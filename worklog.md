@@ -691,3 +691,79 @@ Stage Summary:
 - Database seeded with comprehensive demo data
 - Zero lint errors
 - Application is fully functional and ready for preview
+
+---
+Task ID: 4
+Agent: Seller Gigs Component Developer
+Task: Create seller-gigs.tsx component for gig management in the seller dashboard
+
+Work Log:
+- Created `/src/components/marketplace/seller/seller-gigs.tsx` (~620 lines) — Full gig management component
+
+### Gig List View
+- Search bar with search icon and input
+- Category filter dropdown (populated from API with DEFAULT_CATEGORIES fallback)
+- Status filter (All / Active / Inactive)
+- Desktop: Table with columns — Gig (image + title + featured badge), Category (badge), Starting Price, Orders, Rating (star + value + review count), Status (color-coded badge), Actions (edit/toggle/delete)
+- Mobile: Card layout with image, title, category badge, status badge, starting price, rating, and action buttons
+- Pagination with page navigation
+- Empty state with Briefcase icon and "Create Your First Gig" CTA button
+- Loading skeleton with 5 animated placeholder cards
+
+### Create/Edit Gig Dialog (max-h-[90vh] overflow-y-auto max-w-2xl)
+- Title field (required)
+- Description textarea (required, 4 rows)
+- Category select dropdown (from API or DEFAULT_CATEGORIES)
+- Requirements textarea (2 rows, with helper text "what you need from the buyer")
+- Tags input (comma-separated)
+- **Packages section** — Dynamic add/edit/remove:
+  - Default 3 packages (Basic, Standard, Premium) with unique generated IDs
+  - Each package card with: name select (Basic/Standard/Premium), Popular toggle (Switch + Crown icon), description input, price (number), delivery days (number), features list (dynamic add/remove with + and − buttons)
+  - Add Package button (disabled when 3 packages exist)
+  - Remove package button (hidden when only 1 package)
+  - Package header with colored icon (emerald circle, Crown for popular, Package otherwise)
+- **FAQs section** — Dynamic add/edit/remove:
+  - Add FAQ button
+  - Each FAQ card with HelpCircle icon, question input, answer textarea, remove button (X)
+  - Empty state text when no FAQs
+- Featured toggle with Switch component
+- Cancel / Create Gig or Update Gig buttons (disabled when title, description, or packages missing)
+
+### Actions
+- Edit: Opens dialog pre-populated with gig data (parses JSON strings for packages, faqs, tags)
+- Toggle Active/Inactive: PATCH /api/gigs/:id with { isActive: !gig.isActive }
+- Delete: Soft delete via DELETE /api/gigs/:id with AlertDialog confirmation
+
+### Helper Functions
+- `safeJsonParse<T>(value: string | null | undefined, fallback: T): T` — Safe JSON parsing with fallback
+- `generateId()` — Generates unique IDs using Date.now() + Math.random()
+- `getStartingPrice(gig: Gig)` — Calculates minimum price from parsed packages
+- `getCategoryName(gig: Gig)` — Resolves category name from gig.category or categories list
+
+### API Integration
+- GET /api/gigs?shopId=xxx&page=1&limit=10&search=xxx — Fetch gigs with pagination and search
+- POST /api/gigs — Create gig with packages, faqs, tags (stringified when sending)
+- PATCH /api/gigs/:id — Update gig (same fields + isActive toggle)
+- DELETE /api/gigs/:id — Soft delete (sets isActive: false)
+- GET /api/categories — Fetch categories for filter and form dropdown
+
+Key Implementation Details:
+- 'use client' directive
+- Uses emerald/teal theme (bg-emerald-600, hover:bg-emerald-700 for primary buttons)
+- Matches seller-products.tsx styling patterns exactly
+- shadcn/ui components: Card, Button, Badge, Input, Textarea, Label, Switch, Select, Dialog, Table, AlertDialog
+- Framer Motion for table row animations and AnimatePresence for list transitions
+- Lucide icons: Plus, Search, Edit, Trash2, Power, PowerOff, Briefcase, ChevronLeft, ChevronRight, Star, Image, X, HelpCircle, Package, Minus, Crown
+- Zustand store: useMarketplaceStore for currentUser.shop.id
+- DEFAULT_CATEGORIES fallback when API categories are empty
+- JSON string fields (packages, faqs, tags, images) properly parsed on read and cleaned/stringified on submit
+- Responsive: mobile-first with sm/md breakpoints, table hidden on mobile, cards hidden on desktop
+- ESLint clean with zero errors
+
+Stage Summary:
+- 1 component file created (~620 lines)
+- Full gig CRUD with dynamic packages and FAQs management
+- Matches existing seller-products.tsx patterns and emerald theme
+- Responsive with desktop table + mobile cards layout
+- All JSON fields properly serialized/deserialized
+- Lint-clean with zero errors

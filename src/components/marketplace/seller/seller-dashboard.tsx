@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { SellerOverview } from './seller-overview'
 import { SellerProducts } from './seller-products'
+import { SellerGigs } from './seller-gigs'
 import { SellerOrders } from './seller-orders'
 import { SellerShopSettings } from './seller-shop-settings'
 import { SellerAnalytics } from './seller-analytics'
@@ -58,9 +59,10 @@ export function SellerDashboard() {
           transition={{ duration: 0.3, delay: 0.1 }}
         >
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="mb-6 grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
+            <TabsList className="mb-6 grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="products">Products</TabsTrigger>
+              <TabsTrigger value="gigs">Gigs</TabsTrigger>
               <TabsTrigger value="orders">Orders</TabsTrigger>
               <TabsTrigger value="settings">Shop Settings</TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
@@ -71,6 +73,9 @@ export function SellerDashboard() {
             </TabsContent>
             <TabsContent value="products">
               <SellerProducts />
+            </TabsContent>
+            <TabsContent value="gigs">
+              <SellerGigs />
             </TabsContent>
             <TabsContent value="orders">
               <SellerOrders />

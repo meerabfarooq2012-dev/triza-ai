@@ -11,6 +11,7 @@ import { BuyerDashboard } from '@/components/marketplace/buyer/buyer-dashboard'
 import { SellerDashboard } from '@/components/marketplace/seller/seller-dashboard'
 import ShopView from '@/components/marketplace/shop/shop-view'
 import ProductDetail from '@/components/marketplace/shop/product-detail'
+import GigDetail from '@/components/marketplace/gig/gig-detail'
 import SearchPage from '@/components/marketplace/search/search-page'
 import NotificationsPage from '@/components/marketplace/notifications/notifications-page'
 import AdminPanel from '@/components/marketplace/admin/admin-panel'
@@ -71,6 +72,9 @@ export default function Home() {
 
       case 'product-detail':
         return <ProductDetail />
+
+      case 'gig-detail':
+        return <GigDetail />
 
       case 'search':
         return <SearchPage />

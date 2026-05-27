@@ -22,6 +22,7 @@ export type ViewMode =
   | 'seller-dashboard'
   | 'shop-view'
   | 'product-detail'
+  | 'gig-detail'
   | 'admin'
   | 'search'
   | 'notifications'
@@ -172,6 +173,7 @@ export interface Review {
   userId: string
   shopId: string | null
   productId: string | null
+  gigId: string | null
   rating: number
   title: string | null
   comment: string
@@ -181,6 +183,7 @@ export interface Review {
   user?: User
   shop?: Shop | null
   product?: Product | null
+  gig?: Gig | null
 }
 
 export interface Notification {
@@ -253,6 +256,76 @@ export interface CustomSection {
   type: 'text' | 'banner' | 'gallery' | 'faq' | 'testimonials'
   sortOrder: number
   isActive: boolean
+}
+
+// ----- Gig Types -----
+
+export interface GigPackage {
+  id: string
+  name: 'Basic' | 'Standard' | 'Premium'
+  description: string
+  price: number
+  deliveryDays: number
+  features: string[]
+  isPopular?: boolean
+}
+
+export interface GigFAQ {
+  id: string
+  question: string
+  answer: string
+}
+
+export interface Gig {
+  id: string
+  shopId: string
+  categoryId: string | null
+  title: string
+  slug: string
+  description: string
+  images: string // JSON string of string[]
+  tags: string // JSON string of string[]
+  packages: string // JSON string of GigPackage[]
+  faqs: string // JSON string of GigFAQ[]
+  requirements: string | null
+  isFeatured: boolean
+  isApproved: boolean
+  isActive: boolean
+  totalOrders: number
+  totalReviews: number
+  averageRating: number
+  createdAt: string
+  updatedAt: string
+  shop?: Shop
+  category?: Category | null
+  reviews?: Review[]
+}
+
+export interface CreateGigInput {
+  shopId: string
+  categoryId?: string
+  title: string
+  description: string
+  images?: string[]
+  tags?: string[]
+  packages: GigPackage[]
+  faqs?: GigFAQ[]
+  requirements?: string
+  isFeatured?: boolean
+}
+
+export interface UpdateGigInput extends Partial<CreateGigInput> {
+  isActive?: boolean
+}
+
+export interface GigSearchParams {
+  query?: string
+  category?: string
+  minPrice?: number
+  maxPrice?: number
+  sortBy?: 'price_asc' | 'price_desc' | 'newest' | 'popular' | 'rating'
+  page?: number
+  limit?: number
 }
 
 // ----- Cart -----
@@ -344,6 +417,7 @@ export interface CreateOrderInput {
 export interface CreateReviewInput {
   shopId?: string
   productId?: string
+  gigId?: string
   rating: number
   title?: string
   comment: string

@@ -12,6 +12,7 @@ import {
   Settings,
   TrendingUp,
   Store,
+  Briefcase,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -268,13 +269,24 @@ export function SellerOverview() {
             </CardHeader>
             <CardContent className="space-y-3">
               <Button
-                className="w-full justify-start gap-3 bg-emerald-600 hover:bg-emerald-700"
+                variant="outline"
+                className="w-full justify-start gap-3"
                 onClick={() => {
                   // Navigate to products tab
                 }}
               >
                 <Plus className="h-4 w-4" />
                 Add Product
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full justify-start gap-3"
+                onClick={() => {
+                  // Navigate to gigs tab
+                }}
+              >
+                <Briefcase className="h-4 w-4" />
+                Create Gig
               </Button>
               <Button
                 variant="outline"

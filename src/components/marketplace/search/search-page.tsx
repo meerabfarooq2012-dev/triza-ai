@@ -13,6 +13,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Filter,
+  Clock,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -35,7 +36,7 @@ import {
   DEFAULT_PAGE_SIZE,
   DEFAULT_CATEGORIES,
 } from '@/lib/constants'
-import type { Product, Category, SearchFilters, ProductType } from '@/types'
+import type { Product, Gig, GigPackage, Category, SearchFilters, ProductType, GigSearchParams } from '@/types'
 
 function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
   if (!value) return fallback
@@ -277,10 +278,13 @@ function FilterSidebar({
 export default function SearchPage() {
   const { setCurrentView, searchQuery, setSearchQuery } = useMarketplaceStore()
 
+  const [activeTab, setActiveTab] = useState<'products' | 'gigs'>('products')
   const [products, setProducts] = useState<Product[]>([])
+  const [gigs, setGigs] = useState<Gig[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [totalProducts, setTotalProducts] = useState(0)
+  const [totalGigs, setTotalGigs] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
   const [localQuery, setLocalQuery] = useState(searchQuery)
@@ -324,9 +328,39 @@ export default function SearchPage() {
     }
   }, [filters, searchQuery, currentPage])
 
+  // Search gigs
+  const searchGigs = useCallback(async () => {
+    setLoading(true)
+    try {
+      const gigParams: GigSearchParams = {
+        query: searchQuery || undefined,
+        category: filters.category || undefined,
+        minPrice: filters.minPrice,
+        maxPrice: filters.maxPrice,
+        sortBy: filters.sortBy,
+        page: currentPage,
+        limit: DEFAULT_PAGE_SIZE,
+      }
+      const res = await api.gigs.getGigs(gigParams)
+      if (res.data) {
+        setGigs(res.data.items ?? [])
+        setTotalGigs(res.data.total ?? 0)
+        setTotalPages(res.data.totalPages ?? 0)
+      }
+    } catch {
+      setGigs([])
+    } finally {
+      setLoading(false)
+    }
+  }, [filters, searchQuery, currentPage])
+
   useEffect(() => {
-    searchProducts()
-  }, [searchProducts])
+    if (activeTab === 'products') {
+      searchProducts()
+    } else {
+      searchGigs()
+    }
+  }, [activeTab, searchProducts, searchGigs])
 
   const handleFilterChange = (
     key: keyof SearchFilters,
@@ -352,12 +386,46 @@ export default function SearchPage() {
     setCurrentView('product-detail', { productId })
   }
 
+  const handleGigClick = (gigId: string) => {
+    setCurrentView('gig-detail', { gigId })
+  }
+
+  const getGigStartingPrice = (gig: Gig): number => {
+    const packages = safeJsonParse<GigPackage[]>(gig.packages, [])
+    if (packages.length === 0) return 0
+    return Math.min(...packages.map((p) => p.price))
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">
       {/* Search header */}
       <div className="mb-6">
+        {/* Tab switcher */}
+        <div className="flex items-center gap-2 mb-4">
+          <Button
+            variant={activeTab === 'products' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => { setActiveTab('products'); setCurrentPage(1) }}
+            className="gap-1.5"
+          >
+            <Package size={14} />
+            Products
+          </Button>
+          <Button
+            variant={activeTab === 'gigs' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => { setActiveTab('gigs'); setCurrentPage(1) }}
+            className="gap-1.5"
+          >
+            <Briefcase size={14} />
+            Freelance Gigs
+          </Button>
+        </div>
         <h1 className="text-2xl md:text-3xl font-bold mb-4">
-          Explore {searchQuery ? `results for "${searchQuery}"` : 'Products'}
+          {activeTab === 'gigs'
+            ? `Explore ${searchQuery ? `gig results for "${searchQuery}"` : 'Freelance Gigs'}`
+            : `Explore ${searchQuery ? `results for "${searchQuery}"` : 'Products'}`
+          }
         </h1>
         <div className="flex items-center gap-3">
           <div className="relative flex-1 max-w-xl">
@@ -434,8 +502,8 @@ export default function SearchPage() {
                 'Searching...'
               ) : (
                 <>
-                  Showing <strong>{products.length}</strong> of{' '}
-                  <strong>{totalProducts}</strong> results
+                  Showing <strong>{activeTab === 'products' ? products.length : gigs.length}</strong> of{' '}
+                  <strong>{activeTab === 'products' ? totalProducts : totalGigs}</strong> {activeTab === 'products' ? 'products' : 'gigs'}
                 </>
               )}
             </p>
@@ -461,17 +529,40 @@ export default function SearchPage() {
             </div>
           </div>
 
-          {/* Products grid */}
+          {/* Results grid */}
           {loading ? (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {Array.from({ length: 8 }).map((_, i) => (
-                <Skeleton key={i} className="aspect-square rounded-xl" />
+                <Skeleton key={i} className={activeTab === 'gigs' ? 'aspect-video rounded-xl' : 'aspect-square rounded-xl'} />
               ))}
             </div>
-          ) : products.length === 0 ? (
+          ) : activeTab === 'products' ? (
+            products.length === 0 ? (
+              <div className="text-center py-16">
+                <Search size={64} className="mx-auto text-muted-foreground mb-4" />
+                <h2 className="text-xl font-bold mb-2">No Products Found</h2>
+                <p className="text-muted-foreground mb-4">
+                  Try adjusting your search or filter criteria
+                </p>
+                <Button variant="outline" onClick={handleReset}>
+                  Clear Filters
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {products.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    onClick={() => handleProductClick(product.id)}
+                  />
+                ))}
+              </div>
+            )
+          ) : gigs.length === 0 ? (
             <div className="text-center py-16">
-              <Search size={64} className="mx-auto text-muted-foreground mb-4" />
-              <h2 className="text-xl font-bold mb-2">No Results Found</h2>
+              <Briefcase size={64} className="mx-auto text-muted-foreground mb-4" />
+              <h2 className="text-xl font-bold mb-2">No Gigs Found</h2>
               <p className="text-muted-foreground mb-4">
                 Try adjusting your search or filter criteria
               </p>
@@ -480,14 +571,78 @@ export default function SearchPage() {
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {products.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onClick={() => handleProductClick(product.id)}
-                />
-              ))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {gigs.map((gig) => {
+                const images = safeJsonParse<string[]>(gig.images, [])
+                const tags = safeJsonParse<string[]>(gig.tags, [])
+                const packages = safeJsonParse<GigPackage[]>(gig.packages, [])
+                const startingPrice = getGigStartingPrice(gig)
+                return (
+                  <motion.div key={gig.id} whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
+                    <Card
+                      className="overflow-hidden cursor-pointer group border-0 shadow-sm hover:shadow-lg transition-all h-full"
+                      onClick={() => handleGigClick(gig.id)}
+                    >
+                      <div className="aspect-video relative overflow-hidden bg-muted">
+                        {images[0] ? (
+                          <img
+                            src={images[0]}
+                            alt={gig.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-emerald-50">
+                            <Briefcase size={32} className="text-emerald-300" />
+                          </div>
+                        )}
+                        {gig.isFeatured && (
+                          <Badge className="absolute top-2 left-2 text-xs bg-amber-500 text-white">
+                            Featured
+                          </Badge>
+                        )}
+                        <Badge className="absolute top-2 right-2 text-xs gap-1 bg-emerald-500 text-white">
+                          <Briefcase size={10} />
+                          Gig
+                        </Badge>
+                      </div>
+                      <CardContent className="p-4">
+                        <h3 className="font-semibold text-sm line-clamp-2 mb-1 group-hover:text-emerald-600 transition-colors">
+                          {gig.title}
+                        </h3>
+                        {gig.shop && (
+                          <p className="text-xs text-muted-foreground mb-1.5">
+                            {gig.shop.name}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-1 mb-2">
+                          <Star size={12} className="fill-yellow-400 text-yellow-400" />
+                          <span className="text-xs font-medium">{gig.averageRating.toFixed(1)}</span>
+                          <span className="text-xs text-muted-foreground">({gig.totalReviews})</span>
+                        </div>
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="text-xs text-muted-foreground">Starting at</span>
+                          <span className="font-bold text-lg text-emerald-600">${startingPrice.toFixed(2)}</span>
+                        </div>
+                        {packages.length > 0 && (
+                          <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
+                            <Clock size={10} />
+                            <span>{Math.min(...packages.map(p => p.deliveryDays))}-{Math.max(...packages.map(p => p.deliveryDays))} days</span>
+                          </div>
+                        )}
+                        {tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {tags.slice(0, 2).map((tag) => (
+                              <Badge key={tag} variant="outline" className="text-xs">
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                )
+              })}
             </div>
           )}
 

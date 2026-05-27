@@ -4,6 +4,7 @@ import type {
   User,
   Shop,
   Product,
+  Gig,
   Order,
   Review,
   Notification,
@@ -18,6 +19,9 @@ import type {
   UpdateShopInput,
   CreateProductInput,
   UpdateProductInput,
+  CreateGigInput,
+  UpdateGigInput,
+  GigSearchParams,
   CreateOrderInput,
   CreateReviewInput,
   SendMessageInput,
@@ -416,6 +420,45 @@ const adminApi = {
     }),
 }
 
+// ----- Gigs API -----
+
+const gigsApi = {
+  getGigs: (params?: GigSearchParams) => {
+    const searchParams = new URLSearchParams()
+    if (params?.query) searchParams.set('search', params.query)
+    if (params?.category) searchParams.set('category', params.category)
+    if (params?.minPrice !== undefined)
+      searchParams.set('minPrice', String(params.minPrice))
+    if (params?.maxPrice !== undefined)
+      searchParams.set('maxPrice', String(params.maxPrice))
+    if (params?.sortBy) searchParams.set('sort', params.sortBy)
+    if (params?.page) searchParams.set('page', String(params.page))
+    if (params?.limit) searchParams.set('limit', String(params.limit))
+    const qs = searchParams.toString()
+    return request<ApiResponse<PaginatedResponse<Gig>>>(
+      `/gigs${qs ? `?${qs}` : ''}`
+    )
+  },
+
+  getGig: (id: string) =>
+    request<ApiResponse<Gig>>(`/gigs/${id}`),
+
+  createGig: (data: CreateGigInput) =>
+    request<ApiResponse<Gig>>('/gigs', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateGig: (id: string, data: UpdateGigInput) =>
+    request<ApiResponse<Gig>>(`/gigs/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+
+  deleteGig: (id: string) =>
+    request<ApiResponse>(`/gigs/${id}`, { method: 'DELETE' }),
+}
+
 // ----- Upload API -----
 
 const uploadApi = {
@@ -450,6 +493,7 @@ export const api = {
   auth: authApi,
   shops: shopsApi,
   products: productsApi,
+  gigs: gigsApi,
   orders: ordersApi,
   reviews: reviewsApi,
   notifications: notificationsApi,
