@@ -1,0 +1,282 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String
+  avatar        String?
+  bio           String?
+  role          String    @default("buyer") // buyer, seller, both
+  phone         String?
+  location      String?
+  isVerified    Boolean   @default(false)
+  isAdmin       Boolean   @default(false)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  shop          Shop?
+  buyerOrders   Order[]   @relation("BuyerOrders")
+  sellerOrders  Order[]   @relation("SellerOrders")
+  reviews       Review[]
+  notifications Notification[]
+  sentMessages  Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  disputes      Dispute[] @relation("DisputesByUser")
+  favorites     Favorite[]
+  socialLinks   SocialLink[]
+}
+
+model Shop {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  name            String
+  slug            String    @unique
+  description     String?
+  logo            String?
+  banner          String?
+  primaryColor    String    @default("#6366f1")
+  secondaryColor  String    @default("#8b5cf6")
+  accentColor     String    @default("#a78bfa")
+  layoutStyle     String    @default("grid") // grid, list, featured
+  displayStyle    String    @default("modern") // modern, classic, minimal
+  about           String?
+  contactEmail    String?
+  contactPhone    String?
+  address         String?
+  isApproved      Boolean   @default(true)
+  isActive        Boolean   @default(true)
+  totalSales      Int       @default(0)
+  totalReviews    Int       @default(0)
+  averageRating   Float     @default(0)
+  customSections  String    @default("[]") // JSON array of custom sections
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  products        Product[]
+  reviews         Review[]
+  socialLinks     SocialLink[]
+
+  @@index([slug])
+  @@index([userId])
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  icon        String?
+  description String?
+  parentId    String?
+  sortOrder   Int       @default(0)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  products    Product[]
+}
+
+model Product {
+  id            String    @id @default(cuid())
+  shopId        String
+  categoryId    String?
+  name          String
+  slug          String
+  description   String
+  shortDesc     String?
+  price         Float
+  comparePrice  Float?
+  type          String    @default("digital") // digital, physical, freelance
+  images        String    @default("[]") // JSON array of image URLs
+  fileUrl       String?   // For digital products
+  fileSize      String?
+  stock         Int       @default(-1) // -1 = unlimited for digital
+  sku           String?
+  tags          String    @default("[]") // JSON array
+  isFeatured    Boolean   @default(false)
+  isApproved    Boolean   @default(true)
+  isActive      Boolean   @default(true)
+  totalSales    Int       @default(0)
+  totalReviews  Int       @default(0)
+  averageRating Float     @default(0)
+  deliveryInfo  String?   // Shipping info for physical, or delivery timeline for freelance
+  requirements  String?   // For freelance services - what buyer needs to provide
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  shop          Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  category      Category? @relation(fields: [categoryId], references: [id])
+  // User relation is through Shop
+  orderItems    OrderItem[]
+  reviews       Review[]
+  favorites     Favorite[]
+
+  @@unique([shopId, slug])
+  @@index([shopId])
+  @@index([type])
+  @@index([isFeatured])
+  @@index([categoryId])
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  buyerId       String
+  sellerId      String
+  status        String      @default("pending") // pending, processing, shipped, delivered, cancelled, refunded
+  totalAmount   Float
+  platformFee   Float       @default(0)
+  paymentMethod String      @default("card")
+  paymentStatus String      @default("pending") // pending, paid, failed, refunded
+  shippingName  String?
+  shippingAddr  String?
+  shippingCity  String?
+  shippingZip   String?
+  shippingPhone String?
+  notes         String?
+  trackingNo    String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  buyer         User        @relation("BuyerOrders", fields: [buyerId], references: [id])
+  seller        User        @relation("SellerOrders", fields: [sellerId], references: [id])
+  items         OrderItem[]
+  disputes      Dispute[]
+
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([status])
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  productId   String
+  quantity    Int      @default(1)
+  price       Float
+  type        String   @default("digital") // digital, physical, freelance
+  status      String   @default("pending") // pending, delivered, cancelled
+  createdAt   DateTime @default(now())
+
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product  @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  userId    String
+  shopId    String?
+  productId String?
+  rating    Int
+  title     String?
+  comment   String
+  isVerified Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id])
+  shop      Shop?    @relation(fields: [shopId], references: [id])
+  product   Product? @relation(fields: [productId], references: [id])
+
+  @@index([shopId])
+  @@index([productId])
+  @@index([userId])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String   @default("info") // info, success, warning, error, order, message
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  senderId   String
+  receiverId String
+  content    String
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+
+  @@index([senderId])
+  @@index([receiverId])
+}
+
+model Dispute {
+  id          String   @id @default(cuid())
+  orderId     String
+  userId      String
+  reason      String
+  description String
+  status      String   @default("open") // open, investigating, resolved, closed
+  resolution  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  order       Order    @relation(fields: [orderId], references: [id])
+  user        User     @relation("DisputesByUser", fields: [userId], references: [id])
+
+  @@index([orderId])
+  @@index([status])
+}
+
+model SocialLink {
+  id        String   @id @default(cuid())
+  userId    String
+  shopId    String?
+  platform  String   // twitter, github, linkedin, website, instagram, facebook, youtube
+  url       String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shop      Shop?    @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([shopId])
+}
+
+model PlatformStats {
+  id            String   @id @default(cuid())
+  totalUsers    Int      @default(0)
+  totalSellers  Int      @default(0)
+  totalProducts Int      @default(0)
+  totalOrders   Int      @default(0)
+  totalRevenue  Float    @default(0)
+  updatedAt     DateTime @updatedAt
+}
