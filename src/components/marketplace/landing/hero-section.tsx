@@ -15,11 +15,7 @@ const floatingItems = [
   { icon: <Package className="h-5 w-5" />, x: '50%', y: '10%', delay: 1.2, duration: 5 },
 ]
 
-const stats = [
-  { value: '10K+', label: 'Products' },
-  { value: '5K+', label: 'Sellers' },
-  { value: '50K+', label: 'Buyers' },
-]
+
 
 export function HeroSection() {
   const { setCurrentView } = useMarketplaceStore()
@@ -109,23 +105,7 @@ export function HeroSection() {
             </Button>
           </div>
 
-          {/* Stats */}
-          <div className="flex items-center justify-center gap-8 sm:gap-16">
-            {stats.map((stat, i) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 + i * 0.15, duration: 0.5 }}
-                className="text-center"
-              >
-                <div className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-violet-600 to-rose-500 bg-clip-text text-transparent">
-                  {stat.value}
-                </div>
-                <div className="text-sm text-muted-foreground mt-1">{stat.label}</div>
-              </motion.div>
-            ))}
-          </div>
+
         </motion.div>
       </div>
     </section>
