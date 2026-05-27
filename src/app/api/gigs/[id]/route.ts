@@ -23,7 +23,7 @@ export async function GET(
             user: { select: { id: true, name: true, avatar: true, isVerified: true } },
           },
         },
-        category: { select: { id: true, name: true, slug: true } },
+        category: { select: { id: true, name: true, slug: true, icon: true } },
         reviews: {
           include: {
             user: { select: { id: true, name: true, avatar: true } },
@@ -106,7 +106,7 @@ export async function PATCH(
       data: updateData,
       include: {
         shop: { select: { id: true, name: true, slug: true, logo: true } },
-        category: { select: { id: true, name: true, slug: true } },
+        category: { select: { id: true, name: true, slug: true, icon: true } },
       },
     });
 

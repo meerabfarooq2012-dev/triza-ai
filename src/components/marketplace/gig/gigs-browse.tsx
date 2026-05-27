@@ -34,6 +34,9 @@ import {
   GraduationCap,
   HeartHandshake,
   LayoutGrid,
+  Filter,
+  X,
+  Tag,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -50,6 +53,8 @@ import {
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { GIG_CATEGORIES } from '@/lib/constants'
 import type { Gig, GigPackage, Category } from '@/types'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 
 // Helper
 function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
@@ -148,6 +153,7 @@ export function GigsBrowse() {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalGigs, setTotalGigs] = useState(0)
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false)
 
   // Fetch categories with gig counts
   useEffect(() => {
@@ -279,86 +285,153 @@ export function GigsBrowse() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Category Section */}
-        <div className="mb-10">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-xl md:text-2xl font-bold">Browse by Category</h2>
-            <Button
-              variant="ghost"
-              size="sm"
-              className={!selectedCategory ? 'text-emerald-600 font-semibold' : ''}
-              onClick={() => handleCategoryClick(null)}
-            >
-              <LayoutGrid className="h-4 w-4 mr-1" />
-              All
-            </Button>
+        {/* Active category filter chip */}
+        {selectedCategory && (
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-sm text-muted-foreground">Showing:</span>
+            <Badge className="gap-1.5 bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border-0 pr-1">
+              {GIG_CATEGORIES.find(c => c.slug === selectedCategory)?.name || selectedCategory}
+              <button
+                onClick={() => handleCategoryClick(null)}
+                className="ml-0.5 rounded-full p-0.5 hover:bg-emerald-200 dark:hover:bg-emerald-800 transition-colors"
+              >
+                <X size={12} />
+              </button>
+            </Badge>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-            <AnimatePresence mode="popLayout">
-              {displayCategories.map((category, i) => (
-                <motion.div
-                  key={category.slug}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.2, delay: i * 0.02 }}
+        )}
+
+        <div className="flex gap-8">
+          {/* ====== Desktop Sidebar ====== */}
+          <aside className="hidden lg:block w-64 flex-shrink-0">
+            <div className="sticky top-24">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-sm">Categories</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`h-7 text-xs ${!selectedCategory ? 'text-emerald-600 font-semibold' : ''}`}
+                  onClick={() => handleCategoryClick(null)}
                 >
-                  <Card
-                    className={`cursor-pointer transition-all duration-200 hover:shadow-md border-2 ${
-                      selectedCategory === category.slug
-                        ? 'border-emerald-500 shadow-md shadow-emerald-500/10'
-                        : 'border-transparent hover:border-emerald-200'
-                    }`}
-                    onClick={() => handleCategoryClick(category.slug)}
-                  >
-                    <CardContent className={`p-4 bg-gradient-to-br ${categoryGradients[i % categoryGradients.length]}`}>
-                      <div className={`mb-2 ${iconColorMap[category.slug] || 'text-gray-600'}`}>
-                        {categoryIconMap[category.icon] || <Briefcase className="h-5 w-5" />}
-                      </div>
-                      <h3 className="text-sm font-semibold leading-tight">{category.name}</h3>
-                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{category.description}</p>
+                  <LayoutGrid className="h-3.5 w-3.5 mr-1" />
+                  All
+                </Button>
+              </div>
+              <ScrollArea className="h-[calc(100vh-12rem)]">
+                <div className="space-y-1 pr-3">
+                  {displayCategories.map((category, i) => (
+                    <button
+                      key={category.slug}
+                      onClick={() => handleCategoryClick(category.slug)}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-sm transition-all duration-150 ${
+                        selectedCategory === category.slug
+                          ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-medium shadow-sm'
+                          : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      <span className={`flex-shrink-0 ${iconColorMap[category.slug] || 'text-gray-500'}`}>
+                        {categoryIconMap[category.icon] || <Briefcase className="h-4 w-4" />}
+                      </span>
+                      <span className="flex-1 truncate">{category.name}</span>
                       {category.gigCount > 0 && (
-                        <Badge variant="secondary" className="mt-2 text-[10px]">
-                          {category.gigCount} gig{category.gigCount !== 1 ? 's' : ''}
+                        <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
+                          {category.gigCount}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
+          </aside>
+
+          {/* ====== Main Content ====== */}
+          <div className="flex-1 min-w-0">
+            {/* Header with mobile filter button */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+              <div className="flex items-center gap-3">
+                {/* Mobile Filter Button */}
+                <Sheet open={mobileFilterOpen} onOpenChange={setMobileFilterOpen}>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" size="sm" className="lg:hidden gap-1.5">
+                      <Filter className="h-4 w-4" />
+                      Categories
+                      {selectedCategory && (
+                        <Badge className="ml-1 bg-emerald-500 text-white text-[10px] px-1.5 border-0">
+                          1
                         </Badge>
                       )}
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-        </div>
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="w-80 p-0">
+                    <SheetHeader className="p-4 border-b">
+                      <div className="flex items-center justify-between">
+                        <SheetTitle className="text-left">Categories</SheetTitle>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={`h-7 text-xs ${!selectedCategory ? 'text-emerald-600 font-semibold' : ''}`}
+                          onClick={() => { handleCategoryClick(null); setMobileFilterOpen(false) }}
+                        >
+                          <LayoutGrid className="h-3.5 w-3.5 mr-1" />
+                          All
+                        </Button>
+                      </div>
+                    </SheetHeader>
+                    <ScrollArea className="h-[calc(100vh-5rem)]">
+                      <div className="p-2 space-y-0.5">
+                        {displayCategories.map((category, i) => (
+                          <button
+                            key={category.slug}
+                            onClick={() => { handleCategoryClick(category.slug); setMobileFilterOpen(false) }}
+                            className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left text-sm transition-all duration-150 ${
+                              selectedCategory === category.slug
+                                ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-medium'
+                                : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground'
+                            }`}
+                          >
+                            <span className={`flex-shrink-0 ${iconColorMap[category.slug] || 'text-gray-500'}`}>
+                              {categoryIconMap[category.icon] || <Briefcase className="h-4 w-4" />}
+                            </span>
+                            <span className="flex-1 truncate">{category.name}</span>
+                            {category.gigCount > 0 && (
+                              <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
+                                {category.gigCount}
+                              </span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </SheetContent>
+                </Sheet>
 
-        {/* Gigs Section */}
-        <div>
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
-            <div>
-              <h2 className="text-xl md:text-2xl font-bold">
-                {selectedCategory
-                  ? GIG_CATEGORIES.find(c => c.slug === selectedCategory)?.name || 'Gigs'
-                  : 'All Freelance Gigs'}
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {loading ? 'Loading...' : `${totalGigs} gig${totalGigs !== 1 ? 's' : ''} available`}
-              </p>
+                <div>
+                  <h2 className="text-xl md:text-2xl font-bold">
+                    {selectedCategory
+                      ? GIG_CATEGORIES.find(c => c.slug === selectedCategory)?.name || 'Gigs'
+                      : 'All Freelance Gigs'}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    {loading ? 'Loading...' : `${totalGigs} gig${totalGigs !== 1 ? 's' : ''} available`}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Select value={sortBy} onValueChange={(v) => { setSortBy(v); setPage(1) }}>
+                  <SelectTrigger className="w-[180px] h-9 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="newest">Newest</SelectItem>
+                    <SelectItem value="popular">Most Popular</SelectItem>
+                    <SelectItem value="rating">Highest Rated</SelectItem>
+                    <SelectItem value="price_asc">Price: Low to High</SelectItem>
+                    <SelectItem value="price_desc">Price: High to Low</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Select value={sortBy} onValueChange={(v) => { setSortBy(v); setPage(1) }}>
-                <SelectTrigger className="w-[180px] h-9 text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="newest">Newest</SelectItem>
-                  <SelectItem value="popular">Most Popular</SelectItem>
-                  <SelectItem value="rating">Highest Rated</SelectItem>
-                  <SelectItem value="price_asc">Price: Low to High</SelectItem>
-                  <SelectItem value="price_desc">Price: High to Low</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
 
           {/* Gig Cards Grid */}
           {loading ? (
@@ -425,12 +498,28 @@ export function GigsBrowse() {
                               Featured
                             </Badge>
                           )}
+                          {/* Category badge on image */}
+                          {gig.category && (
+                            <Badge className="absolute bottom-2 left-2 text-[10px] gap-1 bg-white/90 text-gray-800 border-0 backdrop-blur-sm shadow-sm">
+                              {categoryIconMap[gig.category.icon || ''] || <Briefcase size={8} />}
+                              {gig.category.name}
+                            </Badge>
+                          )}
                           <Badge className="absolute top-2 right-2 text-xs gap-1 bg-emerald-500 text-white border-0">
                             <Briefcase size={10} />
                             Gig
                           </Badge>
                         </div>
                         <CardContent className="p-4">
+                          {/* Category tag above title */}
+                          {gig.category && (
+                            <div className="flex items-center gap-1 mb-1.5">
+                              <span className={`text-[10px] ${iconColorMap[gig.category.slug] || 'text-emerald-600'}`}>
+                                {categoryIconMap[gig.category.icon || ''] || <Briefcase size={10} />}
+                              </span>
+                              <span className="text-[10px] font-medium text-muted-foreground">{gig.category.name}</span>
+                            </div>
+                          )}
                           <h3 className="font-semibold text-sm line-clamp-2 mb-1 group-hover:text-emerald-600 transition-colors">
                             {gig.title}
                           </h3>
@@ -519,8 +608,9 @@ export function GigsBrowse() {
               </Button>
             </div>
           )}
-        </div>
-      </div>
+          </div>{/* closes flex-1 min-w-0 */}
+        </div>{/* closes flex gap-8 */}
+      </div>{/* closes max-w-7xl */}
     </div>
   )
 }

@@ -1,21 +1,22 @@
 ---
 Task ID: 1
-Agent: Main Agent
-Task: Fix "not seeing anything" issue - verify dev server and page rendering
+Agent: Main
+Task: Add category display to gig listing page
 
 Work Log:
-- Checked dev server status - server was not running
-- Restarted Next.js dev server on port 3000
-- Verified page renders correctly with 200 status and 109KB HTML output
-- Confirmed all landing page sections render properly: Header, Hero, About, Features, How It Works, Categories, Gigs, CTA, Footer
-- Verified all component files exist in src/components/marketplace/
-- Verified Prisma schema includes Gig model with all necessary fields
-- Verified API routes exist for all features including gigs
-- Verified zustand store with proper rehydration and validation
+- Diagnosed that gig cards in GigsBrowse did not show category names/badges
+- Added category badge overlay on gig card images (bottom-left, white backdrop)
+- Added category icon + name tag above title in each gig card
+- Replaced the old category grid with a proper sidebar layout:
+  - Desktop: Sticky left sidebar with all 25 categories (scrollable)
+  - Mobile: Sheet/drawer with category list (triggered by "Categories" button)
+- Added active category filter chip at top with X to clear
+- Added `icon` field to gig API category responses (gigs list, gig detail, create gig)
+- Fixed div nesting for the new flex layout (sidebar + content)
 
 Stage Summary:
-- The application is fully functional and rendering correctly
-- The "not seeing anything" issue was caused by the dev server not being active
-- Server needs to be running (bun run dev) for the preview to work
-- All gig features are implemented: categories, seller gig management, buyer browsing
-- The page renders with full content: hero, about, features, categories, gigs section, CTA
+- Gig listing now shows category on each gig card (image overlay + text tag)
+- Desktop has a clean sidebar with all 25 freelance categories
+- Mobile has a slide-out categories drawer
+- Active filter shows as dismissible chip
+- No lint errors, page compiles successfully

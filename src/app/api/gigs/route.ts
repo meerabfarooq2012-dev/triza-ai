@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
               user: { select: { id: true, isVerified: true } },
             },
           },
-          category: { select: { id: true, name: true, slug: true } },
+          category: { select: { id: true, name: true, slug: true, icon: true } },
         },
         orderBy,
         skip,
@@ -199,7 +199,7 @@ export async function POST(request: NextRequest) {
       },
       include: {
         shop: { select: { id: true, name: true, slug: true, logo: true } },
-        category: { select: { id: true, name: true, slug: true } },
+        category: { select: { id: true, name: true, slug: true, icon: true } },
       },
     });
 
