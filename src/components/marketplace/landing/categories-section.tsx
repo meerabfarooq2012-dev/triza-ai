@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   Download,
@@ -17,9 +18,30 @@ import {
   Globe,
   PenTool,
   MessageSquare,
+  Film,
+  Database,
+  Megaphone,
+  Figma,
+  Box,
+  Shield,
+  Brain,
+  Cloud,
+  Smartphone,
+  Gamepad2,
+  ShoppingCart,
+  Share2,
+  Headphones,
+  Search,
+  Building2,
+  Scale,
+  Calculator,
+  HeartHandshake,
+  LayoutGrid,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
-import { DEFAULT_CATEGORIES } from '@/lib/constants'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { DEFAULT_CATEGORIES, GIG_CATEGORIES } from '@/lib/constants'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -38,6 +60,24 @@ const iconMap: Record<string, React.ReactNode> = {
   Globe: <Globe className="h-5 w-5" />,
   PenTool: <PenTool className="h-5 w-5" />,
   MessageSquare: <MessageSquare className="h-5 w-5" />,
+  Film: <Film className="h-5 w-5" />,
+  Database: <Database className="h-5 w-5" />,
+  Megaphone: <Megaphone className="h-5 w-5" />,
+  Figma: <Figma className="h-5 w-5" />,
+  Box: <Box className="h-5 w-5" />,
+  Shield: <Shield className="h-5 w-5" />,
+  Brain: <Brain className="h-5 w-5" />,
+  Cloud: <Cloud className="h-5 w-5" />,
+  Smartphone: <Smartphone className="h-5 w-5" />,
+  Gamepad2: <Gamepad2 className="h-5 w-5" />,
+  ShoppingCart: <ShoppingCart className="h-5 w-5" />,
+  Share2: <Share2 className="h-5 w-5" />,
+  Headphones: <Headphones className="h-5 w-5" />,
+  Search: <Search className="h-5 w-5" />,
+  Building2: <Building2 className="h-5 w-5" />,
+  Scale: <Scale className="h-5 w-5" />,
+  Calculator: <Calculator className="h-5 w-5" />,
+  HeartHandshake: <HeartHandshake className="h-5 w-5" />,
 }
 
 const categoryGradients = [
@@ -73,11 +113,19 @@ const cardVariants = {
 
 export function CategoriesSection() {
   const { setCurrentView, setSearchCategory } = useMarketplaceStore()
+  const [activeTab, setActiveTab] = useState<'products' | 'gigs'>('products')
 
-  const handleCategoryClick = (slug: string) => {
+  const handleCategoryClick = (slug: string, type: 'products' | 'gigs') => {
     setSearchCategory(slug)
-    setCurrentView('search')
+    if (type === 'gigs') {
+      setCurrentView('gigs-browse')
+    } else {
+      setCurrentView('search')
+    }
   }
+
+  // Show top 10 freelance categories on landing page
+  const topGigCategories = GIG_CATEGORIES.slice(0, 10)
 
   return (
     <section className="py-20 sm:py-28 bg-muted/30">
@@ -87,7 +135,7 @@ export function CategoriesSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-100px' }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          className="text-center mb-8"
         >
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">
             Browse Categories
@@ -97,31 +145,100 @@ export function CategoriesSection() {
           </p>
         </motion.div>
 
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: '-50px' }}
-          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"
-        >
-          {DEFAULT_CATEGORIES.map((category, i) => (
-            <motion.div key={category.slug} variants={cardVariants}>
-              <Card
-                className="group cursor-pointer border-border/50 hover:border-violet-200 dark:hover:border-violet-800 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 overflow-hidden"
-                onClick={() => handleCategoryClick(category.slug)}
-              >
-                <CardContent className={`p-5 bg-gradient-to-br ${categoryGradients[i % categoryGradients.length]}`}>
-                  <div className={`mb-3 ${iconColors[i % iconColors.length]}`}>
-                    {iconMap[category.icon] || <Package className="h-5 w-5" />}
-                  </div>
-                  <h3 className="text-sm font-semibold group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
-                    {category.name}
-                  </h3>
-                </CardContent>
-              </Card>
+        {/* Tab Switcher */}
+        <div className="flex items-center justify-center gap-2 mb-10">
+          <Button
+            variant={activeTab === 'products' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setActiveTab('products')}
+            className="gap-1.5"
+          >
+            <Package className="h-4 w-4" />
+            Products
+          </Button>
+          <Button
+            variant={activeTab === 'gigs' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setActiveTab('gigs')}
+            className="gap-1.5"
+          >
+            <Briefcase className="h-4 w-4" />
+            Freelance Services
+          </Button>
+        </div>
+
+        {/* Product Categories */}
+        {activeTab === 'products' && (
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-50px' }}
+            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"
+          >
+            {DEFAULT_CATEGORIES.map((category, i) => (
+              <motion.div key={category.slug} variants={cardVariants}>
+                <Card
+                  className="group cursor-pointer border-border/50 hover:border-violet-200 dark:hover:border-violet-800 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 overflow-hidden"
+                  onClick={() => handleCategoryClick(category.slug, 'products')}
+                >
+                  <CardContent className={`p-5 bg-gradient-to-br ${categoryGradients[i % categoryGradients.length]}`}>
+                    <div className={`mb-3 ${iconColors[i % iconColors.length]}`}>
+                      {iconMap[category.icon] || <Package className="h-5 w-5" />}
+                    </div>
+                    <h3 className="text-sm font-semibold group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
+                      {category.name}
+                    </h3>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+
+        {/* Freelance Gig Categories */}
+        {activeTab === 'gigs' && (
+          <>
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-50px' }}
+              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"
+            >
+              {topGigCategories.map((category, i) => (
+                <motion.div key={category.slug} variants={cardVariants}>
+                  <Card
+                    className="group cursor-pointer border-border/50 hover:border-emerald-200 dark:hover:border-emerald-800 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 overflow-hidden"
+                    onClick={() => handleCategoryClick(category.slug, 'gigs')}
+                  >
+                    <CardContent className={`p-5 bg-gradient-to-br ${categoryGradients[i % categoryGradients.length]}`}>
+                      <div className={`mb-3 ${iconColors[i % iconColors.length]}`}>
+                        {iconMap[category.icon] || <Briefcase className="h-5 w-5" />}
+                      </div>
+                      <h3 className="text-sm font-semibold group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                        {category.name}
+                      </h3>
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                        {category.description}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
             </motion.div>
-          ))}
-        </motion.div>
+            <div className="text-center mt-8">
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={() => setCurrentView('gigs-browse')}
+              >
+                <LayoutGrid className="h-4 w-4" />
+                View All {GIG_CATEGORIES.length} Categories
+              </Button>
+            </div>
+          </>
+        )}
       </div>
     </section>
   )

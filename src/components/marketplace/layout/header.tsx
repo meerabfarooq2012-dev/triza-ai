@@ -18,6 +18,7 @@ import {
   ArrowLeftRight,
   Home,
   Compass,
+  Briefcase,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -101,6 +102,7 @@ export function Header() {
   const navLinks = [
     { label: 'Home', view: 'landing' as ViewMode, icon: Home },
     { label: 'Browse', view: 'search' as ViewMode, icon: Compass },
+    { label: 'Gigs', view: 'gigs-browse' as ViewMode, icon: Briefcase },
   ]
 
   return (

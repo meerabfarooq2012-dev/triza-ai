@@ -60,7 +60,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
-import { DEFAULT_CATEGORIES } from '@/lib/constants'
+import { DEFAULT_CATEGORIES, GIG_CATEGORIES } from '@/lib/constants'
 import type { Gig, GigPackage, GigFAQ, Category } from '@/types'
 
 // ---------------------------------------------------------------------------
@@ -466,12 +466,12 @@ export function SellerGigs() {
 
   const allCategories = categories.length > 0
     ? categories
-    : DEFAULT_CATEGORIES.map((c) => ({
+    : GIG_CATEGORIES.map((c) => ({
         id: c.slug,
         name: c.name,
         slug: c.slug,
         icon: c.icon,
-        description: null,
+        description: c.description || null,
         parentId: null,
         sortOrder: c.sortOrder,
         isActive: true,

@@ -195,6 +195,36 @@ export const DEFAULT_CATEGORIES = [
   { name: 'Consulting', slug: 'consulting', icon: 'MessageSquare', sortOrder: 14 },
 ] as const
 
+// ----- Gig Categories -----
+
+export const GIG_CATEGORIES = [
+  { name: 'Graphic Design', slug: 'graphic-design', icon: 'Palette', description: 'Logos, branding, illustrations, and visual design', sortOrder: 0 },
+  { name: 'Programming & Development', slug: 'programming-development', icon: 'Code', description: 'Web, mobile, and software development', sortOrder: 1 },
+  { name: 'Video & Audio Editing', slug: 'video-audio-editing', icon: 'Film', description: 'Video editing, motion graphics, and audio production', sortOrder: 2 },
+  { name: 'Data Entry', slug: 'data-entry', icon: 'Database', description: 'Data processing, spreadsheet management, and data entry', sortOrder: 3 },
+  { name: 'Writing & Translation', slug: 'writing-translation', icon: 'PenTool', description: 'Content writing, copywriting, and translation services', sortOrder: 4 },
+  { name: 'Digital Marketing', slug: 'digital-marketing', icon: 'Megaphone', description: 'SEO, social media, email marketing, and PPC', sortOrder: 5 },
+  { name: 'UI/UX Design', slug: 'ui-ux-design', icon: 'Figma', description: 'User interface and experience design', sortOrder: 6 },
+  { name: '3D & Animation', slug: '3d-animation', icon: 'Box', description: '3D modeling, animation, and visual effects', sortOrder: 7 },
+  { name: 'Photography & Photo Editing', slug: 'photography-editing', icon: 'Camera', description: 'Photo editing, retouching, and photography', sortOrder: 8 },
+  { name: 'Music & Audio', slug: 'music-audio', icon: 'Music', description: 'Music production, voiceover, and sound design', sortOrder: 9 },
+  { name: 'Business & Consulting', slug: 'business-consulting', icon: 'Briefcase', description: 'Business strategy, consulting, and planning', sortOrder: 10 },
+  { name: 'AI & Machine Learning', slug: 'ai-machine-learning', icon: 'Brain', description: 'AI solutions, ML models, and data science', sortOrder: 11 },
+  { name: 'Cybersecurity', slug: 'cybersecurity', icon: 'Shield', description: 'Security audits, penetration testing, and protection', sortOrder: 12 },
+  { name: 'Cloud & DevOps', slug: 'cloud-devops', icon: 'Cloud', description: 'Cloud infrastructure, CI/CD, and DevOps', sortOrder: 13 },
+  { name: 'Mobile App Development', slug: 'mobile-app-dev', icon: 'Smartphone', description: 'iOS, Android, and cross-platform app development', sortOrder: 14 },
+  { name: 'Game Development', slug: 'game-development', icon: 'Gamepad2', description: 'Game design, development, and asset creation', sortOrder: 15 },
+  { name: 'E-Commerce', slug: 'e-commerce', icon: 'ShoppingCart', description: 'Store setup, product listings, and e-commerce solutions', sortOrder: 16 },
+  { name: 'Social Media Management', slug: 'social-media', icon: 'Share2', description: 'Social media strategy, content, and management', sortOrder: 17 },
+  { name: 'Virtual Assistant', slug: 'virtual-assistant', icon: 'Headphones', description: 'Admin support, scheduling, and virtual assistance', sortOrder: 18 },
+  { name: 'SEO & Content Strategy', slug: 'seo-content', icon: 'Search', description: 'Search optimization and content planning', sortOrder: 19 },
+  { name: 'Architecture & Interior Design', slug: 'architecture-interior', icon: 'Building2', description: 'Architectural design and interior styling', sortOrder: 20 },
+  { name: 'Legal & Compliance', slug: 'legal-compliance', icon: 'Scale', description: 'Legal consulting and compliance services', sortOrder: 21 },
+  { name: 'Accounting & Finance', slug: 'accounting-finance', icon: 'Calculator', description: 'Bookkeeping, tax, and financial consulting', sortOrder: 22 },
+  { name: 'Education & Tutoring', slug: 'education-tutoring', icon: 'GraduationCap', description: 'Online tutoring, courses, and training', sortOrder: 23 },
+  { name: 'Customer Service', slug: 'customer-service', icon: 'HeartHandshake', description: 'Customer support and service solutions', sortOrder: 24 },
+] as const
+
 // ----- Color Theme Presets for Shops -----
 
 export const SHOP_COLOR_PRESETS = [

@@ -23,6 +23,7 @@ export type ViewMode =
   | 'shop-view'
   | 'product-detail'
   | 'gig-detail'
+  | 'gigs-browse'
   | 'admin'
   | 'search'
   | 'notifications'

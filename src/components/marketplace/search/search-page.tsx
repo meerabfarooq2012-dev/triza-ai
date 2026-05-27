@@ -35,6 +35,7 @@ import {
   SORT_OPTIONS,
   DEFAULT_PAGE_SIZE,
   DEFAULT_CATEGORIES,
+  GIG_CATEGORIES,
 } from '@/lib/constants'
 import type { Product, Gig, GigPackage, Category, SearchFilters, ProductType, GigSearchParams } from '@/types'
 
@@ -698,11 +699,11 @@ export default function SearchPage() {
       </div>
 
       {/* Browse by Category (shown when no search query) */}
-      {!searchQuery && products.length > 0 && (
+      {!searchQuery && (
         <section className="mt-16">
           <h2 className="text-xl font-bold mb-6">Browse by Category</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-            {DEFAULT_CATEGORIES.map((cat) => (
+            {(activeTab === 'gigs' ? GIG_CATEGORIES : DEFAULT_CATEGORIES).map((cat) => (
               <button
                 key={cat.slug}
                 onClick={() => {
@@ -715,9 +716,25 @@ export default function SearchPage() {
                 <p className="font-medium text-sm group-hover:text-primary transition-colors">
                   {cat.name}
                 </p>
+                {'description' in cat && cat.description && (
+                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                    {cat.description}
+                  </p>
+                )}
               </button>
             ))}
           </div>
+          {activeTab === 'gigs' && (
+            <div className="text-center mt-6">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentView('gigs-browse')}
+              >
+                View All Categories & Gigs
+              </Button>
+            </div>
+          )}
         </section>
       )}
     </div>
