@@ -26,7 +26,11 @@ export default function Home() {
     if (savedUser) {
       try {
         const user = JSON.parse(savedUser)
-        useMarketplaceStore.getState().login(user)
+        if (user && user.role) {
+          useMarketplaceStore.getState().login(user)
+        } else {
+          localStorage.removeItem('marketo-user')
+        }
       } catch {
         localStorage.removeItem('marketo-user')
       }

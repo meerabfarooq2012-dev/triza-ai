@@ -104,6 +104,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
 
       // ----- Auth Actions -----
       login: (user: User) => {
+        if (!user || !user.role) return
         const role = user.role === 'seller' ? 'seller' : 'buyer'
         set({
           currentUser: user,
@@ -257,6 +258,14 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         currentView: state.currentView,
         viewParams: state.viewParams,
       }),
+      onRehydrateStorage: () => (state) => {
+        // Validate rehydrated state - if currentUser is invalid, clear auth
+        if (state?.isAuthenticated && (!state.currentUser || !state.currentUser.role)) {
+          state.currentUser = null
+          state.isAuthenticated = false
+          state.activeRole = 'buyer'
+        }
+      },
     }
   )
 )
