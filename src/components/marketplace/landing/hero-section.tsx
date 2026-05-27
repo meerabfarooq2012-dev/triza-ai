@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { ArrowRight, ShoppingBag, Star, Package, Zap } from 'lucide-react'
+import { ArrowRight, ShoppingBag, Star, Package, Zap, Briefcase } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { PLATFORM_NAME, PLATFORM_TAGLINE, PLATFORM_DESCRIPTION } from '@/lib/constants'
@@ -102,6 +102,15 @@ export function HeroSection() {
             >
               <ShoppingBag className="mr-2 h-4 w-4" />
               Browse Products
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="px-8 text-base border-2 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 border-emerald-200 text-emerald-700 hover:text-emerald-800 dark:border-emerald-800 dark:text-emerald-300"
+              onClick={() => setCurrentView('gigs-browse')}
+            >
+              <Briefcase className="mr-2 h-4 w-4" />
+              Browse Gigs
             </Button>
           </div>
 

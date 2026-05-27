@@ -13,16 +13,21 @@ import {
   TrendingUp,
   Store,
   Briefcase,
+  BarChart3,
+  CalendarDays,
+  ArrowUpRight,
+  ArrowDownRight,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import {
   ORDER_STATUS_LABELS,
   ORDER_STATUS_COLORS,
 } from '@/lib/constants'
-import type { Order, Product, SellerDashboardStats } from '@/types'
+import type { Order, Product, Gig } from '@/types'
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -39,8 +44,22 @@ const itemVariants = {
 
 export function SellerOverview() {
   const { currentUser, setCurrentView } = useMarketplaceStore()
-  const [stats, setStats] = useState<SellerDashboardStats | null>(null)
+  const [stats, setStats] = useState<{
+    totalProducts: number
+    totalGigs: number
+    totalOrders: number
+    totalRevenue: number
+    totalReviews: number
+    averageRating: number
+    pendingOrders: number
+    recentOrders: Order[]
+    ordersThisWeek: number
+    revenueThisWeek: number
+    weeklyOrderChange: number
+    weeklyRevenueChange: number
+  } | null>(null)
   const [topProducts, setTopProducts] = useState<Product[]>([])
+  const [topGigs, setTopGigs] = useState<Gig[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -59,6 +78,12 @@ export function SellerOverview() {
         )
         const productsData = await productsRes.json()
 
+        // Fetch gigs
+        const gigsRes = await fetch(
+          `/api/gigs?shopId=${currentUser.shop.id}&limit=5&sort=popular`
+        )
+        const gigsData = await gigsRes.json()
+
         if (ordersData.success) {
           const orders: Order[] = ordersData.data.orders || []
           const totalOrders = ordersData.data.pagination?.total || orders.length
@@ -70,14 +95,62 @@ export function SellerOverview() {
           ).length
           const recentOrders = orders.slice(0, 5)
 
+          // Calculate this week's orders and revenue
+          const now = new Date()
+          const startOfWeek = new Date(now)
+          startOfWeek.setDate(now.getDate() - now.getDay())
+          startOfWeek.setHours(0, 0, 0, 0)
+
+          const startOfLastWeek = new Date(startOfWeek)
+          startOfLastWeek.setDate(startOfLastWeek.getDate() - 7)
+
+          const thisWeekOrders = orders.filter(
+            (o) => new Date(o.createdAt) >= startOfWeek
+          )
+          const lastWeekOrders = orders.filter((o) => {
+            const d = new Date(o.createdAt)
+            return d >= startOfLastWeek && d < startOfWeek
+          })
+
+          const revenueThisWeek = thisWeekOrders
+            .filter((o) => o.paymentStatus === 'paid')
+            .reduce((sum, o) => sum + o.totalAmount, 0)
+          const revenueLastWeek = lastWeekOrders
+            .filter((o) => o.paymentStatus === 'paid')
+            .reduce((sum, o) => sum + o.totalAmount, 0)
+
+          const weeklyOrderChange =
+            lastWeekOrders.length > 0
+              ? Math.round(
+                  ((thisWeekOrders.length - lastWeekOrders.length) /
+                    lastWeekOrders.length) *
+                    100
+                )
+              : thisWeekOrders.length > 0
+                ? 100
+                : 0
+          const weeklyRevenueChange =
+            revenueLastWeek > 0
+              ? Math.round(
+                  ((revenueThisWeek - revenueLastWeek) / revenueLastWeek) * 100
+                )
+              : revenueThisWeek > 0
+                ? 100
+                : 0
+
           setStats({
-            totalProducts: 0, // will be set below
+            totalProducts: 0,
+            totalGigs: 0,
             totalOrders,
             totalRevenue,
             totalReviews: currentUser.shop?.totalReviews || 0,
             averageRating: currentUser.shop?.averageRating || 0,
             pendingOrders,
             recentOrders,
+            ordersThisWeek: thisWeekOrders.length,
+            revenueThisWeek,
+            weeklyOrderChange,
+            weeklyRevenueChange,
           })
         }
 
@@ -92,6 +165,19 @@ export function SellerOverview() {
               ? {
                   ...prev,
                   totalProducts: productsData.data?.pagination?.total || products.length,
+                }
+              : null
+          )
+        }
+
+        if (gigsData.success) {
+          const gigs = gigsData.data?.gigs || []
+          setTopGigs(gigs.slice(0, 5))
+          setStats((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  totalGigs: gigsData.data?.pagination?.total || gigs.length,
                 }
               : null
           )
@@ -131,6 +217,14 @@ export function SellerOverview() {
       gradient: 'from-emerald-500 to-teal-600',
     },
     {
+      label: 'Active Gigs',
+      value: stats?.totalGigs || 0,
+      icon: Briefcase,
+      bgColor: 'bg-cyan-50',
+      textColor: 'text-cyan-600',
+      gradient: 'from-cyan-500 to-blue-600',
+    },
+    {
       label: 'Total Orders',
       value: stats?.totalOrders || 0,
       icon: ShoppingCart,
@@ -146,17 +240,35 @@ export function SellerOverview() {
       textColor: 'text-violet-600',
       gradient: 'from-violet-500 to-purple-600',
     },
-    {
-      label: 'Rating',
-      value: stats?.averageRating
-        ? `${stats.averageRating.toFixed(1)} ★`
-        : 'No ratings',
-      icon: Star,
-      bgColor: 'bg-rose-50',
-      textColor: 'text-rose-600',
-      gradient: 'from-rose-500 to-pink-600',
-    },
   ]
+
+  // Revenue chart data (simple bar representation)
+  const revenueByDay = (() => {
+    if (!stats?.recentOrders) return []
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+    const now = new Date()
+    const startOfWeek = new Date(now)
+    startOfWeek.setDate(now.getDate() - now.getDay())
+    startOfWeek.setHours(0, 0, 0, 0)
+
+    return days.map((day, i) => {
+      const dayStart = new Date(startOfWeek)
+      dayStart.setDate(startOfWeek.getDate() + i)
+      const dayEnd = new Date(dayStart)
+      dayEnd.setDate(dayEnd.getDate() + 1)
+
+      const dayRevenue = (stats.recentOrders || [])
+        .filter((o) => {
+          const d = new Date(o.createdAt)
+          return d >= dayStart && d < dayEnd && o.paymentStatus === 'paid'
+        })
+        .reduce((sum, o) => sum + o.totalAmount, 0)
+
+      return { day, revenue: dayRevenue }
+    })
+  })()
+
+  const maxRevenue = Math.max(...revenueByDay.map((d) => d.revenue), 1)
 
   return (
     <motion.div
@@ -192,6 +304,147 @@ export function SellerOverview() {
             </Card>
           </motion.div>
         ))}
+      </div>
+
+      {/* Revenue Overview & Orders This Week */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Revenue Overview */}
+        <motion.div variants={itemVariants}>
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-violet-600" />
+                Revenue Overview
+              </CardTitle>
+              <div className="flex items-center gap-1.5 text-sm">
+                {stats?.weeklyRevenueChange !== undefined && (
+                  <span
+                    className={`flex items-center gap-0.5 font-medium ${
+                      stats.weeklyRevenueChange >= 0
+                        ? 'text-emerald-600'
+                        : 'text-red-600'
+                    }`}
+                  >
+                    {stats.weeklyRevenueChange >= 0 ? (
+                      <ArrowUpRight className="h-3.5 w-3.5" />
+                    ) : (
+                      <ArrowDownRight className="h-3.5 w-3.5" />
+                    )}
+                    {Math.abs(stats.weeklyRevenueChange)}%
+                  </span>
+                )}
+                <span className="text-muted-foreground text-xs">vs last week</span>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-4">
+                <p className="text-3xl font-bold text-gray-900">
+                  ${((stats?.revenueThisWeek || 0)).toFixed(2)}
+                </p>
+                <p className="text-sm text-muted-foreground">This week&apos;s revenue</p>
+              </div>
+
+              {/* Simple bar chart */}
+              <div className="flex items-end gap-2 h-32">
+                {revenueByDay.map((item) => (
+                  <div key={item.day} className="flex-1 flex flex-col items-center gap-1">
+                    <div className="w-full relative" style={{ height: '100px' }}>
+                      <div
+                        className="absolute bottom-0 w-full rounded-t-md bg-gradient-to-t from-violet-500 to-purple-400 transition-all duration-500"
+                        style={{
+                          height: `${Math.max((item.revenue / maxRevenue) * 100, 2)}%`,
+                        }}
+                      />
+                    </div>
+                    <span className="text-[10px] text-muted-foreground">{item.day}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Orders This Week */}
+        <motion.div variants={itemVariants}>
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                <CalendarDays className="h-5 w-5 text-amber-600" />
+                Orders This Week
+              </CardTitle>
+              <div className="flex items-center gap-1.5 text-sm">
+                {stats?.weeklyOrderChange !== undefined && (
+                  <span
+                    className={`flex items-center gap-0.5 font-medium ${
+                      stats.weeklyOrderChange >= 0
+                        ? 'text-emerald-600'
+                        : 'text-red-600'
+                    }`}
+                  >
+                    {stats.weeklyOrderChange >= 0 ? (
+                      <ArrowUpRight className="h-3.5 w-3.5" />
+                    ) : (
+                      <ArrowDownRight className="h-3.5 w-3.5" />
+                    )}
+                    {Math.abs(stats.weeklyOrderChange)}%
+                  </span>
+                )}
+                <span className="text-muted-foreground text-xs">vs last week</span>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-4">
+                <p className="text-3xl font-bold text-gray-900">
+                  {stats?.ordersThisWeek || 0}
+                </p>
+                <p className="text-sm text-muted-foreground">orders this week</p>
+              </div>
+
+              {/* Order status breakdown */}
+              <div className="space-y-3">
+                {(() => {
+                  const recentOrders = stats?.recentOrders || []
+                  const pending = recentOrders.filter(
+                    (o) => o.status === 'pending' || o.status === 'processing'
+                  ).length
+                  const shipped = recentOrders.filter(
+                    (o) => o.status === 'shipped'
+                  ).length
+                  const delivered = recentOrders.filter(
+                    (o) => o.status === 'delivered'
+                  ).length
+                  const total = Math.max(recentOrders.length, 1)
+
+                  return (
+                    <>
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Pending / Processing</span>
+                          <span className="font-medium">{pending}</span>
+                        </div>
+                        <Progress value={(pending / total) * 100} className="h-2" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Shipped</span>
+                          <span className="font-medium">{shipped}</span>
+                        </div>
+                        <Progress value={(shipped / total) * 100} className="h-2" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Delivered</span>
+                          <span className="font-medium">{delivered}</span>
+                        </div>
+                        <Progress value={(delivered / total) * 100} className="h-2" />
+                      </div>
+                    </>
+                  )
+                })()}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
 
       {/* Main Content Grid */}
@@ -261,7 +514,7 @@ export function SellerOverview() {
           </Card>
         </motion.div>
 
-        {/* Quick Actions */}
+        {/* Quick Actions & Top Items */}
         <motion.div variants={itemVariants} className="space-y-6">
           <Card className="border-0 shadow-sm">
             <CardHeader className="pb-4">
@@ -293,7 +546,7 @@ export function SellerOverview() {
                 className="w-full justify-start gap-3"
                 onClick={() =>
                   setCurrentView('shop-view', {
-                    slug: currentUser?.shop?.slug || '',
+                    shopSlug: currentUser?.shop?.slug || '',
                   })
                 }
               >
@@ -363,6 +616,68 @@ export function SellerOverview() {
                           <p className="text-xs text-gray-500">
                             {product.totalSales} sales • ${product.price.toFixed(2)}
                           </p>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Top Gigs */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-semibold">
+                <span className="flex items-center gap-2">
+                  <Briefcase className="h-5 w-5 text-cyan-600" />
+                  Top Gigs
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {topGigs.length === 0 ? (
+                <div className="py-4 text-center">
+                  <Briefcase className="mx-auto mb-2 h-8 w-8 text-gray-300" />
+                  <p className="text-sm text-gray-500">No gigs yet</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Create gigs to offer freelance services
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {topGigs.map((gig, idx) => {
+                    const packages = (() => {
+                      try {
+                        return JSON.parse(
+                          (gig as Record<string, unknown>).packages as string || '[]'
+                        ) as { price: number }[]
+                      } catch {
+                        return []
+                      }
+                    })()
+                    const startingPrice =
+                      packages.length > 0
+                        ? Math.min(...packages.map((p) => p.price))
+                        : 0
+                    return (
+                      <div key={gig.id} className="flex items-center gap-3">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 text-xs font-bold text-gray-600">
+                          {idx + 1}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-gray-900">
+                            {gig.title}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {gig.totalOrders} orders • ${startingPrice.toFixed(2)}+
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                          <span className="text-xs text-gray-500">
+                            {gig.averageRating > 0 ? gig.averageRating.toFixed(1) : '-'}
+                          </span>
                         </div>
                       </div>
                     )
