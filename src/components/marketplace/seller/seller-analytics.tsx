@@ -9,10 +9,8 @@ import {
   Star,
   TrendingUp,
   TrendingDown,
-  Users,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import {
   Table,
   TableBody,
@@ -21,7 +19,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   AreaChart,
   Area,
@@ -34,33 +31,7 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
-import type { Order, Product, Review } from '@/types'
-
-// Mock data for charts
-const REVENUE_DATA = [
-  { date: 'Jan', revenue: 1200, orders: 8 },
-  { date: 'Feb', revenue: 1800, orders: 12 },
-  { date: 'Mar', revenue: 2400, orders: 16 },
-  { date: 'Apr', revenue: 2100, orders: 14 },
-  { date: 'May', revenue: 3200, orders: 22 },
-  { date: 'Jun', revenue: 2800, orders: 19 },
-  { date: 'Jul', revenue: 3600, orders: 24 },
-  { date: 'Aug', revenue: 4100, orders: 28 },
-  { date: 'Sep', revenue: 3800, orders: 26 },
-  { date: 'Oct', revenue: 4500, orders: 30 },
-  { date: 'Nov', revenue: 5200, orders: 35 },
-  { date: 'Dec', revenue: 4800, orders: 32 },
-]
-
-const ORDERS_DATA = [
-  { date: 'Mon', orders: 4 },
-  { date: 'Tue', orders: 7 },
-  { date: 'Wed', orders: 5 },
-  { date: 'Thu', orders: 9 },
-  { date: 'Fri', orders: 12 },
-  { date: 'Sat', orders: 8 },
-  { date: 'Sun', orders: 6 },
-]
+import type { Order, Product } from '@/types'
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -75,32 +46,91 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 }
 
+function getWeekDays(): string[] {
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  const today = new Date()
+  const result: string[] = []
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today)
+    d.setDate(d.getDate() - i)
+    result.push(days[d.getDay()])
+  }
+  return result
+}
+
+function getLast12Months(): { label: string; year: number; month: number }[] {
+  const result: { label: string; year: number; month: number }[] = []
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const now = new Date()
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    result.push({
+      label: months[d.getMonth()],
+      year: d.getFullYear(),
+      month: d.getMonth(),
+    })
+  }
+  return result
+}
+
+function getDateString(daysAgo: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() - daysAgo)
+  return d.toISOString().split('T')[0]
+}
+
 export function SellerAnalytics() {
   const { currentUser } = useMarketplaceStore()
   const [topProducts, setTopProducts] = useState<Product[]>([])
-  const [recentReviews, setRecentReviews] = useState<Review[]>([])
   const [totalRevenue, setTotalRevenue] = useState(0)
   const [totalOrders, setTotalOrders] = useState(0)
+  const [revenueData, setRevenueData] = useState<{ date: string; revenue: number }[]>([])
+  const [ordersWeekData, setOrdersWeekData] = useState<{ date: string; orders: number }[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function fetchData() {
       if (!currentUser?.shop) return
       try {
-        // Fetch orders for revenue stats
+        // Fetch all orders for this seller
         const ordersRes = await fetch(
-          `/api/orders?userId=${currentUser.id}&role=seller&limit=100`
+          `/api/orders?userId=${currentUser.id}&role=seller&limit=1000`
         )
         const ordersData = await ordersRes.json()
 
         if (ordersData.success) {
           const orders: Order[] = ordersData.data.orders || []
+          const paidOrders = orders.filter((o) => o.paymentStatus === 'paid')
+
           setTotalOrders(ordersData.data.pagination?.total || orders.length)
-          setTotalRevenue(
-            orders
-              .filter((o) => o.paymentStatus === 'paid')
+          setTotalRevenue(paidOrders.reduce((sum, o) => sum + o.totalAmount, 0))
+
+          // Build revenue chart data - last 12 months
+          const monthLabels = getLast12Months()
+          const revenueByMonth = monthLabels.map(({ label, year, month }) => {
+            const monthRevenue = paidOrders
+              .filter((o) => {
+                const d = new Date(o.createdAt)
+                return d.getFullYear() === year && d.getMonth() === month
+              })
               .reduce((sum, o) => sum + o.totalAmount, 0)
-          )
+            return { date: label, revenue: Math.round(monthRevenue * 100) / 100 }
+          })
+          setRevenueData(revenueByMonth)
+
+          // Build orders this week chart data - last 7 days
+          const weekDays = getWeekDays()
+          const ordersByDay = weekDays.map((dayLabel, idx) => {
+            const daysAgo = 6 - idx
+            const dateStr = getDateString(daysAgo)
+            const count = orders.filter((o) => {
+              const d = new Date(o.createdAt)
+              const oStr = d.toISOString().split('T')[0]
+              return oStr === dateStr
+            }).length
+            return { date: dayLabel, orders: count }
+          })
+          setOrdersWeekData(ordersByDay)
         }
 
         // Fetch top products
@@ -113,9 +143,6 @@ export function SellerAnalytics() {
             productsData.data?.items || productsData.data?.products || []
           )
         }
-
-        // Mock recent reviews for now
-        setRecentReviews([])
       } catch (error) {
         console.error('Failed to fetch analytics:', error)
       } finally {
@@ -148,8 +175,7 @@ export function SellerAnalytics() {
       icon: DollarSign,
       bgColor: 'bg-emerald-50',
       textColor: 'text-emerald-600',
-      trend: '+12.5%',
-      trendUp: true,
+      gradient: 'from-emerald-500 to-teal-600',
     },
     {
       label: 'Total Orders',
@@ -157,8 +183,7 @@ export function SellerAnalytics() {
       icon: ShoppingCart,
       bgColor: 'bg-amber-50',
       textColor: 'text-amber-600',
-      trend: '+8.2%',
-      trendUp: true,
+      gradient: 'from-amber-500 to-orange-600',
     },
     {
       label: 'Products',
@@ -166,8 +191,7 @@ export function SellerAnalytics() {
       icon: Package,
       bgColor: 'bg-violet-50',
       textColor: 'text-violet-600',
-      trend: '+2',
-      trendUp: true,
+      gradient: 'from-violet-500 to-purple-600',
     },
     {
       label: 'Rating',
@@ -177,10 +201,12 @@ export function SellerAnalytics() {
       icon: Star,
       bgColor: 'bg-rose-50',
       textColor: 'text-rose-600',
-      trend: '+0.3',
-      trendUp: true,
+      gradient: 'from-rose-500 to-pink-600',
     },
   ]
+
+  const hasRevenueData = revenueData.some((d) => d.revenue > 0)
+  const hasOrdersData = ordersWeekData.some((d) => d.orders > 0)
 
   return (
     <motion.div
@@ -193,7 +219,7 @@ export function SellerAnalytics() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {statsCards.map((stat) => (
           <motion.div key={stat.label} variants={itemVariants}>
-            <Card className="relative overflow-hidden border-0 shadow-sm">
+            <Card className="relative overflow-hidden border-0 shadow-sm transition-shadow hover:shadow-md">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -204,22 +230,10 @@ export function SellerAnalytics() {
                     <stat.icon className={`h-6 w-6 ${stat.textColor}`} />
                   </div>
                 </div>
-                <div className="mt-2 flex items-center gap-1">
-                  {stat.trendUp ? (
-                    <TrendingUp className="h-3 w-3 text-emerald-500" />
-                  ) : (
-                    <TrendingDown className="h-3 w-3 text-red-500" />
-                  )}
-                  <span
-                    className={`text-xs font-medium ${
-                      stat.trendUp ? 'text-emerald-600' : 'text-red-600'
-                    }`}
-                  >
-                    {stat.trend}
-                  </span>
-                  <span className="text-xs text-gray-400">vs last month</span>
-                </div>
               </CardContent>
+              <div
+                className={`absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r ${stat.gradient}`}
+              />
             </Card>
           </motion.div>
         ))}
@@ -236,66 +250,76 @@ export function SellerAnalytics() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={REVENUE_DATA}>
-                    <defs>
-                      <linearGradient
-                        id="revenueGradient"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop
-                          offset="5%"
-                          stopColor="#10b981"
-                          stopOpacity={0.3}
-                        />
-                        <stop
-                          offset="95%"
-                          stopColor="#10b981"
-                          stopOpacity={0}
-                        />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      stroke="#f0f0f0"
-                    />
-                    <XAxis
-                      dataKey="date"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 12, fill: '#9ca3af' }}
-                    />
-                    <YAxis
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 12, fill: '#9ca3af' }}
-                      tickFormatter={(v) => `$${v}`}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        borderRadius: '8px',
-                        border: 'none',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                      }}
-                      formatter={(value: number) => [
-                        `$${value.toLocaleString()}`,
-                        'Revenue',
-                      ]}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="revenue"
-                      stroke="#10b981"
-                      strokeWidth={2}
-                      fill="url(#revenueGradient)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
+              {hasRevenueData ? (
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={revenueData}>
+                      <defs>
+                        <linearGradient
+                          id="revenueGradient"
+                          x1="0"
+                          y1="0"
+                          x2="0"
+                          y2="1"
+                        >
+                          <stop
+                            offset="5%"
+                            stopColor="#10b981"
+                            stopOpacity={0.3}
+                          />
+                          <stop
+                            offset="95%"
+                            stopColor="#10b981"
+                            stopOpacity={0}
+                          />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="#f0f0f0"
+                      />
+                      <XAxis
+                        dataKey="date"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 12, fill: '#9ca3af' }}
+                      />
+                      <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 12, fill: '#9ca3af' }}
+                        tickFormatter={(v) => `$${v}`}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          borderRadius: '8px',
+                          border: 'none',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                        }}
+                        formatter={(value: number) => [
+                          `$${value.toLocaleString()}`,
+                          'Revenue',
+                        ]}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="revenue"
+                        stroke="#10b981"
+                        strokeWidth={2}
+                        fill="url(#revenueGradient)"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="h-[300px] flex flex-col items-center justify-center text-center">
+                  <DollarSign className="h-12 w-12 text-gray-200 mb-3" />
+                  <p className="text-sm text-gray-500">No revenue data yet</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Revenue will appear when customers purchase your products
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>
@@ -309,44 +333,55 @@ export function SellerAnalytics() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={ORDERS_DATA}>
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      stroke="#f0f0f0"
-                    />
-                    <XAxis
-                      dataKey="date"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 12, fill: '#9ca3af' }}
-                    />
-                    <YAxis
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 12, fill: '#9ca3af' }}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        borderRadius: '8px',
-                        border: 'none',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                      }}
-                      formatter={(value: number) => [
-                        value,
-                        'Orders',
-                      ]}
-                    />
-                    <Bar
-                      dataKey="orders"
-                      fill="#10b981"
-                      radius={[4, 4, 0, 0]}
-                      maxBarSize={40}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              {hasOrdersData ? (
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={ordersWeekData}>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="#f0f0f0"
+                      />
+                      <XAxis
+                        dataKey="date"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 12, fill: '#9ca3af' }}
+                      />
+                      <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 12, fill: '#9ca3af' }}
+                        allowDecimals={false}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          borderRadius: '8px',
+                          border: 'none',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                        }}
+                        formatter={(value: number) => [
+                          value,
+                          'Orders',
+                        ]}
+                      />
+                      <Bar
+                        dataKey="orders"
+                        fill="#10b981"
+                        radius={[4, 4, 0, 0]}
+                        maxBarSize={40}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="h-[300px] flex flex-col items-center justify-center text-center">
+                  <ShoppingCart className="h-12 w-12 text-gray-200 mb-3" />
+                  <p className="text-sm text-gray-500">No orders this week</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Orders will appear when customers purchase your products
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>
@@ -414,7 +449,7 @@ export function SellerAnalytics() {
           </Card>
         </motion.div>
 
-        {/* Recent Reviews */}
+        {/* Recent Reviews Placeholder */}
         <motion.div variants={itemVariants}>
           <Card className="border-0 shadow-sm">
             <CardHeader className="pb-4">
@@ -423,55 +458,13 @@ export function SellerAnalytics() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {recentReviews.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8">
-                  <Star className="mb-3 h-10 w-10 text-gray-300" />
-                  <p className="text-sm text-gray-500">No reviews yet</p>
-                  <p className="mt-1 text-xs text-gray-400">
-                    Reviews will appear when customers review your products
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {recentReviews.map((review) => (
-                    <div
-                      key={review.id}
-                      className="rounded-lg border border-gray-100 p-3"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-7 w-7">
-                            <AvatarFallback className="bg-emerald-100 text-emerald-700 text-[10px]">
-                              {review.user?.name?.slice(0, 2).toUpperCase() || 'U'}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="text-sm font-medium">
-                            {review.user?.name || 'User'}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-0.5">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`h-3 w-3 ${
-                                i < review.rating
-                                  ? 'text-amber-500 fill-amber-500'
-                                  : 'text-gray-200'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                      <p className="mt-2 text-sm text-gray-600">
-                        {review.comment}
-                      </p>
-                      <p className="mt-1 text-xs text-gray-400">
-                        {new Date(review.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <div className="flex flex-col items-center justify-center py-8">
+                <Star className="mb-3 h-10 w-10 text-gray-300" />
+                <p className="text-sm text-gray-500">No reviews yet</p>
+                <p className="mt-1 text-xs text-gray-400">
+                  Reviews will appear when customers review your products
+                </p>
+              </div>
             </CardContent>
           </Card>
         </motion.div>
