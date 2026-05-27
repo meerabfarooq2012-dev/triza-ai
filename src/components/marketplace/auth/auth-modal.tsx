@@ -59,8 +59,9 @@ export function AuthModal() {
     try {
       const res = await api.auth.login(loginEmail, loginPassword)
       if (res.success && res.data) {
-        login(res.data.user)
-        navigateAfterAuth(res.data.user)
+        const user = res.data.user || res.data
+        login(user)
+        navigateAfterAuth(user)
       } else {
         setError(res.error || 'Login failed')
       }
@@ -100,8 +101,9 @@ export function AuthModal() {
         role: regRole,
       })
       if (res.success && res.data) {
-        login(res.data.user)
-        navigateAfterAuth(res.data.user)
+        const user = res.data.user || res.data
+        login(user)
+        navigateAfterAuth(user)
       } else {
         setError(res.error || 'Registration failed')
       }

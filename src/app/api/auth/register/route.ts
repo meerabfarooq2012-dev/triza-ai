@@ -74,7 +74,12 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const { password: _, ...userWithoutPassword } = user;
+    const fullUser = await db.user.findUnique({
+      where: { id: user.id },
+      include: { shop: true },
+    });
+
+    const { password: _, ...userWithoutPassword } = fullUser!;
 
     return NextResponse.json(
       { success: true, data: userWithoutPassword },
