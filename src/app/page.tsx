@@ -15,6 +15,7 @@ import SearchPage from '@/components/marketplace/search/search-page'
 import NotificationsPage from '@/components/marketplace/notifications/notifications-page'
 import AdminPanel from '@/components/marketplace/admin/admin-panel'
 import { PrivacyPolicy } from '@/components/marketplace/landing/privacy-policy'
+import { TermsOfService } from '@/components/marketplace/landing/terms-of-service'
 
 export default function Home() {
   const { currentView, isAuthenticated, currentUser, setActiveRole } = useMarketplaceStore()
@@ -76,6 +77,9 @@ export default function Home() {
 
       case 'privacy':
         return <PrivacyPolicy />
+
+      case 'terms':
+        return <TermsOfService />
 
       case 'admin':
         if (!isAuthenticated || !currentUser?.isAdmin) {

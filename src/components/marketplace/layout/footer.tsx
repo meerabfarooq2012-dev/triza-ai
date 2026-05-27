@@ -16,7 +16,7 @@ const quickLinks = [
 const supportLinks = [
   { label: 'Help Center', view: null, href: '#' },
   { label: 'Contact Us', view: null, href: '#' },
-  { label: 'Terms of Service', view: null, href: '#' },
+  { label: 'Terms of Service', view: 'terms' as ViewMode | null, href: undefined },
   { label: 'Privacy Policy', view: 'privacy' as ViewMode | null, href: undefined },
 ]
 
@@ -123,7 +123,7 @@ export function Footer() {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
           <p>&copy; {new Date().getFullYear()} {PLATFORM_NAME}. All rights reserved.</p>
           <div className="flex items-center gap-4">
-            <a href="#" className="hover:text-foreground transition-colors">Terms</a>
+            <button onClick={() => setCurrentView('terms')} className="hover:text-foreground transition-colors">Terms</button>
             <button onClick={() => setCurrentView('privacy')} className="hover:text-foreground transition-colors">Privacy</button>
             <a href="#" className="hover:text-foreground transition-colors">Cookies</a>
           </div>

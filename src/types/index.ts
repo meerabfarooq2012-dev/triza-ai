@@ -29,6 +29,7 @@ export type ViewMode =
   | 'orders'
   | 'settings'
   | 'privacy'
+  | 'terms'
 
 // ----- Core Domain Models -----
 
