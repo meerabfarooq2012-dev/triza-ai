@@ -205,29 +205,29 @@ export function Header() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="h-9 px-2 gap-2">
                     <Avatar className="h-7 w-7">
-                      {currentUser.avatar ? (
-                        <AvatarImage src={currentUser.avatar} alt={currentUser.name} />
+                      {currentUser?.avatar ? (
+                        <AvatarImage src={currentUser?.avatar} alt={currentUser?.name} />
                       ) : null}
                       <AvatarFallback className="text-xs font-semibold bg-gradient-to-br from-violet-500 to-pink-500 text-white">
-                        {getInitials(currentUser.name)}
+                        {getInitials(currentUser?.name)}
                       </AvatarFallback>
                     </Avatar>
                     <span className="hidden lg:inline text-sm font-medium max-w-[100px] truncate">
-                      {currentUser.name}
+                      {currentUser?.name}
                     </span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium">{currentUser.name}</p>
-                      <p className="text-xs text-muted-foreground">{currentUser.email}</p>
+                      <p className="text-sm font-medium">{currentUser?.name}</p>
+                      <p className="text-xs text-muted-foreground">{currentUser?.email}</p>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
 
                   {/* Role switcher for 'both' role */}
-                  {currentUser.role === 'both' && (
+                  {currentUser?.role === 'both' && (
                     <>
                       <DropdownMenuGroup>
                         <DropdownMenuItem
@@ -243,13 +243,13 @@ export function Header() {
 
                   {/* Dashboard links */}
                   <DropdownMenuGroup>
-                    {activeRole === 'buyer' || currentUser.role === 'buyer' ? (
+                    {activeRole === 'buyer' || currentUser?.role === 'buyer' ? (
                       <DropdownMenuItem onClick={() => handleNavClick('buyer-dashboard')}>
                         <LayoutDashboard className="mr-2 h-4 w-4" />
                         Buyer Dashboard
                       </DropdownMenuItem>
                     ) : null}
-                    {(activeRole === 'seller' || currentUser.role === 'seller') && currentUser.shop ? (
+                    {(activeRole === 'seller' || currentUser?.role === 'seller') && currentUser?.shop ? (
                       <DropdownMenuItem onClick={() => handleNavClick('seller-dashboard')}>
                         <Store className="mr-2 h-4 w-4" />
                         Seller Dashboard
@@ -279,7 +279,7 @@ export function Header() {
                   </DropdownMenuGroup>
 
                   {/* Admin link */}
-                  {currentUser.isAdmin && (
+                  {currentUser?.isAdmin && (
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => handleNavClick('admin')}>
@@ -400,25 +400,25 @@ export function Header() {
                   {/* User info */}
                   <div className="flex items-center gap-3 px-3 py-2 mb-2">
                     <Avatar className="h-9 w-9">
-                      {currentUser.avatar ? (
-                        <AvatarImage src={currentUser.avatar} alt={currentUser.name} />
+                      {currentUser?.avatar ? (
+                        <AvatarImage src={currentUser?.avatar} alt={currentUser?.name} />
                       ) : null}
                       <AvatarFallback className="text-xs font-semibold bg-gradient-to-br from-violet-500 to-pink-500 text-white">
-                        {getInitials(currentUser.name)}
+                        {getInitials(currentUser?.name)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">{currentUser.name}</p>
+                      <p className="text-sm font-medium truncate">{currentUser?.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {USER_ROLE_LABELS[currentUser.role]}
-                        {currentUser.role === 'both' && activeRole === 'seller' && ' (Seller)'}
-                        {currentUser.role === 'both' && activeRole === 'buyer' && ' (Buyer)'}
+                        {USER_ROLE_LABELS[currentUser?.role]}
+                        {currentUser?.role === 'both' && activeRole === 'seller' && ' (Seller)'}
+                        {currentUser?.role === 'both' && activeRole === 'buyer' && ' (Buyer)'}
                       </p>
                     </div>
                   </div>
 
                   {/* Role switcher */}
-                  {currentUser.role === 'both' && (
+                  {currentUser?.role === 'both' && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -431,7 +431,7 @@ export function Header() {
                   )}
 
                   {/* Dashboard links */}
-                  {(activeRole === 'buyer' || currentUser.role === 'buyer') && (
+                  {(activeRole === 'buyer' || currentUser?.role === 'buyer') && (
                     <Button
                       variant="ghost"
                       className="w-full justify-start gap-3"
@@ -441,7 +441,7 @@ export function Header() {
                       Buyer Dashboard
                     </Button>
                   )}
-                  {(activeRole === 'seller' || currentUser.role === 'seller') && currentUser.shop && (
+                  {(activeRole === 'seller' || currentUser?.role === 'seller') && currentUser?.shop && (
                     <Button
                       variant="ghost"
                       className="w-full justify-start gap-3"
@@ -484,7 +484,7 @@ export function Header() {
                     Settings
                   </Button>
 
-                  {currentUser.isAdmin && (
+                  {currentUser?.isAdmin && (
                     <Button
                       variant="ghost"
                       className="w-full justify-start gap-3"

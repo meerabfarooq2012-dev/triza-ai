@@ -114,6 +114,7 @@ export function AuthModal() {
   }
 
   const navigateAfterAuth = (user: UserType) => {
+    if (!user) return
     if (user.isAdmin) {
       setCurrentView('admin')
     } else if (user.role === 'seller' || user.role === 'both') {
