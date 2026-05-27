@@ -313,9 +313,9 @@ export default function SearchPage() {
       }
       const res = await api.products.getProducts(searchFilters)
       if (res.data) {
-        setProducts(res.data.items)
-        setTotalProducts(res.data.total)
-        setTotalPages(res.data.totalPages)
+        setProducts(res.data.items ?? [])
+        setTotalProducts(res.data.total ?? 0)
+        setTotalPages(res.data.totalPages ?? 0)
       }
     } catch {
       setProducts([])
