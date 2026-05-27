@@ -4,7 +4,6 @@ import { HeroSection } from './hero-section'
 import { FeaturesSection } from './features-section'
 import { HowItWorksSection } from './how-it-works-section'
 import { CategoriesSection } from './categories-section'
-import { TestimonialsSection } from './testimonials-section'
 import { CTASection } from './cta-section'
 
 export function LandingPage() {
@@ -14,7 +13,6 @@ export function LandingPage() {
       <FeaturesSection />
       <HowItWorksSection />
       <CategoriesSection />
-      <TestimonialsSection />
       <CTASection />
     </div>
   )
