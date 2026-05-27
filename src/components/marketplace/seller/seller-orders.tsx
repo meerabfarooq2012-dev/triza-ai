@@ -221,11 +221,13 @@ export function SellerOrders() {
                     {/* Items */}
                     <div className="mt-4 space-y-2">
                       {order.items?.map((item) => {
-                        const productImages = item.product
-                          ? (JSON.parse(
-                              (item.product as Record<string, unknown>).images as string || '[]'
-                            ) as string[])
-                          : []
+                        let productImages: string[] = []
+                        if (item.product) {
+                          try {
+                            const raw = (item.product as Record<string, unknown>).images
+                            productImages = JSON.parse(typeof raw === 'string' && raw ? raw : '[]')
+                          } catch { productImages = [] }
+                        }
                         return (
                           <div
                             key={item.id}

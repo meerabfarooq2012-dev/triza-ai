@@ -585,9 +585,11 @@ export function SellerOverview() {
               ) : (
                 <div className="space-y-3">
                   {topProducts.map((product, idx) => {
-                    const images: string[] = JSON.parse(
-                      (product as Record<string, unknown>).images as string || '[]'
-                    )
+                    let images: string[] = []
+                    try {
+                      const raw = (product as Record<string, unknown>).images
+                      images = JSON.parse(typeof raw === 'string' && raw ? raw : '[]')
+                    } catch { images = [] }
                     return (
                       <div
                         key={product.id}

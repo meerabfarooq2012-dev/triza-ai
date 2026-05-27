@@ -305,9 +305,13 @@ export function BuyerOverview() {
             <CardContent>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {recommendedProducts.map((product) => {
-                  const images: string[] = JSON.parse(
-                    (product as Record<string, unknown>).images as string || '[]'
-                  )
+                  let images: string[] = []
+                  try {
+                    const raw = (product as Record<string, unknown>).images
+                    images = JSON.parse(typeof raw === 'string' && raw ? raw : '[]')
+                  } catch {
+                    images = []
+                  }
                   return (
                     <div
                       key={product.id}

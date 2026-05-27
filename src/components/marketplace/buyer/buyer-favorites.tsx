@@ -52,9 +52,11 @@ export function BuyerFavorites() {
   const handleAddToCart = (fav: Favorite) => {
     const product = fav.product as Product | undefined
     if (!product) return
-    const images: string[] = JSON.parse(
-      (product as Record<string, unknown>).images as string || '[]'
-    )
+    let images: string[] = []
+    try {
+      const raw = (product as Record<string, unknown>).images
+      images = JSON.parse(typeof raw === 'string' && raw ? raw : '[]')
+    } catch { images = [] }
     addToCart({
       productId: product.id,
       shopId: product.shopId,
@@ -119,9 +121,11 @@ export function BuyerFavorites() {
           {favorites.map((fav, index) => {
             const product = fav.product as Product | undefined
             if (!product) return null
-            const images: string[] = JSON.parse(
-              (product as Record<string, unknown>).images as string || '[]'
-            )
+            let images: string[] = []
+            try {
+              const raw = (product as Record<string, unknown>).images
+              images = JSON.parse(typeof raw === 'string' && raw ? raw : '[]')
+            } catch { images = [] }
             return (
               <motion.div
                 key={fav.id}
