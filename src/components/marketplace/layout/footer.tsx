@@ -14,10 +14,10 @@ const quickLinks = [
 ]
 
 const supportLinks = [
-  { label: 'Help Center', href: '#' },
-  { label: 'Contact Us', href: '#' },
-  { label: 'Terms of Service', href: '#' },
-  { label: 'Privacy Policy', href: '#' },
+  { label: 'Help Center', view: null, href: '#' },
+  { label: 'Contact Us', view: null, href: '#' },
+  { label: 'Terms of Service', view: null, href: '#' },
+  { label: 'Privacy Policy', view: 'privacy' as ViewMode | null, href: undefined },
 ]
 
 const socialLinks = [
@@ -80,12 +80,21 @@ export function Footer() {
             <ul className="space-y-2.5">
               {supportLinks.map((link) => (
                 <li key={link.label}>
-                  <a
-                    href={link.href}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {link.label}
-                  </a>
+                  {link.view ? (
+                    <button
+                      onClick={() => setCurrentView(link.view as ViewMode)}
+                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {link.label}
+                    </button>
+                  ) : (
+                    <a
+                      href={link.href}
+                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {link.label}
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>
@@ -115,7 +124,7 @@ export function Footer() {
           <p>&copy; {new Date().getFullYear()} {PLATFORM_NAME}. All rights reserved.</p>
           <div className="flex items-center gap-4">
             <a href="#" className="hover:text-foreground transition-colors">Terms</a>
-            <a href="#" className="hover:text-foreground transition-colors">Privacy</a>
+            <button onClick={() => setCurrentView('privacy')} className="hover:text-foreground transition-colors">Privacy</button>
             <a href="#" className="hover:text-foreground transition-colors">Cookies</a>
           </div>
         </div>
