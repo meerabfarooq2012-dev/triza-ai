@@ -267,3 +267,42 @@ Stage Summary:
 - viewParams navigation support for deep-linking to conversations
 - page.tsx updated with 'messages' route case and dynamic import
 - All lint checks pass cleanly
+---
+Task ID: 6
+Agent: Main Agent
+Task: Fix and enhance buyer-seller messaging system (Fiverr-like chat)
+
+Work Log:
+- Discovered the messaging system already existed with extensive infrastructure
+- Identified critical bugs in buyer-messages.tsx and seller-messages.tsx:
+  - Both used `conv.partner` but API returns `conv.otherUser`
+  - Both expected `conv.lastMessage.content` but it can be null
+  - Both lacked Socket.io real-time (polling only)
+  - Data type interface `ConversationItem` didn't match API response shape
+- Rewrote `/src/components/marketplace/buyer/buyer-messages.tsx`:
+  - Updated types to use EnrichedConversation (matching API response with otherUser, nullable lastMessage, product/gig context)
+  - Added Socket.io real-time integration for new-message, typing, stop-typing, messages-read events
+  - Added conversation room join/leave on select/deselect
+  - Added optimistic message sending with server response replacement
+  - Added typing indicator with animated dots
+  - Added read receipt checkmarks (✓/✓✓)
+  - Added product/gig context badges on conversations
+  - Added "Open Full Chat" button to navigate to full MessagesPage
+  - Added proper mobile responsive layout with back button
+- Rewrote `/src/components/marketplace/seller/seller-messages.tsx`:
+  - Same fixes as buyer-messages.tsx
+  - Added Socket.io real-time integration
+  - Added typing indicators and read receipts
+  - Added product/gig context badges
+  - Added "Open Full Chat" button
+  - Customer-facing messaging ("Chat with your customers")
+- Started chat service on port 3003 (Socket.io)
+- Verified both services running: Next.js on 3000, Socket.io on 3003
+- All lint checks pass cleanly
+
+Stage Summary:
+- Fixed critical data structure bugs in buyer/seller messaging components
+- Both components now use Socket.io for real-time messaging (previously polling-only)
+- Added typing indicators, read receipts, and product/gig context
+- Chat service running on port 3003
+- Full messaging flow works: Contact Seller → Create/Find conversation → Real-time chat
