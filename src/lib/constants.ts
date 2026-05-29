@@ -828,3 +828,8 @@ export const PAYMENT_METHODS = [
   { value: 'paypal', label: 'PayPal' },
   { value: 'bank_transfer', label: 'Bank Transfer' },
 ] as const
+
+// ----- Payment Gateway -----
+
+export const PAYMENT_GATEWAY_MODE = process.env.PAYMENT_GATEWAY_MODE || 'sandbox'
+export const PAYMENT_CALLBACK_BASE_URL = process.env.PAYMENT_CALLBACK_BASE_URL || 'http://localhost:3000'

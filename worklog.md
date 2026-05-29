@@ -166,3 +166,88 @@ Stage Summary:
 - Seller: can manage Easypaisa, JazzCash, Payoneer, Wise, Bank Transfer
 - "Both" role users see tabs for both payment and receiving methods
 - Card numbers only store last 4 digits (never full card number)
+
+---
+Task ID: 6
+Agent: Main Agent
+Task: Implement Easypaisa & JazzCash Payment Gateway Integration
+
+Work Log:
+- Created /src/lib/payment-gateway.ts — Core Payment Gateway Service:
+  - Full Easypaisa Payment Gateway API integration (OAuth2 token auth, REST API with JSON payloads)
+  - Full JazzCash Payment Gateway API integration (SHA256 HMAC hash-based authentication)
+  - Common PaymentGatewayResult and PaymentVerifyResult interfaces
+  - Sandbox mode with thorough simulation (generates realistic tokens, mock redirect URLs, auto-confirms after delay with 90% success rate)
+  - In-memory simulated payment tracking for sandbox mode
+  - OAuth2 token caching for Easypaisa with auto-refresh
+  - JazzCash SHA256 secure hash calculation following their v4 API spec
+  - Callback verification functions for both gateways (signature/hash integrity checking)
+  - Utility functions: getGatewayMode(), getSimulatedPayment(), completeSimulatedPayment()
+  - Environment variable configuration for all credentials with fallback defaults
+
+- Created /src/app/api/payments/initiate/route.ts — Payment Initiation API:
+  - POST handler: takes orderId, paymentMethod, buyerId, amount
+  - Validates order exists and belongs to buyer
+  - Verifies payment record exists for the order
+  - Calls appropriate gateway (Easypaisa or JazzCash)
+  - Updates payment status to 'processing' with gateway metadata on success
+  - Updates payment status to 'failed' with error details on failure
+  - Returns redirect URL, payment token, transaction ID to frontend
+
+- Created /src/app/api/payments/callback/route.ts — Payment Callback/Webhook:
+  - POST handler for gateway webhook callbacks (JSON and form-encoded)
+  - GET handler for redirect-based callbacks (with HTML redirect page for buyer)
+  - Verifies callback integrity (Easypaisa signature, JazzCash SHA256 hash)
+  - Extracts payment info from both Easypaisa and JazzCash callback formats
+  - On success: marks payment as completed, escrow as held, updates order to processing
+  - On failure: marks payment as failed, reverses escrow hold, cancels order
+  - Creates notifications for both buyer and seller
+  - Handles sandbox mode simulated callbacks with auto-redirect HTML page
+
+- Created /src/app/api/payments/status/route.ts — Payment Status Check:
+  - GET handler: takes paymentId, optionally checkGateway=true for real-time verification
+  - Returns comprehensive payment + escrow status from database
+  - Optional gateway verification: if payment is 'processing', can poll the gateway for real-time status
+  - Auto-updates database if gateway reports completed/failed while DB shows processing
+  - Returns: paymentId, status, escrowStatus, amounts, method, provider, token, timestamps, related transactions
+
+- Updated .env with payment gateway environment variables:
+  - PAYMENT_GATEWAY_MODE=sandbox
+  - PAYMENT_CALLBACK_BASE_URL=http://localhost:3000
+  - EASYPAISA_MERCHANT_ID, STORE_ID, API_KEY, API_URL (with helpful comments)
+  - JAZZCASH_MERCHANT_ID, PASSWORD, INTEGRITY_SALT, API_URL (with helpful comments)
+
+- Updated /src/lib/constants.ts with payment gateway constants:
+  - PAYMENT_GATEWAY_MODE (reads from env, defaults to 'sandbox')
+  - PAYMENT_CALLBACK_BASE_URL (reads from env, defaults to 'http://localhost:3000')
+
+- All lint checks pass, dev server running without errors
+
+Stage Summary:
+- Complete Easypaisa & JazzCash payment gateway integration with sandbox simulation
+- Full checkout flow works without real credentials (sandbox mode)
+- 3 new API endpoints: /api/payments/initiate, /api/payments/callback, /api/payments/status
+- Real gateway API implementations ready for production (just add credentials)
+- Sandbox mode: generates realistic payment tokens, simulates payment confirmation after 5-10s
+- Callback verification: Easypaisa (OAuth2 signature), JazzCash (SHA256 HMAC hash)
+- Escrow integration: payment confirmation triggers escrow hold, failure triggers escrow reversal
+- Notifications sent to both buyer and seller on payment confirmation/failure
+---
+Task ID: 4
+Agent: Main Agent
+Task: Update checkout modal with real gateway flow (redirect + status polling)
+
+Work Log:
+- Added `gateway_redirect` step to checkout flow for Easypaisa/JazzCash payments
+- Updated `handlePayNow` to call `/api/payments/initiate` for Easypaisa/JazzCash, which returns a redirect URL
+- Added `pollPaymentStatus` function that polls `/api/payments/status` every 5 seconds for up to 5 minutes
+- Added gateway redirect UI with sandbox mode notice, amount display, and "Simulate Payment" / "Open Gateway" button
+- Created `/api/payments/sandbox/route.ts` - HTML page that simulates the Easypaisa/JazzCash payment flow with auto-confirmation after 8 seconds
+- All new state variables: `gatewayRedirectUrl`, `gatewayMode`, `paymentToken`, `pollingPayment`
+- Lint passes with zero errors
+
+Stage Summary:
+- Checkout modal now supports full payment gateway flow
+- When buyer selects Easypaisa/JazzCash, they get redirected to the gateway (sandbox simulation in test mode)
+- Payment status polling auto-detects when payment is confirmed
+- For card/payoneer/wise, the original token verification flow is preserved

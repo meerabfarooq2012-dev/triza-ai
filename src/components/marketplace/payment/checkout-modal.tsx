@@ -105,7 +105,7 @@ const PAYMENT_METHODS: {
 
 // Commission percent is now imported from constants
 
-type CheckoutStep = 'summary' | 'payment' | 'payment_details' | 'shipping' | 'processing' | 'success'
+type CheckoutStep = 'summary' | 'payment' | 'payment_details' | 'shipping' | 'processing' | 'gateway_redirect' | 'success'
 
 export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   const { cart, cartTotal, currentUser, clearCart } = useMarketplaceStore()
@@ -121,6 +121,12 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   const [orderId, setOrderId] = useState<string>('')
   const [paymentId, setPaymentId] = useState<string>('')
   const [paymentAuthConfirmed, setPaymentAuthConfirmed] = useState(false)
+
+  // Gateway redirect state
+  const [gatewayRedirectUrl, setGatewayRedirectUrl] = useState<string>('')
+  const [gatewayMode, setGatewayMode] = useState<string>('')
+  const [paymentToken, setPaymentToken] = useState<string>('')
+  const [pollingPayment, setPollingPayment] = useState(false)
 
   // Payment details state
   const [accountName, setAccountName] = useState('')
@@ -208,6 +214,10 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
     setOrderId('')
     setPaymentId('')
     setPaymentAuthConfirmed(false)
+    setGatewayRedirectUrl('')
+    setGatewayMode('')
+    setPaymentToken('')
+    setPollingPayment(false)
     setAccountName('')
     setMobileNumber('')
     setCardHolder('')
@@ -284,6 +294,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
           // Non-critical — don't block checkout if saving fails
         }
       }
+
       // Step 1: Create order
       const orderRes = await fetch('/api/orders', {
         method: 'POST',
@@ -303,7 +314,6 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
       })
 
       const orderData = await orderRes.json()
-
       if (!orderData.success) {
         throw new Error(orderData.error || 'Failed to create order')
       }
@@ -311,10 +321,10 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
       const createdOrderId = orderData.data?.id || orderData.data?.order?.id || ''
       setOrderId(createdOrderId)
 
-      // Find the sellerId from the cart items (use first item's shop)
+      // Find the sellerId from the cart items
       const sellerId = cart[0]?.shopId || ''
 
-      // Step 2: Initiate payment
+      // Step 2: Create payment record (escrow hold)
       const paymentRes = await fetch('/api/payments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -328,7 +338,6 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
       })
 
       const paymentData = await paymentRes.json()
-
       if (!paymentData.success) {
         throw new Error(paymentData.error || 'Failed to process payment')
       }
@@ -336,7 +345,40 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
       const createdPaymentId = paymentData.data?.id || ''
       setPaymentId(createdPaymentId)
 
-      // Step 3: Verify payment with token (security measure against fake confirmations)
+      // Step 3: For Easypaisa/JazzCash, redirect to payment gateway
+      if (paymentMethod === 'easypaisa' || paymentMethod === 'jazzcash') {
+        try {
+          const initiateRes = await fetch('/api/payments/initiate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orderId: createdOrderId,
+              paymentMethod,
+              buyerId: currentUser.id,
+              amount: cartTotal,
+            }),
+          })
+
+          const initiateData = await initiateRes.json()
+
+          if (initiateData.success && initiateData.data?.redirectUrl) {
+            setGatewayRedirectUrl(initiateData.data.redirectUrl)
+            setGatewayMode(initiateData.data.gatewayMode || 'sandbox')
+            setPaymentToken(initiateData.data.paymentToken || '')
+            setStep('gateway_redirect')
+
+            // Start polling for payment status
+            pollPaymentStatus(createdPaymentId)
+            return
+          }
+          // If gateway initiation fails, fall through to verify flow
+          console.warn('Gateway initiation failed, using direct verification')
+        } catch (err) {
+          console.warn('Gateway initiation error, using direct verification:', err)
+        }
+      }
+
+      // Step 4: For card/payoneer/wise, verify payment with token
       const metadata = paymentData.data?.metadata
       let verificationToken = ''
       try {
@@ -358,9 +400,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
         })
 
         const verifyData = await verifyRes.json()
-
         if (!verifyData.success) {
-          // Payment was created but verification failed - still show as processing
           console.warn('Payment verification failed:', verifyData.error)
         }
       }
@@ -373,6 +413,47 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
       toast.error(message)
       setStep('payment')
     }
+  }
+
+  // Poll payment status for gateway redirect flow
+  const pollPaymentStatus = (pid: string) => {
+    setPollingPayment(true)
+    let attempts = 0
+    const maxAttempts = 60 // 5 minutes (5s * 60)
+
+    const interval = setInterval(async () => {
+      attempts++
+      if (attempts > maxAttempts) {
+        clearInterval(interval)
+        setPollingPayment(false)
+        toast.error('Payment verification timed out. Please check your orders.')
+        setStep('payment')
+        return
+      }
+
+      try {
+        const res = await fetch(`/api/payments/status?paymentId=${pid}&checkGateway=true`)
+        const data = await res.json()
+
+        if (data.success) {
+          const status = data.data?.status
+          if (status === 'completed') {
+            clearInterval(interval)
+            setPollingPayment(false)
+            clearCart()
+            setStep('success')
+            toast.success('Payment confirmed!')
+          } else if (status === 'failed') {
+            clearInterval(interval)
+            setPollingPayment(false)
+            toast.error(data.data?.failureReason || 'Payment failed')
+            setStep('payment')
+          }
+        }
+      } catch {
+        // Continue polling
+      }
+    }, 5000) // Poll every 5 seconds
   }
 
   const steps: { id: CheckoutStep; label: string; number: number }[] = [
@@ -1062,6 +1143,110 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 </p>
               </div>
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            </motion.div>
+          )}
+
+          {/* Step 4.5: Gateway Redirect — waiting for Easypaisa/JazzCash payment */}
+          {step === 'gateway_redirect' && (
+            <motion.div
+              key="gateway_redirect"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="p-6 flex flex-col items-center py-10 space-y-5"
+            >
+              <div className="relative">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
+                  {paymentMethod === 'easypaisa' ? (
+                    <Wallet className="h-8 w-8 text-emerald-600" />
+                  ) : (
+                    <Wallet className="h-8 w-8 text-red-600" />
+                  )}
+                </div>
+                {pollingPayment && (
+                  <div className="absolute -top-1 -right-1 h-6 w-6">
+                    <Loader2 className="h-6 w-6 animate-spin text-emerald-500" />
+                  </div>
+                )}
+              </div>
+
+              <div className="text-center space-y-2">
+                <h3 className="font-bold text-lg">
+                  {paymentMethod === 'easypaisa' ? 'Easypaisa' : 'JazzCash'} Payment
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Complete your payment using {paymentMethod === 'easypaisa' ? 'Easypaisa' : 'JazzCash'}
+                </p>
+              </div>
+
+              {/* Sandbox mode notice */}
+              {gatewayMode === 'sandbox' && (
+                <div className="w-full rounded-lg bg-amber-50 border border-amber-200 p-3">
+                  <div className="flex items-start gap-2">
+                    <Info className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs font-medium text-amber-800">Sandbox Mode (Testing)</p>
+                      <p className="text-[11px] text-amber-700 mt-0.5">
+                        Click the button below to simulate a payment. In production, this will redirect to the real {paymentMethod === 'easypaisa' ? 'Easypaisa' : 'JazzCash'} payment page.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Amount display */}
+              <Card className="w-full p-4 bg-muted/30">
+                <div className="text-center space-y-1">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Amount to Pay</p>
+                  <p className="text-3xl font-bold text-emerald-600">${cartTotal.toFixed(2)}</p>
+                  <p className="text-xs text-muted-foreground">
+                    via {paymentMethod === 'easypaisa' ? 'Easypaisa' : 'JazzCash'}
+                  </p>
+                </div>
+              </Card>
+
+              {/* Action button to open gateway / simulate payment */}
+              <Button
+                className="w-full bg-emerald-600 hover:bg-emerald-700"
+                size="lg"
+                onClick={async () => {
+                  if (gatewayRedirectUrl) {
+                    // For sandbox: open the sandbox confirm URL which auto-completes
+                    // For live: open the real gateway redirect URL in a new tab
+                    window.open(gatewayRedirectUrl, '_blank')
+                  }
+                }}
+              >
+                {gatewayMode === 'sandbox' ? (
+                  <>
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    Simulate Payment
+                  </>
+                ) : (
+                  <>
+                    <Wallet className="h-4 w-4 mr-2" />
+                    Open {paymentMethod === 'easypaisa' ? 'Easypaisa' : 'JazzCash'}
+                  </>
+                )}
+              </Button>
+
+              {/* Polling status */}
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                {pollingPayment ? (
+                  <>
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    <span>Waiting for payment confirmation...</span>
+                  </>
+                ) : (
+                  <span>Checking payment status...</span>
+                )}
+              </div>
+
+              <div className="flex items-start gap-2 rounded-lg bg-emerald-50 border border-emerald-200 p-3 w-full">
+                <ShieldCheck className="h-4 w-4 text-emerald-600 mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-emerald-700">
+                  Your payment is protected by escrow. Funds will only be released to the seller after you confirm delivery.
+                </p>
+              </div>
             </motion.div>
           )}
 
