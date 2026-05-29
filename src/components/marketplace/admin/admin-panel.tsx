@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
   LayoutDashboard,
@@ -10,6 +10,7 @@ import {
   AlertTriangle,
   Settings,
   Shield,
+  CreditCard,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -20,14 +21,16 @@ import AdminProducts from './admin-products'
 import AdminOrders from './admin-orders'
 import AdminDisputes from './admin-disputes'
 import AdminSettings from './admin-settings'
+import { AdminTransactions } from './admin-transactions'
 
-type AdminTab = 'dashboard' | 'users' | 'products' | 'orders' | 'disputes' | 'settings'
+type AdminTab = 'dashboard' | 'users' | 'products' | 'orders' | 'transactions' | 'disputes' | 'settings'
 
 const tabs: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
   { id: 'users', label: 'Users', icon: <Users size={18} /> },
   { id: 'products', label: 'Products', icon: <Package size={18} /> },
   { id: 'orders', label: 'Orders', icon: <ShoppingCart size={18} /> },
+  { id: 'transactions', label: 'Transactions', icon: <CreditCard size={18} /> },
   { id: 'disputes', label: 'Disputes', icon: <AlertTriangle size={18} /> },
   { id: 'settings', label: 'Settings', icon: <Settings size={18} /> },
 ]
@@ -35,6 +38,18 @@ const tabs: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
 export default function AdminPanel() {
   const { currentUser } = useMarketplaceStore()
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard')
+
+  // Listen for admin navigation events from child components
+  useEffect(() => {
+    const handleNavigate = (e: Event) => {
+      const customEvent = e as CustomEvent<string>
+      if (customEvent.detail) {
+        setActiveTab(customEvent.detail as AdminTab)
+      }
+    }
+    window.addEventListener('admin-navigate', handleNavigate)
+    return () => window.removeEventListener('admin-navigate', handleNavigate)
+  }, [])
 
   // Admin check
   if (!currentUser?.isAdmin) {
@@ -62,6 +77,8 @@ export default function AdminPanel() {
         return <AdminProducts />
       case 'orders':
         return <AdminOrders />
+      case 'transactions':
+        return <AdminTransactions />
       case 'disputes':
         return <AdminDisputes />
       case 'settings':

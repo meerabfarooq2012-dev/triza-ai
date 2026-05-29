@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Mail,
@@ -13,6 +13,7 @@ import {
   Sparkles,
   Loader2,
   ArrowRight,
+  Quote,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -47,6 +48,26 @@ export function AuthModal() {
   const [showRegConfirmPassword, setShowRegConfirmPassword] = useState(false)
 
   const { login, setCurrentView } = useMarketplaceStore()
+
+  // Motivational quotes rotation
+  const motivationalQuotes = [
+    { text: 'The secret of getting ahead is getting started.', author: 'Mark Twain' },
+    { text: 'Every expert was once a beginner. Start your journey today.', author: 'Unknown' },
+    { text: 'Your marketplace. Your rules. Your success story starts here.', author: 'Marketo' },
+    { text: 'Don\'t wait for opportunity. Create it.', author: 'Unknown' },
+    { text: 'The best time to start was yesterday. The next best time is now.', author: 'Unknown' },
+    { text: 'Turn your passion into profit. Your shop is just one click away.', author: 'Marketo' },
+    { text: 'Success is not final, failure is not fatal: it is the courage to continue that counts.', author: 'Winston Churchill' },
+    { text: 'Dream big. Start small. Act now.', author: 'Unknown' },
+  ]
+  const [quoteIndex, setQuoteIndex] = useState(0)
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setQuoteIndex((prev) => (prev + 1) % motivationalQuotes.length)
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [motivationalQuotes.length])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -166,23 +187,37 @@ export function AuthModal() {
             </div>
             <h1 className="text-5xl font-bold mb-4">{PLATFORM_NAME}</h1>
             <p className="text-xl text-white/80 mb-8">{PLATFORM_TAGLINE}</p>
-            <div className="grid grid-cols-3 gap-6 mt-10">
-              {[
-                { value: '10K+', label: 'Products' },
-                { value: '5K+', label: 'Sellers' },
-                { value: '50K+', label: 'Buyers' },
-              ].map((stat, i) => (
+            <div className="mt-10 max-w-xs mx-auto">
+              <AnimatePresence mode="wait">
                 <motion.div
-                  key={stat.label}
-                  initial={{ opacity: 0, y: 20 }}
+                  key={quoteIndex}
+                  initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 + i * 0.15, duration: 0.5 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.5 }}
                   className="text-center"
                 >
-                  <div className="text-3xl font-bold">{stat.value}</div>
-                  <div className="text-sm text-white/60">{stat.label}</div>
+                  <Quote className="h-8 w-8 text-white/30 mx-auto mb-3" />
+                  <p className="text-lg font-medium leading-relaxed text-white/90 italic">
+                    &ldquo;{motivationalQuotes[quoteIndex].text}&rdquo;
+                  </p>
+                  <p className="text-sm text-white/50 mt-3">
+                    — {motivationalQuotes[quoteIndex].author}
+                  </p>
                 </motion.div>
-              ))}
+              </AnimatePresence>
+              {/* Quote indicators */}
+              <div className="flex justify-center gap-1.5 mt-5">
+                {motivationalQuotes.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setQuoteIndex(i)}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                      i === quoteIndex ? 'w-6 bg-white/70' : 'w-1.5 bg-white/25 hover:bg-white/40'
+                    }`}
+                  />
+                ))}
+              </div>
             </div>
           </motion.div>
         </div>

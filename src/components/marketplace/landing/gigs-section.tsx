@@ -5,7 +5,6 @@ import {
   Briefcase,
   Palette,
   Code,
-  PenTool,
   Film,
   Database,
   Megaphone,
@@ -13,6 +12,10 @@ import {
   Clock,
   DollarSign,
   ArrowRight,
+  Smartphone,
+  Sparkles,
+  FileText,
+  Brain,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -28,31 +31,38 @@ const gigHighlights = [
   },
   {
     icon: <Code className="h-8 w-8" />,
-    title: 'Programming & Dev',
-    description: 'Web, mobile, and software development',
+    title: 'Web Development',
+    description: 'Website design & full-stack development',
     color: 'from-emerald-500 to-teal-600',
     bgLight: 'bg-emerald-50',
   },
   {
-    icon: <PenTool className="h-8 w-8" />,
-    title: 'Writing & Translation',
-    description: 'Content, copywriting, and translations',
-    color: 'from-cyan-500 to-blue-600',
-    bgLight: 'bg-cyan-50',
+    icon: <Smartphone className="h-8 w-8" />,
+    title: 'App Development',
+    description: 'iOS, Android & cross-platform apps',
+    color: 'from-green-500 to-emerald-600',
+    bgLight: 'bg-green-50',
   },
   {
     icon: <Film className="h-8 w-8" />,
-    title: 'Video & Audio Editing',
-    description: 'Motion graphics, editing & production',
+    title: 'Video Editing',
+    description: 'Video editing, post-production & grading',
     color: 'from-rose-500 to-pink-600',
     bgLight: 'bg-rose-50',
   },
   {
-    icon: <Database className="h-8 w-8" />,
-    title: 'Data Entry',
-    description: 'Data processing & spreadsheet management',
-    color: 'from-amber-500 to-orange-600',
-    bgLight: 'bg-amber-50',
+    icon: <Sparkles className="h-8 w-8" />,
+    title: 'Animation & Motion',
+    description: '2D/3D animation & motion graphics',
+    color: 'from-orange-500 to-amber-600',
+    bgLight: 'bg-orange-50',
+  },
+  {
+    icon: <FileText className="h-8 w-8" />,
+    title: 'Content Writing',
+    description: 'Blog posts, articles & web content',
+    color: 'from-cyan-500 to-blue-600',
+    bgLight: 'bg-cyan-50',
   },
   {
     icon: <Megaphone className="h-8 w-8" />,
@@ -60,6 +70,20 @@ const gigHighlights = [
     description: 'SEO, social media & PPC campaigns',
     color: 'from-fuchsia-500 to-purple-600',
     bgLight: 'bg-fuchsia-50',
+  },
+  {
+    icon: <Brain className="h-8 w-8" />,
+    title: 'AI & Machine Learning',
+    description: 'AI solutions, ML models & data science',
+    color: 'from-purple-500 to-violet-600',
+    bgLight: 'bg-purple-50',
+  },
+  {
+    icon: <Database className="h-8 w-8" />,
+    title: 'Data Entry',
+    description: 'Data processing & spreadsheet management',
+    color: 'from-amber-500 to-orange-600',
+    bgLight: 'bg-amber-50',
   },
 ]
 
@@ -106,7 +130,7 @@ export function GigsSection() {
             </span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            From graphic design to programming, find professional freelancers across 25+ categories with flexible pricing packages.
+            From graphic design to programming, find professional freelancers across 40 categories with flexible pricing packages.
           </p>
         </motion.div>
 

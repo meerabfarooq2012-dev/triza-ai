@@ -9,6 +9,7 @@ import {
   Clock,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Palette,
   Code,
   Film,
@@ -37,6 +38,21 @@ import {
   Filter,
   X,
   Tag,
+  Globe,
+  Sparkles,
+  FileText,
+  Type,
+  BookOpen,
+  Store,
+  FileCode,
+  Mic,
+  Award,
+  Mail,
+  Layers,
+  MessageCircle,
+  ScrollText,
+  Monitor,
+  Ruler,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -52,6 +68,7 @@ import {
 } from '@/components/ui/select'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { GIG_CATEGORIES } from '@/lib/constants'
+import { GIG_SUBCATEGORIES } from '@/lib/gig-subcategories'
 import type { Gig, GigPackage, Category } from '@/types'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet'
@@ -101,6 +118,21 @@ const categoryIconMap: Record<string, React.ReactNode> = {
   Calculator: <Calculator className="h-5 w-5" />,
   GraduationCap: <GraduationCap className="h-5 w-5" />,
   HeartHandshake: <HeartHandshake className="h-5 w-5" />,
+  Globe: <Globe className="h-5 w-5" />,
+  Sparkles: <Sparkles className="h-5 w-5" />,
+  FileText: <FileText className="h-5 w-5" />,
+  Type: <Type className="h-5 w-5" />,
+  BookOpen: <BookOpen className="h-5 w-5" />,
+  Store: <Store className="h-5 w-5" />,
+  FileCode: <FileCode className="h-5 w-5" />,
+  Mic: <Mic className="h-5 w-5" />,
+  Award: <Award className="h-5 w-5" />,
+  Mail: <Mail className="h-5 w-5" />,
+  Layers: <Layers className="h-5 w-5" />,
+  MessageCircle: <MessageCircle className="h-5 w-5" />,
+  ScrollText: <ScrollText className="h-5 w-5" />,
+  Monitor: <Monitor className="h-5 w-5" />,
+  Ruler: <Ruler className="h-5 w-5" />,
 }
 
 const categoryGradients = [
@@ -116,35 +148,51 @@ const categoryGradients = [
 
 const iconColorMap: Record<string, string> = {
   'graphic-design': 'text-violet-600',
-  'programming-development': 'text-emerald-600',
-  'video-audio-editing': 'text-rose-600',
-  'data-entry': 'text-amber-600',
-  'writing-translation': 'text-cyan-600',
-  'digital-marketing': 'text-fuchsia-600',
+  'web-development': 'text-emerald-600',
+  'app-development': 'text-green-600',
   'ui-ux-design': 'text-pink-600',
-  '3d-animation': 'text-orange-600',
-  'photography-editing': 'text-teal-600',
-  'music-audio': 'text-indigo-600',
-  'business-consulting': 'text-gray-600',
+  'video-editing': 'text-rose-600',
+  'animation-motion-graphics': 'text-orange-600',
+  'content-writing': 'text-cyan-600',
+  'copywriting': 'text-teal-600',
+  'translation': 'text-sky-600',
+  'digital-marketing': 'text-fuchsia-600',
+  'social-media-management': 'text-blue-600',
+  'seo-services': 'text-stone-600',
   'ai-machine-learning': 'text-purple-600',
-  'cybersecurity': 'text-red-600',
-  'cloud-devops': 'text-sky-600',
-  'mobile-app-dev': 'text-green-600',
-  'game-development': 'text-lime-600',
-  'e-commerce': 'text-yellow-600',
-  'social-media': 'text-blue-600',
+  'data-entry': 'text-amber-600',
   'virtual-assistant': 'text-stone-600',
-  'seo-content': 'text-stone-600',
-  'architecture-interior': 'text-slate-600',
-  'legal-compliance': 'text-zinc-600',
+  'cyber-security': 'text-red-600',
+  'cloud-computing': 'text-sky-600',
+  'game-development': 'text-lime-600',
+  'e-commerce-services': 'text-yellow-600',
+  'shopify-development': 'text-emerald-600',
+  'wordpress-development': 'text-blue-600',
+  'photography-photo-editing': 'text-teal-600',
+  'music-audio-production': 'text-indigo-600',
+  'voice-over': 'text-purple-600',
+  'business-consulting': 'text-gray-600',
   'accounting-finance': 'text-emerald-700',
-  'education-tutoring': 'text-violet-700',
-  'customer-service': 'text-pink-700',
+  'customer-support': 'text-pink-700',
+  'architecture-interior-design': 'text-slate-600',
+  '3d-modeling-rendering': 'text-orange-700',
+  'programming-software-engineering': 'text-emerald-600',
+  'online-tutoring': 'text-violet-700',
+  'resume-cv-writing': 'text-amber-700',
+  'email-marketing': 'text-cyan-700',
+  'branding-identity': 'text-violet-700',
+  'nft-blockchain': 'text-indigo-700',
+  'chatbot-development': 'text-teal-700',
+  'script-writing': 'text-rose-700',
+  'presentation-design': 'text-fuchsia-700',
+  'product-design': 'text-sky-700',
+  'legal-services': 'text-zinc-600',
 }
 
 export function GigsBrowse() {
   const { setCurrentView } = useMarketplaceStore()
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
   const [gigs, setGigs] = useState<Gig[]>([])
   const [categories, setCategories] = useState<CategoryWithGigCount[]>([])
   const [loading, setLoading] = useState(true)
@@ -207,6 +255,18 @@ export function GigsBrowse() {
     setPage(1)
   }
 
+  const toggleCategoryExpand = (slug: string) => {
+    setExpandedCategories((prev) => {
+      const next = new Set(prev)
+      if (next.has(slug)) {
+        next.delete(slug)
+      } else {
+        next.add(slug)
+      }
+      return next
+    })
+  }
+
   const handleSearch = () => {
     setPage(1)
     fetchGigs()
@@ -262,7 +322,7 @@ export function GigsBrowse() {
               Find the Perfect Freelancer
             </h1>
             <p className="text-lg md:text-xl text-emerald-100 mb-8 max-w-2xl mx-auto">
-              Browse thousands of professional freelance services across {GIG_CATEGORIES.length}+ categories
+              Browse thousands of professional freelance services across {GIG_CATEGORIES.length} categories
             </p>
             <div className="max-w-2xl mx-auto relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-emerald-300" />
@@ -290,7 +350,16 @@ export function GigsBrowse() {
           <div className="flex items-center gap-2 mb-4">
             <span className="text-sm text-muted-foreground">Showing:</span>
             <Badge className="gap-1.5 bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border-0 pr-1">
-              {GIG_CATEGORIES.find(c => c.slug === selectedCategory)?.name || selectedCategory}
+              {(() => {
+                for (const [parentSlug, subs] of Object.entries(GIG_SUBCATEGORIES)) {
+                  const sub = subs.find(s => s.slug === selectedCategory)
+                  if (sub) {
+                    const parent = GIG_CATEGORIES.find(c => c.slug === parentSlug)
+                    return `${parent?.name || ''} › ${sub.name}`
+                  }
+                }
+                return GIG_CATEGORIES.find(c => c.slug === selectedCategory)?.name || selectedCategory
+              })()}
               <button
                 onClick={() => handleCategoryClick(null)}
                 className="ml-0.5 rounded-full p-0.5 hover:bg-emerald-200 dark:hover:bg-emerald-800 transition-colors"
@@ -318,28 +387,91 @@ export function GigsBrowse() {
                 </Button>
               </div>
               <ScrollArea className="h-[calc(100vh-12rem)]">
-                <div className="space-y-1 pr-3">
-                  {displayCategories.map((category, i) => (
-                    <button
-                      key={category.slug}
-                      onClick={() => handleCategoryClick(category.slug)}
-                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-sm transition-all duration-150 ${
-                        selectedCategory === category.slug
-                          ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-medium shadow-sm'
-                          : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      <span className={`flex-shrink-0 ${iconColorMap[category.slug] || 'text-gray-500'}`}>
-                        {categoryIconMap[category.icon] || <Briefcase className="h-4 w-4" />}
-                      </span>
-                      <span className="flex-1 truncate">{category.name}</span>
-                      {category.gigCount > 0 && (
-                        <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
-                          {category.gigCount}
-                        </span>
-                      )}
-                    </button>
-                  ))}
+                <div className="space-y-0.5 pr-3">
+                  {displayCategories.map((category) => {
+                    const subs = GIG_SUBCATEGORIES[category.slug] || []
+                    const isExpanded = expandedCategories.has(category.slug)
+                    const isSelected = selectedCategory === category.slug
+                    const isSubSelected = subs.some((s) => selectedCategory === s.slug)
+
+                    return (
+                      <div key={category.slug}>
+                        <div className="flex items-center">
+                          <button
+                            onClick={() => handleCategoryClick(category.slug)}
+                            className={`flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-sm transition-all duration-150 ${
+                              isSelected
+                                ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-medium shadow-sm'
+                                : isSubSelected
+                                ? 'bg-emerald-50/50 text-emerald-600 font-medium'
+                                : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground'
+                            }`}
+                          >
+                            <span className={`flex-shrink-0 ${iconColorMap[category.slug] || 'text-gray-500'}`}>
+                              {categoryIconMap[category.icon] || <Briefcase className="h-4 w-4" />}
+                            </span>
+                            <span className="flex-1 truncate">{category.name}</span>
+                            {category.gigCount > 0 && (
+                              <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
+                                {category.gigCount}
+                              </span>
+                            )}
+                          </button>
+                          {subs.length > 0 && (
+                            <button
+                              onClick={() => toggleCategoryExpand(category.slug)}
+                              className={`flex-shrink-0 p-1.5 rounded-md hover:bg-muted/50 transition-colors ${
+                                isExpanded ? 'text-emerald-600' : 'text-muted-foreground'
+                              }`}
+                            >
+                              <ChevronDown
+                                size={14}
+                                className={`transition-transform duration-200 ${isExpanded ? 'rotate-0' : '-rotate-90'}`}
+                              />
+                            </button>
+                          )}
+                        </div>
+                        {/* Subcategories */}
+                        <AnimatePresence>
+                          {isExpanded && subs.length > 0 && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="ml-7 pl-2 border-l border-muted">
+                                <button
+                                  onClick={() => handleCategoryClick(category.slug)}
+                                  className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs transition-colors ${
+                                    isSelected
+                                      ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-medium'
+                                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                                  }`}
+                                >
+                                  All {category.name}
+                                </button>
+                                {subs.map((sub) => (
+                                  <button
+                                    key={sub.slug}
+                                    onClick={() => handleCategoryClick(sub.slug)}
+                                    className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs transition-colors ${
+                                      selectedCategory === sub.slug
+                                        ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-medium'
+                                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                                    }`}
+                                  >
+                                    {sub.name}
+                                  </button>
+                                ))}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    )
+                  })}
                 </div>
               </ScrollArea>
             </div>
@@ -380,27 +512,90 @@ export function GigsBrowse() {
                     </SheetHeader>
                     <ScrollArea className="h-[calc(100vh-5rem)]">
                       <div className="p-2 space-y-0.5">
-                        {displayCategories.map((category, i) => (
-                          <button
-                            key={category.slug}
-                            onClick={() => { handleCategoryClick(category.slug); setMobileFilterOpen(false) }}
-                            className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left text-sm transition-all duration-150 ${
-                              selectedCategory === category.slug
-                                ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-medium'
-                                : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground'
-                            }`}
-                          >
-                            <span className={`flex-shrink-0 ${iconColorMap[category.slug] || 'text-gray-500'}`}>
-                              {categoryIconMap[category.icon] || <Briefcase className="h-4 w-4" />}
-                            </span>
-                            <span className="flex-1 truncate">{category.name}</span>
-                            {category.gigCount > 0 && (
-                              <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
-                                {category.gigCount}
-                              </span>
-                            )}
-                          </button>
-                        ))}
+                        {displayCategories.map((category) => {
+                          const subs = GIG_SUBCATEGORIES[category.slug] || []
+                          const isExpanded = expandedCategories.has(category.slug)
+                          const isSelected = selectedCategory === category.slug
+                          const isSubSelected = subs.some((s) => selectedCategory === s.slug)
+
+                          return (
+                            <div key={category.slug}>
+                              <div className="flex items-center">
+                                <button
+                                  onClick={() => { handleCategoryClick(category.slug); setMobileFilterOpen(false) }}
+                                  className={`flex-1 flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left text-sm transition-all duration-150 ${
+                                    isSelected
+                                      ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-medium'
+                                      : isSubSelected
+                                      ? 'bg-emerald-50/50 text-emerald-600 font-medium'
+                                      : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground'
+                                  }`}
+                                >
+                                  <span className={`flex-shrink-0 ${iconColorMap[category.slug] || 'text-gray-500'}`}>
+                                    {categoryIconMap[category.icon] || <Briefcase className="h-4 w-4" />}
+                                  </span>
+                                  <span className="flex-1 truncate">{category.name}</span>
+                                  {category.gigCount > 0 && (
+                                    <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
+                                      {category.gigCount}
+                                    </span>
+                                  )}
+                                </button>
+                                {subs.length > 0 && (
+                                  <button
+                                    onClick={() => toggleCategoryExpand(category.slug)}
+                                    className={`flex-shrink-0 p-1.5 rounded-md hover:bg-muted/50 transition-colors ${
+                                      isExpanded ? 'text-emerald-600' : 'text-muted-foreground'
+                                    }`}
+                                  >
+                                    <ChevronDown
+                                      size={14}
+                                      className={`transition-transform duration-200 ${isExpanded ? 'rotate-0' : '-rotate-90'}`}
+                                    />
+                                  </button>
+                                )}
+                              </div>
+                              {/* Subcategories */}
+                              <AnimatePresence>
+                                {isExpanded && subs.length > 0 && (
+                                  <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="overflow-hidden"
+                                  >
+                                    <div className="ml-7 pl-2 border-l border-muted">
+                                      <button
+                                        onClick={() => { handleCategoryClick(category.slug); setMobileFilterOpen(false) }}
+                                        className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs transition-colors ${
+                                          isSelected
+                                            ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-medium'
+                                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                                        }`}
+                                      >
+                                        All {category.name}
+                                      </button>
+                                      {subs.map((sub) => (
+                                        <button
+                                          key={sub.slug}
+                                          onClick={() => { handleCategoryClick(sub.slug); setMobileFilterOpen(false) }}
+                                          className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs transition-colors ${
+                                            selectedCategory === sub.slug
+                                              ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-medium'
+                                              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                                          }`}
+                                        >
+                                          {sub.name}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
+                          )
+                        })}
                       </div>
                     </ScrollArea>
                   </SheetContent>
@@ -409,7 +604,17 @@ export function GigsBrowse() {
                 <div>
                   <h2 className="text-xl md:text-2xl font-bold">
                     {selectedCategory
-                      ? GIG_CATEGORIES.find(c => c.slug === selectedCategory)?.name || 'Gigs'
+                      ? (() => {
+                          // Check if it's a subcategory
+                          for (const [parentSlug, subs] of Object.entries(GIG_SUBCATEGORIES)) {
+                            const sub = subs.find(s => s.slug === selectedCategory)
+                            if (sub) {
+                              const parent = GIG_CATEGORIES.find(c => c.slug === parentSlug)
+                              return `${parent?.name || ''} › ${sub.name}`
+                            }
+                          }
+                          return GIG_CATEGORIES.find(c => c.slug === selectedCategory)?.name || 'Gigs'
+                        })()
                       : 'All Freelance Gigs'}
                   </h2>
                   <p className="text-sm text-muted-foreground">

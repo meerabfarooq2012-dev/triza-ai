@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus,
@@ -17,6 +17,9 @@ import {
   Image as ImageIcon,
   Tag,
   X,
+  Globe,
+  Check,
+  ChevronDown,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -61,7 +64,10 @@ import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import {
   PRODUCT_TYPE_LABELS,
   DEFAULT_CATEGORIES,
+  PHYSICAL_CATEGORIES,
+  DIGITAL_CATEGORIES,
 } from '@/lib/constants'
+import { countryCodeData } from '@/lib/country-codes'
 import type { Product, ProductType, Category } from '@/types'
 
 interface ProductFormData {
@@ -72,9 +78,11 @@ interface ProductFormData {
   comparePrice: string
   type: ProductType
   categoryId: string
+  subcategoryId: string
   stock: string
   tags: string
   deliveryInfo: string
+  deliveryCountries: string[] // array of country codes
   requirements: string
   isFeatured: boolean
 }
@@ -87,9 +95,11 @@ const emptyForm: ProductFormData = {
   comparePrice: '',
   type: 'digital',
   categoryId: '',
+  subcategoryId: '',
   stock: '-1',
   tags: '',
   deliveryInfo: '',
+  deliveryCountries: [],
   requirements: '',
   isFeatured: false,
 }
@@ -97,8 +107,184 @@ const emptyForm: ProductFormData = {
 const PRODUCT_TYPE_OPTIONS: { value: ProductType; label: string }[] = [
   { value: 'digital', label: 'Digital Product' },
   { value: 'physical', label: 'Physical Product' },
-  { value: 'freelance', label: 'Freelance Service' },
 ]
+
+// ---- Country Multi-Select Component ----
+function CountryMultiSelect({
+  selected,
+  onChange,
+}: {
+  selected: string[]
+  onChange: (codes: string[]) => void
+}) {
+  const [search, setSearch] = useState('')
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement | null>(null)
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const filtered = countryCodeData.filter(
+    (c) =>
+      c.name.toLowerCase().includes(search.toLowerCase()) ||
+      c.code.toLowerCase().includes(search.toLowerCase())
+  )
+
+  const toggleCountry = (code: string) => {
+    if (selected.includes(code)) {
+      onChange(selected.filter((c) => c !== code))
+    } else {
+      onChange([...selected, code])
+    }
+  }
+
+  const selectAll = () => {
+    onChange(countryCodeData.map((c) => c.code))
+  }
+
+  const clearAll = () => {
+    onChange([])
+  }
+
+  const getCountryName = (code: string) => {
+    const country = countryCodeData.find((c) => c.code === code)
+    return country ? `${country.flag} ${country.name}` : code
+  }
+
+  return (
+    <div ref={dropdownRef} className="relative">
+      {/* Selected countries display + trigger */}
+      <div
+        className="min-h-[42px] flex flex-wrap gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 cursor-text"
+        onClick={() => {
+          setDropdownOpen(!dropdownOpen)
+          setSearch('')
+        }}
+      >
+        {selected.length === 0 ? (
+          <span className="text-sm text-gray-400 select-none">
+            Select countries you can deliver to...
+          </span>
+        ) : (
+          selected.slice(0, 5).map((code) => (
+            <Badge
+              key={code}
+              variant="outline"
+              className="gap-1 text-xs bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+            >
+              {getCountryName(code)}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  toggleCountry(code)
+                }}
+                className="ml-0.5 rounded-full hover:bg-emerald-200"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          ))
+        )}
+        {selected.length > 5 && (
+          <Badge variant="outline" className="text-xs bg-gray-50 text-gray-600">
+            +{selected.length - 5} more
+          </Badge>
+        )}
+        <ChevronDown className="ml-auto h-4 w-4 text-gray-400 flex-shrink-0" />
+      </div>
+
+      {/* Dropdown */}
+      {dropdownOpen && (
+        <div className="absolute z-50 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-64 overflow-hidden">
+          {/* Search + Actions */}
+          <div className="border-b border-gray-100 p-2">
+            <Input
+              placeholder="Search countries..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-8 text-sm"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <div className="mt-1.5 flex gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 text-xs text-emerald-600 hover:text-emerald-700"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  selectAll()
+                }}
+              >
+                Select All
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 text-xs text-red-500 hover:text-red-600"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  clearAll()
+                }}
+              >
+                Clear All
+              </Button>
+            </div>
+          </div>
+
+          {/* Country list */}
+          <div className="max-h-48 overflow-y-auto">
+            {filtered.length === 0 ? (
+              <div className="px-3 py-4 text-center text-sm text-gray-400">
+                No country found
+              </div>
+            ) : (
+              filtered.map((country) => {
+                const isSelected = selected.includes(country.code)
+                return (
+                  <button
+                    key={country.code}
+                    type="button"
+                    className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50 transition-colors ${
+                      isSelected ? 'bg-emerald-50' : ''
+                    }`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      toggleCountry(country.code)
+                    }}
+                  >
+                    <span className="flex-shrink-0">
+                      {isSelected ? (
+                        <Check className="h-4 w-4 text-emerald-600" />
+                      ) : (
+                        <span className="inline-block h-4 w-4 rounded border border-gray-300" />
+                      )}
+                    </span>
+                    <span className="text-base">{country.flag}</span>
+                    <span className={isSelected ? 'font-medium text-emerald-700' : 'text-gray-700'}>
+                      {country.name}
+                    </span>
+                    <span className="ml-auto text-xs text-gray-400">{country.code}</span>
+                  </button>
+                )
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export function SellerProducts() {
   const { currentUser } = useMarketplaceStore()
@@ -179,6 +365,20 @@ export function SellerProducts() {
       const raw = (product as Record<string, unknown>).tags
       tags = JSON.parse(typeof raw === 'string' && raw ? raw : '[]')
     } catch { tags = [] }
+    let deliveryCountries: string[] = []
+    try {
+      const raw = (product as Record<string, unknown>).deliveryCountries
+      const parsed = JSON.parse(typeof raw === 'string' && raw ? raw : '[]')
+      deliveryCountries = Array.isArray(parsed) ? parsed : []
+    } catch { deliveryCountries = [] }
+    // Determine subcategoryId from category parent chain
+    let subcategoryId = ''
+    const catId = product.categoryId || ''
+    // Check if the product's category is a subcategory (has parentId)
+    const productCategory = categories.find(c => c.id === catId)
+    if (productCategory?.parentId) {
+      subcategoryId = catId
+    }
     setFormData({
       name: product.name,
       description: product.description,
@@ -186,10 +386,12 @@ export function SellerProducts() {
       price: String(product.price),
       comparePrice: String(product.comparePrice || ''),
       type: product.type,
-      categoryId: product.categoryId || '',
+      categoryId: productCategory?.parentId || catId,
+      subcategoryId,
       stock: String(product.stock),
       tags: tags.join(', '),
       deliveryInfo: product.deliveryInfo || '',
+      deliveryCountries,
       requirements: product.requirements || '',
       isFeatured: product.isFeatured,
     })
@@ -215,10 +417,11 @@ export function SellerProducts() {
           ? parseFloat(formData.comparePrice)
           : undefined,
         type: formData.type,
-        categoryId: formData.categoryId || undefined,
+        categoryId: formData.subcategoryId || formData.categoryId || undefined,
         stock: parseInt(formData.stock, 10),
         tags,
         deliveryInfo: formData.deliveryInfo || undefined,
+        deliveryCountries: formData.deliveryCountries,
         requirements: formData.requirements || undefined,
         isFeatured: formData.isFeatured,
       }
@@ -726,7 +929,9 @@ export function SellerProducts() {
                     setFormData({
                       ...formData,
                       type: v as ProductType,
-                      stock: v === 'digital' ? '-1' : formData.stock,
+                      categoryId: '',
+                      subcategoryId: '',
+                      stock: v === 'digital' ? '-1' : (formData.stock === '-1' ? '0' : formData.stock),
                     })
                   }
                 >
@@ -747,18 +952,37 @@ export function SellerProducts() {
                 <Select
                   value={formData.categoryId}
                   onValueChange={(v) =>
-                    setFormData({ ...formData, categoryId: v })
+                    setFormData({ ...formData, categoryId: v, subcategoryId: '' })
                   }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
+                    {categories
+                      .filter((cat) => {
+                        if (!cat.children || cat.children.length > 0) return true
+                        // Filter top-level categories based on product type
+                        const physicalSlugs = PHYSICAL_CATEGORIES.map(c => c.slug)
+                        const digitalSlugs = DIGITAL_CATEGORIES.map(c => c.slug)
+                        if (formData.type === 'physical') return physicalSlugs.includes(cat.slug)
+                        if (formData.type === 'digital') return digitalSlugs.includes(cat.slug)
+                        return true
+                      })
+                      .filter((cat) => {
+                        // Only show top-level categories that match the product type
+                        const physicalSlugs = PHYSICAL_CATEGORIES.map(c => c.slug)
+                        const digitalSlugs = DIGITAL_CATEGORIES.map(c => c.slug)
+                        if (formData.type === 'physical') return physicalSlugs.includes(cat.slug)
+                        if (formData.type === 'digital') return digitalSlugs.includes(cat.slug)
+                        return true
+                      })
+                      .map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </SelectItem>
+                      ))
+                    }
                     {categories.length === 0 &&
                       DEFAULT_CATEGORIES.map((cat) => (
                         <SelectItem key={cat.slug} value={cat.slug}>
@@ -769,6 +993,35 @@ export function SellerProducts() {
                 </Select>
               </div>
             </div>
+
+            {/* Subcategory (shown when selected category has children) */}
+            {formData.categoryId && (() => {
+              const selectedCat = categories.find(c => c.id === formData.categoryId)
+              return selectedCat?.children && selectedCat.children.length > 0
+            })() && (
+              <div className="grid gap-2">
+                <Label>Subcategory</Label>
+                <Select
+                  value={formData.subcategoryId}
+                  onValueChange={(v) =>
+                    setFormData({ ...formData, subcategoryId: v })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select subcategory" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories
+                      .find(c => c.id === formData.categoryId)
+                      ?.children?.map((sub) => (
+                        <SelectItem key={sub.id} value={sub.id}>
+                          {sub.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Stock */}
             <div className="grid gap-2">
@@ -810,8 +1063,8 @@ export function SellerProducts() {
               />
             </div>
 
-            {/* Delivery Info (for physical/freelance) */}
-            {formData.type !== 'digital' && (
+            {/* Delivery Information (for physical) */}
+            {formData.type === 'physical' && (
               <div className="grid gap-2">
                 <Label htmlFor="deliveryInfo">Delivery Information</Label>
                 <Textarea
@@ -826,21 +1079,22 @@ export function SellerProducts() {
               </div>
             )}
 
-            {/* Requirements (for freelance) */}
-            {formData.type === 'freelance' && (
-              <div className="grid gap-2">
-                <Label htmlFor="requirements">Requirements</Label>
-                <Textarea
-                  id="requirements"
-                  value={formData.requirements}
-                  onChange={(e) =>
-                    setFormData({ ...formData, requirements: e.target.value })
-                  }
-                  placeholder="What you need from the buyer to get started"
-                  rows={2}
-                />
-              </div>
-            )}
+            {/* Delivery Countries */}
+            <div className="grid gap-2">
+              <Label className="flex items-center gap-1.5">
+                <Globe className="h-4 w-4 text-gray-500" />
+                Delivery Countries
+                <span className="text-xs text-gray-400">
+                  ({(formData.deliveryCountries || []).length} selected)
+                </span>
+              </Label>
+              <CountryMultiSelect
+                selected={formData.deliveryCountries || []}
+                onChange={(countries) =>
+                  setFormData({ ...formData, deliveryCountries: countries })
+                }
+              />
+            </div>
 
             {/* Featured toggle */}
             <div className="flex items-center justify-between rounded-lg border p-3">

@@ -19,16 +19,16 @@ const features = [
     gradient: 'from-violet-500 to-purple-600',
   },
   {
+    icon: <ShieldCheck className="h-6 w-6" />,
+    title: 'Escrow Payments',
+    description: 'Funds held securely in escrow until you confirm delivery. Supports Easypaisa, JazzCash, Payoneer, and Wise.',
+    gradient: 'from-emerald-500 to-teal-600',
+  },
+  {
     icon: <Package className="h-6 w-6" />,
     title: 'Sell Anything',
     description: 'Digital downloads, physical products, or freelance services — sell whatever you create.',
     gradient: 'from-rose-500 to-pink-600',
-  },
-  {
-    icon: <ShieldCheck className="h-6 w-6" />,
-    title: 'Secure Payments',
-    description: 'Safe and reliable payment processing with buyer protection and instant seller payouts.',
-    gradient: 'from-emerald-500 to-teal-600',
   },
   {
     icon: <Palette className="h-6 w-6" />,
@@ -39,13 +39,13 @@ const features = [
   {
     icon: <Truck className="h-6 w-6" />,
     title: 'Order Tracking',
-    description: 'Real-time updates on order status, shipping progress, and delivery confirmation.',
+    description: 'Real-time payment status tracking from initiation through escrow to release. Full transparency.',
     gradient: 'from-cyan-500 to-sky-600',
   },
   {
     icon: <BarChart3 className="h-6 w-6" />,
-    title: 'Analytics Dashboard',
-    description: 'Powerful insights at your fingertips. Track sales, revenue, and customer behavior.',
+    title: 'Seller Wallet',
+    description: 'Track earnings, manage withdrawals via local & international methods, and view detailed transaction history.',
     gradient: 'from-fuchsia-500 to-purple-600',
   },
 ]

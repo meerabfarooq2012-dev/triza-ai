@@ -19,6 +19,7 @@ import {
   Home,
   Compass,
   Briefcase,
+  CreditCard,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -245,13 +246,13 @@ export function Header() {
 
                   {/* Dashboard links */}
                   <DropdownMenuGroup>
-                    {activeRole === 'buyer' || currentUser?.role === 'buyer' ? (
+                    {activeRole === 'buyer' || currentUser?.role === 'buyer' || currentUser?.role === 'both' ? (
                       <DropdownMenuItem onClick={() => handleNavClick('buyer-dashboard')}>
                         <LayoutDashboard className="mr-2 h-4 w-4" />
                         Buyer Dashboard
                       </DropdownMenuItem>
                     ) : null}
-                    {(activeRole === 'seller' || currentUser?.role === 'seller') && currentUser?.shop ? (
+                    {(activeRole === 'seller' || currentUser?.role === 'seller' || currentUser?.role === 'both') ? (
                       <DropdownMenuItem onClick={() => handleNavClick('seller-dashboard')}>
                         <Store className="mr-2 h-4 w-4" />
                         Seller Dashboard
@@ -277,6 +278,15 @@ export function Header() {
                     <DropdownMenuItem onClick={() => handleNavClick('settings')}>
                       <Settings className="mr-2 h-4 w-4" />
                       Settings
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        const dashboard = (activeRole === 'seller' || currentUser?.role === 'seller') ? 'seller-dashboard' : 'buyer-dashboard'
+                        useMarketplaceStore.getState().setCurrentView(dashboard as ViewMode, { tab: 'payment-settings' })
+                      }}
+                    >
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      Payment Info
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
 
@@ -433,7 +443,7 @@ export function Header() {
                   )}
 
                   {/* Dashboard links */}
-                  {(activeRole === 'buyer' || currentUser?.role === 'buyer') && (
+                  {(activeRole === 'buyer' || currentUser?.role === 'buyer' || currentUser?.role === 'both') && (
                     <Button
                       variant="ghost"
                       className="w-full justify-start gap-3"
@@ -443,7 +453,7 @@ export function Header() {
                       Buyer Dashboard
                     </Button>
                   )}
-                  {(activeRole === 'seller' || currentUser?.role === 'seller') && currentUser?.shop && (
+                  {(activeRole === 'seller' || currentUser?.role === 'seller' || currentUser?.role === 'both') && (
                     <Button
                       variant="ghost"
                       className="w-full justify-start gap-3"
@@ -484,6 +494,18 @@ export function Header() {
                   >
                     <Settings className="h-4.5 w-4.5" />
                     Settings
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start gap-3"
+                    onClick={() => {
+                      const dashboard = (activeRole === 'seller' || currentUser?.role === 'seller') ? 'seller-dashboard' : 'buyer-dashboard'
+                      useMarketplaceStore.getState().setCurrentView(dashboard as ViewMode, { tab: 'payment-settings' })
+                    }}
+                  >
+                    <CreditCard className="h-4.5 w-4.5" />
+                    Payment Info
                   </Button>
 
                   {currentUser?.isAdmin && (

@@ -50,6 +50,7 @@ export async function GET(
       ...product,
       images: JSON.parse(product.images || '[]'),
       tags: JSON.parse(product.tags || '[]'),
+      deliveryCountries: JSON.parse(product.deliveryCountries || '[]'),
     };
 
     return NextResponse.json({ success: true, data: parsedProduct });
@@ -89,13 +90,13 @@ export async function PUT(
     const allowedFields = [
       'name', 'description', 'shortDesc', 'price', 'comparePrice',
       'type', 'images', 'fileUrl', 'fileSize', 'stock', 'sku',
-      'tags', 'isFeatured', 'categoryId', 'deliveryInfo', 'requirements',
+      'tags', 'isFeatured', 'categoryId', 'deliveryInfo', 'deliveryCountries', 'requirements',
     ];
 
     const data: Record<string, unknown> = {};
     for (const field of allowedFields) {
       if (body[field] !== undefined) {
-        if ((field === 'images' || field === 'tags') && typeof body[field] !== 'string') {
+        if ((field === 'images' || field === 'tags' || field === 'deliveryCountries') && typeof body[field] !== 'string') {
           data[field] = JSON.stringify(body[field]);
         } else if (field === 'price' || field === 'comparePrice') {
           data[field] = body[field] !== null ? parseFloat(String(body[field])) : null;
@@ -139,6 +140,7 @@ export async function PUT(
         ...updatedProduct,
         images: JSON.parse(updatedProduct.images || '[]'),
         tags: JSON.parse(updatedProduct.tags || '[]'),
+        deliveryCountries: JSON.parse(updatedProduct.deliveryCountries || '[]'),
       },
     });
   } catch (error) {
@@ -148,6 +150,13 @@ export async function PUT(
       { status: 500 }
     );
   }
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  return PUT(request, { params });
 }
 
 export async function DELETE(

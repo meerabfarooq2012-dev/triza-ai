@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { UserPlus, Settings, Rocket } from 'lucide-react'
+import { UserPlus, ShieldCheck, Rocket } from 'lucide-react'
 
 const steps = [
   {
@@ -12,15 +12,15 @@ const steps = [
   },
   {
     number: '02',
-    icon: <Settings className="h-7 w-7" />,
-    title: 'Set Up Your Shop',
-    description: 'Customize your storefront with branding, colors, and products. Make it uniquely yours.',
+    icon: <ShieldCheck className="h-7 w-7" />,
+    title: 'Pay Securely with Escrow',
+    description: 'Buy with confidence — payments are held in escrow until you confirm delivery. Supports Easypaisa, JazzCash, Payoneer & Wise.',
   },
   {
     number: '03',
     icon: <Rocket className="h-7 w-7" />,
-    title: 'Start Selling & Buying',
-    description: 'List your products or browse and purchase from thousands of sellers on the marketplace.',
+    title: 'Confirm & Get Paid',
+    description: 'Buyers confirm delivery to release funds. Sellers receive 90% directly to their wallet. Fast, secure, transparent.',
   },
 ]
 

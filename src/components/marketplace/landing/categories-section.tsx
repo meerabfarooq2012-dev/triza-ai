@@ -16,32 +16,31 @@ import {
   Paintbrush,
   Briefcase,
   Globe,
-  PenTool,
-  MessageSquare,
-  Film,
-  Database,
-  Megaphone,
-  Figma,
-  Box,
-  Shield,
-  Brain,
-  Cloud,
   Smartphone,
+  Home,
+  Gem,
+  Sparkles,
+  Scissors,
+  UtensilsCrossed,
+  Dumbbell,
   Gamepad2,
-  ShoppingCart,
-  Share2,
-  Headphones,
-  Search,
-  Building2,
-  Scale,
-  Calculator,
-  HeartHandshake,
+  PawPrint,
+  Car,
+  Armchair,
+  Baby,
+  Tent,
+  Gift,
+  Hand,
   LayoutGrid,
+  Film,
+  Brain,
+  Layers,
+  Megaphone,
+  Printer,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { DEFAULT_CATEGORIES, GIG_CATEGORIES } from '@/lib/constants'
+import { PHYSICAL_CATEGORIES, GIG_CATEGORIES, DIGITAL_CATEGORIES } from '@/lib/constants'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -58,26 +57,26 @@ const iconMap: Record<string, React.ReactNode> = {
   Paintbrush: <Paintbrush className="h-5 w-5" />,
   Briefcase: <Briefcase className="h-5 w-5" />,
   Globe: <Globe className="h-5 w-5" />,
-  PenTool: <PenTool className="h-5 w-5" />,
-  MessageSquare: <MessageSquare className="h-5 w-5" />,
-  Film: <Film className="h-5 w-5" />,
-  Database: <Database className="h-5 w-5" />,
-  Megaphone: <Megaphone className="h-5 w-5" />,
-  Figma: <Figma className="h-5 w-5" />,
-  Box: <Box className="h-5 w-5" />,
-  Shield: <Shield className="h-5 w-5" />,
-  Brain: <Brain className="h-5 w-5" />,
-  Cloud: <Cloud className="h-5 w-5" />,
   Smartphone: <Smartphone className="h-5 w-5" />,
+  Home: <Home className="h-5 w-5" />,
+  Gem: <Gem className="h-5 w-5" />,
+  Sparkles: <Sparkles className="h-5 w-5" />,
+  Scissors: <Scissors className="h-5 w-5" />,
+  UtensilsCrossed: <UtensilsCrossed className="h-5 w-5" />,
+  Dumbbell: <Dumbbell className="h-5 w-5" />,
   Gamepad2: <Gamepad2 className="h-5 w-5" />,
-  ShoppingCart: <ShoppingCart className="h-5 w-5" />,
-  Share2: <Share2 className="h-5 w-5" />,
-  Headphones: <Headphones className="h-5 w-5" />,
-  Search: <Search className="h-5 w-5" />,
-  Building2: <Building2 className="h-5 w-5" />,
-  Scale: <Scale className="h-5 w-5" />,
-  Calculator: <Calculator className="h-5 w-5" />,
-  HeartHandshake: <HeartHandshake className="h-5 w-5" />,
+  PawPrint: <PawPrint className="h-5 w-5" />,
+  Car: <Car className="h-5 w-5" />,
+  Armchair: <Armchair className="h-5 w-5" />,
+  Baby: <Baby className="h-5 w-5" />,
+  Tent: <Tent className="h-5 w-5" />,
+  Gift: <Gift className="h-5 w-5" />,
+  Hand: <Hand className="h-5 w-5" />,
+  Film: <Film className="h-5 w-5" />,
+  Brain: <Brain className="h-5 w-5" />,
+  Layers: <Layers className="h-5 w-5" />,
+  Megaphone: <Megaphone className="h-5 w-5" />,
+  Printer: <Printer className="h-5 w-5" />,
 }
 
 const categoryGradients = [
@@ -111,9 +110,11 @@ const cardVariants = {
   visible: { opacity: 1, scale: 1, transition: { duration: 0.3 } },
 }
 
+type ProductTab = 'digital' | 'physical' | 'gigs'
+
 export function CategoriesSection() {
   const { setCurrentView, setSearchCategory } = useMarketplaceStore()
-  const [activeTab, setActiveTab] = useState<'products' | 'gigs'>('products')
+  const [activeTab, setActiveTab] = useState<ProductTab>('physical')
 
   const handleCategoryClick = (slug: string, type: 'products' | 'gigs') => {
     setSearchCategory(slug)
@@ -148,13 +149,22 @@ export function CategoriesSection() {
         {/* Tab Switcher */}
         <div className="flex items-center justify-center gap-2 mb-10">
           <Button
-            variant={activeTab === 'products' ? 'default' : 'outline'}
+            variant={activeTab === 'physical' ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setActiveTab('products')}
+            onClick={() => setActiveTab('physical')}
             className="gap-1.5"
           >
             <Package className="h-4 w-4" />
-            Products
+            Physical Products
+          </Button>
+          <Button
+            variant={activeTab === 'digital' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setActiveTab('digital')}
+            className="gap-1.5"
+          >
+            <Download className="h-4 w-4" />
+            Digital Products
           </Button>
           <Button
             variant={activeTab === 'gigs' ? 'default' : 'outline'}
@@ -167,8 +177,8 @@ export function CategoriesSection() {
           </Button>
         </div>
 
-        {/* Product Categories */}
-        {activeTab === 'products' && (
+        {/* Physical Product Categories */}
+        {activeTab === 'physical' && (
           <motion.div
             variants={containerVariants}
             initial="hidden"
@@ -176,7 +186,7 @@ export function CategoriesSection() {
             viewport={{ once: true, margin: '-50px' }}
             className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"
           >
-            {DEFAULT_CATEGORIES.map((category, i) => (
+            {PHYSICAL_CATEGORIES.map((category, i) => (
               <motion.div key={category.slug} variants={cardVariants}>
                 <Card
                   className="group cursor-pointer border-border/50 hover:border-violet-200 dark:hover:border-violet-800 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 overflow-hidden"
@@ -187,6 +197,40 @@ export function CategoriesSection() {
                       {iconMap[category.icon] || <Package className="h-5 w-5" />}
                     </div>
                     <h3 className="text-sm font-semibold group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
+                      {category.name}
+                    </h3>
+                    {category.description && (
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                        {category.description}
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+
+        {/* Digital Product Categories */}
+        {activeTab === 'digital' && (
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-50px' }}
+            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"
+          >
+            {DIGITAL_CATEGORIES.map((category, i) => (
+              <motion.div key={category.slug} variants={cardVariants}>
+                <Card
+                  className="group cursor-pointer border-border/50 hover:border-cyan-200 dark:hover:border-cyan-800 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 overflow-hidden"
+                  onClick={() => handleCategoryClick(category.slug, 'products')}
+                >
+                  <CardContent className={`p-5 bg-gradient-to-br ${categoryGradients[i % categoryGradients.length]}`}>
+                    <div className={`mb-3 ${iconColors[i % iconColors.length]}`}>
+                      {iconMap[category.icon] || <Download className="h-5 w-5" />}
+                    </div>
+                    <h3 className="text-sm font-semibold group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
                       {category.name}
                     </h3>
                   </CardContent>

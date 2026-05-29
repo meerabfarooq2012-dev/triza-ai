@@ -143,7 +143,8 @@ export const useMarketplaceStore = create<MarketplaceState>()(
 
       // ----- Role Actions -----
       setActiveRole: (role: 'buyer' | 'seller') => {
-        set({ activeRole: role })
+        const newView = role === 'seller' ? 'seller-dashboard' : 'buyer-dashboard'
+        set({ activeRole: role, currentView: newView, viewParams: {} })
       },
 
       // ----- Cart Actions -----

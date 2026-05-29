@@ -318,9 +318,11 @@ export default function SearchPage() {
       }
       const res = await api.products.getProducts(searchFilters)
       if (res.data) {
-        setProducts(res.data.items ?? [])
-        setTotalProducts(res.data.total ?? 0)
-        setTotalPages(res.data.totalPages ?? 0)
+        const items = res.data.items ?? res.data.products ?? []
+        const pagination = res.data.pagination
+        setProducts(items)
+        setTotalProducts(pagination?.total ?? res.data.total ?? 0)
+        setTotalPages(pagination?.totalPages ?? res.data.totalPages ?? 0)
       }
     } catch {
       setProducts([])
@@ -344,9 +346,11 @@ export default function SearchPage() {
       }
       const res = await api.gigs.getGigs(gigParams)
       if (res.data) {
-        setGigs(res.data.items ?? [])
-        setTotalGigs(res.data.total ?? 0)
-        setTotalPages(res.data.totalPages ?? 0)
+        const items = res.data.items ?? res.data.gigs ?? []
+        const pagination = res.data.pagination
+        setGigs(items)
+        setTotalGigs(pagination?.total ?? res.data.total ?? 0)
+        setTotalPages(pagination?.totalPages ?? res.data.totalPages ?? 0)
       }
     } catch {
       setGigs([])

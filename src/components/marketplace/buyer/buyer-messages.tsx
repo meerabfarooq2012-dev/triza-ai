@@ -23,62 +23,6 @@ interface ConversationItem {
   unreadCount: number
 }
 
-// Mock conversations for when API returns empty
-const MOCK_CONVERSATIONS: ConversationItem[] = [
-  {
-    partner: {
-      id: 'mock-seller-1',
-      name: 'Creative Studio',
-      email: 'studio@example.com',
-      avatar: null,
-      bio: null,
-      role: 'seller',
-      phone: null,
-      location: null,
-      isVerified: true,
-      isAdmin: false,
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    lastMessage: {
-      id: 'mock-msg-1',
-      senderId: 'mock-seller-1',
-      receiverId: 'current',
-      content: 'Thanks for your interest! The template will be ready by Friday.',
-      isRead: false,
-      createdAt: new Date().toISOString(),
-    },
-    unreadCount: 1,
-  },
-  {
-    partner: {
-      id: 'mock-seller-2',
-      name: 'Design Hub',
-      email: 'design@example.com',
-      avatar: null,
-      bio: null,
-      role: 'seller',
-      phone: null,
-      location: null,
-      isVerified: true,
-      isAdmin: false,
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    lastMessage: {
-      id: 'mock-msg-2',
-      senderId: 'current',
-      receiverId: 'mock-seller-2',
-      content: 'Can I get a custom version of this?',
-      isRead: true,
-      createdAt: new Date(Date.now() - 86400000).toISOString(),
-    },
-    unreadCount: 0,
-  },
-]
-
 export function BuyerMessages() {
   const { currentUser } = useMarketplaceStore()
   const [conversations, setConversations] = useState<ConversationItem[]>([])
@@ -93,12 +37,13 @@ export function BuyerMessages() {
   const fetchConversations = useCallback(async () => {
     if (!currentUser) return
     try {
-      // Since there's no conversations endpoint, we'll use mock data
-      // In production this would be: const res = await fetch(`/api/messages/conversations?userId=${currentUser.id}`)
-      setConversations(MOCK_CONVERSATIONS)
+      const res = await fetch(`/api/messages/conversations?userId=${currentUser.id}`)
+      const data = await res.json()
+      if (data.success) {
+        setConversations(data.data || [])
+      }
     } catch (error) {
       console.error('Failed to fetch conversations:', error)
-      setConversations(MOCK_CONVERSATIONS)
     } finally {
       setLoading(false)
     }
@@ -114,26 +59,6 @@ export function BuyerMessages() {
         const data = await res.json()
         if (data.success) {
           setMessages(data.data || [])
-        } else {
-          // Mock messages if no real data
-          setMessages([
-            {
-              id: 'mock-1',
-              senderId: partnerId,
-              receiverId: currentUser.id,
-              content: 'Hello! How can I help you?',
-              isRead: true,
-              createdAt: new Date(Date.now() - 3600000).toISOString(),
-            },
-            {
-              id: 'mock-2',
-              senderId: currentUser.id,
-              receiverId: partnerId,
-              content: 'Hi! I have a question about your product.',
-              isRead: true,
-              createdAt: new Date(Date.now() - 1800000).toISOString(),
-            },
-          ])
         }
       } catch (error) {
         console.error('Failed to fetch messages:', error)

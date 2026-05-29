@@ -36,7 +36,28 @@ export async function GET(request: NextRequest) {
     }
 
     if (category) {
-      where.category = { slug: category };
+      // Check if this is a parent category - if so, include all child categories
+      const parentCat = await db.category.findUnique({
+        where: { slug: category },
+        include: { children: { select: { id: true } } },
+      });
+      if (parentCat && parentCat.children.length > 0) {
+        // Include gigs from parent category AND all child categories
+        const categoryIds = [parentCat.id, ...parentCat.children.map((child) => child.id)];
+        if (where.OR) {
+          // Combine with existing search OR - use AND
+          const searchOr = where.OR;
+          where.OR = undefined;
+          where.AND = [
+            { OR: searchOr },
+            { categoryId: { in: categoryIds } },
+          ];
+        } else {
+          where.OR = categoryIds.map((id) => ({ categoryId: id }));
+        }
+      } else {
+        where.category = { slug: category };
+      }
     }
 
     if (shopId) {
@@ -78,7 +99,7 @@ export async function GET(request: NextRequest) {
               user: { select: { id: true, isVerified: true } },
             },
           },
-          category: { select: { id: true, name: true, slug: true, icon: true } },
+          category: { select: { id: true, name: true, slug: true, icon: true, parentId: true } },
         },
         orderBy,
         skip,

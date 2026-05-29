@@ -10,14 +10,13 @@ import {
   Package,
   MessageSquare,
   Store,
-  TrendingUp,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/lib/constants'
-import type { Order, Product, BuyerDashboardStats } from '@/types'
+import type { Order, BuyerDashboardStats } from '@/types'
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -35,7 +34,6 @@ const itemVariants = {
 export function BuyerOverview() {
   const { currentUser, setCurrentView } = useMarketplaceStore()
   const [stats, setStats] = useState<BuyerDashboardStats | null>(null)
-  const [recommendedProducts, setRecommendedProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -53,10 +51,6 @@ export function BuyerOverview() {
           `/api/favorites?userId=${currentUser.id}`
         )
         const favData = await favRes.json()
-
-        // Fetch recommended products
-        const productsRes = await fetch('/api/products?limit=4&sortBy=popular')
-        const productsData = await productsRes.json()
 
         if (ordersData.success) {
           const orders: Order[] = ordersData.data.orders || []
@@ -76,9 +70,6 @@ export function BuyerOverview() {
           })
         }
 
-        if (productsData.success) {
-          setRecommendedProducts(productsData.data?.items || productsData.data?.products || [])
-        }
       } catch (error) {
         console.error('Failed to fetch buyer dashboard data:', error)
       } finally {
@@ -282,80 +273,6 @@ export function BuyerOverview() {
         </motion.div>
       </div>
 
-      {/* Recommended Products */}
-      {recommendedProducts.length > 0 && (
-        <motion.div variants={itemVariants}>
-          <Card className="border-0 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-4">
-              <CardTitle className="text-lg font-semibold">
-                <span className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-emerald-600" />
-                  Recommended for You
-                </span>
-              </CardTitle>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setCurrentView('search')}
-                className="text-emerald-600 hover:text-emerald-700"
-              >
-                See More
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {recommendedProducts.map((product) => {
-                  let images: string[] = []
-                  try {
-                    const raw = (product as Record<string, unknown>).images
-                    images = JSON.parse(typeof raw === 'string' && raw ? raw : '[]')
-                  } catch {
-                    images = []
-                  }
-                  return (
-                    <div
-                      key={product.id}
-                      className="group cursor-pointer overflow-hidden rounded-xl border border-gray-100 transition-all hover:border-emerald-200 hover:shadow-md"
-                      onClick={() =>
-                        setCurrentView('product-detail', { id: product.id })
-                      }
-                    >
-                      <div className="aspect-square overflow-hidden bg-gray-100">
-                        {images[0] ? (
-                          <img
-                            src={images[0]}
-                            alt={product.name}
-                            className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                          />
-                        ) : (
-                          <div className="flex h-full items-center justify-center">
-                            <Package className="h-10 w-10 text-gray-300" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="p-3">
-                        <p className="truncate text-sm font-medium text-gray-900">
-                          {product.name}
-                        </p>
-                        <div className="mt-1 flex items-center justify-between">
-                          <span className="text-sm font-bold text-emerald-600">
-                            ${product.price.toFixed(2)}
-                          </span>
-                          {product.averageRating > 0 && (
-                            <span className="text-xs text-gray-500">
-                              ★ {product.averageRating.toFixed(1)}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
     </motion.div>
   )
 }

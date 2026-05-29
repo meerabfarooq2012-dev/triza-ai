@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   Store,
   Tag,
+  Globe,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -34,6 +35,7 @@ import {
   PRODUCT_TYPE_LABELS,
   PLATFORM_NAME,
 } from '@/lib/constants'
+import { countryCodeData } from '@/lib/country-codes'
 import type { Product, Review, CartItem } from '@/types'
 
 function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
@@ -243,6 +245,7 @@ export default function ProductDetail() {
 
   const images = safeJsonParse<string[]>(product.images, [])
   const tags = safeJsonParse<string[]>(product.tags, [])
+  const deliveryCountries = safeJsonParse<string[]>(product.deliveryCountries, [])
   const discount = product.comparePrice
     ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
     : 0
@@ -445,6 +448,32 @@ export default function ProductDetail() {
                   <span>Delivery: {product.deliveryInfo}</span>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Delivery Countries */}
+          {deliveryCountries.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <Globe size={16} className="text-muted-foreground" />
+                <span>Delivers to:</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {deliveryCountries.slice(0, 8).map((code) => {
+                  const country = countryCodeData.find((c) => c.code === code)
+                  return (
+                    <Badge key={code} variant="outline" className="text-xs gap-1">
+                      <span>{country?.flag}</span>
+                      <span>{country?.name || code}</span>
+                    </Badge>
+                  )
+                })}
+                {deliveryCountries.length > 8 && (
+                  <Badge variant="outline" className="text-xs">
+                    +{deliveryCountries.length - 8} more
+                  </Badge>
+                )}
+              </div>
             </div>
           )}
 

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
 import {
   Users,
   Store,
@@ -11,6 +12,9 @@ import {
   TrendingUp,
   ArrowUpRight,
   ArrowDownRight,
+  Shield,
+  Clock,
+  Banknote,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -21,6 +25,8 @@ import {
   Line,
   AreaChart,
   Area,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -61,17 +67,32 @@ const mockUserGrowthData = [
   { date: 'Dec', users: 1420 },
 ]
 
+interface PaymentStats {
+  totalEscrowHeld: number
+  totalCommissionEarned: number
+  activeWithdrawals: number
+  activeWithdrawalsAmount: number
+}
+
+interface PaymentActivity {
+  month: string
+  payments: number
+  commission: number
+  count: number
+}
+
 interface StatCardProps {
   title: string
   value: string | number
   icon: React.ReactNode
   change?: number
   subtitle?: string
+  accentColor?: string
 }
 
-function StatCard({ title, value, icon, change, subtitle }: StatCardProps) {
+function StatCard({ title, value, icon, change, subtitle, accentColor = 'bg-primary/10 text-primary' }: StatCardProps) {
   return (
-    <Card className="border-0 shadow-sm">
+    <Card className="border-0 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div>
@@ -98,7 +119,7 @@ function StatCard({ title, value, icon, change, subtitle }: StatCardProps) {
               <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
             )}
           </div>
-          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${accentColor}`}>
             {icon}
           </div>
         </div>
@@ -107,11 +128,30 @@ function StatCard({ title, value, icon, change, subtitle }: StatCardProps) {
   )
 }
 
+// Custom tooltip for payment activity chart
+function PaymentActivityTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: string }) {
+  if (active && payload && payload.length) {
+    return (
+      <div className="rounded-lg border bg-background p-3 shadow-md text-xs">
+        <p className="font-medium mb-1">{label}</p>
+        {payload.map((entry, idx) => (
+          <p key={idx} style={{ color: entry.color }}>
+            {entry.name}: ${entry.value.toFixed(2)}
+          </p>
+        ))}
+      </div>
+    )
+  }
+  return null
+}
+
 export default function AdminDashboard() {
   const [stats, setStats] = useState<AdminStats | null>(null)
   const [recentUsers, setRecentUsers] = useState<User[]>([])
   const [recentOrders, setRecentOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
+  const [paymentStats, setPaymentStats] = useState<PaymentStats | null>(null)
+  const [paymentActivity, setPaymentActivity] = useState<PaymentActivity[]>([])
 
   useEffect(() => {
     let cancelled = false
@@ -135,6 +175,29 @@ export default function AdminDashboard() {
       .finally(() => {
         if (!cancelled) setLoading(false)
       })
+
+    // Fetch payment stats from admin/stats endpoint
+    const fetchPaymentStats = async () => {
+      try {
+        const currentUser = JSON.parse(localStorage.getItem('marketplace-user') || '{}')
+        if (currentUser?.id) {
+          const res = await fetch(`/api/admin/stats?userId=${currentUser.id}`)
+          const json = await res.json()
+          if (json.success && json.data) {
+            if (json.data.paymentStats) {
+              setPaymentStats(json.data.paymentStats)
+            }
+            if (json.data.paymentActivity) {
+              setPaymentActivity(json.data.paymentActivity)
+            }
+          }
+        }
+      } catch {
+        // Silently fail - payment stats are supplementary
+      }
+    }
+    fetchPaymentStats()
+
     return () => { cancelled = true }
   }, [])
 
@@ -163,202 +226,366 @@ export default function AdminDashboard() {
     <div className="space-y-6">
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <StatCard
-          title="Total Users"
-          value={platformStats?.totalUsers?.toLocaleString() ?? '1,420'}
-          icon={<Users size={24} />}
-          change={12}
-          subtitle={`${stats?.recentSignups ?? 28} new this week`}
-        />
-        <StatCard
-          title="Total Sellers"
-          value={platformStats?.totalSellers?.toLocaleString() ?? '320'}
-          icon={<Store size={24} />}
-          change={8}
-        />
-        <StatCard
-          title="Total Products"
-          value={platformStats?.totalProducts?.toLocaleString() ?? '2,850'}
-          icon={<Package size={24} />}
-          change={15}
-        />
-        <StatCard
-          title="Total Orders"
-          value={platformStats?.totalOrders?.toLocaleString() ?? '4,620'}
-          icon={<ShoppingCart size={24} />}
-          change={22}
-        />
-        <StatCard
-          title="Revenue"
-          value={`$${(platformStats?.totalRevenue ?? 52800).toLocaleString()}`}
-          icon={<DollarSign size={24} />}
-          change={18}
-        />
-        <StatCard
-          title="Open Disputes"
-          value={stats?.openDisputes ?? 7}
-          icon={<AlertTriangle size={24} />}
-          change={-5}
-          subtitle={`${stats?.pendingShops ?? 3} pending approvals`}
-        />
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0 }}
+        >
+          <StatCard
+            title="Total Users"
+            value={platformStats?.totalUsers?.toLocaleString() ?? '1,420'}
+            icon={<Users size={24} />}
+            change={12}
+            subtitle={`${stats?.recentSignups ?? 28} new this week`}
+          />
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+        >
+          <StatCard
+            title="Total Sellers"
+            value={platformStats?.totalSellers?.toLocaleString() ?? '320'}
+            icon={<Store size={24} />}
+            change={8}
+          />
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <StatCard
+            title="Total Products"
+            value={platformStats?.totalProducts?.toLocaleString() ?? '2,850'}
+            icon={<Package size={24} />}
+            change={15}
+          />
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+        >
+          <StatCard
+            title="Total Orders"
+            value={platformStats?.totalOrders?.toLocaleString() ?? '4,620'}
+            icon={<ShoppingCart size={24} />}
+            change={22}
+          />
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <StatCard
+            title="Revenue"
+            value={`$${(platformStats?.totalRevenue ?? 52800).toLocaleString()}`}
+            icon={<DollarSign size={24} />}
+            change={18}
+          />
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+        >
+          <StatCard
+            title="Open Disputes"
+            value={stats?.openDisputes ?? 7}
+            icon={<AlertTriangle size={24} />}
+            change={-5}
+            subtitle={`${stats?.pendingShops ?? 3} pending approvals`}
+          />
+        </motion.div>
+      </div>
+
+      {/* Payment Stats Section */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold flex items-center gap-2">
+          <DollarSign size={20} className="text-emerald-600" />
+          Payment Overview
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <StatCard
+              title="Total Escrow Held"
+              value={`$${(paymentStats?.totalEscrowHeld ?? 0).toFixed(2)}`}
+              icon={<Shield size={22} />}
+              subtitle="Funds in escrow"
+              accentColor="bg-amber-50 text-amber-600"
+            />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+          >
+            <StatCard
+              title="Commission Earned"
+              value={`$${(paymentStats?.totalCommissionEarned ?? 0).toFixed(2)}`}
+              icon={<DollarSign size={22} />}
+              subtitle="10% platform fee"
+              accentColor="bg-emerald-50 text-emerald-600"
+            />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <StatCard
+              title="Active Withdrawals"
+              value={paymentStats?.activeWithdrawals ?? 0}
+              icon={<Banknote size={22} />}
+              subtitle={`$${(paymentStats?.activeWithdrawalsAmount ?? 0).toFixed(2)} total`}
+              accentColor="bg-violet-50 text-violet-600"
+            />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.45 }}
+          >
+            <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs text-muted-foreground">Payment Activity</p>
+                  <TrendingUp size={16} className="text-emerald-500" />
+                </div>
+                {paymentActivity.length > 0 ? (
+                  <div className="h-16">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={paymentActivity} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="miniPaymentGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                            <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <Area
+                          type="monotone"
+                          dataKey="payments"
+                          stroke="#10b981"
+                          strokeWidth={1.5}
+                          fill="url(#miniPaymentGradient)"
+                          dot={false}
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="h-16 flex items-center justify-center">
+                    <p className="text-xs text-muted-foreground">No data</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
       </div>
 
       {/* Charts */}
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Revenue Chart */}
-        <Card className="border-0 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <TrendingUp size={18} className="text-primary" />
-              Revenue Overview
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={revenueData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="date" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis fontSize={12} tickLine={false} axisLine={false} />
-                  <Tooltip
-                    contentStyle={{
-                      borderRadius: '8px',
-                      border: 'none',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                    }}
-                    formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="revenue"
-                    stroke="#6366f1"
-                    strokeWidth={2}
-                    dot={{ fill: '#6366f1', r: 3 }}
-                    activeDot={{ r: 5 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <TrendingUp size={18} className="text-emerald-600" />
+                Revenue Overview
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={revenueData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="date" fontSize={12} tickLine={false} axisLine={false} />
+                    <YAxis fontSize={12} tickLine={false} axisLine={false} />
+                    <Tooltip
+                      contentStyle={{
+                        borderRadius: '8px',
+                        border: 'none',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                      }}
+                      formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="revenue"
+                      stroke="#10b981"
+                      strokeWidth={2}
+                      dot={{ fill: '#10b981', r: 3 }}
+                      activeDot={{ r: 5 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-        {/* User Growth Chart */}
-        <Card className="border-0 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Users size={18} className="text-primary" />
-              User Growth
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={mockUserGrowthData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="date" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis fontSize={12} tickLine={false} axisLine={false} />
-                  <Tooltip
-                    contentStyle={{
-                      borderRadius: '8px',
-                      border: 'none',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                    }}
-                    formatter={(value: number) => [value.toLocaleString(), 'Users']}
-                  />
-                  <defs>
-                    <linearGradient id="userGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <Area
-                    type="monotone"
-                    dataKey="users"
-                    stroke="#6366f1"
-                    strokeWidth={2}
-                    fill="url(#userGradient)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Payment Activity Chart */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.55 }}
+        >
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <DollarSign size={18} className="text-emerald-600" />
+                Payment Activity (6 months)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {paymentActivity.length > 0 ? (
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={paymentActivity}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="month" fontSize={12} tickLine={false} axisLine={false} />
+                      <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v: number) => `$${v}`} />
+                      <Tooltip content={<PaymentActivityTooltip />} />
+                      <Bar dataKey="payments" fill="#10b981" radius={[4, 4, 0, 0]} name="Payments" />
+                      <Bar dataKey="commission" fill="#f59e0b" radius={[4, 4, 0, 0]} name="Commission" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={mockUserGrowthData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="date" fontSize={12} tickLine={false} axisLine={false} />
+                      <YAxis fontSize={12} tickLine={false} axisLine={false} />
+                      <Tooltip
+                        contentStyle={{
+                          borderRadius: '8px',
+                          border: 'none',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                        }}
+                        formatter={(value: number) => [value.toLocaleString(), 'Users']}
+                      />
+                      <defs>
+                        <linearGradient id="userGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <Area
+                        type="monotone"
+                        dataKey="users"
+                        stroke="#10b981"
+                        strokeWidth={2}
+                        fill="url(#userGradient)"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
 
       {/* Recent activity */}
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Recent Signups */}
-        <Card className="border-0 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Recent Signups</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {recentUsers.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">
-                No recent signups
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {recentUsers.map((user) => (
-                  <div key={user.id} className="flex items-center gap-3">
-                    <Avatar className="w-8 h-8">
-                      <AvatarFallback className="text-xs">
-                        {user.name[0]}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{user.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {user.email}
-                      </p>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+        >
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Recent Signups</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {recentUsers.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  No recent signups
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {recentUsers.map((user) => (
+                    <div key={user.id} className="flex items-center gap-3">
+                      <Avatar className="w-8 h-8">
+                        <AvatarFallback className="text-xs">
+                          {user.name[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{user.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {user.email}
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="text-xs">
+                        {user.role}
+                      </Badge>
                     </div>
-                    <Badge variant="outline" className="text-xs">
-                      {user.role}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
 
         {/* Recent Orders */}
-        <Card className="border-0 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Recent Orders</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {recentOrders.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">
-                No recent orders
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {recentOrders.map((order) => (
-                  <div key={order.id} className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                      <ShoppingCart size={14} className="text-muted-foreground" />
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.65 }}
+        >
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Recent Orders</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {recentOrders.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  No recent orders
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {recentOrders.map((order) => (
+                    <div key={order.id} className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                        <ShoppingCart size={14} className="text-muted-foreground" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">
+                          #{order.id.slice(0, 8)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(order.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <span className="text-sm font-semibold">
+                        ${order.totalAmount.toFixed(2)}
+                      </span>
+                      <Badge variant="outline" className="text-xs">
+                        {order.status}
+                      </Badge>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">
-                        #{order.id.slice(0, 8)}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(order.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <span className="text-sm font-semibold">
-                      ${order.totalAmount.toFixed(2)}
-                    </span>
-                    <Badge variant="outline" className="text-xs">
-                      {order.status}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
     </div>
   )

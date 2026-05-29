@@ -18,6 +18,8 @@ import {
   MapPin,
   Store,
   Check,
+  ImagePlus,
+  X,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -49,6 +51,7 @@ import type {
   SocialLink,
 } from '@/types'
 import { toast } from 'sonner'
+import { countryCodeData } from '@/lib/country-codes'
 
 export function SellerShopSettings() {
   const { currentUser } = useMarketplaceStore()
@@ -61,6 +64,9 @@ export function SellerShopSettings() {
   const [about, setAbout] = useState('')
   const [contactEmail, setContactEmail] = useState('')
   const [contactPhone, setContactPhone] = useState('')
+  const [phoneCountryCode, setPhoneCountryCode] = useState('+1')
+  const [countrySearch, setCountrySearch] = useState('')
+  const [countryDropdownOpen, setCountryDropdownOpen] = useState(false)
   const [address, setAddress] = useState('')
   const [primaryColor, setPrimaryColor] = useState('#6366f1')
   const [secondaryColor, setSecondaryColor] = useState('#8b5cf6')
@@ -69,6 +75,8 @@ export function SellerShopSettings() {
   const [displayStyle, setDisplayStyle] = useState<DisplayStyle>('modern')
   const [customSections, setCustomSections] = useState<CustomSection[]>([])
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([])
+  const [logo, setLogo] = useState<string | null>(null)
+  const [banner, setBanner] = useState<string | null>(null)
 
   // Temp state for adding
   const [newSectionTitle, setNewSectionTitle] = useState('')
@@ -102,6 +110,19 @@ export function SellerShopSettings() {
       }
 
       setSocialLinks(s.socialLinks || [])
+      setLogo(s.logo || null)
+      setBanner(s.banner || null)
+
+      // Parse country code from phone number
+      if (s.contactPhone) {
+        const match = s.contactPhone.match(/^\+(\d{1,4})\s*(.*)/)
+        if (match) {
+          setPhoneCountryCode('+' + match[1])
+          setContactPhone(match[2] || '')
+        } else {
+          setContactPhone(s.contactPhone)
+        }
+      }
     }
   }, [currentUser])
 
@@ -161,6 +182,37 @@ export function SellerShopSettings() {
     setSocialLinks(socialLinks.filter((l) => l.id !== id))
   }
 
+  const handleImageUpload = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    type: 'logo' | 'banner'
+  ) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Image must be less than 2MB')
+      return
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      const result = reader.result as string
+      if (type === 'logo') {
+        setLogo(result)
+      } else {
+        setBanner(result)
+      }
+    }
+    reader.readAsDataURL(file)
+  }
+
   const handleSave = async () => {
     if (!shop) return
     setSaving(true)
@@ -173,8 +225,10 @@ export function SellerShopSettings() {
           name,
           description,
           about,
+          logo,
+          banner,
           contactEmail,
-          contactPhone,
+          contactPhone: contactPhone ? `${phoneCountryCode} ${contactPhone}`.trim() : '',
           address,
           primaryColor,
           secondaryColor,
@@ -200,6 +254,127 @@ export function SellerShopSettings() {
 
   return (
     <div className="space-y-6">
+      {/* Shop Branding */}
+      <Card className="border-0 shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ImagePlus className="h-5 w-5 text-emerald-600" />
+            Shop Branding
+          </CardTitle>
+          <CardDescription>
+            Upload your shop logo and banner image
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Logo Upload */}
+          <div className="space-y-3">
+            <Label>Shop Logo</Label>
+            <div className="flex items-start gap-4">
+              <div className="relative">
+                {logo ? (
+                  <div className="group relative h-24 w-24 overflow-hidden rounded-xl border-2 border-gray-100 shadow-sm">
+                    <img
+                      src={logo}
+                      alt="Shop logo"
+                      className="h-full w-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setLogo(null)}
+                      className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100"
+                    >
+                      <X className="h-5 w-5 text-white" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex h-24 w-24 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 transition-colors hover:border-emerald-300 hover:bg-emerald-50/50">
+                    <div className="flex flex-col items-center gap-1">
+                      <ImagePlus className="h-6 w-6 text-gray-400" />
+                      <span className="text-[10px] text-gray-400">Upload</span>
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleImageUpload(e, 'logo')}
+                    />
+                  </label>
+                )}
+              </div>
+              <div className="flex-1">
+                <p className="text-sm text-gray-600">
+                  Upload your shop logo. This appears in your shop header and search results.
+                </p>
+                <p className="mt-1 text-xs text-gray-400">
+                  Recommended: 200×200px, max 2MB, PNG or JPG
+                </p>
+                {logo && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mt-2 h-7 text-xs text-red-500 hover:text-red-600 hover:bg-red-50"
+                    onClick={() => setLogo(null)}
+                  >
+                    <Trash2 className="h-3 w-3 mr-1" />
+                    Remove Logo
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Banner Upload */}
+          <div className="space-y-3">
+            <Label>Shop Banner</Label>
+            <div className="space-y-2">
+              {banner ? (
+                <div className="group relative overflow-hidden rounded-xl border-2 border-gray-100 shadow-sm">
+                  <img
+                    src={banner}
+                    alt="Shop banner"
+                    className="h-40 w-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setBanner(null)}
+                    className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100"
+                  >
+                    <X className="h-6 w-6 text-white" />
+                  </button>
+                </div>
+              ) : (
+                <label className="flex h-32 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 transition-colors hover:border-emerald-300 hover:bg-emerald-50/50">
+                  <div className="flex flex-col items-center gap-2">
+                    <ImagePlus className="h-8 w-8 text-gray-400" />
+                    <div className="text-center">
+                      <p className="text-sm font-medium text-gray-500">Click to upload banner</p>
+                      <p className="text-xs text-gray-400">Recommended: 1200×300px, max 2MB</p>
+                    </div>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handleImageUpload(e, 'banner')}
+                  />
+                </label>
+              )}
+              {banner && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs text-red-500 hover:text-red-600 hover:bg-red-50"
+                  onClick={() => setBanner(null)}
+                >
+                  <Trash2 className="h-3 w-3 mr-1" />
+                  Remove Banner
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Basic Info */}
       <Card className="border-0 shadow-sm">
         <CardHeader>
@@ -271,12 +446,81 @@ export function SellerShopSettings() {
               <Phone className="h-3.5 w-3.5" />
               Contact Phone
             </Label>
-            <Input
-              id="contact-phone"
-              value={contactPhone}
-              onChange={(e) => setContactPhone(e.target.value)}
-              placeholder="+1 (555) 000-0000"
-            />
+            <div className="flex gap-2">
+              {/* Country Code Selector */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => { setCountryDropdownOpen(!countryDropdownOpen); setCountrySearch('') }}
+                  className="flex h-9 w-[100px] items-center justify-between rounded-md border border-input bg-background px-2 text-sm ring-offset-background hover:bg-accent hover:text-accent-foreground"
+                >
+                  <span className="truncate">{phoneCountryCode}</span>
+                  <ChevronDown className="h-3 w-3 opacity-50 shrink-0" />
+                </button>
+                {countryDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setCountryDropdownOpen(false)} />
+                    <div className="absolute left-0 top-full z-50 mt-1 w-[280px] overflow-hidden rounded-lg border bg-background shadow-lg">
+                      <div className="p-2 border-b">
+                        <Input
+                          placeholder="Search country..."
+                          value={countrySearch}
+                          onChange={(e) => setCountrySearch(e.target.value)}
+                          className="h-8 text-sm"
+                          autoFocus
+                        />
+                      </div>
+                      <div className="max-h-[240px] overflow-y-auto">
+                        {countryCodeData
+                          .filter((c) =>
+                            c.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
+                            c.code.includes(countrySearch) ||
+                            c.dial_code.includes(countrySearch)
+                          )
+                          .map((c) => (
+                            <button
+                              key={c.code}
+                              type="button"
+                              className={`flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent transition-colors ${
+                                phoneCountryCode === c.dial_code ? 'bg-emerald-50 text-emerald-700' : ''
+                              }`}
+                              onClick={() => {
+                                setPhoneCountryCode(c.dial_code)
+                                setCountryDropdownOpen(false)
+                                setCountrySearch('')
+                              }}
+                            >
+                              <span className="text-base leading-none">{c.flag}</span>
+                              <span className="flex-1 text-left truncate">{c.name}</span>
+                              <span className="text-xs text-muted-foreground shrink-0">{c.dial_code}</span>
+                            </button>
+                          ))}
+                        {countryCodeData.filter((c) =>
+                          c.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
+                          c.code.includes(countrySearch) ||
+                          c.dial_code.includes(countrySearch)
+                        ).length === 0 && (
+                          <div className="px-3 py-4 text-center text-sm text-muted-foreground">
+                            No country found
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+              {/* Phone Number Input */}
+              <Input
+                id="contact-phone"
+                value={contactPhone}
+                onChange={(e) => setContactPhone(e.target.value)}
+                placeholder="(555) 000-0000"
+                className="flex-1"
+              />
+            </div>
+            <p className="text-xs text-gray-400">
+              Full number: {phoneCountryCode} {contactPhone}
+            </p>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="address" className="flex items-center gap-1.5">
@@ -338,13 +582,22 @@ export function SellerShopSettings() {
           {/* Preview */}
           <div className="overflow-hidden rounded-xl border">
             <div
-              className="p-4"
+              className="p-4 flex items-center gap-3"
               style={{ background: primaryColor }}
             >
-              <h3 className="text-lg font-bold text-white">{name || 'Shop Name'}</h3>
-              <p className="text-sm text-white/80">
-                {description || 'Shop description preview'}
-              </p>
+              {logo ? (
+                <img src={logo} alt="Logo" className="h-10 w-10 rounded-lg object-cover border border-white/20" />
+              ) : (
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20">
+                  <Store className="h-5 w-5 text-white" />
+                </div>
+              )}
+              <div>
+                <h3 className="text-lg font-bold text-white">{name || 'Shop Name'}</h3>
+                <p className="text-sm text-white/80">
+                  {description || 'Shop description preview'}
+                </p>
+              </div>
             </div>
             <div className="flex gap-2 p-4 bg-white">
               <div
@@ -725,13 +978,27 @@ export function SellerShopSettings() {
               setDescription(s.description || '')
               setAbout(s.about || '')
               setContactEmail(s.contactEmail || '')
-              setContactPhone(s.contactPhone || '')
+              if (s.contactPhone) {
+                const match = s.contactPhone.match(/^\+(\d{1,4})\s*(.*)/)
+                if (match) {
+                  setPhoneCountryCode('+' + match[1])
+                  setContactPhone(match[2] || '')
+                } else {
+                  setPhoneCountryCode('+1')
+                  setContactPhone(s.contactPhone)
+                }
+              } else {
+                setPhoneCountryCode('+1')
+                setContactPhone('')
+              }
               setAddress(s.address || '')
               setPrimaryColor(s.primaryColor)
               setSecondaryColor(s.secondaryColor)
               setAccentColor(s.accentColor)
               setLayoutStyle(s.layoutStyle)
               setDisplayStyle(s.displayStyle)
+              setLogo(s.logo || null)
+              setBanner(s.banner || null)
             }
           }}
         >

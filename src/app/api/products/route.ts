@@ -98,6 +98,7 @@ export async function GET(request: NextRequest) {
       ...p,
       images: JSON.parse(p.images || '[]'),
       tags: JSON.parse(p.tags || '[]'),
+      deliveryCountries: JSON.parse(p.deliveryCountries || '[]'),
     }));
 
     return NextResponse.json({
@@ -141,6 +142,7 @@ export async function POST(request: NextRequest) {
       tags,
       isFeatured,
       deliveryInfo,
+      deliveryCountries,
       requirements,
     } = body;
 
@@ -187,6 +189,7 @@ export async function POST(request: NextRequest) {
         tags: typeof tags === 'string' ? tags : JSON.stringify(tags || []),
         isFeatured: isFeatured || false,
         deliveryInfo,
+        deliveryCountries: typeof deliveryCountries === 'string' ? deliveryCountries : JSON.stringify(deliveryCountries || []),
         requirements,
       },
       include: {
@@ -202,6 +205,7 @@ export async function POST(request: NextRequest) {
           ...product,
           images: JSON.parse(product.images || '[]'),
           tags: JSON.parse(product.tags || '[]'),
+          deliveryCountries: JSON.parse(product.deliveryCountries || '[]'),
         },
       },
       { status: 201 }

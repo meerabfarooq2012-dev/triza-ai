@@ -28,6 +28,20 @@ export async function GET(
         buyer: { select: { id: true, name: true, avatar: true, email: true } },
         seller: { select: { id: true, name: true, avatar: true, email: true } },
         disputes: true,
+        payment: {
+          select: {
+            id: true,
+            amount: true,
+            platformFee: true,
+            sellerPayout: true,
+            paymentMethod: true,
+            status: true,
+            escrowStatus: true,
+            paidAt: true,
+            releasedAt: true,
+            createdAt: true,
+          },
+        },
       },
     });
 

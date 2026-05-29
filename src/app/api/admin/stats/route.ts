@@ -31,6 +31,11 @@ export async function GET(request: NextRequest) {
       openDisputes,
       recentOrders,
       recentUsers,
+      // Payment stats
+      totalEscrowHeld,
+      totalCommissionEarned,
+      activeWithdrawalsCount,
+      activeWithdrawalsAmount,
     ] = await Promise.all([
       db.user.count({ where: { isActive: true } }),
       db.user.count({ where: { role: { in: ['seller', 'both'] }, isActive: true } }),
@@ -66,7 +71,59 @@ export async function GET(request: NextRequest) {
           createdAt: true,
         },
       }),
+      // Payment stats
+      db.wallet.aggregate({
+        _sum: { pendingBalance: true },
+      }),
+      db.transaction.aggregate({
+        where: { type: 'commission', status: 'completed' },
+        _sum: { amount: true },
+      }),
+      db.withdrawal.count({
+        where: { status: { in: ['pending', 'processing', 'approved'] } },
+      }),
+      db.withdrawal.aggregate({
+        where: { status: { in: ['pending', 'processing', 'approved'] } },
+        _sum: { amount: true },
+      }),
     ]);
+
+    // Build payment activity chart data for last 6 months
+    const now = new Date();
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const paymentActivity = [];
+
+    for (let i = 5; i >= 0; i--) {
+      const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+      const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0, 23, 59, 59, 999);
+
+      const [monthPayments, monthCommission] = await Promise.all([
+        db.payment.aggregate({
+          where: {
+            status: 'completed',
+            createdAt: { gte: monthStart, lte: monthEnd },
+          },
+          _sum: { amount: true },
+          _count: true,
+        }),
+        db.transaction.aggregate({
+          where: {
+            type: 'commission',
+            status: 'completed',
+            createdAt: { gte: monthStart, lte: monthEnd },
+          },
+          _sum: { amount: true },
+        }),
+      ]);
+
+      paymentActivity.push({
+        month: monthNames[monthDate.getMonth()],
+        payments: Math.round((monthPayments._sum.amount || 0) * 100) / 100,
+        commission: Math.round((monthCommission._sum.amount || 0) * 100) / 100,
+        count: monthPayments._count,
+      });
+    }
 
     // Update platform stats
     await db.platformStats.upsert({
@@ -103,6 +160,14 @@ export async function GET(request: NextRequest) {
         },
         recentOrders,
         recentUsers,
+        // Payment stats
+        paymentStats: {
+          totalEscrowHeld: Math.round((totalEscrowHeld._sum.pendingBalance || 0) * 100) / 100,
+          totalCommissionEarned: Math.round((totalCommissionEarned._sum.amount || 0) * 100) / 100,
+          activeWithdrawals: activeWithdrawalsCount,
+          activeWithdrawalsAmount: Math.round((activeWithdrawalsAmount._sum.amount || 0) * 100) / 100,
+        },
+        paymentActivity,
       },
     });
   } catch (error) {

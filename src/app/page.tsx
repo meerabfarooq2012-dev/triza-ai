@@ -20,7 +20,7 @@ import { PrivacyPolicy } from '@/components/marketplace/landing/privacy-policy'
 import { TermsOfService } from '@/components/marketplace/landing/terms-of-service'
 
 export default function Home() {
-  const { currentView, isAuthenticated, currentUser, setActiveRole } = useMarketplaceStore()
+  const { currentView, isAuthenticated, currentUser } = useMarketplaceStore()
 
   // Auto-restore session on mount
   useEffect(() => {
@@ -62,8 +62,7 @@ export default function Home() {
       case 'seller-dashboard':
         if (!isAuthenticated) return <AuthModal />
         if (currentUser?.role === 'buyer') {
-          // Buyer can't access seller dashboard, switch to buyer
-          setActiveRole('buyer')
+          // Pure buyer can't access seller dashboard, redirect to buyer dashboard
           return <BuyerDashboard />
         }
         return <SellerDashboard />

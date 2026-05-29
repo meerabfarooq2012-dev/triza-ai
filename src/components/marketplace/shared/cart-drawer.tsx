@@ -6,6 +6,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { EmptyState } from '@/components/marketplace/shared/empty-state'
+import { CheckoutModal } from '@/components/marketplace/payment/checkout-modal'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import type { CartItem } from '@/types'
 
@@ -18,6 +19,7 @@ export function openCartDrawer() {
 
 export function CartDrawer() {
   const [open, setOpen] = useState(false)
+  const [checkoutOpen, setCheckoutOpen] = useState(false)
   const { cart, cartTotal, removeFromCart, updateCartQuantity, clearCart } = useMarketplaceStore()
 
   // Register listener
@@ -75,7 +77,7 @@ export function CartDrawer() {
               <p className="text-xs text-muted-foreground">
                 Shipping and taxes calculated at checkout
               </p>
-              <Button className="w-full" size="lg">
+              <Button className="w-full" size="lg" onClick={() => setCheckoutOpen(true)}>
                 Checkout — ${cartTotal.toFixed(2)}
               </Button>
               <Button
@@ -90,6 +92,9 @@ export function CartDrawer() {
           </>
         )}
       </SheetContent>
+
+      {/* Checkout Modal */}
+      <CheckoutModal open={checkoutOpen} onOpenChange={setCheckoutOpen} />
     </Sheet>
   )
 }

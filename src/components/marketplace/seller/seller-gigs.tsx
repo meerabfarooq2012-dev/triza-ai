@@ -19,6 +19,8 @@ import {
   Package as PackageIcon,
   Minus,
   Crown,
+  Check,
+  ChevronsUpDown,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -34,6 +36,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command'
 import {
   Dialog,
   DialogContent,
@@ -60,7 +75,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
-import { DEFAULT_CATEGORIES, GIG_CATEGORIES } from '@/lib/constants'
+import { GIG_CATEGORIES } from '@/lib/constants'
 import type { Gig, GigPackage, GigFAQ, Category } from '@/types'
 
 // ---------------------------------------------------------------------------
@@ -88,6 +103,7 @@ interface GigFormData {
   title: string
   description: string
   categoryId: string
+  subcategoryId: string
   requirements: string
   tags: string
   isFeatured: boolean
@@ -129,6 +145,7 @@ const emptyForm: GigFormData = {
   title: '',
   description: '',
   categoryId: '',
+  subcategoryId: '',
   requirements: '',
   tags: '',
   isFeatured: false,
@@ -160,6 +177,9 @@ export function SellerGigs() {
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = useState<Gig | null>(null)
 
+  // Subcategory popover
+  const [subPopoverOpen, setSubPopoverOpen] = useState(false)
+
   // ----- Data fetching -----
 
   const fetchGigs = useCallback(async () => {
@@ -189,7 +209,7 @@ export function SellerGigs() {
 
   const fetchCategories = useCallback(async () => {
     try {
-      const res = await fetch('/api/categories')
+      const res = await fetch('/api/categories?type=gigs')
       const data = await res.json()
       if (data.success) {
         setCategories(data.data || [])
@@ -225,6 +245,7 @@ export function SellerGigs() {
       ...emptyForm,
       packages: defaultPackages.map((p) => ({ ...p, id: generateId() })),
       faqs: [],
+      subcategoryId: '',
     })
     setDialogOpen(true)
   }
@@ -235,10 +256,17 @@ export function SellerGigs() {
     const faqs = safeJsonParse<GigFAQ[]>(gig.faqs, [])
     const tags = safeJsonParse<string[]>(gig.tags, [])
 
+    // Find subcategory if category has a parent
+    const gigCategory = gig.category
+    const isSubcategory = !!(gigCategory?.parentId)
+    const parentCategoryId = isSubcategory ? gigCategory!.parentId! : (gig.categoryId || '')
+    const subcategoryId = isSubcategory ? (gig.categoryId || '') : ''
+
     setFormData({
       title: gig.title,
       description: gig.description,
-      categoryId: gig.categoryId || '',
+      categoryId: parentCategoryId,
+      subcategoryId: subcategoryId,
       requirements: gig.requirements || '',
       tags: tags.join(', '),
       isFeatured: gig.isFeatured,
@@ -376,7 +404,7 @@ export function SellerGigs() {
         shopId: currentUser.shop.id,
         title: formData.title,
         description: formData.description,
-        categoryId: formData.categoryId || undefined,
+        categoryId: formData.subcategoryId || formData.categoryId || undefined,
         packages: cleanedPackages,
         faqs: cleanedFaqs,
         tags,
@@ -477,6 +505,10 @@ export function SellerGigs() {
         isActive: true,
         createdAt: new Date().toISOString(),
       }))
+
+  // Get subcategories for selected category in form (from DB children)
+  const selectedCategory = allCategories.find((c) => c.id === formData.categoryId)
+  const availableSubcategories: Category[] = selectedCategory?.children || []
 
   // =====================================================================
   // Render
@@ -883,26 +915,131 @@ export function SellerGigs() {
               />
             </div>
 
-            {/* Category */}
+            {/* Category & Subcategory */}
             <div className="grid gap-2">
-              <Label>Category</Label>
-              <Select
-                value={formData.categoryId}
-                onValueChange={(v) =>
-                  setFormData({ ...formData, categoryId: v })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {allCategories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label className="text-sm font-medium">Category & Subcategory *</Label>
+              <p className="text-xs text-muted-foreground -mt-1">
+                First select a category, then choose a subcategory to specify your niche
+              </p>
+
+              {/* Category selector */}
+              <div className="flex items-center gap-2">
+                <div className="flex-1">
+                  <Select
+                    value={formData.categoryId}
+                    onValueChange={(v) =>
+                      setFormData({ ...formData, categoryId: v, subcategoryId: '' })
+                    }
+                    onOpenChange={() => setSubPopoverOpen(false)}
+                  >
+                    <SelectTrigger className={!formData.categoryId ? 'text-muted-foreground' : ''}>
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allCategories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          <div className="flex items-center gap-2">
+                            {cat.icon && <span className="text-base">{cat.icon}</span>}
+                            <span>{cat.name}</span>
+                            {cat.children && cat.children.length > 0 && (
+                              <span className="text-[10px] text-muted-foreground">
+                                ({cat.children.length})
+                              </span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Arrow indicator */}
+                <div className={`flex-shrink-0 transition-colors duration-200 ${formData.categoryId ? 'text-emerald-500' : 'text-gray-300'}`}>
+                  <ChevronRight className="h-4 w-4" />
+                </div>
+
+                {/* Subcategory selector */}
+                <div className="flex-1">
+                  {formData.categoryId && availableSubcategories.length > 0 ? (
+                    <Popover open={subPopoverOpen} onOpenChange={setSubPopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={subPopoverOpen}
+                          className={`w-full justify-between font-normal ${!formData.subcategoryId ? 'text-muted-foreground' : ''}`}
+                        >
+                          {formData.subcategoryId
+                            ? availableSubcategories.find((s) => s.id === formData.subcategoryId)?.name || 'Select subcategory'
+                            : 'Select subcategory'}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search subcategory..." />
+                          <CommandList className="max-h-[250px]">
+                            <CommandEmpty>No subcategory found.</CommandEmpty>
+                            <CommandGroup>
+                              <CommandItem
+                                value="none"
+                                onSelect={() => {
+                                  setFormData({ ...formData, subcategoryId: '' })
+                                  setSubPopoverOpen(false)
+                                }}
+                              >
+                                <Check className={`mr-2 h-4 w-4 ${!formData.subcategoryId ? 'opacity-100' : 'opacity-0'}`} />
+                                <span className="text-muted-foreground italic">None (use parent category only)</span>
+                              </CommandItem>
+                              {availableSubcategories.map((sub) => (
+                                <CommandItem
+                                  key={sub.id}
+                                  value={sub.name}
+                                  onSelect={() => {
+                                    setFormData({ ...formData, subcategoryId: sub.id })
+                                    setSubPopoverOpen(false)
+                                  }}
+                                >
+                                  <Check className={`mr-2 h-4 w-4 ${formData.subcategoryId === sub.id ? 'opacity-100' : 'opacity-0'}`} />
+                                  {sub.name}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  ) : formData.categoryId && availableSubcategories.length === 0 ? (
+                    <div className="flex h-9 items-center rounded-md border border-dashed border-gray-200 px-3 text-xs text-muted-foreground">
+                      No subcategories for this category
+                    </div>
+                  ) : (
+                    <div className="flex h-9 items-center rounded-md border border-dashed border-gray-200 px-3 text-xs text-muted-foreground">
+                      Select a category first
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Selected category breadcrumb */}
+              {formData.categoryId && (
+                <div className="flex items-center gap-1.5 rounded-md bg-emerald-50 px-3 py-1.5 text-xs">
+                  <span className="font-medium text-emerald-700">
+                    {allCategories.find((c) => c.id === formData.categoryId)?.name}
+                  </span>
+                  {formData.subcategoryId && (
+                    <>
+                      <ChevronRight className="h-3 w-3 text-emerald-400" />
+                      <span className="font-medium text-emerald-600">
+                        {availableSubcategories.find((s) => s.id === formData.subcategoryId)?.name}
+                      </span>
+                    </>
+                  )}
+                  {!formData.subcategoryId && availableSubcategories.length > 0 && (
+                    <span className="text-emerald-500 italic">— pick a subcategory for better visibility</span>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Requirements */}

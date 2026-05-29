@@ -8,6 +8,10 @@ export type UserRole = 'buyer' | 'seller' | 'both'
 export type ProductType = 'digital' | 'physical' | 'freelance'
 export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded'
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded'
+export type PaymentMethod = 'easypaisa' | 'jazzcash' | 'payoneer' | 'wise' | 'card' | 'bank_transfer'
+export type EscrowStatus = 'held' | 'released' | 'refunded'
+export type TransactionType = 'credit' | 'debit' | 'commission' | 'withdrawal' | 'refund' | 'escrow_hold' | 'escrow_release'
+export type WithdrawalStatus = 'pending' | 'processing' | 'approved' | 'rejected' | 'completed'
 export type OrderItemStatus = 'pending' | 'delivered' | 'cancelled'
 export type LayoutStyle = 'grid' | 'list' | 'featured'
 export type DisplayStyle = 'modern' | 'classic' | 'minimal'
@@ -123,6 +127,7 @@ export interface Product {
   totalReviews: number
   averageRating: number
   deliveryInfo: string | null
+  deliveryCountries: string // JSON string of string[] (country codes)
   requirements: string | null
   createdAt: string
   updatedAt: string
@@ -154,6 +159,7 @@ export interface Order {
   seller?: User
   items?: OrderItem[]
   disputes?: Dispute[]
+  payment?: Payment | null
 }
 
 export interface OrderItem {
@@ -394,6 +400,7 @@ export interface CreateProductInput {
   tags?: string[]
   isFeatured?: boolean
   deliveryInfo?: string
+  deliveryCountries?: string[]
   requirements?: string
 }
 
@@ -455,6 +462,15 @@ export interface PaginatedResponse<T> {
   page: number
   limit: number
   totalPages: number
+  // Support alternative API response shapes
+  products?: T[]
+  gigs?: T[]
+  pagination?: {
+    total: number
+    page: number
+    limit: number
+    totalPages: number
+  }
 }
 
 export interface SearchFilters {
@@ -525,4 +541,177 @@ export interface AdminStats {
   pendingShops: number
   openDisputes: number
   revenueChart: { date: string; revenue: number }[]
+}
+
+// ----- Payment System Types -----
+
+export interface Wallet {
+  id: string
+  userId: string
+  balance: number
+  pendingBalance: number
+  totalEarnings: number
+  totalWithdrawn: number
+  currency: string
+  createdAt: string
+  updatedAt: string
+  user?: User
+  transactions?: Transaction[]
+  withdrawals?: Withdrawal[]
+}
+
+export interface Payment {
+  id: string
+  orderId: string
+  buyerId: string
+  sellerId: string
+  amount: number
+  platformFee: number
+  sellerPayout: number
+  paymentMethod: string
+  paymentProvider: string | null
+  status: string
+  escrowStatus: EscrowStatus
+  paidAt: string | null
+  releasedAt: string | null
+  failureReason: string | null
+  metadata: string
+  createdAt: string
+  updatedAt: string
+  order?: Order
+  buyer?: User
+  seller?: User
+  transactions?: Transaction[]
+}
+
+export interface Transaction {
+  id: string
+  walletId: string
+  paymentId: string | null
+  type: TransactionType
+  amount: number
+  balance: number
+  description: string
+  status: string
+  referenceType: string | null
+  referenceId: string | null
+  metadata: string
+  createdAt: string
+  wallet?: Wallet
+  payment?: Payment
+}
+
+export interface Withdrawal {
+  id: string
+  walletId: string
+  userId: string
+  amount: number
+  fee: number
+  netAmount: number
+  method: string
+  accountDetails: string
+  status: WithdrawalStatus
+  adminNote: string | null
+  processedAt: string | null
+  rejectedAt: string | null
+  completedAt: string | null
+  createdAt: string
+  updatedAt: string
+  wallet?: Wallet
+  user?: User
+}
+
+export interface CreateWithdrawalInput {
+  amount: number
+  method: PaymentMethod | 'bank_transfer'
+  accountDetails: {
+    accountName: string
+    accountNumber: string
+    bankName?: string
+    routingNumber?: string
+    swiftCode?: string
+    email?: string
+  }
+}
+
+export interface InitiatePaymentInput {
+  orderId: string
+  buyerId: string
+  sellerId: string
+  paymentMethod: PaymentMethod
+  amount: number
+}
+
+export interface MonthlyEarning {
+  month: string
+  year: number
+  earnings: number
+}
+
+export interface WalletDashboardData {
+  wallet: Wallet
+  recentTransactions: Transaction[]
+  pendingWithdrawals: Withdrawal[]
+  allWithdrawals: Withdrawal[]
+  totalEarningsThisMonth: number
+  totalEarningsLastMonth: number
+  monthlyChange: number
+  monthlyEarnings: MonthlyEarning[]
+}
+
+export interface AdminTransactionsData {
+  payments: Payment[]
+  withdrawals: Withdrawal[]
+  totalEscrowHeld: number
+  totalCommissionEarned: number
+  totalPendingWithdrawals: number
+  paymentPagination: { page: number; limit: number; total: number; totalPages: number }
+  withdrawalPagination: { page: number; limit: number; total: number; totalPages: number }
+}
+
+// ----- Payment Info Types (Saved payment methods) -----
+
+export type PaymentInfoType = 'buyer' | 'seller'
+export type PaymentInfoMethod = 'easypaisa' | 'jazzcash' | 'card' | 'payoneer' | 'wise' | 'bank_transfer'
+
+export interface PaymentInfo {
+  id: string
+  userId: string
+  type: PaymentInfoType
+  method: PaymentInfoMethod
+  label: string
+  accountDetails: string // JSON — parsed as PaymentInfoAccountDetails
+  isDefault: boolean
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface PaymentInfoAccountDetails {
+  // Easypaisa / JazzCash
+  accountName?: string
+  mobileNumber?: string
+  // Card
+  cardHolder?: string
+  cardLast4?: string
+  expiryMonth?: string
+  expiryYear?: string
+  cardType?: 'visa' | 'master' | 'unionpay'
+  // Payoneer
+  email?: string
+  // Wise
+  iban?: string
+  // Bank Transfer
+  accountNumber?: string
+  bankName?: string
+  routingNumber?: string
+  swiftCode?: string
+}
+
+export interface CreatePaymentInfoInput {
+  type: PaymentInfoType
+  method: PaymentInfoMethod
+  label: string
+  accountDetails: PaymentInfoAccountDetails
+  isDefault?: boolean
 }
