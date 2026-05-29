@@ -1,0 +1,178 @@
+'use client'
+
+import { useState, useEffect, lazy, Suspense } from 'react'
+import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { Header } from '@/components/marketplace/layout/header'
+import { Footer } from '@/components/marketplace/layout/footer'
+import { CartDrawer } from '@/components/marketplace/shared/cart-drawer'
+import { LandingPage } from '@/components/marketplace/landing/landing-page'
+import { AuthModal } from '@/components/marketplace/auth/auth-modal'
+
+// Lazy load heavy dashboard/shop components to reduce initial bundle
+const BuyerDashboard = lazy(() =>
+  import('@/components/marketplace/buyer/buyer-dashboard').then(m => ({ default: m.BuyerDashboard }))
+)
+const SellerDashboard = lazy(() =>
+  import('@/components/marketplace/seller/seller-dashboard').then(m => ({ default: m.SellerDashboard }))
+)
+const ShopView = lazy(() =>
+  import('@/components/marketplace/shop/shop-view')
+)
+const ProductDetail = lazy(() =>
+  import('@/components/marketplace/shop/product-detail')
+)
+const GigDetail = lazy(() =>
+  import('@/components/marketplace/gig/gig-detail')
+)
+const GigsBrowse = lazy(() =>
+  import('@/components/marketplace/gig/gigs-browse').then(m => ({ default: m.GigsBrowse }))
+)
+const SearchPage = lazy(() =>
+  import('@/components/marketplace/search/search-page')
+)
+const NotificationsPage = lazy(() =>
+  import('@/components/marketplace/notifications/notifications-page')
+)
+const AdminPanel = lazy(() =>
+  import('@/components/marketplace/admin/admin-panel')
+)
+const PrivacyPolicy = lazy(() =>
+  import('@/components/marketplace/landing/privacy-policy').then(m => ({ default: m.PrivacyPolicy }))
+)
+const TermsOfService = lazy(() =>
+  import('@/components/marketplace/landing/terms-of-service').then(m => ({ default: m.TermsOfService }))
+)
+
+function LoadingSpinner() {
+  return (
+    <div className="flex items-center justify-center min-h-[200px]">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-600" />
+    </div>
+  )
+}
+
+export default function Home() {
+  const { currentView, isAuthenticated, currentUser } = useMarketplaceStore()
+
+  const renderView = () => {
+    switch (currentView) {
+      case 'auth':
+        return <AuthModal />
+      case 'buyer-dashboard':
+        if (!isAuthenticated) return <AuthModal />
+        return (
+          <Suspense fallback={<LoadingSpinner />}>
+            <BuyerDashboard />
+          </Suspense>
+        )
+      case 'seller-dashboard':
+        if (!isAuthenticated) return <AuthModal />
+        return (
+          <Suspense fallback={<LoadingSpinner />}>
+            <SellerDashboard />
+          </Suspense>
+        )
+      case 'shop-view':
+        return (
+          <Suspense fallback={<LoadingSpinner />}>
+            <ShopView />
+          </Suspense>
+        )
+      case 'product-detail':
+        return (
+          <Suspense fallback={<LoadingSpinner />}>
+            <ProductDetail />
+          </Suspense>
+        )
+      case 'gig-detail':
+        return (
+          <Suspense fallback={<LoadingSpinner />}>
+            <GigDetail />
+          </Suspense>
+        )
+      case 'gigs-browse':
+        return (
+          <Suspense fallback={<LoadingSpinner />}>
+            <GigsBrowse />
+          </Suspense>
+        )
+      case 'search':
+        return (
+          <Suspense fallback={<LoadingSpinner />}>
+            <SearchPage />
+          </Suspense>
+        )
+      case 'notifications':
+        if (!isAuthenticated) return <AuthModal />
+        return (
+          <Suspense fallback={<LoadingSpinner />}>
+            <NotificationsPage />
+          </Suspense>
+        )
+      case 'privacy':
+        return (
+          <Suspense fallback={<LoadingSpinner />}>
+            <PrivacyPolicy />
+          </Suspense>
+        )
+      case 'terms':
+        return (
+          <Suspense fallback={<LoadingSpinner />}>
+            <TermsOfService />
+          </Suspense>
+        )
+      case 'admin':
+        if (!isAuthenticated || !currentUser?.isAdmin) {
+          return (
+            <div className="flex items-center justify-center min-h-[60vh]">
+              <div className="text-center">
+                <h2 className="text-2xl font-bold mb-2">Access Denied</h2>
+                <p className="text-muted-foreground">You do not have admin privileges.</p>
+              </div>
+            </div>
+          )
+        }
+        return (
+          <Suspense fallback={<LoadingSpinner />}>
+            <AdminPanel />
+          </Suspense>
+        )
+      case 'landing':
+      default:
+        return <LandingPage />
+    }
+  }
+
+  // Auth modal is full-screen, no header/footer
+  if (currentView === 'auth') {
+    return <AuthModal />
+  }
+
+  // Shop view has its own immersive layout
+  if (currentView === 'shop-view') {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1">
+          <Suspense fallback={<LoadingSpinner />}>
+            <ShopView />
+          </Suspense>
+        </main>
+        <Footer />
+        <CartDrawer />
+      </div>
+    )
+  }
+
+  // All other views get standard layout
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-1">
+        {renderView()}
+      </main>
+      <Footer />
+      <CartDrawer />
+    </div>
+  )
+}

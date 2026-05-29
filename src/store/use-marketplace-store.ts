@@ -75,9 +75,12 @@ export const useMarketplaceStore = create<MarketplaceState>()(
   persist(
     (set, get) => ({
       // ----- Auth State -----
+      // Start with isLoadingAuth = false so the page always renders immediately.
+      // The persist middleware will rehydrate from localStorage and the
+      // onRehydrateStorage callback will validate the rehydrated state.
       currentUser: null,
       isAuthenticated: false,
-      isLoadingAuth: true,
+      isLoadingAuth: false,
 
       // ----- Navigation State -----
       currentView: 'landing',
@@ -259,17 +262,37 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         currentView: state.currentView,
         viewParams: state.viewParams,
       }),
-      onRehydrateStorage: () => (state) => {
-        // Validate rehydrated state - if currentUser is invalid, clear auth
-        if (state?.isAuthenticated && (!state.currentUser || !state.currentUser.role)) {
-          state.currentUser = null
-          state.isAuthenticated = false
-          state.activeRole = 'buyer'
-        }
-        // Always mark auth loading as complete after rehydration
-        // This ensures the app doesn't get stuck on the loading screen
-        if (state) {
-          state.isLoadingAuth = false
+      onRehydrateStorage: () => {
+        // Return a function that will be called after rehydration completes
+        return (state, error) => {
+          // If there was an error during rehydration, reset auth state
+          if (error) {
+            console.error('Zustand rehydration error:', error)
+            // Use a setTimeout to ensure the store is ready
+            setTimeout(() => {
+              useMarketplaceStore.setState({
+                currentUser: null,
+                isAuthenticated: false,
+                isLoadingAuth: false,
+                activeRole: 'buyer',
+                currentView: 'landing',
+              })
+            }, 0)
+            return
+          }
+
+          // Validate rehydrated state - if currentUser is invalid, clear auth
+          if (state?.isAuthenticated && (!state.currentUser || !state.currentUser.role)) {
+            setTimeout(() => {
+              useMarketplaceStore.setState({
+                currentUser: null,
+                isAuthenticated: false,
+                isLoadingAuth: false,
+                activeRole: 'buyer',
+                currentView: 'landing',
+              })
+            }, 0)
+          }
         }
       },
     }
