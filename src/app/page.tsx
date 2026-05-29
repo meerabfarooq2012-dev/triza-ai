@@ -22,32 +22,18 @@ import { TermsOfService } from '@/components/marketplace/landing/terms-of-servic
 export default function Home() {
   const { currentView, isAuthenticated, currentUser, isLoadingAuth } = useMarketplaceStore()
 
-  // Auto-restore session on mount
+  // Ensure loading state always resolves (safety net)
   useEffect(() => {
-    const savedUser = localStorage.getItem('marketo-user')
-    if (savedUser) {
-      try {
-        const user = JSON.parse(savedUser)
-        if (user && user.role) {
-          useMarketplaceStore.getState().login(user)
-        } else {
-          localStorage.removeItem('marketo-user')
-        }
-      } catch {
-        localStorage.removeItem('marketo-user')
+    const timeout = setTimeout(() => {
+      if (useMarketplaceStore.getState().isLoadingAuth) {
+        useMarketplaceStore.getState().setLoadingAuth(false)
       }
-    }
-    useMarketplaceStore.getState().setLoadingAuth(false)
-  }, [])
+    }, 3000)
 
-  // Save user to localStorage when auth state changes
-  useEffect(() => {
-    if (isAuthenticated && currentUser) {
-      localStorage.setItem('marketo-user', JSON.stringify(currentUser))
-    } else {
-      localStorage.removeItem('marketo-user')
-    }
-  }, [isAuthenticated, currentUser])
+    // If zustand persist has already rehydrated, mark loading as done
+    // The persist onRehydrateStorage callback handles this, but this is a safety net
+    return () => clearTimeout(timeout)
+  }, [])
 
   // Show loading spinner while auth state is being restored
   if (isLoadingAuth) {

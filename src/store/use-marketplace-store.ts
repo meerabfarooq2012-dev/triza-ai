@@ -266,6 +266,11 @@ export const useMarketplaceStore = create<MarketplaceState>()(
           state.isAuthenticated = false
           state.activeRole = 'buyer'
         }
+        // Always mark auth loading as complete after rehydration
+        // This ensures the app doesn't get stuck on the loading screen
+        if (state) {
+          state.isLoadingAuth = false
+        }
       },
     }
   )

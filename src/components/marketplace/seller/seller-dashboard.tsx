@@ -23,21 +23,36 @@ export function SellerDashboard() {
   const [shopLoading, setShopLoading] = useState(true)
   const [creatingShop, setCreatingShop] = useState(false)
   const [shopData, setShopData] = useState<Record<string, unknown> | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   // Fetch fresh user data (with shop) from API on mount
   useEffect(() => {
+    let cancelled = false
+
     async function fetchUserData() {
-      if (!currentUser) return
-      // If user already has shop data, use it
-      if (currentUser.shop) {
-        setShopData(currentUser.shop)
+      // Always ensure loading resolves
+      if (!currentUser) {
+        // If no user yet, just show the dashboard without shop data
+        // (the page.tsx already handles auth gating)
         setShopLoading(false)
         return
       }
+
+      // If user already has shop data, use it
+      if (currentUser.shop) {
+        if (!cancelled) {
+          setShopData(currentUser.shop)
+          setShopLoading(false)
+        }
+        return
+      }
+
       // If user is seller/both but has no shop, try fetching from API
       try {
         const res = await fetch(`/api/auth/me?userId=${currentUser.id}`)
         const data = await res.json()
+        if (cancelled) return
+
         if (data.success && data.data?.shop) {
           setShopData(data.data.shop)
           // Also update the store with fresh user data
@@ -45,10 +60,29 @@ export function SellerDashboard() {
         }
       } catch (error) {
         console.error('Failed to fetch user data:', error)
+        if (!cancelled) {
+          setLoadError('Could not load shop data. Please refresh the page.')
+        }
       }
-      setShopLoading(false)
+
+      if (!cancelled) {
+        setShopLoading(false)
+      }
     }
+
+    // Add a safety timeout to ensure loading always resolves
+    const timeout = setTimeout(() => {
+      if (!cancelled) {
+        setShopLoading(false)
+      }
+    }, 5000)
+
     fetchUserData()
+
+    return () => {
+      cancelled = true
+      clearTimeout(timeout)
+    }
   }, [currentUser])
 
   // Auto-create shop if seller has none
@@ -136,6 +170,16 @@ export function SellerDashboard() {
           </div>
         </motion.div>
 
+        {/* Error message */}
+        {loadError && (
+          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="h-5 w-5 text-red-600" />
+              <p className="text-sm text-red-700">{loadError}</p>
+            </div>
+          </div>
+        )}
+
         {/* No Shop Banner - show setup prompt if seller has no shop */}
         {!hasShop && (
           <motion.div
@@ -178,20 +222,22 @@ export function SellerDashboard() {
           transition={{ duration: 0.3, delay: 0.1 }}
         >
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="mb-6 flex w-full flex-wrap gap-1">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="products">Products</TabsTrigger>
-              <TabsTrigger value="gigs">Gigs</TabsTrigger>
-              <TabsTrigger value="orders">Orders</TabsTrigger>
-              <TabsTrigger value="wallet">Wallet</TabsTrigger>
-              <TabsTrigger value="payment-settings" className="gap-1 data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
-                <Settings className="h-3.5 w-3.5" />
-                Payment Info
-              </TabsTrigger>
-              <TabsTrigger value="messages">Messages</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
-              <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            </TabsList>
+            <div className="mb-6 overflow-x-auto">
+              <TabsList className="flex w-max min-w-full flex-wrap gap-1">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="products">Products</TabsTrigger>
+                <TabsTrigger value="gigs">Gigs</TabsTrigger>
+                <TabsTrigger value="orders">Orders</TabsTrigger>
+                <TabsTrigger value="wallet">Wallet</TabsTrigger>
+                <TabsTrigger value="payment-settings" className="gap-1 data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+                  <Settings className="h-3.5 w-3.5" />
+                  Payment Info
+                </TabsTrigger>
+                <TabsTrigger value="messages">Messages</TabsTrigger>
+                <TabsTrigger value="settings">Settings</TabsTrigger>
+                <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              </TabsList>
+            </div>
 
             <TabsContent value="overview">
               <SellerOverview />
