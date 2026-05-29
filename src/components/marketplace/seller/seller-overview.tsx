@@ -64,9 +64,27 @@ export function SellerOverview() {
 
   useEffect(() => {
     async function fetchData() {
-      if (!currentUser?.shop) {
+      if (!currentUser) {
         setLoading(false)
         return
+      }
+      // If shop data is missing from store, try fetching from API
+      if (!currentUser.shop) {
+        try {
+          const meRes = await fetch(`/api/auth/me?userId=${currentUser.id}`)
+          const meData = await meRes.json()
+          if (meData.success && meData.data?.shop) {
+            useMarketplaceStore.getState().login(meData.data)
+          }
+        } catch (error) {
+          console.error('Failed to fetch user data for overview:', error)
+        }
+        // Check again after potential update
+        const updatedUser = useMarketplaceStore.getState().currentUser
+        if (!updatedUser?.shop) {
+          setLoading(false)
+          return
+        }
       }
       try {
         // Fetch orders for stats

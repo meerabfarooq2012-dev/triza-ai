@@ -73,10 +73,6 @@ export default function Home() {
 
       case 'seller-dashboard':
         if (!isAuthenticated) return <AuthModal />
-        if (currentUser?.role === 'buyer') {
-          // Pure buyer can't access seller dashboard, redirect to buyer dashboard
-          return <BuyerDashboard />
-        }
         return <SellerDashboard />
 
       case 'shop-view':

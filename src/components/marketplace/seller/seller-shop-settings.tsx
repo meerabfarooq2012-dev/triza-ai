@@ -86,44 +86,90 @@ export function SellerShopSettings() {
   const [newSocialUrl, setNewSocialUrl] = useState('')
 
   useEffect(() => {
-    if (currentUser?.shop) {
-      const s = currentUser.shop
-      setShop(s)
-      setName(s.name)
-      setDescription(s.description || '')
-      setAbout(s.about || '')
-      setContactEmail(s.contactEmail || '')
-      setContactPhone(s.contactPhone || '')
-      setAddress(s.address || '')
-      setPrimaryColor(s.primaryColor)
-      setSecondaryColor(s.secondaryColor)
-      setAccentColor(s.accentColor)
-      setLayoutStyle(s.layoutStyle)
-      setDisplayStyle(s.displayStyle)
+    async function loadShopData() {
+      if (currentUser?.shop) {
+        const s = currentUser.shop
+        setShop(s)
+        setName(s.name)
+        setDescription(s.description || '')
+        setAbout(s.about || '')
+        setContactEmail(s.contactEmail || '')
+        setContactPhone(s.contactPhone || '')
+        setAddress(s.address || '')
+        setPrimaryColor(s.primaryColor)
+        setSecondaryColor(s.secondaryColor)
+        setAccentColor(s.accentColor)
+        setLayoutStyle(s.layoutStyle)
+        setDisplayStyle(s.displayStyle)
 
-      // Parse custom sections
-      try {
-        const sections = JSON.parse(s.customSections || '[]')
-        setCustomSections(sections)
-      } catch {
-        setCustomSections([])
-      }
+        // Parse custom sections
+        try {
+          const sections = JSON.parse(s.customSections || '[]')
+          setCustomSections(sections)
+        } catch {
+          setCustomSections([])
+        }
 
-      setSocialLinks(s.socialLinks || [])
-      setLogo(s.logo || null)
-      setBanner(s.banner || null)
+        setSocialLinks(s.socialLinks || [])
+        setLogo(s.logo || null)
+        setBanner(s.banner || null)
 
-      // Parse country code from phone number
-      if (s.contactPhone) {
-        const match = s.contactPhone.match(/^\+(\d{1,4})\s*(.*)/)
-        if (match) {
-          setPhoneCountryCode('+' + match[1])
-          setContactPhone(match[2] || '')
-        } else {
-          setContactPhone(s.contactPhone)
+        // Parse country code from phone number
+        if (s.contactPhone) {
+          const match = s.contactPhone.match(/^\+(\d{1,4})\s*(.*)/)
+          if (match) {
+            setPhoneCountryCode('+' + match[1])
+            setContactPhone(match[2] || '')
+          } else {
+            setContactPhone(s.contactPhone)
+          }
+        }
+      } else if (currentUser) {
+        // Try fetching shop data from API
+        try {
+          const res = await fetch(`/api/auth/me?userId=${currentUser.id}`)
+          const data = await res.json()
+          if (data.success && data.data?.shop) {
+            const s = data.data.shop
+            setShop(s)
+            setName(s.name)
+            setDescription(s.description || '')
+            setAbout(s.about || '')
+            setContactEmail(s.contactEmail || '')
+            setContactPhone(s.contactPhone || '')
+            setAddress(s.address || '')
+            setPrimaryColor(s.primaryColor)
+            setSecondaryColor(s.secondaryColor)
+            setAccentColor(s.accentColor)
+            setLayoutStyle(s.layoutStyle)
+            setDisplayStyle(s.displayStyle)
+            try {
+              const sections = JSON.parse(s.customSections || '[]')
+              setCustomSections(sections)
+            } catch {
+              setCustomSections([])
+            }
+            setSocialLinks(s.socialLinks || [])
+            setLogo(s.logo || null)
+            setBanner(s.banner || null)
+            if (s.contactPhone) {
+              const match = s.contactPhone.match(/^\+(\d{1,4})\s*(.*)/)
+              if (match) {
+                setPhoneCountryCode('+' + match[1])
+                setContactPhone(match[2] || '')
+              } else {
+                setContactPhone(s.contactPhone)
+              }
+            }
+            // Update store with fresh data
+            useMarketplaceStore.getState().login(data.data)
+          }
+        } catch (error) {
+          console.error('Failed to fetch shop data:', error)
         }
       }
     }
+    loadShopData()
   }, [currentUser])
 
   const handleSelectPreset = (preset: (typeof SHOP_COLOR_PRESETS)[number]) => {

@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Store, User, Settings, Loader2 } from 'lucide-react'
+import { Store, Settings, Loader2, AlertCircle } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Button } from '@/components/ui/button'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { SellerOverview } from './seller-overview'
 import { SellerProducts } from './seller-products'
@@ -14,13 +15,14 @@ import { SellerAnalytics } from './seller-analytics'
 import { SellerMessages } from './seller-messages'
 import { SellerWallet } from '@/components/marketplace/payment/seller-wallet'
 import { PaymentSettingsPage } from '@/components/marketplace/payment/payment-settings-page'
+import { toast } from 'sonner'
 
 export function SellerDashboard() {
-  const { currentUser, setCurrentView } = useMarketplaceStore()
+  const { currentUser } = useMarketplaceStore()
   const [activeTab, setActiveTab] = useState('overview')
   const [shopLoading, setShopLoading] = useState(true)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [shopData, setShopData] = useState<any>(null)
+  const [creatingShop, setCreatingShop] = useState(false)
+  const [shopData, setShopData] = useState<Record<string, unknown> | null>(null)
 
   // Fetch fresh user data (with shop) from API on mount
   useEffect(() => {
@@ -49,8 +51,45 @@ export function SellerDashboard() {
     fetchUserData()
   }, [currentUser])
 
+  // Auto-create shop if seller has none
+  const handleCreateShop = async () => {
+    if (!currentUser || creatingShop) return
+    setCreatingShop(true)
+    try {
+      const res = await fetch('/api/shops', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: currentUser.id,
+          name: `${currentUser.name}'s Shop`,
+          description: `Welcome to ${currentUser.name}'s shop!`,
+        }),
+      })
+      const data = await res.json()
+      if (data.success && data.data) {
+        setShopData(data.data)
+        // Update store with fresh user data including shop
+        const meRes = await fetch(`/api/auth/me?userId=${currentUser.id}`)
+        const meData = await meRes.json()
+        if (meData.success) {
+          useMarketplaceStore.getState().login(meData.data)
+        }
+        toast.success('Shop created successfully!')
+        setActiveTab('settings')
+      } else {
+        toast.error(data.error || 'Failed to create shop')
+      }
+    } catch (error) {
+      console.error('Failed to create shop:', error)
+      toast.error('Failed to create shop. Please try again.')
+    } finally {
+      setCreatingShop(false)
+    }
+  }
+
   const shopName = shopData?.name || currentUser?.shop?.name || 'My Shop'
   const userName = currentUser?.name || 'Seller'
+  const hasShop = !!(shopData || currentUser?.shop)
 
   // Loading state while checking for shop
   if (shopLoading) {
@@ -60,39 +99,6 @@ export function SellerDashboard() {
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-600" />
           <p className="text-sm text-muted-foreground">Loading your dashboard...</p>
         </div>
-      </div>
-    )
-  }
-
-  // If seller has no shop, show setup prompt
-  if (!shopData && !currentUser?.shop) {
-    return (
-      <div className="min-h-screen bg-gray-50/50 flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-md mx-auto text-center p-8"
-        >
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white mx-auto mb-6">
-            <Store className="h-10 w-10" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Set Up Your Shop</h1>
-          <p className="text-gray-500 mb-6">
-            Welcome, {userName}! To start selling on Marketo, you need to set up your shop first. 
-            Go to Settings to customize your shop.
-          </p>
-          <button
-            onClick={() => setActiveTab('settings')}
-            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-medium text-white shadow-lg transition-colors hover:bg-emerald-700"
-          >
-            <Settings className="h-4 w-4" />
-            Go to Shop Settings
-          </button>
-          {/* Actually just show the full dashboard so they can access settings */}
-          <p className="mt-4 text-xs text-gray-400">Redirecting you to your dashboard...</p>
-        </motion.div>
-        {/* Auto-redirect to settings after a moment */}
-        <RedirectToDashboard />
       </div>
     )
   }
@@ -129,6 +135,41 @@ export function SellerDashboard() {
             </div>
           </div>
         </motion.div>
+
+        {/* No Shop Banner - show setup prompt if seller has no shop */}
+        {!hasShop && (
+          <motion.div
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4"
+          >
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
+                  <AlertCircle className="h-5 w-5 text-amber-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-amber-900">Set Up Your Shop</p>
+                  <p className="text-sm text-amber-700">
+                    You need a shop to start selling. Create one now to add products and gigs.
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={handleCreateShop}
+                disabled={creatingShop}
+                className="gap-2 bg-emerald-600 hover:bg-emerald-700 shrink-0"
+              >
+                {creatingShop ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Store className="h-4 w-4" />
+                )}
+                {creatingShop ? 'Creating...' : 'Create My Shop'}
+              </Button>
+            </div>
+          </motion.div>
+        )}
 
         {/* Tab Navigation */}
         <motion.div
@@ -186,20 +227,4 @@ export function SellerDashboard() {
       </div>
     </div>
   )
-}
-
-// Helper component that redirects to seller dashboard with settings tab
-function RedirectToDashboard() {
-  const { setCurrentView } = useMarketplaceStore()
-  
-  useEffect(() => {
-    // This shouldn't normally happen - if seller has no shop, the register API creates one.
-    // But if somehow shop is missing, redirect to landing
-    const timer = setTimeout(() => {
-      setCurrentView('landing')
-    }, 3000)
-    return () => clearTimeout(timer)
-  }, [setCurrentView])
-  
-  return null
 }
