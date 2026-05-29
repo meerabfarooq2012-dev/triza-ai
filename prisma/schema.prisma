@@ -494,3 +494,41 @@ model PaymentInfo {
   // Wise: { email, iban, accountName }
   // Bank Transfer: { accountName, accountNumber, bankName, routingNumber, swiftCode }
 }
+
+// =============================================================================
+// FEEDBACK & SUPPORT CHAT MODEL
+// =============================================================================
+
+model FeedbackThread {
+  id          String   @id @default(cuid())
+  userId      String?  // null for anonymous visitors
+  sessionId   String   @unique // browser session identifier
+  status      String   @default("open") // open, closed
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  messages    FeedbackMessage[]
+
+  @@index([userId])
+  @@index([sessionId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model FeedbackMessage {
+  id          String   @id @default(cuid())
+  threadId    String
+  senderType  String   // "user", "ai", "admin"
+  content     String
+  messageType String   @default("text") // text, question, feedback, system
+  category    String?  // "question", "feedback", "bug", "feature_request", "general"
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  thread      FeedbackThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([threadId])
+  @@index([senderType])
+  @@index([isRead])
+  @@index([createdAt])
+}

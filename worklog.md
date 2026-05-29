@@ -306,3 +306,112 @@ Stage Summary:
 - Added typing indicators, read receipts, and product/gig context
 - Chat service running on port 3003
 - Full messaging flow works: Contact Seller → Create/Find conversation → Real-time chat
+
+---
+Task ID: 3
+Agent: Frontend Agent
+Task: Build floating feedback/support chat widget component
+
+Work Log:
+- Reviewed worklog.md for context on previous agents' work (Task 1-6: blank page fixes, fake data removal, chat service, messaging system, etc.)
+- Reviewed Prisma schema — found FeedbackThread and FeedbackMessage models already exist
+- Reviewed existing /api/feedback route.ts — found GET and POST endpoints already implemented with ZAI SDK for AI responses
+- Verified db:push is in sync (schema already matches database)
+- Created `/home/z/my-project/src/components/marketplace/shared/feedback-widget.tsx` with full feature set:
+  - Floating button: fixed bottom-6 right-6 z-50, 56px round, emerald-to-teal gradient, MessageSquare icon, pulse animation on load, hover scale + tooltip, red unread badge dot
+  - Chat panel: framer-motion slide-up animation, 380px width (mobile: calc(100vw - 2rem)), 520px height (mobile: calc(100vh - 6rem)), rounded-2xl, shadow-2xl, border
+  - Header: emerald-600 to teal-600 gradient with decorative pattern, Bot icon + "Marketo Support", green pulsing "Online" dot, subtitle, X close button
+  - Messages area: ScrollArea with custom scrollbar, auto-scroll on new messages, user messages (right-aligned, gradient bg, rounded-2xl rounded-br-md), AI messages (left-aligned, muted bg, rounded-2xl rounded-bl-md, "AI" Badge), system messages (centered, italic), welcome message, loading dots animation, timestamps
+  - Input area: CategorySelector with 4 categories (Question/Feedback/Bug Report/Feature Request) as pill buttons, Textarea with char limit (500), Enter to send / Shift+Enter newline, Send button with emerald gradient, disabled state while AI typing
+  - Session management: sessionId via crypto.randomUUID(), localStorage key 'marketo-feedback-session', loads history from GET /api/feedback, sends via POST /api/feedback
+  - Uses useMarketplaceStore for currentUser
+  - Framer Motion animations throughout (open/close, messages, typing indicator, pulse)
+  - Responsive design for mobile
+- Fixed API response handling to match actual API format (result.data.messages vs result.messages)
+- Added logic to replace local optimistic messages with server-saved messages (both user and AI)
+- Fixed lint warning: removed unnecessary eslint-disable for react-hooks/exhaustive-deps
+- All lint checks pass cleanly (0 errors, 0 warnings)
+
+Stage Summary:
+- Created polished Intercom/Crisp-style feedback widget at `/home/z/my-project/src/components/marketplace/shared/feedback-widget.tsx`
+- Full floating chat widget with collapsed (button) and expanded (panel) states
+- Category selection, AI responses with typing indicator, session persistence
+- API routes already existed at /api/feedback with ZAI SDK integration
+- Component properly integrated with useMarketplaceStore and existing API response format
+- All lint checks pass
+---
+Task ID: 2
+Agent: Backend Agent
+Task: Create API routes for feedback/support chat widget
+
+Work Log:
+- Read worklog.md and reviewed all previous task context
+- Reviewed Prisma schema: FeedbackThread (id, userId?, sessionId, status, timestamps) and FeedbackMessage (id, threadId, senderType, content, messageType, category?, isRead, createdAt) models already defined
+- Reviewed z-ai-web-dev-sdk API: `ZAI.create()` singleton, `zai.chat.completions.create({ messages, stream })` with ChatMessage type
+- Reviewed existing route patterns (admin verification in /api/admin/users/route.ts, message handling in /api/messages/route.ts)
+- Created `/home/z/my-project/src/app/api/feedback/route.ts`:
+  - GET handler: Accepts `sessionId` query param, returns thread with messages (or null thread + empty messages array)
+  - POST handler: Accepts `{ sessionId, userId?, content, category? }` body
+    - Validates required fields (sessionId, content)
+    - Finds or creates FeedbackThread by sessionId
+    - Links thread to user if userId provided and thread was previously anonymous
+    - Saves user's message as FeedbackMessage (senderType: "user")
+    - Loads last 10 messages from thread for conversation context
+    - Builds chat messages array with system prompt for LLM
+    - Uses z-ai-web-dev-sdk singleton ZAI instance for AI response generation
+    - Graceful fallback if LLM fails (returns helpful error message instead of crashing)
+    - Saves AI response as FeedbackMessage (senderType: "ai")
+    - Updates thread timestamp
+    - Returns thread info, userMessage, and aiMessage (status 201)
+  - Singleton ZAI instance via `getZAI()` async function
+  - System prompt: Marketo Pakistani marketplace assistant with escrow, 10% commission, Easypaisa/JazzCash/Payoneer/Wise info
+- Created `/home/z/my-project/src/app/api/feedback/admin/route.ts`:
+  - GET handler: Accepts `userId`, `status?`, `page?`, `limit?` query params
+  - Verifies user is admin (same pattern as other admin routes)
+  - Queries all feedback threads with messages, sorted by updatedAt descending
+  - Enriches each thread with computed fields: messageCount, lastMessage, unreadCount
+  - Returns paginated results with threads and pagination metadata
+- Both routes use `{ success: true, data: ... }` response format
+- Both routes have proper error handling with try/catch and console.error logging
+- Database already in sync (FeedbackThread and FeedbackMessage models confirmed via `bun run db:push`)
+- All lint checks pass cleanly (0 errors)
+
+Stage Summary:
+- Created 2 API route files for the feedback/support chat widget
+- `/api/feedback` GET: Fetch thread by sessionId with all messages
+- `/api/feedback` POST: Send message, get AI response via z-ai-web-dev-sdk LLM integration
+- `/api/feedback/admin` GET: Admin-only endpoint to view all feedback threads with pagination
+- LLM integration uses singleton ZAI instance with Marketo-specific system prompt
+- Conversation context: last 10 messages passed to LLM for coherent responses
+- Graceful LLM fallback: returns helpful message instead of crashing on API errors
+- Anonymous-to-authenticated thread linking: userId is backfilled when user logs in
+
+---
+Task ID: 7
+Agent: Main Agent
+Task: Create feedback/support chat tab with AI-powered Q&A for Marketo
+
+Work Log:
+- Added FeedbackThread and FeedbackMessage models to prisma/schema.prisma
+- Added @unique constraint on sessionId for FeedbackThread (needed for findUnique)
+- Pushed schema to database and regenerated Prisma client
+- Created API routes via subagent:
+  - /api/feedback GET: Fetch thread by sessionId
+  - /api/feedback POST: Send message + get AI response via z-ai-web-dev-sdk
+  - /api/feedback/admin GET: Admin view of all feedback threads
+- Fixed LLM API call: Added `thinking: { type: 'disabled' }`, used 'assistant' role for system prompt
+- Created feedback widget component via subagent: floating chat bubble with panel
+- Fixed widget: Removed duplicate AI response (was both server + local fallback), now only uses server AI response
+- Added FeedbackWidget dynamic import to page.tsx
+- Tested API: POST returns 201 with AI-generated response, GET returns 200 with messages
+- All lint checks pass cleanly
+- Dev server running on port 3000, chat service on port 3003
+
+Stage Summary:
+- Floating feedback/support chat widget in bottom-right corner of every page
+- AI-powered responses using z-ai-web-dev-sdk LLM integration
+- Categories: Question, Feedback, Bug Report, Feature Request
+- Session persistence via localStorage
+- Chat history loaded from database on reopen
+- Fallback to local responses if LLM API fails
+- Admin endpoint to view all feedback threads

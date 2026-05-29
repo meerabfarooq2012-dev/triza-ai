@@ -112,6 +112,11 @@ const MessagesPage = dynamic(
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
+const FeedbackWidget = dynamic(
+  () => import('@/components/marketplace/shared/feedback-widget').then(m => ({ default: m.FeedbackWidget })),
+  { ssr: false }
+)
+
 // Error boundary component to catch rendering errors in child components
 type ErrorBoundaryProps = { children: React.ReactNode; fallback?: React.ReactNode }
 type ErrorBoundaryState = { hasError: boolean; error: Error | null }
@@ -271,6 +276,7 @@ function MarketplaceApp() {
       </main>
       <Footer />
       <CartDrawer />
+      <FeedbackWidget />
     </div>
   )
 }
