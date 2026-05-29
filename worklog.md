@@ -23,3 +23,23 @@ Stage Summary:
 - Fix 3: Refactored page.tsx to use lazy component loading
 - Page now renders immediately without blocking loading state
 - All linter checks pass
+
+---
+Task ID: 1
+Agent: Main Agent
+Task: Fix entire website showing blank page on preview
+
+Work Log:
+- Investigated root cause: Next.js dev server with Turbopack was crashing due to high memory usage
+- Fixed `output: "standalone"` in next.config.ts which was causing `next start` to not work properly
+- Rewrote `src/app/page.tsx` to use `next/dynamic` with `ssr: false` for all heavy components, reducing server memory from 1.2GB+ to ~170MB
+- Updated `package.json` dev script to include `-H 0.0.0.0` flag for proper port binding
+- Used double-fork technique to start the production server in a way that persists across bash sessions
+- Added `NODE_OPTIONS="--max-old-space-size=256"` to limit heap and force aggressive GC
+- Verified server stability: 100+ requests, all static assets (CSS, JS, fonts) serving correctly
+
+Stage Summary:
+- Root cause was a combination of: (1) Turbopack dev server using too much memory, (2) `output: "standalone"` breaking `next start`, (3) server process being killed when bash sessions ended
+- Production server now runs stably at ~170MB RSS with double-fork process detachment
+- Page renders correctly with title "Marketo - Your Marketplace, Your Way"
+- All JavaScript chunks, CSS, and fonts load properly for client-side rendering

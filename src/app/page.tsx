@@ -1,221 +1,162 @@
 'use client'
 
-import { useState, useEffect, useCallback, type ComponentType } from 'react'
+import dynamic from 'next/dynamic'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
-import { Header } from '@/components/marketplace/layout/header'
-import { Footer } from '@/components/marketplace/layout/footer'
-import { CartDrawer } from '@/components/marketplace/shared/cart-drawer'
-import { LandingPage } from '@/components/marketplace/landing/landing-page'
-import { AuthModal } from '@/components/marketplace/auth/auth-modal'
 
-// Component cache - loaded on demand via dynamic import
-const componentCache = new Map<string, ComponentType>()
-
-function useLazyComponent(
-  key: string,
-  loader: () => Promise<Record<string, ComponentType>>
-) {
-  const cached = componentCache.get(key)
-  const [Comp, setComp] = useState<ComponentType | null>(cached ?? null)
-  const [loading, setLoading] = useState(!cached)
-
-  useEffect(() => {
-    if (cached) return // Already have the component
-
-    let cancelled = false
-    loader()
-      .then((mod) => {
-        if (cancelled) return
-        const component = mod.default ?? Object.values(mod)[0]
-        componentCache.set(key, component)
-        setComp(component)
-        setLoading(false)
-      })
-      .catch((err) => {
-        console.error(`Failed to load component "${key}":`, err)
-        if (!cancelled) setLoading(false)
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [key])
-
-  return { Comp, loading }
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="flex flex-col items-center gap-3">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-violet-200 border-t-violet-600" />
+        <p className="text-sm text-muted-foreground font-medium">Loading Marketo...</p>
+      </div>
+    </div>
+  )
 }
 
 function ViewLoader() {
   return (
     <div className="flex items-center justify-center min-h-[300px]">
       <div className="flex flex-col items-center gap-3">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-600" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-violet-200 border-t-violet-600" />
         <p className="text-sm text-muted-foreground">Loading view...</p>
       </div>
     </div>
   )
 }
 
+const Header = dynamic(
+  () => import('@/components/marketplace/layout/header').then(m => ({ default: m.Header })),
+  { ssr: false, loading: () => <div className="h-16 border-b" /> }
+)
+
+const Footer = dynamic(
+  () => import('@/components/marketplace/layout/footer').then(m => ({ default: m.Footer })),
+  { ssr: false, loading: () => <div className="h-16" /> }
+)
+
+const CartDrawer = dynamic(
+  () => import('@/components/marketplace/shared/cart-drawer').then(m => ({ default: m.CartDrawer })),
+  { ssr: false }
+)
+
+const LandingPage = dynamic(
+  () => import('@/components/marketplace/landing/landing-page').then(m => ({ default: m.LandingPage })),
+  { ssr: false, loading: () => <PageLoader /> }
+)
+
+const AuthModal = dynamic(
+  () => import('@/components/marketplace/auth/auth-modal').then(m => ({ default: m.AuthModal })),
+  { ssr: false, loading: () => <PageLoader /> }
+)
+
+const BuyerDashboard = dynamic(
+  () => import('@/components/marketplace/buyer/buyer-dashboard').then(m => ({ default: m.BuyerDashboard })),
+  { ssr: false, loading: () => <ViewLoader /> }
+)
+
+const SellerDashboard = dynamic(
+  () => import('@/components/marketplace/seller/seller-dashboard').then(m => ({ default: m.SellerDashboard })),
+  { ssr: false, loading: () => <ViewLoader /> }
+)
+
+const ShopView = dynamic(
+  () => import('@/components/marketplace/shop/shop-view'),
+  { ssr: false, loading: () => <ViewLoader /> }
+)
+
+const ProductDetail = dynamic(
+  () => import('@/components/marketplace/shop/product-detail'),
+  { ssr: false, loading: () => <ViewLoader /> }
+)
+
+const GigDetail = dynamic(
+  () => import('@/components/marketplace/gig/gig-detail'),
+  { ssr: false, loading: () => <ViewLoader /> }
+)
+
+const GigsBrowse = dynamic(
+  () => import('@/components/marketplace/gig/gigs-browse').then(m => ({ default: m.GigsBrowse })),
+  { ssr: false, loading: () => <ViewLoader /> }
+)
+
+const SearchPage = dynamic(
+  () => import('@/components/marketplace/search/search-page'),
+  { ssr: false, loading: () => <ViewLoader /> }
+)
+
+const NotificationsPage = dynamic(
+  () => import('@/components/marketplace/notifications/notifications-page'),
+  { ssr: false, loading: () => <ViewLoader /> }
+)
+
+const AdminPanel = dynamic(
+  () => import('@/components/marketplace/admin/admin-panel'),
+  { ssr: false, loading: () => <ViewLoader /> }
+)
+
+const PrivacyPolicy = dynamic(
+  () => import('@/components/marketplace/landing/privacy-policy').then(m => ({ default: m.PrivacyPolicy })),
+  { ssr: false, loading: () => <ViewLoader /> }
+)
+
+const TermsOfService = dynamic(
+  () => import('@/components/marketplace/landing/terms-of-service').then(m => ({ default: m.TermsOfService })),
+  { ssr: false, loading: () => <ViewLoader /> }
+)
+
 export default function Home() {
   const { currentView, isAuthenticated, currentUser } = useMarketplaceStore()
-
-  // Lazy load heavy components only when their view is active
-  const buyerDash = useLazyComponent(
-    'buyer-dashboard',
-    useCallback(
-      () => import('@/components/marketplace/buyer/buyer-dashboard'),
-      []
-    )
-  )
-  const sellerDash = useLazyComponent(
-    'seller-dashboard',
-    useCallback(
-      () => import('@/components/marketplace/seller/seller-dashboard'),
-      []
-    )
-  )
-  const shopView = useLazyComponent(
-    'shop-view',
-    useCallback(() => import('@/components/marketplace/shop/shop-view'), [])
-  )
-  const productDetail = useLazyComponent(
-    'product-detail',
-    useCallback(
-      () => import('@/components/marketplace/shop/product-detail'),
-      []
-    )
-  )
-  const gigDetail = useLazyComponent(
-    'gig-detail',
-    useCallback(() => import('@/components/marketplace/gig/gig-detail'), [])
-  )
-  const gigsBrowse = useLazyComponent(
-    'gigs-browse',
-    useCallback(() => import('@/components/marketplace/gig/gigs-browse'), [])
-  )
-  const searchPage = useLazyComponent(
-    'search-page',
-    useCallback(
-      () => import('@/components/marketplace/search/search-page'),
-      []
-    )
-  )
-  const notifPage = useLazyComponent(
-    'notifications-page',
-    useCallback(
-      () => import('@/components/marketplace/notifications/notifications-page'),
-      []
-    )
-  )
-  const adminPanel = useLazyComponent(
-    'admin-panel',
-    useCallback(
-      () => import('@/components/marketplace/admin/admin-panel'),
-      []
-    )
-  )
-  const privacyPage = useLazyComponent(
-    'privacy',
-    useCallback(
-      () => import('@/components/marketplace/landing/privacy-policy'),
-      []
-    )
-  )
-  const termsPage = useLazyComponent(
-    'terms',
-    useCallback(
-      () => import('@/components/marketplace/landing/terms-of-service'),
-      []
-    )
-  )
 
   const renderView = () => {
     switch (currentView) {
       case 'auth':
         return <AuthModal />
-
       case 'buyer-dashboard':
         if (!isAuthenticated) return <AuthModal />
-        if (buyerDash.loading || !buyerDash.Comp) return <ViewLoader />
-        return <buyerDash.Comp />
-
+        return <BuyerDashboard />
       case 'seller-dashboard':
         if (!isAuthenticated) return <AuthModal />
-        if (sellerDash.loading || !sellerDash.Comp) return <ViewLoader />
-        return <sellerDash.Comp />
-
+        return <SellerDashboard />
       case 'shop-view':
-        if (shopView.loading || !shopView.Comp) return <ViewLoader />
-        return <shopView.Comp />
-
+        return <ShopView />
       case 'product-detail':
-        if (productDetail.loading || !productDetail.Comp) return <ViewLoader />
-        return <productDetail.Comp />
-
+        return <ProductDetail />
       case 'gig-detail':
-        if (gigDetail.loading || !gigDetail.Comp) return <ViewLoader />
-        return <gigDetail.Comp />
-
+        return <GigDetail />
       case 'gigs-browse':
-        if (gigsBrowse.loading || !gigsBrowse.Comp) return <ViewLoader />
-        return <gigsBrowse.Comp />
-
+        return <GigsBrowse />
       case 'search':
-        if (searchPage.loading || !searchPage.Comp) return <ViewLoader />
-        return <searchPage.Comp />
-
+        return <SearchPage />
       case 'notifications':
         if (!isAuthenticated) return <AuthModal />
-        if (notifPage.loading || !notifPage.Comp) return <ViewLoader />
-        return <notifPage.Comp />
-
+        return <NotificationsPage />
       case 'privacy':
-        if (privacyPage.loading || !privacyPage.Comp) return <ViewLoader />
-        return <privacyPage.Comp />
-
+        return <PrivacyPolicy />
       case 'terms':
-        if (termsPage.loading || !termsPage.Comp) return <ViewLoader />
-        return <termsPage.Comp />
-
+        return <TermsOfService />
       case 'admin':
         if (!isAuthenticated || !currentUser?.isAdmin) {
           return (
             <div className="flex items-center justify-center min-h-[60vh]">
               <div className="text-center">
                 <h2 className="text-2xl font-bold mb-2">Access Denied</h2>
-                <p className="text-muted-foreground">
-                  You do not have admin privileges.
-                </p>
+                <p className="text-muted-foreground">You do not have admin privileges.</p>
               </div>
             </div>
           )
         }
-        if (adminPanel.loading || !adminPanel.Comp) return <ViewLoader />
-        return <adminPanel.Comp />
-
+        return <AdminPanel />
       case 'landing':
       default:
         return <LandingPage />
     }
   }
 
-  // Auth modal is full-screen, no header/footer
   if (currentView === 'auth') {
     return <AuthModal />
   }
 
-  // Shop view has its own immersive layout
-  if (currentView === 'shop-view') {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-1">{renderView()}</main>
-        <Footer />
-        <CartDrawer />
-      </div>
-    )
-  }
-
-  // All other views get standard layout
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
