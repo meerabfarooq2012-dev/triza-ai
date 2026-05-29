@@ -36,36 +36,8 @@ import {
 import { api } from '@/lib/api'
 import type { AdminStats, User, Order } from '@/types'
 
-// Mock chart data for when API data is not available
-const mockRevenueData = [
-  { date: 'Jan', revenue: 2400 },
-  { date: 'Feb', revenue: 3200 },
-  { date: 'Mar', revenue: 2800 },
-  { date: 'Apr', revenue: 4500 },
-  { date: 'May', revenue: 3900 },
-  { date: 'Jun', revenue: 5100 },
-  { date: 'Jul', revenue: 4800 },
-  { date: 'Aug', revenue: 5600 },
-  { date: 'Sep', revenue: 6200 },
-  { date: 'Oct', revenue: 5900 },
-  { date: 'Nov', revenue: 6800 },
-  { date: 'Dec', revenue: 7200 },
-]
-
-const mockUserGrowthData = [
-  { date: 'Jan', users: 120 },
-  { date: 'Feb', users: 180 },
-  { date: 'Mar', users: 250 },
-  { date: 'Apr', users: 340 },
-  { date: 'May', users: 420 },
-  { date: 'Jun', users: 530 },
-  { date: 'Jul', users: 650 },
-  { date: 'Aug', users: 780 },
-  { date: 'Sep', users: 920 },
-  { date: 'Oct', users: 1080 },
-  { date: 'Nov', users: 1250 },
-  { date: 'Dec', users: 1420 },
-]
+// Empty placeholder chart data for when API data is not available
+const emptyChartData: Array<{ date: string; revenue: number }> = []
 
 interface PaymentStats {
   totalEscrowHeld: number
@@ -223,7 +195,7 @@ export default function AdminDashboard() {
   const platformStats = stats?.platformStats
   const revenueData = stats?.revenueChart?.length
     ? stats.revenueChart
-    : mockRevenueData
+    : emptyChartData
 
   return (
     <div className="space-y-6">
@@ -236,10 +208,10 @@ export default function AdminDashboard() {
         >
           <StatCard
             title="Total Users"
-            value={platformStats?.totalUsers?.toLocaleString() ?? '1,420'}
+            value={platformStats?.totalUsers?.toLocaleString() ?? '0'}
             icon={<Users size={24} />}
-            change={12}
-            subtitle={`${stats?.recentSignups ?? 28} new this week`}
+            change={platformStats?.totalUsers ? undefined : undefined}
+            subtitle={`${stats?.recentSignups ?? 0} new this week`}
           />
         </motion.div>
         <motion.div
@@ -249,9 +221,8 @@ export default function AdminDashboard() {
         >
           <StatCard
             title="Total Sellers"
-            value={platformStats?.totalSellers?.toLocaleString() ?? '320'}
+            value={platformStats?.totalSellers?.toLocaleString() ?? '0'}
             icon={<Store size={24} />}
-            change={8}
           />
         </motion.div>
         <motion.div
@@ -261,9 +232,8 @@ export default function AdminDashboard() {
         >
           <StatCard
             title="Total Products"
-            value={platformStats?.totalProducts?.toLocaleString() ?? '2,850'}
+            value={platformStats?.totalProducts?.toLocaleString() ?? '0'}
             icon={<Package size={24} />}
-            change={15}
           />
         </motion.div>
         <motion.div
@@ -273,9 +243,8 @@ export default function AdminDashboard() {
         >
           <StatCard
             title="Total Orders"
-            value={platformStats?.totalOrders?.toLocaleString() ?? '4,620'}
+            value={platformStats?.totalOrders?.toLocaleString() ?? '0'}
             icon={<ShoppingCart size={24} />}
-            change={22}
           />
         </motion.div>
         <motion.div
@@ -285,9 +254,8 @@ export default function AdminDashboard() {
         >
           <StatCard
             title="Revenue"
-            value={`$${(platformStats?.totalRevenue ?? 52800).toLocaleString()}`}
+            value={`$${(platformStats?.totalRevenue ?? 0).toLocaleString()}`}
             icon={<DollarSign size={24} />}
-            change={18}
           />
         </motion.div>
         <motion.div
@@ -297,10 +265,9 @@ export default function AdminDashboard() {
         >
           <StatCard
             title="Open Disputes"
-            value={stats?.openDisputes ?? 7}
+            value={stats?.openDisputes ?? 0}
             icon={<AlertTriangle size={24} />}
-            change={-5}
-            subtitle={`${stats?.pendingShops ?? 3} pending approvals`}
+            subtitle={`${stats?.pendingShops ?? 0} pending approvals`}
           />
         </motion.div>
       </div>
@@ -410,31 +377,37 @@ export default function AdminDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={revenueData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis dataKey="date" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis fontSize={12} tickLine={false} axisLine={false} />
-                    <Tooltip
-                      contentStyle={{
-                        borderRadius: '8px',
-                        border: 'none',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                      }}
-                      formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="revenue"
-                      stroke="#10b981"
-                      strokeWidth={2}
-                      dot={{ fill: '#10b981', r: 3 }}
-                      activeDot={{ r: 5 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
+              {revenueData.length > 0 ? (
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={revenueData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="date" fontSize={12} tickLine={false} axisLine={false} />
+                      <YAxis fontSize={12} tickLine={false} axisLine={false} />
+                      <Tooltip
+                        contentStyle={{
+                          borderRadius: '8px',
+                          border: 'none',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                        }}
+                        formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="revenue"
+                        stroke="#10b981"
+                        strokeWidth={2}
+                        dot={{ fill: '#10b981', r: 3 }}
+                        activeDot={{ r: 5 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="h-64 flex items-center justify-center">
+                  <p className="text-sm text-muted-foreground">No revenue data yet</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>
@@ -467,35 +440,8 @@ export default function AdminDashboard() {
                   </ResponsiveContainer>
                 </div>
               ) : (
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={mockUserGrowthData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis dataKey="date" fontSize={12} tickLine={false} axisLine={false} />
-                      <YAxis fontSize={12} tickLine={false} axisLine={false} />
-                      <Tooltip
-                        contentStyle={{
-                          borderRadius: '8px',
-                          border: 'none',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                        }}
-                        formatter={(value: number) => [value.toLocaleString(), 'Users']}
-                      />
-                      <defs>
-                        <linearGradient id="userGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <Area
-                        type="monotone"
-                        dataKey="users"
-                        stroke="#10b981"
-                        strokeWidth={2}
-                        fill="url(#userGradient)"
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
+                <div className="h-64 flex items-center justify-center">
+                  <p className="text-sm text-muted-foreground">No payment activity yet</p>
                 </div>
               )}
             </CardContent>
