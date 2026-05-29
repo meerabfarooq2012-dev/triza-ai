@@ -43,3 +43,29 @@ Stage Summary:
 - Production server now runs stably at ~170MB RSS with double-fork process detachment
 - Page renders correctly with title "Marketo - Your Marketplace, Your Way"
 - All JavaScript chunks, CSS, and fonts load properly for client-side rendering
+---
+Task ID: 1
+Agent: Main Agent
+Task: Fix entire website blank page / client-side exception error
+
+Work Log:
+- Investigated root cause of "Application error: a client-side exception has occurred"
+- Found dev server was crashing repeatedly (background process management issues)
+- Fixed package.json dev script from `next build && next start` to `next dev --turbopack`
+- Started dev server using subshell approach `(exec npx next dev ... &)` which keeps process alive
+- Subagent verified all 16 dynamic imports match their component export patterns (no mismatches)
+- Fixed `useHydrated` hook: replaced `useEffect` + `setState` with `useSyncExternalStore` to comply with React 19 lint rules
+- Added `ErrorBoundary` class component wrapping MarketplaceApp and renderView()
+- Added try/catch around renderView() switch statement
+- Added "Reset App" button to error boundaries that clears localStorage and reloads
+- Fixed unsafe `name[0]` access in admin-dashboard.tsx and admin-panel.tsx (optional chaining)
+- Fixed wrong localStorage key in admin-dashboard.tsx ('marketplace-user' → 'marketo-storage')
+- Enhanced error.tsx with "Reset App" option
+- Lint passes cleanly with zero errors
+
+Stage Summary:
+- Dev server is running stably on port 3000 (HTTP 200)
+- All lint errors resolved
+- Error boundaries in place at both page level and view level
+- useHydrated hook uses React 19-compliant useSyncExternalStore
+- Previous client-side error should now be caught gracefully with "Reset App" option

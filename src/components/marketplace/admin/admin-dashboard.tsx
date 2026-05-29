@@ -179,9 +179,12 @@ export default function AdminDashboard() {
     // Fetch payment stats from admin/stats endpoint
     const fetchPaymentStats = async () => {
       try {
-        const currentUser = JSON.parse(localStorage.getItem('marketplace-user') || '{}')
-        if (currentUser?.id) {
-          const res = await fetch(`/api/admin/stats?userId=${currentUser.id}`)
+        // Read from Zustand's persisted storage key
+        const stored = localStorage.getItem('marketo-storage')
+        const parsed = stored ? JSON.parse(stored) : {}
+        const userId = parsed?.state?.currentUser?.id
+        if (userId) {
+          const res = await fetch(`/api/admin/stats?userId=${userId}`)
           const json = await res.json()
           if (json.success && json.data) {
             if (json.data.paymentStats) {
@@ -523,7 +526,7 @@ export default function AdminDashboard() {
                     <div key={user.id} className="flex items-center gap-3">
                       <Avatar className="w-8 h-8">
                         <AvatarFallback className="text-xs">
-                          {user.name[0]}
+                          {user.name?.[0] || 'U'}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">

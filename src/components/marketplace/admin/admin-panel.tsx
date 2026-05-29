@@ -121,7 +121,7 @@ export default function AdminPanel() {
         <div className="p-4 border-t">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
-              {currentUser.name[0]}
+              {currentUser.name?.[0] || 'A'}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{currentUser.name}</p>
