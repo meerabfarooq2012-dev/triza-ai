@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Store, User, Settings } from 'lucide-react'
+import { Store, User, Settings, Loader2 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { SellerOverview } from './seller-overview'
@@ -16,11 +16,86 @@ import { SellerWallet } from '@/components/marketplace/payment/seller-wallet'
 import { PaymentSettingsPage } from '@/components/marketplace/payment/payment-settings-page'
 
 export function SellerDashboard() {
-  const { currentUser } = useMarketplaceStore()
+  const { currentUser, setCurrentView } = useMarketplaceStore()
   const [activeTab, setActiveTab] = useState('overview')
+  const [shopLoading, setShopLoading] = useState(true)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [shopData, setShopData] = useState<any>(null)
 
-  const shopName = currentUser?.shop?.name || 'My Shop'
+  // Fetch fresh user data (with shop) from API on mount
+  useEffect(() => {
+    async function fetchUserData() {
+      if (!currentUser) return
+      // If user already has shop data, use it
+      if (currentUser.shop) {
+        setShopData(currentUser.shop)
+        setShopLoading(false)
+        return
+      }
+      // If user is seller/both but has no shop, try fetching from API
+      try {
+        const res = await fetch(`/api/auth/me?userId=${currentUser.id}`)
+        const data = await res.json()
+        if (data.success && data.data?.shop) {
+          setShopData(data.data.shop)
+          // Also update the store with fresh user data
+          useMarketplaceStore.getState().login(data.data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch user data:', error)
+      }
+      setShopLoading(false)
+    }
+    fetchUserData()
+  }, [currentUser])
+
+  const shopName = shopData?.name || currentUser?.shop?.name || 'My Shop'
   const userName = currentUser?.name || 'Seller'
+
+  // Loading state while checking for shop
+  if (shopLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50/50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-600" />
+          <p className="text-sm text-muted-foreground">Loading your dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // If seller has no shop, show setup prompt
+  if (!shopData && !currentUser?.shop) {
+    return (
+      <div className="min-h-screen bg-gray-50/50 flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-md mx-auto text-center p-8"
+        >
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white mx-auto mb-6">
+            <Store className="h-10 w-10" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Set Up Your Shop</h1>
+          <p className="text-gray-500 mb-6">
+            Welcome, {userName}! To start selling on Marketo, you need to set up your shop first. 
+            Go to Settings to customize your shop.
+          </p>
+          <button
+            onClick={() => setActiveTab('settings')}
+            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-medium text-white shadow-lg transition-colors hover:bg-emerald-700"
+          >
+            <Settings className="h-4 w-4" />
+            Go to Shop Settings
+          </button>
+          {/* Actually just show the full dashboard so they can access settings */}
+          <p className="mt-4 text-xs text-gray-400">Redirecting you to your dashboard...</p>
+        </motion.div>
+        {/* Auto-redirect to settings after a moment */}
+        <RedirectToDashboard />
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-50/50">
@@ -34,9 +109,9 @@ export function SellerDashboard() {
         >
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white">
-              {currentUser?.shop?.logo ? (
+              {shopData?.logo || currentUser?.shop?.logo ? (
                 <img
-                  src={currentUser.shop.logo}
+                  src={(shopData?.logo || currentUser?.shop?.logo) as string}
                   alt={shopName}
                   className="h-12 w-12 rounded-full object-cover"
                 />
@@ -111,4 +186,20 @@ export function SellerDashboard() {
       </div>
     </div>
   )
+}
+
+// Helper component that redirects to seller dashboard with settings tab
+function RedirectToDashboard() {
+  const { setCurrentView } = useMarketplaceStore()
+  
+  useEffect(() => {
+    // This shouldn't normally happen - if seller has no shop, the register API creates one.
+    // But if somehow shop is missing, redirect to landing
+    const timer = setTimeout(() => {
+      setCurrentView('landing')
+    }, 3000)
+    return () => clearTimeout(timer)
+  }, [setCurrentView])
+  
+  return null
 }

@@ -77,7 +77,10 @@ export function BuyerOrders() {
   const [confirmingDelivery, setConfirmingDelivery] = useState(false)
 
   const fetchOrders = useCallback(async () => {
-    if (!currentUser) return
+    if (!currentUser) {
+      setLoading(false)
+      return
+    }
     setLoading(true)
     try {
       const params = new URLSearchParams({

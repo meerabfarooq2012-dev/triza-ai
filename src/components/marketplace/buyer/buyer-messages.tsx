@@ -35,7 +35,10 @@ export function BuyerMessages() {
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
 
   const fetchConversations = useCallback(async () => {
-    if (!currentUser) return
+    if (!currentUser) {
+      setLoading(false)
+      return
+    }
     try {
       const res = await fetch(`/api/messages/conversations?userId=${currentUser.id}`)
       const data = await res.json()

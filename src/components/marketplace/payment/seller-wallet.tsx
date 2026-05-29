@@ -215,7 +215,10 @@ export function SellerWallet() {
   }
 
   const fetchData = useCallback(async () => {
-    if (!currentUser) return
+    if (!currentUser) {
+      setLoading(false)
+      return
+    }
     setLoading(true)
     setError(null)
     try {

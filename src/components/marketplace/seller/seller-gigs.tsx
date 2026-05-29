@@ -183,7 +183,10 @@ export function SellerGigs() {
   // ----- Data fetching -----
 
   const fetchGigs = useCallback(async () => {
-    if (!currentUser?.shop) return
+    if (!currentUser?.shop) {
+      setLoading(false)
+      return
+    }
     setLoading(true)
     try {
       const params = new URLSearchParams({

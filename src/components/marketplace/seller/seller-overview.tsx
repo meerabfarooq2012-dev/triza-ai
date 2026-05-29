@@ -64,7 +64,10 @@ export function SellerOverview() {
 
   useEffect(() => {
     async function fetchData() {
-      if (!currentUser?.shop) return
+      if (!currentUser?.shop) {
+        setLoading(false)
+        return
+      }
       try {
         // Fetch orders for stats
         const ordersRes = await fetch(

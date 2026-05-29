@@ -90,7 +90,10 @@ export function SellerAnalytics() {
 
   useEffect(() => {
     async function fetchData() {
-      if (!currentUser?.shop) return
+      if (!currentUser?.shop) {
+        setLoading(false)
+        return
+      }
       try {
         // Fetch all orders for this seller
         const ordersRes = await fetch(

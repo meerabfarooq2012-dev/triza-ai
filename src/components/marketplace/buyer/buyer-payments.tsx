@@ -311,7 +311,10 @@ export function BuyerPayments() {
   const [confirmingDelivery, setConfirmingDelivery] = useState<string | null>(null)
 
   const fetchPayments = useCallback(async () => {
-    if (!currentUser) return
+    if (!currentUser) {
+      setLoading(false)
+      return
+    }
     setLoading(true)
     try {
       const params = new URLSearchParams({

@@ -20,7 +20,7 @@ import { PrivacyPolicy } from '@/components/marketplace/landing/privacy-policy'
 import { TermsOfService } from '@/components/marketplace/landing/terms-of-service'
 
 export default function Home() {
-  const { currentView, isAuthenticated, currentUser } = useMarketplaceStore()
+  const { currentView, isAuthenticated, currentUser, isLoadingAuth } = useMarketplaceStore()
 
   // Auto-restore session on mount
   useEffect(() => {
@@ -48,6 +48,18 @@ export default function Home() {
       localStorage.removeItem('marketo-user')
     }
   }, [isAuthenticated, currentUser])
+
+  // Show loading spinner while auth state is being restored
+  if (isLoadingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-600" />
+          <p className="text-sm text-muted-foreground">Loading Marketo...</p>
+        </div>
+      </div>
+    )
+  }
 
   // Determine which view to show
   const renderView = () => {

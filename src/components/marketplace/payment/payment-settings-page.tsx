@@ -862,7 +862,10 @@ export function PaymentSettingsPage({ userId, userRole }: PaymentSettingsPagePro
   const [settingDefaultId, setSettingDefaultId] = useState<string | null>(null)
 
   const fetchMethods = useCallback(async () => {
-    if (!userId) return
+    if (!userId) {
+      setLoading(false)
+      return
+    }
     setLoading(true)
     setError(null)
     try {

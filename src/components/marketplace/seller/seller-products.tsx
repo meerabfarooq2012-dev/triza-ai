@@ -307,7 +307,10 @@ export function SellerProducts() {
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null)
 
   const fetchProducts = useCallback(async () => {
-    if (!currentUser?.shop) return
+    if (!currentUser?.shop) {
+      setLoading(false)
+      return
+    }
     setLoading(true)
     try {
       const params = new URLSearchParams({

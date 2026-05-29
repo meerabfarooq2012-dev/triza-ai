@@ -16,7 +16,10 @@ export function BuyerFavorites() {
 
   useEffect(() => {
     async function fetchFavorites() {
-      if (!currentUser) return
+      if (!currentUser) {
+        setLoading(false)
+        return
+      }
       try {
         const res = await fetch(`/api/favorites?userId=${currentUser.id}`)
         const data = await res.json()
