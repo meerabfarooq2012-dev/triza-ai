@@ -152,11 +152,11 @@ function ProductGridCard({
           <div className="flex items-center justify-between">
             <div className="flex items-baseline gap-2">
               <span className="font-bold text-lg" style={{ color: shopColors.primary }}>
-                ${product.price.toFixed(2)}
+                ${(product.price ?? 0).toFixed(2)}
               </span>
               {product.comparePrice && (
                 <span className="text-xs text-muted-foreground line-through">
-                  ${product.comparePrice.toFixed(2)}
+                  ${(product.comparePrice ?? 0).toFixed(2)}
                 </span>
               )}
             </div>
@@ -250,11 +250,11 @@ function ProductListCard({
               </div>
               <div className="text-right flex-shrink-0">
                 <span className="font-bold text-xl" style={{ color: shopColors.primary }}>
-                  ${product.price.toFixed(2)}
+                  ${(product.price ?? 0).toFixed(2)}
                 </span>
                 {product.comparePrice && (
                   <div className="text-sm text-muted-foreground line-through">
-                    ${product.comparePrice.toFixed(2)}
+                    ${(product.comparePrice ?? 0).toFixed(2)}
                   </div>
                 )}
               </div>
@@ -327,11 +327,11 @@ function FeaturedProductCard({
             </div>
             <div className="flex items-baseline gap-3 mb-6">
               <span className="text-3xl font-bold" style={{ color: shopColors.primary }}>
-                ${product.price.toFixed(2)}
+                ${(product.price ?? 0).toFixed(2)}
               </span>
               {product.comparePrice && (
                 <span className="text-lg text-muted-foreground line-through">
-                  ${product.comparePrice.toFixed(2)}
+                  ${(product.comparePrice ?? 0).toFixed(2)}
                 </span>
               )}
             </div>
@@ -578,7 +578,7 @@ export default function ShopView() {
             <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
               <div className="flex items-center gap-1.5">
                 <StarRating rating={shop.averageRating} />
-                <span className="text-sm font-medium">{shop.averageRating.toFixed(1)}</span>
+                <span className="text-sm font-medium">{(shop.averageRating ?? 0).toFixed(1)}</span>
                 <span className="text-sm text-muted-foreground">({shop.totalReviews} reviews)</span>
               </div>
               <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -880,7 +880,7 @@ export default function ShopView() {
                   <div className="flex items-center gap-6">
                     <div className="text-center">
                       <div className="text-4xl font-bold" style={{ color: shopColors.primary }}>
-                        {shop.averageRating.toFixed(1)}
+                        {(shop.averageRating ?? 0).toFixed(1)}
                       </div>
                       <StarRating rating={shop.averageRating} />
                       <p className="text-sm text-muted-foreground mt-1">

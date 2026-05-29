@@ -185,7 +185,7 @@ export default function AdminOrders() {
                     </TableCell>
                     <TableCell>
                       <span className="font-semibold text-sm">
-                        ${order.totalAmount.toFixed(2)}
+                        ${(order.totalAmount ?? 0).toFixed(2)}
                       </span>
                     </TableCell>
                     <TableCell>
@@ -238,7 +238,7 @@ export default function AdminOrders() {
                                     </div>
                                     <div>
                                       <p className="text-xs text-muted-foreground">Amount</p>
-                                      <p className="text-sm font-medium">${selectedOrder.totalAmount.toFixed(2)}</p>
+                                      <p className="text-sm font-medium">${(selectedOrder.totalAmount ?? 0).toFixed(2)}</p>
                                     </div>
                                     <div>
                                       <p className="text-xs text-muted-foreground">Status</p>
@@ -261,7 +261,7 @@ export default function AdminOrders() {
                                       {selectedOrder.items.map((item) => (
                                         <div key={item.id} className="flex items-center justify-between py-1 border-b last:border-0">
                                           <span className="text-sm">{item.product?.name || `Product ${item.productId.slice(0, 8)}`}</span>
-                                          <span className="text-sm font-medium">x{item.quantity} ${item.price.toFixed(2)}</span>
+                                          <span className="text-sm font-medium">x{item.quantity} ${(item.price ?? 0).toFixed(2)}</span>
                                         </div>
                                       ))}
                                     </div>

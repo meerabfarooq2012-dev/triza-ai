@@ -222,7 +222,7 @@ export function BuyerOverview() {
                           {ORDER_STATUS_LABELS[order.status]}
                         </Badge>
                         <span className="text-sm font-semibold text-gray-900">
-                          ${order.totalAmount.toFixed(2)}
+                          ${(order.totalAmount ?? 0).toFixed(2)}
                         </span>
                       </div>
                     </div>

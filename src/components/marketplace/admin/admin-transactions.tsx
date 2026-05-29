@@ -517,13 +517,13 @@ export function AdminTransactions() {
                                   {payment.seller?.name || 'N/A'}
                                 </TableCell>
                                 <TableCell className="text-right text-sm font-medium">
-                                  ${payment.amount.toFixed(2)}
+                                  ${(payment.amount ?? 0).toFixed(2)}
                                 </TableCell>
                                 <TableCell className="text-right text-sm text-amber-600">
-                                  ${payment.platformFee.toFixed(2)}
+                                  ${(payment.platformFee ?? 0).toFixed(2)}
                                 </TableCell>
                                 <TableCell className="text-right text-sm text-emerald-600">
-                                  ${payment.sellerPayout.toFixed(2)}
+                                  ${(payment.sellerPayout ?? 0).toFixed(2)}
                                 </TableCell>
                                 <TableCell>
                                   <Badge variant="outline" className="text-[10px] px-1.5 py-0">
@@ -590,15 +590,15 @@ export function AdminTransactions() {
                                             </p>
                                             <p>
                                               <span className="text-muted-foreground">Total:</span>{' '}
-                                              ${payment.amount.toFixed(2)}
+                                              ${(payment.amount ?? 0).toFixed(2)}
                                             </p>
                                             <p>
                                               <span className="text-muted-foreground">Platform Fee:</span>{' '}
-                                              ${payment.platformFee.toFixed(2)}
+                                              ${(payment.platformFee ?? 0).toFixed(2)}
                                             </p>
                                             <p>
                                               <span className="text-muted-foreground">Seller Payout:</span>{' '}
-                                              ${payment.sellerPayout.toFixed(2)}
+                                              ${(payment.sellerPayout ?? 0).toFixed(2)}
                                             </p>
                                           </div>
                                           {payment.failureReason && (
@@ -761,13 +761,13 @@ export function AdminTransactions() {
                                   {w.user?.name || 'N/A'}
                                 </TableCell>
                                 <TableCell className="text-right text-sm font-medium">
-                                  ${w.amount.toFixed(2)}
+                                  ${(w.amount ?? 0).toFixed(2)}
                                 </TableCell>
                                 <TableCell className="text-right text-sm text-amber-600">
-                                  ${w.fee.toFixed(2)}
+                                  ${(w.fee ?? 0).toFixed(2)}
                                 </TableCell>
                                 <TableCell className="text-right text-sm text-emerald-600">
-                                  ${w.netAmount.toFixed(2)}
+                                  ${(w.netAmount ?? 0).toFixed(2)}
                                 </TableCell>
                                 <TableCell>
                                   <Badge variant="outline" className="text-[10px] px-1.5 py-0">

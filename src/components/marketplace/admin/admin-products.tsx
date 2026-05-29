@@ -261,7 +261,7 @@ export default function AdminProducts() {
                       </TableCell>
                       <TableCell>
                         <span className="font-semibold text-sm">
-                          ${product.price.toFixed(2)}
+                          ${(product.price ?? 0).toFixed(2)}
                         </span>
                       </TableCell>
                       <TableCell className="hidden md:table-cell text-sm text-muted-foreground">

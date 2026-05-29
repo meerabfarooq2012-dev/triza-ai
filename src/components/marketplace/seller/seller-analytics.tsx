@@ -174,7 +174,7 @@ export function SellerAnalytics() {
   const statsCards = [
     {
       label: 'Total Revenue',
-      value: `$${totalRevenue.toFixed(2)}`,
+      value: `$${(totalRevenue ?? 0).toFixed(2)}`,
       icon: DollarSign,
       bgColor: 'bg-emerald-50',
       textColor: 'text-emerald-600',
@@ -199,7 +199,7 @@ export function SellerAnalytics() {
     {
       label: 'Rating',
       value: currentUser?.shop?.averageRating
-        ? `${currentUser.shop.averageRating.toFixed(1)} ★`
+        ? `${(currentUser.shop.averageRating ?? 0).toFixed(1)} ★`
         : 'N/A',
       icon: Star,
       bgColor: 'bg-rose-50',
@@ -434,12 +434,12 @@ export function SellerAnalytics() {
                             {product.totalSales}
                           </TableCell>
                           <TableCell className="text-right text-sm font-medium">
-                            ${(product.totalSales * product.price).toFixed(2)}
+                            ${((product.totalSales ?? 0) * (product.price ?? 0)).toFixed(2)}
                           </TableCell>
                           <TableCell className="text-right text-sm">
                             <span className="flex items-center justify-end gap-1">
                               <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
-                              {product.averageRating.toFixed(1)}
+                              {(product.averageRating ?? 0).toFixed(1)}
                             </span>
                           </TableCell>
                         </TableRow>

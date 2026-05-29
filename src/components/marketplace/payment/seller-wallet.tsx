@@ -164,7 +164,7 @@ function EarningsChartTooltip({ active, payload, label }: { active?: boolean; pa
     return (
       <div className="rounded-lg border bg-background p-2 shadow-md">
         <p className="text-xs font-medium text-muted-foreground">{label}</p>
-        <p className="text-sm font-bold text-emerald-600">${payload[0].value.toFixed(2)}</p>
+        <p className="text-sm font-bold text-emerald-600">${(payload[0].value ?? 0).toFixed(2)}</p>
       </div>
     )
   }
@@ -275,10 +275,10 @@ export function SellerWallet() {
 
   const handleQuickAmount = (quickAmount: number | 'max') => {
     if (quickAmount === 'max') {
-      setWithdrawAmount(availableBalance.toFixed(2))
+      setWithdrawAmount((availableBalance ?? 0).toFixed(2))
     } else {
       const val = Math.min(quickAmount, availableBalance)
-      setWithdrawAmount(val.toFixed(2))
+      setWithdrawAmount((val ?? 0).toFixed(2))
     }
   }
 
@@ -488,7 +488,7 @@ export function SellerWallet() {
                         ) : (
                           <ArrowDownRight className="h-3 w-3" />
                         )}
-                        {Math.abs(monthlyChange).toFixed(1)}%
+                        {(Math.abs(monthlyChange ?? 0)).toFixed(1)}%
                       </span>
                     )}
                     <span className="text-xs text-muted-foreground">vs last month</span>
@@ -621,10 +621,10 @@ export function SellerWallet() {
                                 isCredit ? 'text-emerald-600' : 'text-red-600'
                               }`}
                             >
-                              {isCredit ? '+' : '-'}${Math.abs(tx.amount).toFixed(2)}
+                              {isCredit ? '+' : '-'}${(Math.abs(tx.amount ?? 0)).toFixed(2)}
                             </TableCell>
                             <TableCell className="text-sm text-right">
-                              ${tx.balance.toFixed(2)}
+                              ${(tx.balance ?? 0).toFixed(2)}
                             </TableCell>
                             <TableCell>
                               <Badge
@@ -774,7 +774,7 @@ export function SellerWallet() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Available: ${availableBalance.toFixed(2)}
+                  Available: ${(availableBalance ?? 0).toFixed(2)}
                 </p>
                 {/* Quick Amount Buttons */}
                 <div className="flex flex-wrap gap-1.5 mt-2">
@@ -982,7 +982,7 @@ export function SellerWallet() {
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-sm font-medium">
-                              ${w.amount.toFixed(2)}
+                              ${(w.amount ?? 0).toFixed(2)}
                             </p>
                             <p className="text-xs text-muted-foreground capitalize">
                               via {w.method.replace('_', ' ')}
@@ -1103,13 +1103,13 @@ export function SellerWallet() {
                             {new Date(w.createdAt).toLocaleDateString()}
                           </TableCell>
                           <TableCell className="text-sm font-medium text-right">
-                            ${w.amount.toFixed(2)}
+                            ${(w.amount ?? 0).toFixed(2)}
                           </TableCell>
                           <TableCell className="text-xs text-right text-muted-foreground">
-                            ${w.fee.toFixed(2)}
+                            ${(w.fee ?? 0).toFixed(2)}
                           </TableCell>
                           <TableCell className="text-sm text-right text-emerald-600">
-                            ${w.netAmount.toFixed(2)}
+                            ${(w.netAmount ?? 0).toFixed(2)}
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize">

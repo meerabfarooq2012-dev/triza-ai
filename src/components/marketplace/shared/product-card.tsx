@@ -135,11 +135,11 @@ export function ProductCard({ product, className }: ProductCardProps) {
           {/* Price */}
           <div className="flex items-baseline gap-2 pt-0.5">
             <span className="text-lg font-bold text-foreground">
-              ${product.price.toFixed(2)}
+              ${(product.price ?? 0).toFixed(2)}
             </span>
             {product.comparePrice && product.comparePrice > product.price && (
               <span className="text-xs text-muted-foreground line-through">
-                ${product.comparePrice.toFixed(2)}
+                ${(product.comparePrice ?? 0).toFixed(2)}
               </span>
             )}
           </div>

@@ -126,7 +126,7 @@ function PackageCard({
 
         {/* Price */}
         <div className="text-center mb-4">
-          <span className="text-3xl font-bold">${pkg.price.toFixed(2)}</span>
+          <span className="text-3xl font-bold">${(pkg.price ?? 0).toFixed(2)}</span>
         </div>
 
         {/* Delivery */}
@@ -469,7 +469,7 @@ export default function GigDetail() {
           <div className="flex items-center gap-1.5">
             <RatingStars rating={gig.averageRating} size="sm" />
             <span className="text-sm font-semibold text-amber-600">
-              {gig.averageRating.toFixed(1)}
+              {(gig.averageRating ?? 0).toFixed(1)}
             </span>
             <span className="text-sm text-muted-foreground">
               ({gig.totalReviews} review{gig.totalReviews !== 1 ? 's' : ''})
@@ -690,7 +690,7 @@ export default function GigDetail() {
                 <h3 className="font-bold text-lg mb-4">Rating Summary</h3>
                 <div className="text-center mb-4">
                   <div className="text-4xl font-bold">
-                    {gig.averageRating.toFixed(1)}
+                    {(gig.averageRating ?? 0).toFixed(1)}
                   </div>
                   <RatingStars rating={gig.averageRating} size="lg" />
                   <p className="text-sm text-muted-foreground mt-1">
@@ -828,7 +828,7 @@ export default function GigDetail() {
                   <div className="bg-emerald-500 p-4 text-white">
                     <div className="flex items-center justify-between">
                       <h3 className="font-bold text-lg">{selectedPkg.name}</h3>
-                      <span className="text-2xl font-bold">${selectedPkg.price.toFixed(2)}</span>
+                      <span className="text-2xl font-bold">${(selectedPkg.price ?? 0).toFixed(2)}</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-emerald-100 text-sm mt-1">
                       <Clock size={14} />
@@ -889,7 +889,7 @@ export default function GigDetail() {
                     <div className="flex items-center gap-1">
                       <RatingStars rating={gig.shop.averageRating} size="sm" />
                       <span className="text-xs text-muted-foreground">
-                        {gig.shop.averageRating.toFixed(1)}
+                        {(gig.shop.averageRating ?? 0).toFixed(1)}
                       </span>
                     </div>
                   </div>
@@ -936,7 +936,7 @@ export default function GigDetail() {
                 <p className="text-sm font-medium truncate">{selectedPkg.name}</p>
                 <div className="flex items-center gap-2">
                   <span className="text-lg font-bold text-emerald-600">
-                    ${selectedPkg.price.toFixed(2)}
+                    ${(selectedPkg.price ?? 0).toFixed(2)}
                   </span>
                   <span className="text-xs text-muted-foreground flex items-center gap-1">
                     <Clock size={10} />

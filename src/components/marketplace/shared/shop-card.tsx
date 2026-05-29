@@ -110,7 +110,7 @@ export function ShopCard({ shop, className }: ShopCardProps) {
             </div>
             <div className="flex items-center gap-1">
               <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-              <span>{shop.averageRating.toFixed(1)}</span>
+              <span>{(shop.averageRating ?? 0).toFixed(1)}</span>
             </div>
           </div>
 

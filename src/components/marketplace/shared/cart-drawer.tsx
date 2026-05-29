@@ -72,13 +72,13 @@ export function CartDrawer() {
             <div className="border-t bg-background p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Subtotal</span>
-                <span className="text-lg font-bold">${cartTotal.toFixed(2)}</span>
+                <span className="text-lg font-bold">${(cartTotal ?? 0).toFixed(2)}</span>
               </div>
               <p className="text-xs text-muted-foreground">
                 Shipping and taxes calculated at checkout
               </p>
               <Button className="w-full" size="lg" onClick={() => setCheckoutOpen(true)}>
-                Checkout — ${cartTotal.toFixed(2)}
+                Checkout — ${(cartTotal ?? 0).toFixed(2)}
               </Button>
               <Button
                 variant="ghost"
@@ -146,7 +146,7 @@ function CartItemRow({
 
           {/* Price */}
           <span className="text-sm font-semibold">
-            ${(item.price * item.quantity).toFixed(2)}
+            ${((item.price ?? 0) * (item.quantity ?? 1)).toFixed(2)}
           </span>
         </div>
       </div>

@@ -548,7 +548,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                       </p>
                     </div>
                     <span className="text-sm font-semibold">
-                      ${(item.price * item.quantity).toFixed(2)}
+                      ${((item.price ?? 0) * (item.quantity ?? 1)).toFixed(2)}
                     </span>
                   </div>
                 ))}
@@ -559,20 +559,20 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span>${cartTotal.toFixed(2)}</span>
+                  <span>${(cartTotal ?? 0).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Platform Fee (10%)</span>
-                  <span>${platformFee.toFixed(2)}</span>
+                  <span>${(platformFee ?? 0).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm text-emerald-600">
                   <span>Seller Receives (90%)</span>
-                  <span>${sellerPayout.toFixed(2)}</span>
+                  <span>${(sellerPayout ?? 0).toFixed(2)}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between font-bold text-lg">
                   <span>Total</span>
-                  <span>${cartTotal.toFixed(2)}</span>
+                  <span>${(cartTotal ?? 0).toFixed(2)}</span>
                 </div>
               </div>
 
@@ -1026,7 +1026,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                     }
                   }}
                 >
-                  {hasPhysicalItems ? 'Continue to Shipping' : `Pay $${cartTotal.toFixed(2)}`}
+                  {hasPhysicalItems ? 'Continue to Shipping' : `Pay $${(cartTotal ?? 0).toFixed(2)}`}
                 </Button>
               </div>
             </motion.div>
@@ -1118,7 +1118,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 </Button>
                 <Button className="flex-1" onClick={handlePayNow}>
                   <CreditCard className="h-4 w-4 mr-2" />
-                  Pay ${cartTotal.toFixed(2)}
+                  Pay ${(cartTotal ?? 0).toFixed(2)}
                 </Button>
               </div>
             </motion.div>
@@ -1197,7 +1197,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
               <Card className="w-full p-4 bg-muted/30">
                 <div className="text-center space-y-1">
                   <p className="text-xs text-muted-foreground uppercase tracking-wider">Amount to Pay</p>
-                  <p className="text-3xl font-bold text-emerald-600">${cartTotal.toFixed(2)}</p>
+                  <p className="text-3xl font-bold text-emerald-600">${(cartTotal ?? 0).toFixed(2)}</p>
                   <p className="text-xs text-muted-foreground">
                     via {paymentMethod === 'easypaisa' ? 'Easypaisa' : 'JazzCash'}
                   </p>
@@ -1289,7 +1289,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Amount Paid</span>
-                  <span className="font-semibold">${cartTotal.toFixed(2)}</span>
+                  <span className="font-semibold">${(cartTotal ?? 0).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Method</span>

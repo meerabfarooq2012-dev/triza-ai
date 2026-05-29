@@ -69,3 +69,31 @@ Stage Summary:
 - Error boundaries in place at both page level and view level
 - useHydrated hook uses React 19-compliant useSyncExternalStore
 - Previous client-side error should now be caught gracefully with "Reset App" option
+
+---
+Task ID: 2
+Agent: Main Agent
+Task: Fix TypeError: Cannot read properties of undefined (reading 'toFixed') causing entire website crash
+
+Work Log:
+- User reported exact error: `TypeError: Cannot read properties of undefined (reading 'toFixed')` in ProductDetail component
+- Root cause: API returns product data where numeric fields like `price`, `averageRating`, `comparePrice` can be undefined/null
+- Calling `.toFixed()` on undefined throws TypeError, crashing the entire React render tree
+- Fixed product-detail.tsx (6 unsafe .toFixed calls) - the direct crash source
+- Fixed search-page.tsx (5 calls), shop-view.tsx (8 calls), gig-detail.tsx (6 calls), gigs-browse.tsx (2 calls)
+- Fixed product-card.tsx (2 calls), shop-card.tsx (1 call), cart-drawer.tsx (3 calls)
+- Fixed featured-products-section.tsx (2 calls), popular-shops-section.tsx (1 call)
+- Fixed seller-analytics.tsx (4 calls), seller-overview.tsx (4 calls), seller-products.tsx (3 calls), seller-gigs.tsx (4 calls), seller-orders.tsx (8 calls)
+- Fixed buyer-orders.tsx (11 calls), buyer-favorites.tsx (2 calls), buyer-payments.tsx (5 calls), buyer-overview.tsx (1 call)
+- Fixed admin-transactions.tsx (9 calls), admin-orders.tsx (3 calls), admin-products.tsx (1 call), admin-dashboard.tsx (2 calls)
+- Fixed checkout-modal.tsx (9 calls), seller-wallet.tsx (10 calls), order-payment-status.tsx (5 calls)
+- Fixed rating-stars.tsx (1 call - clampedRating fallback)
+- Added safety reset in Zustand store: on rehydration, detail views (product-detail, gig-detail, shop-view) are reset to 'landing' to prevent crashes from stale persisted state
+- Total: 100+ unsafe .toFixed() calls fixed across 27 component files
+- Lint passes cleanly, dev server returns 200 on all requests
+
+Stage Summary:
+- Root cause: ProductDetail component calling .toFixed() on undefined product price/rating values from API
+- Fix: Added `?? 0` nullish coalescing fallback before every .toFixed() call across entire codebase
+- Additional safety: Zustand store resets detail views to 'landing' on page reload
+- App should now render without crashes even when API data has missing numeric fields

@@ -646,11 +646,11 @@ export function SellerProducts() {
                         <TableCell>
                           <div>
                             <span className="text-sm font-semibold text-gray-900">
-                              ${product.price.toFixed(2)}
+                              ${(product.price ?? 0).toFixed(2)}
                             </span>
                             {product.comparePrice && (
                               <span className="ml-1 text-xs text-gray-400 line-through">
-                                ${product.comparePrice.toFixed(2)}
+                                ${(product.comparePrice ?? 0).toFixed(2)}
                               </span>
                             )}
                           </div>
@@ -770,7 +770,7 @@ export function SellerProducts() {
                             </div>
                             <div className="mt-2 flex items-center justify-between">
                               <span className="text-sm font-bold text-emerald-600">
-                                ${product.price.toFixed(2)}
+                                ${(product.price ?? 0).toFixed(2)}
                               </span>
                               <div className="flex items-center gap-1">
                                 <Button

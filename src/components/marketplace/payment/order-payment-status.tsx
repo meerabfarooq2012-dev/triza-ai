@@ -208,15 +208,15 @@ export function OrderPaymentStatus({
             <div className="rounded-lg bg-muted/30 p-3 space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Total Paid</span>
-                <span className="font-semibold">${totalAmount.toFixed(2)}</span>
+                <span className="font-semibold">${(totalAmount ?? 0).toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm text-amber-600">
                 <span>Platform Fee (10%)</span>
-                <span>-${platformFee.toFixed(2)}</span>
+                <span>-${(platformFee ?? 0).toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm text-emerald-600">
                 <span>Seller Payout (90%)</span>
-                <span>+${sellerPayout.toFixed(2)}</span>
+                <span>+${(sellerPayout ?? 0).toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -295,12 +295,12 @@ export function OrderPaymentStatus({
                 <AlertDialogDescription className="space-y-3 text-left">
                   <p>
                     By confirming delivery, you authorize Marketo to release the payment of{' '}
-                    <span className="font-semibold text-foreground">${totalAmount.toFixed(2)}</span>{' '}
+                    <span className="font-semibold text-foreground">${(totalAmount ?? 0).toFixed(2)}</span>{' '}
                     to the seller. This action <span className="font-semibold text-foreground">cannot be undone</span>.
                   </p>
                   <p>
                     The seller will receive{' '}
-                    <span className="font-semibold text-emerald-600">${sellerPayout.toFixed(2)}</span>{' '}
+                    <span className="font-semibold text-emerald-600">${(sellerPayout ?? 0).toFixed(2)}</span>{' '}
                     (after 10% platform fee).
                   </p>
                   <div className="pt-2">

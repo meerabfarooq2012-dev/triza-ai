@@ -124,7 +124,7 @@ export function PopularShopsSection() {
                           {shop.averageRating > 0 && (
                             <div className="flex items-center gap-0.5">
                               <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                              <span>{shop.averageRating.toFixed(1)}</span>
+                              <span>{(shop.averageRating ?? 0).toFixed(1)}</span>
                             </div>
                           )}
                           {shop.totalSales > 0 && (

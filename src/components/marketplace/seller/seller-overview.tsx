@@ -524,7 +524,7 @@ export function SellerOverview() {
                           {ORDER_STATUS_LABELS[order.status]}
                         </Badge>
                         <span className="text-sm font-semibold text-gray-900">
-                          ${order.totalAmount.toFixed(2)}
+                          ${(order.totalAmount ?? 0).toFixed(2)}
                         </span>
                       </div>
                     </div>
@@ -637,7 +637,7 @@ export function SellerOverview() {
                             {product.name}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {product.totalSales} sales • ${product.price.toFixed(2)}
+                            {product.totalSales} sales • ${(product.price ?? 0).toFixed(2)}
                           </p>
                         </div>
                       </div>
@@ -693,13 +693,13 @@ export function SellerOverview() {
                             {gig.title}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {gig.totalOrders} orders • ${startingPrice.toFixed(2)}+
+                            {gig.totalOrders} orders • ${(startingPrice ?? 0).toFixed(2)}+
                           </p>
                         </div>
                         <div className="flex items-center gap-1">
                           <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
                           <span className="text-xs text-gray-500">
-                            {gig.averageRating > 0 ? gig.averageRating.toFixed(1) : '-'}
+                            {(gig.averageRating ?? 0) > 0 ? (gig.averageRating ?? 0).toFixed(1) : '-'}
                           </span>
                         </div>
                       </div>

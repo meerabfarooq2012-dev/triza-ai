@@ -552,12 +552,12 @@ export function BuyerPayments() {
                           <div className="flex items-center gap-1">
                             <DollarSign className="h-3.5 w-3.5 text-gray-400" />
                             <span className="font-bold text-gray-900">
-                              ${payment.amount.toFixed(2)}
+                              ${(payment.amount ?? 0).toFixed(2)}
                             </span>
                           </div>
                           <Separator orientation="vertical" className="h-4" />
                           <span className="text-xs text-gray-500">
-                            Fee: ${payment.platformFee.toFixed(2)}
+                            Fee: ${(payment.platformFee ?? 0).toFixed(2)}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -752,15 +752,15 @@ export function BuyerPayments() {
                 <div className="space-y-1.5">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Total Amount</span>
-                    <span className="font-semibold">${selectedPayment.amount.toFixed(2)}</span>
+                    <span className="font-semibold">${(selectedPayment.amount ?? 0).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm text-amber-600">
                     <span>Platform Fee (10%)</span>
-                    <span>-${selectedPayment.platformFee.toFixed(2)}</span>
+                    <span>-${(selectedPayment.platformFee ?? 0).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm text-emerald-600">
                     <span>Seller Payout (90%)</span>
-                    <span>+${selectedPayment.sellerPayout.toFixed(2)}</span>
+                    <span>+${(selectedPayment.sellerPayout ?? 0).toFixed(2)}</span>
                   </div>
                 </div>
               </div>

@@ -30,7 +30,7 @@ export function RatingStars({
   showValue = false,
   className,
 }: RatingStarsProps) {
-  const clampedRating = Math.max(0, Math.min(rating, maxRating))
+  const clampedRating = Math.max(0, Math.min(rating ?? 0, maxRating))
   const fullStars = Math.floor(clampedRating)
   const hasHalfStar = clampedRating - fullStars >= 0.25 && clampedRating - fullStars < 0.75
   const filledIfRounded = clampedRating - fullStars >= 0.75

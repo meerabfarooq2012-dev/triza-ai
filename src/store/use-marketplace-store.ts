@@ -276,6 +276,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
                 isLoadingAuth: false,
                 activeRole: 'buyer',
                 currentView: 'landing',
+                viewParams: {},
               })
             }, 0)
             return
@@ -290,6 +291,18 @@ export const useMarketplaceStore = create<MarketplaceState>()(
                 isLoadingAuth: false,
                 activeRole: 'buyer',
                 currentView: 'landing',
+                viewParams: {},
+              })
+            }, 0)
+          }
+
+          // Reset detail views on page reload to prevent crashes from stale data
+          const detailViews = ['product-detail', 'gig-detail', 'shop-view']
+          if (state?.currentView && detailViews.includes(state.currentView)) {
+            setTimeout(() => {
+              useMarketplaceStore.setState({
+                currentView: 'landing',
+                viewParams: {},
               })
             }, 0)
           }

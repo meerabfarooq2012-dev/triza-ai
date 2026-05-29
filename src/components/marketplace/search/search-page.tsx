@@ -118,17 +118,17 @@ function ProductCard({
               className="fill-yellow-400 text-yellow-400"
             />
             <span className="text-xs font-medium">
-              {product.averageRating.toFixed(1)}
+              {(product.averageRating ?? 0).toFixed(1)}
             </span>
             <span className="text-xs text-muted-foreground">
               ({product.totalReviews})
             </span>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="font-bold text-lg">${product.price.toFixed(2)}</span>
+            <span className="font-bold text-lg">${(product.price ?? 0).toFixed(2)}</span>
             {product.comparePrice && (
               <span className="text-xs text-muted-foreground line-through">
-                ${product.comparePrice.toFixed(2)}
+                ${(product.comparePrice ?? 0).toFixed(2)}
               </span>
             )}
           </div>
@@ -621,12 +621,12 @@ export default function SearchPage() {
                         )}
                         <div className="flex items-center gap-1 mb-2">
                           <Star size={12} className="fill-yellow-400 text-yellow-400" />
-                          <span className="text-xs font-medium">{gig.averageRating.toFixed(1)}</span>
+                          <span className="text-xs font-medium">{(gig.averageRating ?? 0).toFixed(1)}</span>
                           <span className="text-xs text-muted-foreground">({gig.totalReviews})</span>
                         </div>
                         <div className="flex items-baseline gap-1.5">
                           <span className="text-xs text-muted-foreground">Starting at</span>
-                          <span className="font-bold text-lg text-emerald-600">${startingPrice.toFixed(2)}</span>
+                          <span className="font-bold text-lg text-emerald-600">${(startingPrice ?? 0).toFixed(2)}</span>
                         </div>
                         {packages.length > 0 && (
                           <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">

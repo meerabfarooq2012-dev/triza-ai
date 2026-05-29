@@ -136,7 +136,7 @@ function PaymentActivityTooltip({ active, payload, label }: { active?: boolean; 
         <p className="font-medium mb-1">{label}</p>
         {payload.map((entry, idx) => (
           <p key={idx} style={{ color: entry.color }}>
-            {entry.name}: ${entry.value.toFixed(2)}
+            {entry.name}: ${(entry.value ?? 0).toFixed(2)}
           </p>
         ))}
       </div>
@@ -577,7 +577,7 @@ export default function AdminDashboard() {
                         </p>
                       </div>
                       <span className="text-sm font-semibold">
-                        ${order.totalAmount.toFixed(2)}
+                        ${(order.totalAmount ?? 0).toFixed(2)}
                       </span>
                       <Badge variant="outline" className="text-xs">
                         {order.status}

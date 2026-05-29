@@ -194,11 +194,11 @@ export function BuyerFavorites() {
                     <div className="mt-2 flex items-center justify-between">
                       <div className="flex items-baseline gap-1.5">
                         <span className="text-lg font-bold text-emerald-600">
-                          ${product.price.toFixed(2)}
+                          ${(product.price ?? 0).toFixed(2)}
                         </span>
                         {product.comparePrice && (
                           <span className="text-xs text-gray-400 line-through">
-                            ${product.comparePrice.toFixed(2)}
+                            ${(product.comparePrice ?? 0).toFixed(2)}
                           </span>
                         )}
                       </div>

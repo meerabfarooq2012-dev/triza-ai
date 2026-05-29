@@ -246,7 +246,7 @@ export default function ProductDetail() {
   const images = safeJsonParse<string[]>(product.images, [])
   const tags = safeJsonParse<string[]>(product.tags, [])
   const deliveryCountries = safeJsonParse<string[]>(product.deliveryCountries, [])
-  const discount = product.comparePrice
+  const discount = product.comparePrice && product.price
     ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
     : 0
 
@@ -358,19 +358,19 @@ export default function ProductDetail() {
           <div className="flex items-center gap-2">
             <StarRating rating={product.averageRating} />
             <span className="text-sm font-medium">
-              {product.averageRating.toFixed(1)}
+              {(product.averageRating ?? 0).toFixed(1)}
             </span>
             <span className="text-sm text-muted-foreground">
-              ({product.totalReviews} reviews)
+              ({product.totalReviews ?? 0} reviews)
             </span>
           </div>
 
           {/* Price */}
           <div className="flex items-baseline gap-3">
-            <span className="text-3xl font-bold">${product.price.toFixed(2)}</span>
+            <span className="text-3xl font-bold">${(product.price ?? 0).toFixed(2)}</span>
             {product.comparePrice && (
               <span className="text-lg text-muted-foreground line-through">
-                ${product.comparePrice.toFixed(2)}
+                ${(product.comparePrice ?? 0).toFixed(2)}
               </span>
             )}
             {discount > 0 && (
@@ -568,7 +568,7 @@ export default function ProductDetail() {
                     <div className="flex items-center gap-1">
                       <StarRating rating={product.shop.averageRating} size={12} />
                       <span className="text-xs text-muted-foreground">
-                        {product.shop.averageRating.toFixed(1)}
+                        {(product.shop.averageRating ?? 0).toFixed(1)}
                       </span>
                     </div>
                   </div>
@@ -639,7 +639,7 @@ export default function ProductDetail() {
                 <h3 className="font-bold text-lg mb-4">Rating Summary</h3>
                 <div className="text-center mb-4">
                   <div className="text-4xl font-bold">
-                    {product.averageRating.toFixed(1)}
+                    {(product.averageRating ?? 0).toFixed(1)}
                   </div>
                   <StarRating rating={product.averageRating} />
                   <p className="text-sm text-muted-foreground mt-1">
@@ -802,7 +802,7 @@ export default function ProductDetail() {
                         {rp.name}
                       </h3>
                       <p className="font-bold text-sm mt-1">
-                        ${rp.price.toFixed(2)}
+                        ${(rp.price ?? 0).toFixed(2)}
                       </p>
                     </CardContent>
                   </Card>

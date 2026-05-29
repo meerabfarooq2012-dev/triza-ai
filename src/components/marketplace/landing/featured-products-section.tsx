@@ -130,12 +130,12 @@ export function FeaturedProductsSection() {
                       </p>
                       <div className="flex items-center justify-between mt-3">
                         <span className="text-lg font-bold bg-gradient-to-r from-violet-600 to-rose-500 bg-clip-text text-transparent">
-                          ${product.price.toFixed(2)}
+                          ${(product.price ?? 0).toFixed(2)}
                         </span>
                         {product.averageRating > 0 && (
                           <div className="flex items-center gap-1 text-xs text-muted-foreground">
                             <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                            {product.averageRating.toFixed(1)}
+                            {(product.averageRating ?? 0).toFixed(1)}
                           </div>
                         )}
                       </div>

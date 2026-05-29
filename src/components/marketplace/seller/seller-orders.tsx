@@ -254,11 +254,11 @@ export function SellerOrders() {
                                 {item.product?.name || 'Product'}
                               </p>
                               <p className="text-xs text-gray-500">
-                                Qty: {item.quantity} × ${item.price.toFixed(2)}
+                                Qty: {item.quantity} × ${(item.price ?? 0).toFixed(2)}
                               </p>
                             </div>
                             <p className="text-sm font-semibold text-gray-900">
-                              ${(item.price * item.quantity).toFixed(2)}
+                              ${((item.price ?? 0) * (item.quantity ?? 1)).toFixed(2)}
                             </p>
                           </div>
                         )
@@ -271,7 +271,7 @@ export function SellerOrders() {
                         <span className="text-gray-500">
                           Total:{' '}
                           <span className="font-bold text-gray-900">
-                            ${order.totalAmount.toFixed(2)}
+                            ${(order.totalAmount ?? 0).toFixed(2)}
                           </span>
                         </span>
                       </div>
@@ -402,11 +402,11 @@ export function SellerOrders() {
                         {item.product?.name || 'Product'}
                       </p>
                       <p className="text-xs text-gray-500">
-                        Qty: {item.quantity} × ${item.price.toFixed(2)}
+                        Qty: {item.quantity} × ${(item.price ?? 0).toFixed(2)}
                       </p>
                     </div>
                     <p className="text-sm font-semibold">
-                      ${(item.price * item.quantity).toFixed(2)}
+                      ${((item.price ?? 0) * (item.quantity ?? 1)).toFixed(2)}
                     </p>
                   </div>
                 ))}
@@ -432,16 +432,16 @@ export function SellerOrders() {
               <div className="space-y-1 rounded-lg bg-gray-50 p-3">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Subtotal</span>
-                  <span>${selectedOrder.totalAmount.toFixed(2)}</span>
+                  <span>${(selectedOrder.totalAmount ?? 0).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Platform Fee</span>
-                  <span>${selectedOrder.platformFee.toFixed(2)}</span>
+                  <span>${(selectedOrder.platformFee ?? 0).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between font-semibold">
                   <span>Your Earnings</span>
                   <span className="text-emerald-600">
-                    ${(selectedOrder.totalAmount - selectedOrder.platformFee).toFixed(2)}
+                    ${((selectedOrder.totalAmount ?? 0) - (selectedOrder.platformFee ?? 0)).toFixed(2)}
                   </span>
                 </div>
               </div>

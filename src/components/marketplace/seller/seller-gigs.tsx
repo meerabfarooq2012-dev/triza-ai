@@ -671,7 +671,7 @@ export function SellerGigs() {
                         </TableCell>
                         <TableCell>
                           <span className="text-sm font-semibold text-gray-900">
-                            ${startingPrice.toFixed(2)}
+                            ${(startingPrice ?? 0).toFixed(2)}
                           </span>
                         </TableCell>
                         <TableCell>
@@ -683,8 +683,8 @@ export function SellerGigs() {
                           <div className="flex items-center gap-1">
                             <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
                             <span className="text-sm text-gray-600">
-                              {gig.averageRating > 0
-                                ? gig.averageRating.toFixed(1)
+                              {(gig.averageRating ?? 0) > 0
+                                ? (gig.averageRating ?? 0).toFixed(1)
                                 : '-'}
                             </span>
                             {gig.totalReviews > 0 && (
@@ -800,13 +800,13 @@ export function SellerGigs() {
                             <div className="mt-2 flex items-center justify-between">
                               <div className="flex items-center gap-2">
                                 <span className="text-sm font-bold text-emerald-600">
-                                  ${startingPrice.toFixed(2)}
+                                  ${(startingPrice ?? 0).toFixed(2)}
                                 </span>
                                 <div className="flex items-center gap-0.5">
                                   <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
                                   <span className="text-xs text-gray-500">
-                                    {gig.averageRating > 0
-                                      ? gig.averageRating.toFixed(1)
+                                    {(gig.averageRating ?? 0) > 0
+                                      ? (gig.averageRating ?? 0).toFixed(1)
                                       : '-'}
                                   </span>
                                 </div>

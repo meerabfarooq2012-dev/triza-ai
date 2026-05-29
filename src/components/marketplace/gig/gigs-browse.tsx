@@ -735,12 +735,12 @@ export function GigsBrowse() {
                           )}
                           <div className="flex items-center gap-1 mb-2">
                             <Star size={12} className="fill-yellow-400 text-yellow-400" />
-                            <span className="text-xs font-medium">{gig.averageRating.toFixed(1)}</span>
+                            <span className="text-xs font-medium">{(gig.averageRating ?? 0).toFixed(1)}</span>
                             <span className="text-xs text-muted-foreground">({gig.totalReviews})</span>
                           </div>
                           <div className="flex items-baseline gap-1.5">
                             <span className="text-xs text-muted-foreground">Starting at</span>
-                            <span className="font-bold text-lg text-emerald-600">${startingPrice.toFixed(2)}</span>
+                            <span className="font-bold text-lg text-emerald-600">${(startingPrice ?? 0).toFixed(2)}</span>
                           </div>
                           {packages.length > 0 && (
                             <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
