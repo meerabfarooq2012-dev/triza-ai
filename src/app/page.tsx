@@ -107,6 +107,11 @@ const TermsOfService = dynamic(
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
+const MessagesPage = dynamic(
+  () => import('@/components/marketplace/messages/messages-page').then(m => ({ default: m.MessagesPage })),
+  { ssr: false, loading: () => <ViewLoader /> }
+)
+
 // Error boundary component to catch rendering errors in child components
 type ErrorBoundaryProps = { children: React.ReactNode; fallback?: React.ReactNode }
 type ErrorBoundaryState = { hasError: boolean; error: Error | null }
@@ -214,6 +219,9 @@ function MarketplaceApp() {
         case 'notifications':
           if (!isAuthenticated) return <AuthModal />
           return <NotificationsPage />
+        case 'messages':
+          if (!isAuthenticated) return <AuthModal />
+          return <MessagesPage />
         case 'privacy':
           return <PrivacyPolicy />
         case 'terms':

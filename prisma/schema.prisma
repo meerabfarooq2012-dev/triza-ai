@@ -30,6 +30,8 @@ model User {
   notifications Notification[]
   sentMessages  Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")
+  conversationsAsP1 Conversation[] @relation("ConvParticipant1")
+  conversationsAsP2 Conversation[] @relation("ConvParticipant2")
   disputes      Dispute[] @relation("DisputesByUser")
   favorites     Favorite[]
   socialLinks   SocialLink[]
@@ -128,6 +130,7 @@ model Product {
   orderItems    OrderItem[]
   reviews       Review[]
   favorites     Favorite[]
+  conversations Conversation[]
 
   @@unique([shopId, slug])
   @@index([shopId])
@@ -235,19 +238,50 @@ model Notification {
   @@index([isRead])
 }
 
-model Message {
-  id         String   @id @default(cuid())
-  senderId   String
-  receiverId String
-  content    String
-  isRead     Boolean  @default(false)
-  createdAt  DateTime @default(now())
+model Conversation {
+  id             String    @id @default(cuid())
+  participant1Id String
+  participant2Id String
+  productId      String?
+  gigId          String?
+  orderId        String?
+  lastMessageAt  DateTime  @default(now())
+  lastMessagePreview String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
-  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
-  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  participant1   User      @relation("ConvParticipant1", fields: [participant1Id], references: [id])
+  participant2   User      @relation("ConvParticipant2", fields: [participant2Id], references: [id])
+  product        Product?  @relation(fields: [productId], references: [id])
+  gig            Gig?      @relation(fields: [gigId], references: [id])
+  messages       Message[]
+
+  @@unique([participant1Id, participant2Id, productId, gigId])
+  @@index([participant1Id])
+  @@index([participant2Id])
+  @@index([lastMessageAt])
+  @@index([productId])
+  @@index([gigId])
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String?
+  senderId       String
+  receiverId     String
+  content        String
+  messageType    String   @default("text") // text, image, system, order_reference
+  isRead         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  sender         User          @relation("SentMessages", fields: [senderId], references: [id])
+  receiver       User          @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  conversation   Conversation? @relation(fields: [conversationId], references: [id])
 
   @@index([senderId])
   @@index([receiverId])
+  @@index([conversationId])
+  @@index([createdAt])
 }
 
 model Dispute {
@@ -307,6 +341,7 @@ model Gig {
   shop            Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
   category        Category? @relation(fields: [categoryId], references: [id])
   reviews         Review[]
+  conversations   Conversation[]
 
   @@unique([shopId, slug])
   @@index([shopId])

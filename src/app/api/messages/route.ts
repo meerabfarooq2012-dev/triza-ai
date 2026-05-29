@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
+// GET /api/messages?userId=string&otherUserId=string
+// Fetch messages between two users (backward compatible)
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -52,10 +54,12 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// POST /api/messages
+// Send a message and create/update the conversation
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { senderId, receiverId, content } = body;
+    const { senderId, receiverId, content, productId, gigId, messageType } = body;
 
     if (!senderId || !receiverId || !content) {
       return NextResponse.json(
@@ -64,11 +68,45 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Sort participant IDs alphabetically so participant1Id < participant2Id
+    const [participant1Id, participant2Id] =
+      senderId < receiverId ? [senderId, receiverId] : [receiverId, senderId];
+
+    // Build the conversation lookup filter
+    // SQLite treats NULL as distinct in unique constraints, so we use findFirst + create
+    const conversationFilter: Record<string, string | null> = {
+      participant1Id,
+      participant2Id,
+      productId: productId || null,
+      gigId: gigId || null,
+    };
+
+    // Find or create the conversation
+    let conversation = await db.conversation.findFirst({
+      where: conversationFilter,
+    });
+
+    if (!conversation) {
+      conversation = await db.conversation.create({
+        data: {
+          participant1Id,
+          participant2Id,
+          productId: productId || null,
+          gigId: gigId || null,
+          lastMessageAt: new Date(),
+          lastMessagePreview: content.substring(0, 100),
+        },
+      });
+    }
+
+    // Create the message with conversationId
     const message = await db.message.create({
       data: {
+        conversationId: conversation.id,
         senderId,
         receiverId,
         content,
+        messageType: messageType || 'text',
       },
       include: {
         sender: { select: { id: true, name: true, avatar: true } },
@@ -76,7 +114,16 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Create notification for receiver
+    // Update the conversation's lastMessageAt and lastMessagePreview
+    await db.conversation.update({
+      where: { id: conversation.id },
+      data: {
+        lastMessageAt: new Date(),
+        lastMessagePreview: content.substring(0, 100),
+      },
+    });
+
+    // Create a notification for the receiver
     await db.notification.create({
       data: {
         userId: receiverId,

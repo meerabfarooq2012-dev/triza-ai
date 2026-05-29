@@ -147,3 +147,123 @@ Stage Summary:
 - Stat cards now show real values from API with 0 as fallback
 - Charts show empty state messages instead of fake data
 - Admin panel now accurately reflects the true state of the marketplace
+
+---
+Task ID: 3
+Agent: Chat Service Agent
+Task: Create Socket.io mini-service for Marketo marketplace real-time chat system
+
+Work Log:
+- Created `/home/z/my-project/mini-services/chat-service/index.ts` with full Socket.io server implementation
+- Updated `/home/z/my-project/mini-services/chat-service/package.json` with correct name, scripts, and dependencies
+- Removed `@types/bun` and `typescript` from dependencies, moved to devDependencies
+- Implemented all 6 required Socket.io events:
+  - `join-conversation` - joins room `conv:{conversationId}`, tracks user-socket mapping
+  - `leave-conversation` - leaves room, cleans up tracking
+  - `send-message` - broadcasts `new-message` to the conversation room via `io.to()`
+  - `typing` - emits `user-typing` to others in room (not sender)
+  - `stop-typing` - emits `user-stop-typing` to others in room
+  - `mark-read` - emits `messages-read` to others in room
+- Room-based architecture: conversations use `conv:{conversationId}` room naming
+- User tracking via `socketUserMap` (socketId → userId) and `socketRoomsMap` (socketId → Set<conversationId>)
+- Proper disconnect cleanup: leaves all rooms, removes from tracking maps, notifies other users
+- CORS enabled with `origin: "*"`
+- Port hardcoded to 3003
+- Installed socket.io@4.8.3 dependency
+- Verified service starts and responds to Socket.io polling transport
+
+Stage Summary:
+- Socket.io chat service running on port 3003 with full real-time messaging support
+- All 6 client→server events implemented with corresponding server→client broadcasts
+- Room-based architecture with proper join/leave/cleanup lifecycle
+- Service runs with `bun --hot` for auto-restart on file changes
+
+---
+Task ID: 4
+Agent: Backend Agent
+Task: Update backend API routes for Marketo marketplace messaging system with Conversation model
+
+Work Log:
+- Read existing code: `/api/messages/route.ts` (GET+POST), `/api/messages/conversations/route.ts` (GET)
+- Verified Prisma schema already has `Conversation` model with `@@unique([participant1Id, participant2Id, productId, gigId])` and enhanced `Message` model with `conversationId` field
+- Confirmed database is in sync with schema via `bun run db:push`
+- Updated `/api/messages/route.ts` POST handler:
+  - Sorts participant IDs alphabetically (participant1Id < participant2Id)
+  - Uses `findFirst` + `create` pattern (not upsert) because SQLite treats NULL as distinct in unique constraints
+  - Creates Message with conversationId linked to the Conversation
+  - Updates Conversation's lastMessageAt and lastMessagePreview after each message
+  - Creates notification for receiver
+  - Kept existing GET handler for backward compatibility (fetches messages between two users, marks as read)
+- Rewrote `/api/messages/conversations/route.ts`:
+  - Queries Conversation model where user is participant1 or participant2
+  - Includes participant info, product/gig context, last message
+  - Computes unread count per conversation via separate query
+  - Returns enriched response with otherUser, product, gig, unreadCount, lastMessage
+  - Sorted by lastMessageAt descending
+- Created `/api/messages/conversations/[id]/route.ts`:
+  - GET endpoint for specific conversation with all messages
+  - Verifies user is a participant (403 if not)
+  - Includes sender info for each message
+  - Marks all unread messages (where receiverId === userId) as read
+  - Returns conversation details with otherUser, product, gig, and messages array
+- Created `/api/messages/unread-count/route.ts`:
+  - Simple GET endpoint counting messages where receiverId === userId and isRead === false
+  - Returns `{ success: true, data: { count: N } }`
+- Created `/api/messages/conversations/create/route.ts`:
+  - POST endpoint to create or find a conversation
+  - Sorts participant IDs alphabetically
+  - Uses findFirst + create pattern for same SQLite NULL constraint reason
+  - If initialMessage is provided, creates the first message and updates conversation
+  - Creates notification for receiver when initial message is sent
+  - Returns conversation with otherUser, product, gig, isNew flag, and optional message
+  - Returns 201 for new conversations, 200 for existing ones
+- All lint checks pass cleanly
+- Dev server running normally
+
+Stage Summary:
+- 5 API route files created/updated for the messaging system
+- All routes use the new Conversation model with proper participant sorting
+- SQLite NULL handling: uses findFirst + create instead of upsert (since NULL != NULL in SQLite unique constraints)
+- Backward-compatible GET endpoint preserved on /api/messages
+- New endpoints: conversation detail, unread count, and conversation create/find
+
+---
+Task ID: 5
+Agent: Main Agent
+Task: Build Fiverr-style full-page messaging component for Marketo marketplace
+
+Work Log:
+- Read worklog.md and reviewed all previous task context
+- Reviewed existing codebase: store, types, API routes, Socket.io service, existing buyer/seller messages components, page.tsx routing
+- Created `/home/z/my-project/src/components/marketplace/messages/messages-page.tsx`:
+  - Full `'use client'` component exported as `MessagesPage`
+  - 3-panel desktop layout (conversation list ~320-384px | chat thread flex-1 | context panel ~288-320px)
+  - 2-panel mobile layout (toggle between conversation list and thread view)
+  - Left Panel: Search filter, conversation list sorted by lastMessageAt, avatars with online indicator dots, unread count badges (emerald green), product/gig context badges (📦/💼), relative timestamps ("2m ago", "Yesterday", "Jan 15")
+  - Center Panel: Thread header with user avatar/name/online status + action buttons, product/gig context bar with thumbnail/price/view link, message bubbles (gradient emerald/teal for own, light gray for others), date separators between days, system messages centered/italic, typing indicator with animated dots, auto-resize textarea (up to 4 lines), Enter to send / Shift+Enter for newline
+  - Right Panel (desktop only when product/gig): Image, name, price, "View Details" button, seller info card, trust badges (Secure messaging, Verified seller, Escrow protection)
+  - Socket.io integration: Connect on mount, join/leave conversation rooms, send-message via socket + API POST, typing with 2-second debounce, mark-read events, new-message listener with duplicate prevention
+  - API integration: Fetch conversations, fetch messages per conversation (marks as read), send message with optimistic update + server response replacement, create/find conversation
+  - viewParams navigation: Auto-select by conversationId, auto-create/find by otherUserId with productId/gigId context
+  - Loading states with skeleton loaders for both conversation list and message thread
+  - Empty states with friendly messages and icons (MessageSquare)
+  - Not-authenticated state with sign-in CTA
+  - Framer Motion animations for messages and panel transitions
+  - Custom scrollbar styling for message area
+  - Responsive design with window resize listener
+- Updated `/home/z/my-project/src/app/page.tsx`:
+  - Added `MessagesPage` dynamic import with ssr: false
+  - Added `case 'messages'` in renderView switch (requires authentication, shows AuthModal if not logged in)
+- Fixed lint: Reordered useCallback definitions (handleSelectConversation → createConversation → fetchConversations) to resolve dependency order and eliminate unused eslint-disable directives
+- All lint checks pass cleanly (0 errors, 0 warnings)
+
+Stage Summary:
+- Created comprehensive Fiverr-style messaging page at `/home/z/my-project/src/components/marketplace/messages/messages-page.tsx`
+- Full Socket.io real-time integration with typing indicators, read receipts, and online status
+- 3-panel responsive layout (desktop) / 2-panel toggle (mobile)
+- All 5 existing API routes properly integrated (conversations, messages, create, unread-count, conversation detail)
+- Optimistic message updates with server response replacement
+- Product/Gig context panels with trust badges
+- viewParams navigation support for deep-linking to conversations
+- page.tsx updated with 'messages' route case and dynamic import
+- All lint checks pass cleanly

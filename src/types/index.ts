@@ -206,13 +206,16 @@ export interface Notification {
 
 export interface Message {
   id: string
+  conversationId: string | null
   senderId: string
   receiverId: string
   content: string
+  messageType: string // text, image, system, order_reference
   isRead: boolean
   createdAt: string
   sender?: User
   receiver?: User
+  conversation?: Conversation
 }
 
 export interface Dispute {
@@ -500,9 +503,22 @@ export interface OrderSearchParams {
 // ----- Conversation type for messages -----
 
 export interface Conversation {
-  partner: User
-  lastMessage: Message
+  id: string
+  participant1Id: string
+  participant2Id: string
+  productId: string | null
+  gigId: string | null
+  orderId: string | null
+  lastMessageAt: string
+  lastMessagePreview: string | null
+  createdAt: string
+  updatedAt: string
+  otherUser?: User
+  product?: Product | null
+  gig?: Gig | null
   unreadCount: number
+  lastMessage?: Message
+  messages?: Message[]
 }
 
 // ----- Dashboard Stats -----

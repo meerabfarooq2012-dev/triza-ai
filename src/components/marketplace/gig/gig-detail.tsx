@@ -866,7 +866,16 @@ export default function GigDetail() {
               <Button
                 variant="outline"
                 className="w-full gap-2"
-                onClick={handleVisitShop}
+                onClick={() => {
+                  if (currentUser && gig.shop) {
+                    setCurrentView('messages', {
+                      otherUserId: gig.shop.userId,
+                      gigId: gig.id,
+                    })
+                  } else {
+                    setCurrentView('auth', { mode: 'login' })
+                  }
+                }}
               >
                 <MessageSquare size={16} />
                 Contact Seller

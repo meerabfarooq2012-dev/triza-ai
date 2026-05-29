@@ -20,6 +20,7 @@ import {
   Store,
   Tag,
   Globe,
+  MessageSquare,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -573,15 +574,35 @@ export default function ProductDetail() {
                     </div>
                   </div>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleVisitShop}
-                  className="gap-1"
-                >
-                  <Store size={14} />
-                  Visit Shop
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (currentUser && product.shop) {
+                        setCurrentView('messages', {
+                          otherUserId: product.shop.userId,
+                          productId: product.id,
+                        })
+                      } else {
+                        setCurrentView('auth', { mode: 'login' })
+                      }
+                    }}
+                    className="gap-1"
+                  >
+                    <MessageSquare size={14} />
+                    Contact
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleVisitShop}
+                    className="gap-1"
+                  >
+                    <Store size={14} />
+                    Visit
+                  </Button>
+                </div>
               </div>
             </Card>
           )}

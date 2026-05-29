@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
+// GET /api/messages/conversations?userId=string
+// Fetch all conversations for a user using the Conversation model
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -13,63 +15,102 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get all messages where the user is sender or receiver
-    const messages = await db.message.findMany({
+    // Find all conversations where the user is participant1 or participant2
+    const conversations = await db.conversation.findMany({
       where: {
         OR: [
-          { senderId: userId },
-          { receiverId: userId },
+          { participant1Id: userId },
+          { participant2Id: userId },
         ],
       },
       include: {
-        sender: { select: { id: true, name: true, avatar: true, email: true } },
-        receiver: { select: { id: true, name: true, avatar: true, email: true } },
+        participant1: { select: { id: true, name: true, avatar: true } },
+        participant2: { select: { id: true, name: true, avatar: true } },
+        product: {
+          select: {
+            id: true,
+            name: true,
+            images: true,
+            price: true,
+          },
+        },
+        gig: {
+          select: {
+            id: true,
+            title: true,
+            images: true,
+            packages: true,
+          },
+        },
+        messages: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          select: {
+            id: true,
+            content: true,
+            senderId: true,
+            createdAt: true,
+          },
+        },
       },
-      orderBy: { createdAt: 'desc' },
-      take: 500,
+      orderBy: { lastMessageAt: 'desc' },
     });
 
-    // Group messages by conversation partner
-    const conversationMap = new Map<string, {
-      partner: { id: string; name: string; avatar: string | null; email: string };
-      lastMessage: typeof messages[0];
-      unreadCount: number;
-    }>();
+    // For each conversation, compute unread count and determine the "other user"
+    const enrichedConversations = await Promise.all(
+      conversations.map(async (conv) => {
+        const isParticipant1 = conv.participant1Id === userId;
+        const otherUser = isParticipant1 ? conv.participant2 : conv.participant1;
 
-    for (const msg of messages) {
-      const partnerId = msg.senderId === userId ? msg.receiverId : msg.senderId;
-      const partner = msg.senderId === userId ? msg.receiver : msg.sender;
-
-      if (!conversationMap.has(partnerId)) {
-        const unreadCount = messages.filter(
-          (m) => m.senderId === partnerId && m.receiverId === userId && !m.isRead
-        ).length;
-
-        conversationMap.set(partnerId, {
-          partner: {
-            id: partner.id,
-            name: partner.name,
-            avatar: partner.avatar,
-            email: partner.email,
+        // Count unread messages in this conversation for the user
+        const unreadCount = await db.message.count({
+          where: {
+            conversationId: conv.id,
+            receiverId: userId,
+            isRead: false,
           },
-          lastMessage: msg,
-          unreadCount,
         });
-      }
-    }
 
-    const conversations = Array.from(conversationMap.values());
-
-    // Sort by last message date (most recent first)
-    conversations.sort(
-      (a, b) =>
-        new Date(b.lastMessage.createdAt).getTime() -
-        new Date(a.lastMessage.createdAt).getTime()
+        return {
+          id: conv.id,
+          participant1Id: conv.participant1Id,
+          participant2Id: conv.participant2Id,
+          productId: conv.productId,
+          gigId: conv.gigId,
+          lastMessageAt: conv.lastMessageAt,
+          lastMessagePreview: conv.lastMessagePreview,
+          createdAt: conv.createdAt,
+          updatedAt: conv.updatedAt,
+          otherUser: {
+            id: otherUser.id,
+            name: otherUser.name,
+            avatar: otherUser.avatar,
+          },
+          product: conv.product
+            ? {
+                id: conv.product.id,
+                name: conv.product.name,
+                images: conv.product.images,
+                price: conv.product.price,
+              }
+            : null,
+          gig: conv.gig
+            ? {
+                id: conv.gig.id,
+                title: conv.gig.title,
+                images: conv.gig.images,
+                packages: conv.gig.packages,
+              }
+            : null,
+          unreadCount,
+          lastMessage: conv.messages.length > 0 ? conv.messages[0] : null,
+        };
+      })
     );
 
     return NextResponse.json({
       success: true,
-      data: conversations,
+      data: enrichedConversations,
     });
   } catch (error) {
     console.error('Get conversations error:', error);

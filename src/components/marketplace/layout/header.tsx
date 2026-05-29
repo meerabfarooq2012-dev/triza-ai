@@ -20,6 +20,7 @@ import {
   Compass,
   Briefcase,
   CreditCard,
+  MessageSquare,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -65,7 +66,23 @@ export function Header() {
   const [searchInput, setSearchInput] = useState('')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [searchExpanded, setSearchExpanded] = useState(false)
+  const [unreadMessages, setUnreadMessages] = useState(0)
   const searchInputRef = useRef<HTMLInputElement>(null)
+
+  // Fetch unread message count
+  useEffect(() => {
+    if (!isAuthenticated || !currentUser) return
+    const fetchUnread = async () => {
+      try {
+        const res = await fetch(`/api/messages/unread-count?userId=${currentUser.id}`)
+        const data = await res.json()
+        if (data.success) setUnreadMessages(data.data?.count ?? 0)
+      } catch {}
+    }
+    fetchUnread()
+    const interval = setInterval(fetchUnread, 30000) // poll every 30s
+    return () => clearInterval(interval)
+  }, [isAuthenticated, currentUser])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -185,6 +202,23 @@ export function Header() {
               )}
             </Button>
 
+            {/* Messages */}
+            {isAuthenticated && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 relative"
+                onClick={() => handleNavClick('messages')}
+              >
+                <MessageSquare className="h-4.5 w-4.5" />
+                {unreadMessages > 0 && (
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] font-bold bg-emerald-500 text-white border-0">
+                    {unreadMessages > 99 ? '99+' : unreadMessages}
+                  </Badge>
+                )}
+              </Button>
+            )}
+
             {/* Notifications */}
             {isAuthenticated && (
               <Button
@@ -262,6 +296,15 @@ export function Header() {
                   <DropdownMenuSeparator />
 
                   <DropdownMenuGroup>
+                    <DropdownMenuItem onClick={() => handleNavClick('messages')}>
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      Messages
+                      {unreadMessages > 0 && (
+                        <Badge className="ml-auto h-5 px-1.5 text-[10px] bg-emerald-500 text-white border-0">
+                          {unreadMessages}
+                        </Badge>
+                      )}
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleNavClick('notifications')}>
                       <Bell className="mr-2 h-4 w-4" />
                       Notifications
@@ -463,6 +506,20 @@ export function Header() {
                       Seller Dashboard
                     </Button>
                   )}
+
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start gap-3"
+                    onClick={() => handleNavClick('messages')}
+                  >
+                    <MessageSquare className="h-4.5 w-4.5" />
+                    Messages
+                    {unreadMessages > 0 && (
+                      <Badge className="ml-auto h-5 px-1.5 text-[10px] bg-emerald-500 text-white border-0">
+                        {unreadMessages}
+                      </Badge>
+                    )}
+                  </Button>
 
                   <Button
                     variant="ghost"
