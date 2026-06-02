@@ -28,6 +28,7 @@ import {
   ORDER_STATUS_COLORS,
 } from '@/lib/constants'
 import type { Order, Product, Gig } from '@/types'
+import { SellerTierCard } from '@/components/marketplace/verification/seller-tier-card'
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -537,6 +538,14 @@ export function SellerOverview() {
 
         {/* Quick Actions & Top Items */}
         <motion.div variants={itemVariants} className="space-y-6">
+          {/* Seller Tier Badge */}
+          {currentUser?.shop?.id && (
+            <SellerTierCard
+              shopId={currentUser.shop.id}
+              size="full"
+            />
+          )}
+
           <Card className="border-0 shadow-sm">
             <CardHeader className="pb-4">
               <CardTitle className="text-lg font-semibold">Quick Actions</CardTitle>

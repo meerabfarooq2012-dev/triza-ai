@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { SellerOverview } from './seller-overview'
+import { SellerTierCard } from '@/components/marketplace/verification/seller-tier-card'
 import { SellerProducts } from './seller-products'
 import { SellerGigs } from './seller-gigs'
 import { SellerOrders } from './seller-orders'
@@ -169,10 +170,18 @@ export function SellerDashboard() {
                 <Store className="h-6 w-6" />
               )}
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                {shopName}
-              </h1>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3 flex-wrap">
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {shopName}
+                </h1>
+                {(shopData?.id || currentUser?.shop?.id) && (
+                  <SellerTierCard
+                    shopId={(shopData?.id || currentUser?.shop?.id) as string}
+                    size="compact"
+                  />
+                )}
+              </div>
               <p className="text-sm text-gray-500">
                 Welcome back, {userName}! Manage your shop and products.
               </p>
