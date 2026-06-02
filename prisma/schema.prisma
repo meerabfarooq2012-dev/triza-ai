@@ -98,7 +98,7 @@ model Shop {
   verificationDocs SellerVerification[]
   sellerBadges     SellerBadge[]
   sellerTier        SellerTier?
-  coupons           Coupon[]
+  coupons          Coupon[]
 
   @@index([slug])
   @@index([userId])
@@ -159,6 +159,9 @@ model Product {
   conversations Conversation[]
   activities     Activity[]
   sharedProducts SharedProduct[]
+  hasVariants    Boolean   @default(false) // true if product uses variant system
+  variantOptions ProductVariantOption[]
+  variants       ProductVariant[]
 
   @@unique([shopId, slug])
   @@index([shopId])
@@ -223,20 +226,88 @@ model OrderStatusLog {
 }
 
 model OrderItem {
-  id          String   @id @default(cuid())
-  orderId     String
-  productId   String
-  quantity    Int      @default(1)
-  price       Float
-  type        String   @default("digital") // digital, physical, freelance
-  status      String   @default("pending") // pending, delivered, cancelled
-  createdAt   DateTime @default(now())
+  id           String   @id @default(cuid())
+  orderId      String
+  productId    String
+  quantity     Int      @default(1)
+  price        Float
+  type         String   @default("digital") // digital, physical, freelance
+  status       String   @default("pending") // pending, delivered, cancelled
+  variantId    String?  // Which variant was purchased (null if no variants)
+  variantLabel String?  // Human-readable label e.g. "Small / Red"
+  variantSku   String?  // SKU at time of purchase (snapshot)
+  createdAt    DateTime @default(now())
 
   order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product     Product  @relation(fields: [productId], references: [id])
 
   @@index([orderId])
   @@index([productId])
+}
+
+// =============================================================================
+// PRODUCT VARIANTS MODELS
+// =============================================================================
+
+model ProductVariantOption {
+  id        String   @id @default(cuid())
+  productId String
+  name      String   // e.g. "Size", "Color", "Material"
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product   Product                      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  values    ProductVariantOptionValue[]
+
+  @@index([productId])
+}
+
+model ProductVariantOptionValue {
+  id        String   @id @default(cuid())
+  optionId  String
+  value     String   // e.g. "Red", "Large", "Cotton"
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  option    ProductVariantOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+
+  @@index([optionId])
+}
+
+model ProductVariant {
+  id              String   @id @default(cuid())
+  productId       String
+  sku             String?  // Full SKU for this specific combination
+  price           Float    // Absolute price for this variant
+  priceAdjustment Float    @default(0) // Relative adjustment from base price
+  stock           Int      @default(0)
+  images          String   @default("[]") // JSON array of image URLs
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  product         Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
+  values          ProductVariantValue[]
+
+  @@index([productId])
+  @@index([sku])
+  @@index([isActive])
+}
+
+model ProductVariantValue {
+  id        String   @id @default(cuid())
+  variantId String
+  optionId  String
+  valueId   String
+  createdAt DateTime @default(now())
+
+  variant   ProductVariant       @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@index([variantId])
+  @@index([optionId])
+  @@index([valueId])
 }
 
 model Review {
@@ -1080,14 +1151,14 @@ model Coupon {
 }
 
 model CouponUsage {
-  id              String   @id @default(cuid())
-  couponId        String
-  userId          String   // Buyer who used the coupon
-  orderId         String   // Order it was applied to
-  discountAmount  Float    // Actual discount applied
-  createdAt       DateTime @default(now())
+  id          String   @id @default(cuid())
+  couponId    String
+  userId      String   // Buyer who used the coupon
+  orderId     String   // Order it was applied to
+  discountAmount Float  // Actual discount applied
+  createdAt   DateTime @default(now())
 
-  coupon          Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  coupon      Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
 
   @@unique([couponId, userId, orderId])
   @@index([couponId])
@@ -1095,3 +1166,5 @@ model CouponUsage {
   @@index([orderId])
   @@index([createdAt])
 }
+
+

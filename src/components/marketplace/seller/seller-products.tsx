@@ -23,6 +23,7 @@ import {
   Upload,
   Cloud,
   Loader2,
+  Layers,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -72,7 +73,8 @@ import {
   DIGITAL_CATEGORIES,
 } from '@/lib/constants'
 import { countryCodeData } from '@/lib/country-codes'
-import type { Product, ProductType, Category } from '@/types'
+import { VariantManager } from '@/components/marketplace/seller/variant-manager'
+import type { Product, ProductType, Category, ProductVariantOption, ProductVariant } from '@/types'
 
 interface ProductFormData {
   name: string
@@ -472,6 +474,13 @@ export function SellerProducts() {
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null)
 
+  // Variant manager dialog
+  const [variantDialogOpen, setVariantDialogOpen] = useState(false)
+  const [variantProduct, setVariantProduct] = useState<Product | null>(null)
+  const [variantOptions, setVariantOptions] = useState<ProductVariantOption[]>([])
+  const [variantVariants, setVariantVariants] = useState<ProductVariant[]>([])
+  const [variantLoading, setVariantLoading] = useState(false)
+
   const fetchProducts = useCallback(async () => {
     if (!currentUser?.shop) {
       setLoading(false)
@@ -693,6 +702,26 @@ export function SellerProducts() {
     }
   }
 
+  const handleOpenVariants = async (product: Product) => {
+    setVariantProduct(product)
+    setVariantLoading(true)
+    setVariantDialogOpen(true)
+    try {
+      const res = await fetch(`/api/products/${product.id}/variants`)
+      const data = await res.json()
+      if (data.success) {
+        setVariantOptions(data.data.variantOptions || [])
+        setVariantVariants(data.data.variants || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch variants:', error)
+      setVariantOptions([])
+      setVariantVariants([])
+    } finally {
+      setVariantLoading(false)
+    }
+  }
+
   const filteredProducts = products.filter((p) => {
     if (statusFilter === 'active' && !p.isActive) return false
     if (statusFilter === 'inactive' && p.isActive) return false
@@ -835,6 +864,12 @@ export function SellerProducts() {
                                   Featured
                                 </Badge>
                               )}
+                              {product.hasVariants && (
+                                <Badge variant="outline" className="mt-0.5 text-[10px] text-emerald-600 border-emerald-200 gap-0.5">
+                                  <Layers className="h-2.5 w-2.5" />
+                                  Variants
+                                </Badge>
+                              )}
                             </div>
                           </div>
                         </TableCell>
@@ -879,6 +914,15 @@ export function SellerProducts() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => handleOpenVariants(product)}
+                              title="Manage Variants"
+                            >
+                              <Layers className="h-4 w-4 text-emerald-500" />
+                            </Button>
                             <Button
                               variant="ghost"
                               size="icon"
@@ -967,12 +1011,27 @@ export function SellerProducts() {
                               >
                                 {product.isActive ? 'Active' : 'Inactive'}
                               </Badge>
+                              {product.hasVariants && (
+                                <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-200 gap-0.5">
+                                  <Layers className="h-2.5 w-2.5" />
+                                  Variants
+                                </Badge>
+                              )}
                             </div>
                             <div className="mt-2 flex items-center justify-between">
                               <span className="text-sm font-bold text-emerald-600">
                                 ${(product.price ?? 0).toFixed(2)}
                               </span>
                               <div className="flex items-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  onClick={() => handleOpenVariants(product)}
+                                  title="Manage Variants"
+                                >
+                                  <Layers className="h-3.5 w-3.5 text-emerald-500" />
+                                </Button>
                                 <Button
                                   variant="ghost"
                                   size="icon"
@@ -1375,6 +1434,35 @@ export function SellerProducts() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Variant Manager Dialog */}
+      <Dialog open={variantDialogOpen} onOpenChange={setVariantDialogOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Layers size={18} className="text-emerald-600" />
+              Manage Variants — {variantProduct?.name}
+            </DialogTitle>
+          </DialogHeader>
+          {variantLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+            </div>
+          ) : variantProduct ? (
+            <VariantManager
+              productId={variantProduct.id}
+              shopId={variantProduct.shopId}
+              existingOptions={variantOptions}
+              existingVariants={variantVariants}
+              basePrice={variantProduct.price}
+              onSave={() => {
+                setVariantDialogOpen(false)
+                fetchProducts()
+              }}
+            />
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

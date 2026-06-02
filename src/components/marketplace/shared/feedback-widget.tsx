@@ -68,7 +68,10 @@ function getOrCreateSessionId(): string {
   if (typeof window === 'undefined') return ''
   let sessionId = localStorage.getItem(SESSION_KEY)
   if (!sessionId) {
-    sessionId = crypto.randomUUID()
+    // crypto.randomUUID() may not be available in non-HTTPS contexts
+    sessionId = typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : 'xxxx-xxxx-xxxx-xxxx'.replace(/x/g, () => Math.floor(Math.random() * 16).toString(16))
     localStorage.setItem(SESSION_KEY, sessionId)
   }
   return sessionId

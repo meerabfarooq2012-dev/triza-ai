@@ -62,7 +62,7 @@ export function CartDrawer() {
               <div className="space-y-1">
                 {cart.map((item) => (
                   <CartItemRow
-                    key={item.productId}
+                    key={`${item.productId}-${item.variantId ?? 'default'}`}
                     item={item}
                     onUpdateQuantity={updateCartQuantity}
                     onRemove={removeFromCart}
@@ -107,16 +107,16 @@ function CartItemRow({
   onRemove,
 }: {
   item: CartItem
-  onUpdateQuantity: (productId: string, quantity: number) => void
-  onRemove: (productId: string) => void
+  onUpdateQuantity: (productId: string, quantity: number, variantId?: string | null) => void
+  onRemove: (productId: string, variantId?: string | null) => void
 }) {
   return (
     <div className="flex gap-3 py-3">
       {/* Image */}
       <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-muted/30">
-        {item.image ? (
+        {item.variantImage || item.image ? (
           <img
-            src={item.image}
+            src={item.variantImage || item.image || ''}
             alt={item.name}
             className="h-full w-full object-cover"
           />
@@ -130,6 +130,9 @@ function CartItemRow({
       {/* Details */}
       <div className="flex-1 min-w-0">
         <h4 className="text-sm font-medium truncate">{item.name}</h4>
+        {item.variantLabel && (
+          <p className="text-xs text-emerald-600 font-medium truncate">{item.variantLabel}</p>
+        )}
         <p className="text-xs text-muted-foreground">{item.shopName}</p>
         <div className="flex items-center justify-between mt-1.5">
           {/* Quantity controls */}
@@ -138,7 +141,7 @@ function CartItemRow({
               variant="outline"
               size="icon"
               className="h-6 w-6"
-              onClick={() => onUpdateQuantity(item.productId, item.quantity - 1)}
+              onClick={() => onUpdateQuantity(item.productId, item.quantity - 1, item.variantId)}
             >
               <Minus className="h-3 w-3" />
             </Button>
@@ -147,7 +150,7 @@ function CartItemRow({
               variant="outline"
               size="icon"
               className="h-6 w-6"
-              onClick={() => onUpdateQuantity(item.productId, item.quantity + 1)}
+              onClick={() => onUpdateQuantity(item.productId, item.quantity + 1, item.variantId)}
               disabled={item.quantity >= item.stock && item.stock > 0}
             >
               <Plus className="h-3 w-3" />
@@ -166,7 +169,7 @@ function CartItemRow({
         variant="ghost"
         size="icon"
         className="h-7 w-7 flex-shrink-0 text-muted-foreground hover:text-destructive"
-        onClick={() => onRemove(item.productId)}
+        onClick={() => onRemove(item.productId, item.variantId)}
       >
         <Trash2 className="h-3.5 w-3.5" />
       </Button>

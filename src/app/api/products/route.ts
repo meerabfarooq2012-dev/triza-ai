@@ -156,11 +156,30 @@ export async function GET(request: NextRequest) {
       deliveryCountries: JSON.parse(p.deliveryCountries || '[]'),
     }));
 
+    // For products with hasVariants=true, add variantPriceMin and variantPriceMax
+    const productsWithVariantPrices = await Promise.all(
+      parsedProducts.map(async (p) => {
+        if (p.hasVariants) {
+          const agg = await db.productVariant.aggregate({
+            where: { productId: p.id, isActive: true },
+            _min: { price: true },
+            _max: { price: true },
+          });
+          return {
+            ...p,
+            variantPriceMin: agg._min.price ?? null,
+            variantPriceMax: agg._max.price ?? null,
+          };
+        }
+        return p;
+      })
+    );
+
     return NextResponse.json({
       success: true,
       data: {
-        items: parsedProducts,
-        products: parsedProducts,
+        items: productsWithVariantPrices,
+        products: productsWithVariantPrices,
         pagination: {
           page,
           limit,

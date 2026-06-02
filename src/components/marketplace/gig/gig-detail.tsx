@@ -198,7 +198,7 @@ export default function GigDetail() {
       .finally(() => setLoading(false))
   }, [gigId])
 
-  useEffect(() => {
+  useEffect(/* eslint-disable react-hooks/set-state-in-effect */ () => {
     fetchGig()
   }, [fetchGig])
 

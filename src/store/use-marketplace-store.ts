@@ -59,8 +59,8 @@ interface MarketplaceState {
 
   // Cart actions
   addToCart: (item: CartItem) => void
-  removeFromCart: (productId: string) => void
-  updateCartQuantity: (productId: string, quantity: number) => void
+  removeFromCart: (productId: string, variantId?: string | null) => void
+  updateCartQuantity: (productId: string, quantity: number, variantId?: string | null) => void
   clearCart: () => void
 
   // Search actions
@@ -189,14 +189,15 @@ export const useMarketplaceStore = create<MarketplaceState>()(
       // ----- Cart Actions -----
       addToCart: (item: CartItem) => {
         const { cart } = get()
+        const itemVariantId = item.variantId ?? null
         const existingIndex = cart.findIndex(
-          (ci) => ci.productId === item.productId
+          (ci) => ci.productId === item.productId && (ci.variantId ?? null) === itemVariantId
         )
 
         let updatedCart: CartItem[]
 
         if (existingIndex >= 0) {
-          // Item already in cart - update quantity
+          // Item already in cart with same variant - update quantity
           updatedCart = cart.map((ci, index) =>
             index === existingIndex
               ? { ...ci, quantity: ci.quantity + item.quantity }
@@ -212,10 +213,11 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         })
       },
 
-      removeFromCart: (productId: string) => {
+      removeFromCart: (productId: string, variantId?: string | null) => {
         const { cart } = get()
+        const vId = variantId ?? null
         const updatedCart = cart.filter(
-          (item) => item.productId !== productId
+          (item) => !(item.productId === productId && (item.variantId ?? null) === vId)
         )
         set({
           cart: updatedCart,
@@ -223,13 +225,14 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         })
       },
 
-      updateCartQuantity: (productId: string, quantity: number) => {
+      updateCartQuantity: (productId: string, quantity: number, variantId?: string | null) => {
         const { cart } = get()
+        const vId = variantId ?? null
 
         if (quantity <= 0) {
           // Remove item if quantity is 0 or less
           const updatedCart = cart.filter(
-            (item) => item.productId !== productId
+            (item) => !(item.productId === productId && (item.variantId ?? null) === vId)
           )
           set({
             cart: updatedCart,
@@ -239,7 +242,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         }
 
         const updatedCart = cart.map((item) =>
-          item.productId === productId ? { ...item, quantity } : item
+          item.productId === productId && (item.variantId ?? null) === vId ? { ...item, quantity } : item
         )
         set({
           cart: updatedCart,

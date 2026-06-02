@@ -21,6 +21,7 @@ import {
   Globe,
   MessageSquare,
   Share2,
+  Layers,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -47,7 +48,8 @@ import {
   PLATFORM_NAME,
 } from '@/lib/constants'
 import { countryCodeData } from '@/lib/country-codes'
-import type { Product, CartItem } from '@/types'
+import { VariantSelector } from '@/components/marketplace/shared/variant-selector'
+import type { Product, CartItem, ProductVariantOption, ProductVariant } from '@/types'
 
 function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
   if (!value) return fallback
@@ -84,8 +86,20 @@ export default function ProductDetail() {
   const [activeTab, setActiveTab] = useState('details')
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
 
-  // Check if product is already in cart
-  const isInCart = cart.some((item) => item.productId === productId)
+  // Variant state
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
+  const [effectivePrice, setEffectivePrice] = useState<number | null>(null)
+  const [effectiveStock, setEffectiveStock] = useState<number>(0)
+  const [variantImage, setVariantImage] = useState<string | null>(null)
+  const [variantLabel, setVariantLabel] = useState<string>('')
+  const [variantSku, setVariantSku] = useState<string | null>(null)
+
+  // Check if product is already in cart (considering variant)
+  const isInCart = cart.some(
+    (item) =>
+      item.productId === productId &&
+      (item.variantId ?? null) === selectedVariantId
+  )
 
   const fetchProduct = useCallback(() => {
     if (!productId) return
@@ -103,7 +117,7 @@ export default function ProductDetail() {
       .finally(() => setLoading(false))
   }, [productId])
 
-  useEffect(() => {
+  useEffect(/* eslint-disable react-hooks/set-state-in-effect */ () => {
     fetchProduct()
   }, [fetchProduct])
 
@@ -128,23 +142,29 @@ export default function ProductDetail() {
 
   const handleAddToCart = () => {
     if (!product || !product.shop) return
+    if (product.hasVariants && !selectedVariantId) return
     const images = safeJsonParse<string[]>(product.images, [])
     const cartItem: CartItem = {
       productId: product.id,
       shopId: product.shopId,
       name: product.name,
-      price: product.price,
+      price: effectivePrice ?? product.price,
       quantity,
-      image: images[0] || null,
+      image: variantImage || images[0] || null,
       type: product.type,
-      stock: product.stock,
+      stock: effectiveStock > 0 ? effectiveStock : product.stock,
       shopName: product.shop.name || 'Unknown Shop',
+      variantId: selectedVariantId,
+      variantLabel: variantLabel || undefined,
+      variantSku: variantSku || undefined,
+      variantImage: variantImage || undefined,
     }
     addToCart(cartItem)
   }
 
   const handleBuyNow = () => {
     if (!product || !product.shop) return
+    if (product.hasVariants && !selectedVariantId) return
     if (!isInCart) {
       handleAddToCart()
     }
@@ -209,9 +229,19 @@ export default function ProductDetail() {
   const images = safeJsonParse<string[]>(product.images, [])
   const tags = safeJsonParse<string[]>(product.tags, [])
   const deliveryCountries = safeJsonParse<string[]>(product.deliveryCountries, [])
-  const discount = product.comparePrice && product.price
-    ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
-    : 0
+
+  // For variant products, compute display price
+  const displayPrice = effectivePrice ?? product.price
+  const discount = product.comparePrice && displayPrice
+    ? Math.round(((product.comparePrice - displayPrice) / product.comparePrice) * 100)
+    : product.comparePrice && product.price
+      ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
+      : 0
+
+  // Determine which images to show in gallery
+  const galleryImages = variantImage ? [variantImage, ...images] : images
+  const variantOptions = (product.variantOptions || []) as ProductVariantOption[]
+  const variants = (product.variants || []) as ProductVariant[]
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-4 md:py-8">
@@ -249,7 +279,7 @@ export default function ProductDetail() {
             <AnimatePresence mode="wait">
               <motion.img
                 key={selectedImage}
-                src={images[selectedImage] || '/placeholder.png'}
+                src={galleryImages[selectedImage] || '/placeholder.png'}
                 alt={product.name}
                 className="w-full h-full object-cover"
                 initial={{ opacity: 0 }}
@@ -258,7 +288,7 @@ export default function ProductDetail() {
                 transition={{ duration: 0.2 }}
               />
             </AnimatePresence>
-            {images.length === 0 && (
+            {galleryImages.length === 0 && (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground">
                 <ProductTypeIcon type={product.type} size={64} />
                 <p className="mt-2 text-sm">No images available</p>
@@ -272,9 +302,9 @@ export default function ProductDetail() {
           </motion.div>
 
           {/* Thumbnails */}
-          {images.length > 1 && (
+          {galleryImages.length > 1 && (
             <div className="flex gap-2 overflow-x-auto pb-2">
-              {images.map((img, index) => (
+              {galleryImages.map((img, index) => (
                 <button
                   key={index}
                   onClick={() => setSelectedImage(index)}
@@ -321,7 +351,20 @@ export default function ProductDetail() {
 
           {/* Price */}
           <div className="flex items-baseline gap-3">
-            <span className="text-3xl font-bold">${(product.price ?? 0).toFixed(2)}</span>
+            {product.hasVariants && !selectedVariantId ? (
+              <>
+                <span className="text-3xl font-bold">
+                  From ${(product.variantPriceMin ?? product.price ?? 0).toFixed(2)}
+                </span>
+                {product.variantPriceMax && product.variantPriceMax !== product.variantPriceMin && (
+                  <span className="text-lg text-muted-foreground">
+                    – ${(product.variantPriceMax ?? 0).toFixed(2)}
+                  </span>
+                )}
+              </>
+            ) : (
+              <span className="text-3xl font-bold">${(displayPrice ?? 0).toFixed(2)}</span>
+            )}
             {product.comparePrice && (
               <span className="text-lg text-muted-foreground line-through">
                 ${(product.comparePrice ?? 0).toFixed(2)}
@@ -339,6 +382,26 @@ export default function ProductDetail() {
             <p className="text-muted-foreground">{product.shortDesc}</p>
           )}
 
+          {/* Variant Selector */}
+          {product.hasVariants && variantOptions.length > 0 && (
+            <VariantSelector
+              variantOptions={variantOptions}
+              variants={variants}
+              basePrice={product.price}
+              onVariantChange={(selected) => {
+                setSelectedVariantId(selected.variantId)
+                setEffectivePrice(selected.price)
+                setEffectiveStock(selected.stock)
+                setVariantImage(selected.image)
+                setVariantLabel(selected.label)
+                setVariantSku(selected.sku)
+                if (selected.image) {
+                  setSelectedImage(0)
+                }
+              }}
+            />
+          )}
+
           {/* Type-specific info */}
           {product.type === 'physical' && (
             <div className="space-y-2">
@@ -351,13 +414,16 @@ export default function ProductDetail() {
               <div className="flex items-center gap-2 text-sm">
                 <Package size={16} className="text-muted-foreground" />
                 <span>
-                  {product.stock > 0 ? (
-                    <span className="text-green-600 font-medium">
-                      {product.stock} in stock
-                    </span>
-                  ) : (
-                    <span className="text-red-600 font-medium">Out of stock</span>
-                  )}
+                  {product.hasVariants && selectedVariantId
+                    ? effectiveStock > 0
+                      ? <span className="text-green-600 font-medium">{effectiveStock} in stock</span>
+                      : <span className="text-red-600 font-medium">Out of stock</span>
+                    : product.hasVariants
+                      ? <span className="text-emerald-600 font-medium">Select options for stock</span>
+                      : product.stock > 0
+                        ? <span className="text-green-600 font-medium">{product.stock} in stock</span>
+                        : <span className="text-red-600 font-medium">Out of stock</span>
+                  }
                 </span>
               </div>
               {product.sku && (
@@ -481,12 +547,22 @@ export default function ProductDetail() {
               size="lg"
               className="flex-1 gap-2"
               onClick={handleAddToCart}
-              disabled={product.type === 'physical' && product.stock <= 0}
+              disabled={
+                (product.type === 'physical' && !product.hasVariants && product.stock <= 0) ||
+                (product.hasVariants && !selectedVariantId) ||
+                (product.hasVariants && selectedVariantId !== null && effectiveStock <= 0)
+              }
             >
               <ShoppingCart size={18} />
-              {isInCart ? 'Add Another' : 'Add to Cart'}
+              {product.hasVariants && !selectedVariantId ? 'Select Options' : isInCart ? 'Add Another' : 'Add to Cart'}
             </Button>
-            <Button size="lg" variant="secondary" className="flex-1 gap-2" onClick={handleBuyNow}>
+            <Button
+              size="lg"
+              variant="secondary"
+              className="flex-1 gap-2"
+              onClick={handleBuyNow}
+              disabled={product.hasVariants && !selectedVariantId}
+            >
               <Zap size={18} />
               Buy Now
             </Button>

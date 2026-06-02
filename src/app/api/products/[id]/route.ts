@@ -36,6 +36,14 @@ export async function GET(
         favorites: {
           select: { userId: true },
         },
+        variantOptions: {
+          include: { values: { orderBy: { sortOrder: 'asc' } } },
+          orderBy: { sortOrder: 'asc' },
+        },
+        variants: {
+          include: { values: true },
+          where: { isActive: true },
+        },
       },
     });
 
@@ -51,6 +59,10 @@ export async function GET(
       images: JSON.parse(product.images || '[]'),
       tags: JSON.parse(product.tags || '[]'),
       deliveryCountries: JSON.parse(product.deliveryCountries || '[]'),
+      variants: product.variants?.map((v: { images: string; [key: string]: unknown }) => ({
+        ...v,
+        images: JSON.parse(v.images || '[]'),
+      })) ?? [],
     };
 
     return NextResponse.json({ success: true, data: parsedProduct });
@@ -91,6 +103,7 @@ export async function PUT(
       'name', 'description', 'shortDesc', 'price', 'comparePrice',
       'type', 'images', 'fileUrl', 'fileSize', 'stock', 'sku',
       'tags', 'isFeatured', 'isActive', 'categoryId', 'deliveryInfo', 'deliveryCountries', 'requirements',
+      'hasVariants',
     ];
 
     const data: Record<string, unknown> = {};

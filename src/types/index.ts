@@ -150,12 +150,17 @@ export interface Product {
   deliveryInfo: string | null
   deliveryCountries: string // JSON string of string[] (country codes)
   requirements: string | null
+  hasVariants?: boolean
   createdAt: string
   updatedAt: string
   shop?: Shop
   category?: Category | null
   reviews?: Review[]
   isFavorited?: boolean
+  variantOptions?: ProductVariantOption[]
+  variants?: ProductVariant[]
+  variantPriceMin?: number | null
+  variantPriceMax?: number | null
 }
 
 export interface Order {
@@ -200,6 +205,9 @@ export interface OrderItem {
   price: number
   type: ProductType
   status: OrderItemStatus
+  variantId?: string | null
+  variantLabel?: string | null
+  variantSku?: string | null
   createdAt: string
   order?: Order
   product?: Product
@@ -477,6 +485,10 @@ export interface CartItem {
   type: ProductType
   stock: number
   shopName: string
+  variantId?: string | null
+  variantLabel?: string | null
+  variantSku?: string | null
+  variantImage?: string | null
 }
 
 // ----- Form / Input Types -----
@@ -542,6 +554,7 @@ export interface CreateOrderInput {
   items: {
     productId: string
     quantity: number
+    variantId?: string | null
   }[]
   shippingName?: string
   shippingAddr?: string
@@ -1408,6 +1421,69 @@ export const COUPON_APPLIES_TO_LABELS: Record<CouponAppliesToType, string> = {
   digital: 'Digital Products Only',
   physical: 'Physical Products Only',
   freelance: 'Freelance Services Only',
+}
+
+// ----- Product Variant Types -----
+
+export interface ProductVariantOption {
+  id: string
+  productId: string
+  name: string        // "Size", "Color", etc.
+  sortOrder: number
+  createdAt: string
+  updatedAt: string
+  values?: ProductVariantOptionValue[]
+}
+
+export interface ProductVariantOptionValue {
+  id: string
+  optionId: string
+  value: string       // "Red", "Large", etc.
+  sortOrder: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ProductVariant {
+  id: string
+  productId: string
+  sku: string | null
+  price: number
+  priceAdjustment: number
+  stock: number
+  images: string      // JSON string of string[]
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+  values?: ProductVariantValue[]
+}
+
+export interface ProductVariantValue {
+  id: string
+  variantId: string
+  optionId: string
+  valueId: string
+  createdAt: string
+}
+
+export type SelectedVariants = Record<string, string>
+
+export interface CreateVariantOptionInput {
+  name: string
+  values: string[]
+}
+
+export interface VariantCombinationInput {
+  optionCombination: Record<string, string>
+  priceAdjustment: number
+  stock: number
+  sku?: string
+  images?: string[]
+}
+
+export interface CreateProductVariantsInput {
+  options: CreateVariantOptionInput[]
+  variants: VariantCombinationInput[]
 }
 
 export const DOCUMENT_TYPE_LABELS: Record<string, string> = {

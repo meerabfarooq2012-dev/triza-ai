@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { Heart, Download, Package, Briefcase } from 'lucide-react'
+import { Heart, Download, Package, Briefcase, Layers } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -146,13 +146,34 @@ export function ProductCard({ product, className }: ProductCardProps) {
 
           {/* Price */}
           <div className="flex items-baseline gap-2 pt-0.5">
-            <span className="text-lg font-bold text-foreground">
-              ${(product.price ?? 0).toFixed(2)}
-            </span>
-            {product.comparePrice && product.comparePrice > product.price && (
-              <span className="text-xs text-muted-foreground line-through">
-                ${(product.comparePrice ?? 0).toFixed(2)}
-              </span>
+            {product.hasVariants && product.variantPriceMin != null ? (
+              <>
+                <span className="text-lg font-bold text-foreground">
+                  From ${(product.variantPriceMin ?? 0).toFixed(2)}
+                </span>
+                {product.variantPriceMax != null && product.variantPriceMax !== product.variantPriceMin && (
+                  <span className="text-xs text-muted-foreground">
+                    – ${(product.variantPriceMax ?? 0).toFixed(2)}
+                  </span>
+                )}
+              </>
+            ) : (
+              <>
+                <span className="text-lg font-bold text-foreground">
+                  ${(product.price ?? 0).toFixed(2)}
+                </span>
+                {product.comparePrice && product.comparePrice > product.price && (
+                  <span className="text-xs text-muted-foreground line-through">
+                    ${(product.comparePrice ?? 0).toFixed(2)}
+                  </span>
+                )}
+              </>
+            )}
+            {product.hasVariants && (
+              <Badge variant="outline" className="text-[10px] gap-0.5 bg-emerald-50 text-emerald-700 border-emerald-200">
+                <Layers className="h-2.5 w-2.5" />
+                Options
+              </Badge>
             )}
           </div>
 

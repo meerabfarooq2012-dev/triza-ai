@@ -150,7 +150,13 @@ export async function POST(request: NextRequest) {
       quantity: number;
       price: number;
       type: string;
+      variantId?: string;
+      variantLabel?: string;
+      variantSku?: string;
     }[] = [];
+
+    // Track variant stock decrements separately
+    const variantStockDecrements: { variantId: string; quantity: number }[] = [];
 
     for (const item of items) {
       const product = products.find((p) => p.id === item.productId);
@@ -166,23 +172,96 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
-      if (product.stock !== -1 && product.stock < (item.quantity || 1)) {
-        return NextResponse.json(
-          { success: false, error: `Not enough stock for "${product.name}"` },
-          { status: 400 }
-        );
-      }
 
       const quantity = item.quantity || 1;
-      const price = product.price;
-      totalAmount += price * quantity;
 
-      orderItemsData.push({
-        productId: product.id,
-        quantity,
-        price,
-        type: product.type,
-      });
+      // Variant handling
+      if (product.hasVariants) {
+        // If product has variants, variantId is required
+        if (!item.variantId) {
+          return NextResponse.json(
+            { success: false, error: `Please select a variant for "${product.name}"` },
+            { status: 400 }
+          );
+        }
+
+        // Look up the variant
+        const variant = await db.productVariant.findUnique({
+          where: { id: item.variantId },
+          include: {
+            values: {
+              include: {
+                option: true,
+              },
+            },
+          },
+        });
+
+        if (!variant || variant.productId !== product.id || !variant.isActive) {
+          return NextResponse.json(
+            { success: false, error: `Selected variant for "${product.name}" is not available` },
+            { status: 400 }
+          );
+        }
+
+        if (variant.stock < quantity) {
+          return NextResponse.json(
+            { success: false, error: `Not enough stock for variant of "${product.name}"` },
+            { status: 400 }
+          );
+        }
+
+        // Use variant.price instead of product.price
+        const price = variant.price;
+        totalAmount += price * quantity;
+
+        // Build variantLabel from option name + value pairs joined by " / "
+        const variantLabel = variant.values
+          .map((vv) => `${vv.option.name}: ${vv.valueId}`)
+          .join(' / ');
+
+        // Try to resolve human-readable variant label
+        // Fetch option values for better labels
+        const optionValueIds = variant.values.map((vv) => vv.valueId);
+        const optionValueRecords = await db.productVariantOptionValue.findMany({
+          where: { id: { in: optionValueIds } },
+          include: { option: true },
+        });
+
+        const readableLabel = optionValueRecords
+          .map((ovr) => `${ovr.option.name}: ${ovr.value}`)
+          .join(' / ');
+
+        orderItemsData.push({
+          productId: product.id,
+          quantity,
+          price,
+          type: product.type,
+          variantId: variant.id,
+          variantLabel: readableLabel || variantLabel,
+          variantSku: variant.sku || null,
+        });
+
+        variantStockDecrements.push({ variantId: variant.id, quantity });
+      } else {
+        // No variants — use product price and stock
+        if (product.stock !== -1 && product.stock < quantity) {
+          return NextResponse.json(
+            { success: false, error: `Not enough stock for "${product.name}"` },
+            { status: 400 }
+          );
+        }
+
+        const price = product.price;
+        totalAmount += price * quantity;
+
+        orderItemsData.push({
+          productId: product.id,
+          quantity,
+          price,
+          type: product.type,
+        });
+      }
     }
 
     const platformFee = Math.round(totalAmount * 0.1 * 100) / 100;
@@ -241,14 +320,33 @@ export async function POST(request: NextRequest) {
     // Update product sales and stock
     for (const item of orderItemsData) {
       const product = products.find((p) => p.id === item.productId)!;
-      await db.product.update({
-        where: { id: item.productId },
-        data: {
-          totalSales: { increment: item.quantity },
-          ...(product.stock !== -1
-            ? { stock: { decrement: item.quantity } }
-            : {}),
-        },
+      // Only decrement product stock if no variant (variant stock is handled separately)
+      if (!item.variantId) {
+        await db.product.update({
+          where: { id: item.productId },
+          data: {
+            totalSales: { increment: item.quantity },
+            ...(product.stock !== -1
+              ? { stock: { decrement: item.quantity } }
+              : {}),
+          },
+        });
+      } else {
+        // For variant products, just increment totalSales on the product
+        await db.product.update({
+          where: { id: item.productId },
+          data: {
+            totalSales: { increment: item.quantity },
+          },
+        });
+      }
+    }
+
+    // Decrement variant stock
+    for (const { variantId, quantity } of variantStockDecrements) {
+      await db.productVariant.update({
+        where: { id: variantId },
+        data: { stock: { decrement: quantity } },
       });
     }
 
