@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Helper to safely create a table
+    // Helper to safely create a table (single statement only)
     const createTableIfMissing = async (table: string, sql: string) => {
       try {
         await db.$executeRawUnsafe(sql)
@@ -52,6 +52,21 @@ export async function GET(request: NextRequest) {
           results.push(`⏭️ Table ${table} already exists`)
         } else {
           results.push(`❌ Table ${table}: ${err.message || 'unknown error'}`)
+        }
+      }
+    }
+
+    // Helper to create an index safely
+    const createIndexIfMissing = async (sql: string) => {
+      try {
+        await db.$executeRawUnsafe(sql)
+        results.push(`✅ Index created`)
+      } catch (e: unknown) {
+        const err = e as { message?: string }
+        if (err.message?.includes('already exists')) {
+          results.push(`⏭️ Index already exists`)
+        } else {
+          results.push(`❌ Index: ${err.message?.slice(0, 100) || 'unknown'}`)
         }
       }
     }
@@ -104,6 +119,31 @@ export async function GET(request: NextRequest) {
     await addColumnIfMissing('Order', 'shippingCost', 'DOUBLE PRECISION DEFAULT 0')
 
     // ─── SellerVerification table missing columns ────────────────────────
+    // First create the table if it doesn't exist
+    await createTableIfMissing('SellerVerification', `
+      CREATE TABLE IF NOT EXISTS "SellerVerification" (
+        "id" TEXT NOT NULL,
+        "userId" TEXT NOT NULL,
+        "shopId" TEXT NOT NULL,
+        "status" TEXT NOT NULL DEFAULT 'pending',
+        "documentType" TEXT NOT NULL,
+        "documentUrl" TEXT NOT NULL,
+        "documentNumber" TEXT,
+        "country" TEXT,
+        "submittedAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+        "reviewedAt" TIMESTAMP,
+        "reviewedBy" TEXT,
+        "rejectionReason" TEXT,
+        "businessName" TEXT,
+        "businessAddress" TEXT,
+        "notes" TEXT,
+        "expiresAt" TIMESTAMP,
+        "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+        "updatedAt" TIMESTAMP NOT NULL,
+        CONSTRAINT "SellerVerification_pkey" PRIMARY KEY ("id")
+      )
+    `)
+    await createIndexIfMissing('CREATE UNIQUE INDEX IF NOT EXISTS "SellerVerification_userId_badgeSlug_key" ON "SellerVerification"("userId", "documentType")')
     await addColumnIfMissing('SellerVerification', 'businessName', 'TEXT')
     await addColumnIfMissing('SellerVerification', 'businessAddress', 'TEXT')
     await addColumnIfMissing('SellerVerification', 'notes', 'TEXT')
@@ -128,15 +168,13 @@ export async function GET(request: NextRequest) {
         "calculatedAt" TIMESTAMP NOT NULL DEFAULT NOW(),
         "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
         "updatedAt" TIMESTAMP NOT NULL,
-        CONSTRAINT "SellerTier_pkey" PRIMARY KEY ("id"),
-        CONSTRAINT "SellerTier_shopId_fkey" FOREIGN KEY ("shopId") REFERENCES "Shop"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-        CONSTRAINT "SellerTier_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE
-      );
-      CREATE UNIQUE INDEX IF NOT EXISTS "SellerTier_shopId_key" ON "SellerTier"("shopId");
-      CREATE UNIQUE INDEX IF NOT EXISTS "SellerTier_userId_key" ON "SellerTier"("userId");
-      CREATE INDEX IF NOT EXISTS "SellerTier_tier_index" ON "SellerTier"("tier");
-      CREATE INDEX IF NOT EXISTS "SellerTier_calculatedAt_index" ON "SellerTier"("calculatedAt");
+        CONSTRAINT "SellerTier_pkey" PRIMARY KEY ("id")
+      )
     `)
+    await createIndexIfMissing('CREATE UNIQUE INDEX IF NOT EXISTS "SellerTier_shopId_key" ON "SellerTier"("shopId")')
+    await createIndexIfMissing('CREATE UNIQUE INDEX IF NOT EXISTS "SellerTier_userId_key" ON "SellerTier"("userId")')
+    await createIndexIfMissing('CREATE INDEX IF NOT EXISTS "SellerTier_tier_index" ON "SellerTier"("tier")')
+    await createIndexIfMissing('CREATE INDEX IF NOT EXISTS "SellerTier_calculatedAt_index" ON "SellerTier"("calculatedAt")')
 
     // NotificationPreference table
     await createTableIfMissing('NotificationPreference', `
@@ -155,10 +193,10 @@ export async function GET(request: NextRequest) {
         "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
         "updatedAt" TIMESTAMP NOT NULL,
         CONSTRAINT "NotificationPreference_pkey" PRIMARY KEY ("id")
-      );
-      CREATE UNIQUE INDEX IF NOT EXISTS "NotificationPreference_userId_key" ON "NotificationPreference"("userId");
-      CREATE INDEX IF NOT EXISTS "NotificationPreference_userId_index" ON "NotificationPreference"("userId");
+      )
     `)
+    await createIndexIfMissing('CREATE UNIQUE INDEX IF NOT EXISTS "NotificationPreference_userId_key" ON "NotificationPreference"("userId")')
+    await createIndexIfMissing('CREATE INDEX IF NOT EXISTS "NotificationPreference_userId_index" ON "NotificationPreference"("userId")')
 
     // Dispute-related tables
     await createTableIfMissing('DisputeMessage', `
@@ -172,13 +210,12 @@ export async function GET(request: NextRequest) {
         "isRead" BOOLEAN NOT NULL DEFAULT false,
         "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
         "updatedAt" TIMESTAMP NOT NULL,
-        CONSTRAINT "DisputeMessage_pkey" PRIMARY KEY ("id"),
-        CONSTRAINT "DisputeMessage_disputeId_fkey" FOREIGN KEY ("disputeId") REFERENCES "Dispute"("id") ON DELETE CASCADE ON UPDATE CASCADE
-      );
-      CREATE INDEX IF NOT EXISTS "DisputeMessage_disputeId_index" ON "DisputeMessage"("disputeId");
-      CREATE INDEX IF NOT EXISTS "DisputeMessage_senderId_index" ON "DisputeMessage"("senderId");
-      CREATE INDEX IF NOT EXISTS "DisputeMessage_createdAt_index" ON "DisputeMessage"("createdAt");
+        CONSTRAINT "DisputeMessage_pkey" PRIMARY KEY ("id")
+      )
     `)
+    await createIndexIfMissing('CREATE INDEX IF NOT EXISTS "DisputeMessage_disputeId_index" ON "DisputeMessage"("disputeId")')
+    await createIndexIfMissing('CREATE INDEX IF NOT EXISTS "DisputeMessage_senderId_index" ON "DisputeMessage"("senderId")')
+    await createIndexIfMissing('CREATE INDEX IF NOT EXISTS "DisputeMessage_createdAt_index" ON "DisputeMessage"("createdAt")')
 
     await createTableIfMissing('DisputeEvidence', `
       CREATE TABLE IF NOT EXISTS "DisputeEvidence" (
@@ -190,12 +227,11 @@ export async function GET(request: NextRequest) {
         "fileName" TEXT,
         "description" TEXT,
         "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
-        CONSTRAINT "DisputeEvidence_pkey" PRIMARY KEY ("id"),
-        CONSTRAINT "DisputeEvidence_disputeId_fkey" FOREIGN KEY ("disputeId") REFERENCES "Dispute"("id") ON DELETE CASCADE ON UPDATE CASCADE
-      );
-      CREATE INDEX IF NOT EXISTS "DisputeEvidence_disputeId_index" ON "DisputeEvidence"("disputeId");
-      CREATE INDEX IF NOT EXISTS "DisputeEvidence_uploadedBy_index" ON "DisputeEvidence"("uploadedBy");
+        CONSTRAINT "DisputeEvidence_pkey" PRIMARY KEY ("id")
+      )
     `)
+    await createIndexIfMissing('CREATE INDEX IF NOT EXISTS "DisputeEvidence_disputeId_index" ON "DisputeEvidence"("disputeId")')
+    await createIndexIfMissing('CREATE INDEX IF NOT EXISTS "DisputeEvidence_uploadedBy_index" ON "DisputeEvidence"("uploadedBy")')
 
     await createTableIfMissing('DisputeTimeline', `
       CREATE TABLE IF NOT EXISTS "DisputeTimeline" (
@@ -206,12 +242,11 @@ export async function GET(request: NextRequest) {
         "note" TEXT,
         "changedBy" TEXT NOT NULL,
         "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
-        CONSTRAINT "DisputeTimeline_pkey" PRIMARY KEY ("id"),
-        CONSTRAINT "DisputeTimeline_disputeId_fkey" FOREIGN KEY ("disputeId") REFERENCES "Dispute"("id") ON DELETE CASCADE ON UPDATE CASCADE
-      );
-      CREATE INDEX IF NOT EXISTS "DisputeTimeline_disputeId_index" ON "DisputeTimeline"("disputeId");
-      CREATE INDEX IF NOT EXISTS "DisputeTimeline_createdAt_index" ON "DisputeTimeline"("createdAt");
+        CONSTRAINT "DisputeTimeline_pkey" PRIMARY KEY ("id")
+      )
     `)
+    await createIndexIfMissing('CREATE INDEX IF NOT EXISTS "DisputeTimeline_disputeId_index" ON "DisputeTimeline"("disputeId")')
+    await createIndexIfMissing('CREATE INDEX IF NOT EXISTS "DisputeTimeline_createdAt_index" ON "DisputeTimeline"("createdAt")')
 
     // Try running admin setup too
     try {
