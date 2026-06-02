@@ -145,7 +145,6 @@ async function generateWithZAI(systemPrompt: string, userPrompt: string): Promis
 // Uses dynamic import so build doesn't fail if @google/generative-ai is not installed
 // ──────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let GoogleGenerativeAIClass: any = null
 let geminiLoadAttempted = false
 
@@ -162,7 +161,6 @@ async function getGoogleGenerativeAI(): Promise<typeof GoogleGenerativeAIClass |
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let geminiAI: any = null
 
 async function getGeminiAI() {

@@ -5,7 +5,6 @@
  * is not installed.  The module is loaded lazily on first use.
  */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let GoogleGenerativeAIClass: any = null
 let loadAttempted = false
 
@@ -22,7 +21,6 @@ async function loadGeminiSDK() {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let generativeAI: any = null
 
 /**
