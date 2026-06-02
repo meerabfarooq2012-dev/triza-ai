@@ -20,6 +20,8 @@ import {
   Check,
   ImagePlus,
   X,
+  Loader2,
+  Cloud,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -52,6 +54,7 @@ import type {
 } from '@/types'
 import { toast } from 'sonner'
 import { countryCodeData } from '@/lib/country-codes'
+import { ShareShopUrl } from '@/components/marketplace/shared/share-shop-url'
 
 export function SellerShopSettings() {
   const { currentUser } = useMarketplaceStore()
@@ -77,6 +80,8 @@ export function SellerShopSettings() {
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([])
   const [logo, setLogo] = useState<string | null>(null)
   const [banner, setBanner] = useState<string | null>(null)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [uploadingBanner, setUploadingBanner] = useState(false)
 
   // Temp state for adding
   const [newSectionTitle, setNewSectionTitle] = useState('')
@@ -228,7 +233,7 @@ export function SellerShopSettings() {
     setSocialLinks(socialLinks.filter((l) => l.id !== id))
   }
 
-  const handleImageUpload = (
+  const handleImageUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
     type: 'logo' | 'banner'
   ) => {
@@ -247,16 +252,54 @@ export function SellerShopSettings() {
       return
     }
 
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      const result = reader.result as string
-      if (type === 'logo') {
-        setLogo(result)
+    const setUploading = type === 'logo' ? setUploadingLogo : setUploadingBanner
+    setUploading(true)
+
+    try {
+      // Try cloud upload first
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('folder', type === 'logo' ? 'logos' : 'banners')
+
+      const res = await fetch('/api/upload', { method: 'POST', body: formData })
+      const data = await res.json()
+
+      if (data.success && data.url) {
+        // Cloud upload succeeded
+        if (type === 'logo') {
+          setLogo(data.url)
+        } else {
+          setBanner(data.url)
+        }
+        toast.success(`${type === 'logo' ? 'Logo' : 'Banner'} uploaded to cloud!`)
       } else {
-        setBanner(result)
+        // Fall back to base64
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          const result = reader.result as string
+          if (type === 'logo') {
+            setLogo(result)
+          } else {
+            setBanner(result)
+          }
+        }
+        reader.readAsDataURL(file)
       }
+    } catch {
+      // Error - fall back to base64
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        const result = reader.result as string
+        if (type === 'logo') {
+          setLogo(result)
+        } else {
+          setBanner(result)
+        }
+      }
+      reader.readAsDataURL(file)
+    } finally {
+      setUploading(false)
     }
-    reader.readAsDataURL(file)
   }
 
   const handleSave = async () => {
@@ -298,8 +341,33 @@ export function SellerShopSettings() {
     }
   }
 
+  const shopUrl = shop?.slug ? `${typeof window !== 'undefined' ? window.location.origin : ''}/?shop=${shop.slug}` : ''
+
   return (
     <div className="space-y-6">
+      {/* Your Shop URL */}
+      {shop?.slug && (
+        <Card className="border-0 shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Link2 className="h-5 w-5 text-emerald-600" />
+              Your Shop URL
+            </CardTitle>
+            <CardDescription>
+              Share your shop URL on social media to get more customers
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ShareShopUrl
+              url={shopUrl}
+              title={name || shop.name}
+              description={`Anyone with this link can visit your shop directly. Share it on WhatsApp, Facebook, Twitter, and more!`}
+              shareText={`Check out ${name || shop.name} on Marketo! 🛍️`}
+            />
+          </CardContent>
+        </Card>
+      )}
+
       {/* Shop Branding */}
       <Card className="border-0 shadow-sm">
         <CardHeader>
@@ -317,13 +385,22 @@ export function SellerShopSettings() {
             <Label>Shop Logo</Label>
             <div className="flex items-start gap-4">
               <div className="relative">
-                {logo ? (
+                {uploadingLogo ? (
+                  <div className="flex h-24 w-24 items-center justify-center rounded-xl border-2 border-dashed border-emerald-200 bg-emerald-50/50">
+                    <Loader2 className="h-6 w-6 animate-spin text-emerald-500" />
+                  </div>
+                ) : logo ? (
                   <div className="group relative h-24 w-24 overflow-hidden rounded-xl border-2 border-gray-100 shadow-sm">
                     <img
                       src={logo}
                       alt="Shop logo"
                       className="h-full w-full object-cover"
                     />
+                    {logo.startsWith('http') && (
+                      <span className="absolute bottom-1 left-1 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-white">
+                        <Cloud className="h-2.5 w-2.5" />
+                      </span>
+                    )}
                     <button
                       type="button"
                       onClick={() => setLogo(null)}
@@ -343,6 +420,7 @@ export function SellerShopSettings() {
                       accept="image/*"
                       className="hidden"
                       onChange={(e) => handleImageUpload(e, 'logo')}
+                      disabled={uploadingLogo}
                     />
                   </label>
                 )}
@@ -373,13 +451,25 @@ export function SellerShopSettings() {
           <div className="space-y-3">
             <Label>Shop Banner</Label>
             <div className="space-y-2">
-              {banner ? (
+              {uploadingBanner ? (
+                <div className="flex h-32 items-center justify-center rounded-xl border-2 border-dashed border-emerald-200 bg-emerald-50/50">
+                  <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+                    <p className="text-sm font-medium text-emerald-600">Uploading...</p>
+                  </div>
+                </div>
+              ) : banner ? (
                 <div className="group relative overflow-hidden rounded-xl border-2 border-gray-100 shadow-sm">
                   <img
                     src={banner}
                     alt="Shop banner"
                     className="h-40 w-full object-cover"
                   />
+                  {banner.startsWith('http') && (
+                    <span className="absolute bottom-2 left-2 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-white">
+                      <Cloud className="h-3 w-3" />
+                    </span>
+                  )}
                   <button
                     type="button"
                     onClick={() => setBanner(null)}
@@ -402,6 +492,7 @@ export function SellerShopSettings() {
                     accept="image/*"
                     className="hidden"
                     onChange={(e) => handleImageUpload(e, 'banner')}
+                    disabled={uploadingBanner}
                   />
                 </label>
               )}

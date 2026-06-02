@@ -11,13 +11,14 @@ import { BuyerPayments } from './buyer-payments'
 import { BuyerFavorites } from './buyer-favorites'
 import { BuyerMessages } from './buyer-messages'
 import { PaymentSettingsPage } from '@/components/marketplace/payment/payment-settings-page'
+import { AddressBook } from '@/components/marketplace/shipping/address-book'
 
 export function BuyerDashboard() {
   const { currentUser, viewParams } = useMarketplaceStore()
   const [manualTab, setManualTab] = useState<string | null>(null)
 
   // Support deep-linking to a specific tab via viewParams
-  const validTabs = ['overview', 'orders', 'payments', 'favorites', 'messages', 'payment-settings']
+  const validTabs = ['overview', 'orders', 'payments', 'favorites', 'messages', 'payment-settings', 'addresses']
   const activeTab = useMemo(() => {
     if (manualTab) return manualTab
     if (viewParams?.tab && validTabs.includes(viewParams.tab)) return viewParams.tab
@@ -87,6 +88,9 @@ export function BuyerDashboard() {
               <TabsTrigger value="messages" className="gap-1.5">
                 Messages
               </TabsTrigger>
+              <TabsTrigger value="addresses" className="gap-1.5">
+                📍 Addresses
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview">
@@ -108,6 +112,9 @@ export function BuyerDashboard() {
             </TabsContent>
             <TabsContent value="messages">
               <BuyerMessages />
+            </TabsContent>
+            <TabsContent value="addresses">
+              {currentUser && <AddressBook userId={currentUser.id} />}
             </TabsContent>
           </Tabs>
         </motion.div>

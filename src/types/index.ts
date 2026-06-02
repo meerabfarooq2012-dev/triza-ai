@@ -15,8 +15,13 @@ export type WithdrawalStatus = 'pending' | 'processing' | 'approved' | 'rejected
 export type OrderItemStatus = 'pending' | 'delivered' | 'cancelled'
 export type LayoutStyle = 'grid' | 'list' | 'featured'
 export type DisplayStyle = 'modern' | 'classic' | 'minimal'
-export type NotificationType = 'info' | 'success' | 'warning' | 'error' | 'order' | 'message'
-export type DisputeStatus = 'open' | 'investigating' | 'resolved' | 'closed'
+export type NotificationType = 'info' | 'success' | 'warning' | 'error' | 'order' | 'message' | 'payment' | 'review' | 'shop' | 'promotion' | 'system'
+export type NotificationCategory = 'order' | 'payment' | 'message' | 'review' | 'shop' | 'promotion' | 'system'
+export type NotificationPriority = 'low' | 'normal' | 'high' | 'urgent'
+export type DisputeStatus = 'open' | 'under_review' | 'investigating' | 'awaiting_response' | 'resolved' | 'closed' | 'escalated'
+export type DisputePriority = 'low' | 'normal' | 'high' | 'urgent'
+export type DisputeCategory = 'product_issue' | 'payment_issue' | 'shipping_issue' | 'communication_issue' | 'other'
+export type DisputeResolutionType = 'refund' | 'replacement' | 'partial_refund' | 'no_action'
 export type SocialPlatform = 'twitter' | 'github' | 'linkedin' | 'website' | 'instagram' | 'facebook' | 'youtube'
 
 export type ViewMode =
@@ -33,9 +38,18 @@ export type ViewMode =
   | 'notifications'
   | 'messages'
   | 'orders'
+  | 'order-tracking'
+  | 'shipping-settings'
+  | 'address-book'
   | 'settings'
   | 'privacy'
   | 'terms'
+  | 'returns'
+  | 'return-detail'
+  | 'return-policy'
+  | 'activity-feed'
+  | 'disputes'
+  | 'dispute-detail'
 
 // ----- Core Domain Models -----
 
@@ -88,6 +102,11 @@ export interface Shop {
   socialLinks?: SocialLink[]
 }
 
+export interface CategoryCount {
+  products?: number
+  gigs?: number
+}
+
 export interface Category {
   id: string
   name: string
@@ -101,6 +120,7 @@ export interface Category {
   parent?: Category | null
   children?: Category[]
   products?: Product[]
+  _count?: CategoryCount
 }
 
 export interface Product {
@@ -143,14 +163,21 @@ export interface Order {
   sellerId: string
   status: OrderStatus
   totalAmount: number
+  shippingCost: number
   platformFee: number
   paymentMethod: string
   paymentStatus: PaymentStatus
   shippingName: string | null
   shippingAddr: string | null
   shippingCity: string | null
+  shippingState: string | null
+  shippingCountry: string
   shippingZip: string | null
   shippingPhone: string | null
+  shippingMethod: string | null
+  carrier: string | null
+  estimatedDelivery: string | null
+  deliveredAt: string | null
   notes: string | null
   trackingNo: string | null
   createdAt: string
@@ -160,6 +187,8 @@ export interface Order {
   items?: OrderItem[]
   disputes?: Dispute[]
   payment?: Payment | null
+  statusLogs?: OrderStatusLog[]
+  shipment?: Shipment
 }
 
 export interface OrderItem {
@@ -175,6 +204,15 @@ export interface OrderItem {
   product?: Product
 }
 
+export interface OrderStatusLog {
+  id: string
+  orderId: string
+  status: OrderStatus
+  note: string | null
+  changedBy: string
+  createdAt: string
+}
+
 export interface Review {
   id: string
   userId: string
@@ -185,6 +223,9 @@ export interface Review {
   title: string | null
   comment: string
   isVerified: boolean
+  helpfulCount?: number
+  sellerReply?: string
+  sellerReplyAt?: string | Date
   createdAt: string
   updatedAt: string
   user?: User
@@ -199,9 +240,41 @@ export interface Notification {
   title: string
   message: string
   type: NotificationType
+  category: NotificationCategory
   link: string | null
+  image: string | null
+  priority: NotificationPriority
+  metadata: string // JSON string
   isRead: boolean
   createdAt: string
+}
+
+export interface NotificationPreference {
+  id: string
+  userId: string
+  orderUpdates: boolean
+  paymentAlerts: boolean
+  newMessages: boolean
+  reviewNotifications: boolean
+  shopUpdates: boolean
+  promotions: boolean
+  systemAlerts: boolean
+  soundEnabled: boolean
+  desktopNotifications: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateNotificationInput {
+  userId: string
+  title: string
+  message: string
+  type?: NotificationType
+  category?: NotificationCategory
+  link?: string
+  image?: string
+  priority?: NotificationPriority
+  metadata?: Record<string, unknown>
 }
 
 export interface Message {
@@ -222,14 +295,63 @@ export interface Dispute {
   id: string
   orderId: string
   userId: string
+  sellerId: string
+  shopId?: string | null
   reason: string
+  category: DisputeCategory
   description: string
   status: DisputeStatus
-  resolution: string | null
+  priority: DisputePriority
+  resolution?: string | null
+  resolutionType?: DisputeResolutionType | null
+  refundAmount?: number | null
+  assignedAdminId?: string | null
+  sellerResponse?: string | null
+  escalatedAt?: string | null
+  resolvedAt?: string | null
+  closedAt?: string | null
   createdAt: string
   updatedAt: string
   order?: Order
   user?: User
+  messages?: DisputeMessage[]
+  evidence?: DisputeEvidence[]
+  timeline?: DisputeTimeline[]
+}
+
+export interface DisputeMessage {
+  id: string
+  disputeId: string
+  senderId: string
+  senderRole: 'buyer' | 'seller' | 'admin'
+  content: string
+  isInternal: boolean
+  isRead: boolean
+  createdAt: string
+  updatedAt: string
+  sender?: User
+}
+
+export interface DisputeEvidence {
+  id: string
+  disputeId: string
+  uploadedBy: string
+  type: 'image' | 'document' | 'screenshot' | 'receipt' | 'other'
+  fileUrl: string
+  fileName?: string | null
+  description?: string | null
+  createdAt: string
+  uploader?: User
+}
+
+export interface DisputeTimeline {
+  id: string
+  disputeId: string
+  status: string
+  action: string
+  note?: string | null
+  changedBy: string
+  createdAt: string
 }
 
 export interface SocialLink {
@@ -333,6 +455,7 @@ export interface GigSearchParams {
   category?: string
   minPrice?: number
   maxPrice?: number
+  rating?: number
   sortBy?: 'price_asc' | 'price_desc' | 'newest' | 'popular' | 'rating'
   page?: number
   limit?: number
@@ -419,8 +542,12 @@ export interface CreateOrderInput {
   shippingName?: string
   shippingAddr?: string
   shippingCity?: string
+  shippingState?: string
   shippingZip?: string
+  shippingCountry?: string
   shippingPhone?: string
+  shippingMethod?: ShippingMethod
+  shippingCost?: number
   notes?: string
   paymentMethod?: string
 }
@@ -441,13 +568,20 @@ export interface SendMessageInput {
 
 export interface CreateDisputeInput {
   orderId: string
+  userId: string
+  sellerId: string
+  shopId?: string
   reason: string
+  category: DisputeCategory
   description: string
+  priority?: DisputePriority
 }
 
 export interface ResolveDisputeInput {
   status: 'resolved' | 'closed'
   resolution: string
+  resolutionType?: DisputeResolutionType
+  refundAmount?: number
 }
 
 // ----- API Response Types -----
@@ -482,6 +616,9 @@ export interface SearchFilters {
   type?: ProductType
   minPrice?: number
   maxPrice?: number
+  rating?: number
+  tags?: string
+  inStock?: boolean
   sortBy?: 'price_asc' | 'price_desc' | 'newest' | 'popular' | 'rating'
   page?: number
   limit?: number
@@ -730,4 +867,240 @@ export interface CreatePaymentInfoInput {
   label: string
   accountDetails: PaymentInfoAccountDetails
   isDefault?: boolean
+}
+
+// ----- Shipping & Delivery Types -----
+
+export type ShipmentStatus = 'pending' | 'picked_up' | 'in_transit' | 'out_for_delivery' | 'delivered' | 'failed' | 'returned'
+export type ShippingMethod = 'standard' | 'express' | 'overnight' | 'pickup'
+
+export interface DeliveryAddress {
+  id: string
+  userId: string
+  label: string
+  fullName: string
+  phone: string
+  address: string
+  city: string
+  state: string | null
+  zipCode: string | null
+  country: string
+  isDefault: boolean
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ShippingZone {
+  id: string
+  shopId: string
+  name: string
+  countries: string // JSON array of ISO country codes
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+  rates?: ShippingRate[]
+}
+
+export interface ShippingRate {
+  id: string
+  zoneId: string
+  name: string
+  method: ShippingMethod
+  minDays: number
+  maxDays: number
+  price: number
+  freeAbove: number | null
+  weightLimit: number | null
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+  zone?: ShippingZone
+  estimatedDate?: string // computed on frontend
+}
+
+export interface Shipment {
+  id: string
+  orderId: string
+  carrier: string | null
+  trackingNumber: string | null
+  trackingUrl: string | null
+  status: ShipmentStatus
+  shippedAt: string | null
+  estimatedDelivery: string | null
+  deliveredAt: string | null
+  weight: number | null
+  notes: string | null
+  createdAt: string
+  updatedAt: string
+  order?: Order
+}
+
+export interface CreateDeliveryAddressInput {
+  label: string
+  fullName: string
+  phone: string
+  address: string
+  city: string
+  state?: string
+  zipCode?: string
+  country?: string
+  isDefault?: boolean
+}
+
+export interface CreateShippingZoneInput {
+  name: string
+  countries: string[]
+  isActive?: boolean
+}
+
+export interface CreateShippingRateInput {
+  name: string
+  method: ShippingMethod
+  minDays: number
+  maxDays: number
+  price: number
+  freeAbove?: number
+  weightLimit?: number
+  isActive?: boolean
+}
+
+export interface CreateShipmentInput {
+  carrier?: string
+  trackingNumber?: string
+  trackingUrl?: string
+  status?: ShipmentStatus
+  weight?: number
+  notes?: string
+}
+
+export interface ShippingCalculationInput {
+  shopId: string
+  country: string
+  orderTotal: number
+  weight?: number
+}
+
+// ----- Return & Refund Types -----
+
+export type ReturnReason = 'damaged' | 'defective' | 'wrong_item' | 'not_as_described' | 'changed_mind' | 'other'
+export type ReturnType = 'return' | 'exchange' | 'refund_only'
+export type ReturnStatus = 'requested' | 'under_review' | 'approved' | 'rejected' | 'processing' | 'completed' | 'cancelled'
+export type RefundMethod = 'original' | 'wallet' | 'bank_transfer'
+export type ReturnShippingPaidBy = 'buyer' | 'seller' | 'split'
+
+export interface ReturnRequest {
+  id: string
+  orderId: string
+  userId: string
+  shopId: string
+  reason: ReturnReason
+  description: string
+  images: string[]
+  type: ReturnType
+  status: ReturnStatus
+  refundAmount: number | null
+  refundMethod: RefundMethod | null
+  sellerResponse: string | null
+  adminNote: string | null
+  reviewedAt: string | null
+  approvedAt: string | null
+  rejectedAt: string | null
+  completedAt: string | null
+  createdAt: string
+  updatedAt: string
+  order?: Order
+  user?: { id: string; name: string; avatar: string | null }
+  shop?: { id: string; name: string }
+  timeline?: ReturnTimeline[]
+}
+
+export interface ReturnTimeline {
+  id: string
+  returnId: string
+  status: ReturnStatus
+  note: string | null
+  changedBy: string
+  createdAt: string
+}
+
+export interface ReturnPolicy {
+  id: string
+  shopId: string
+  acceptsReturns: boolean
+  returnPeriodDays: number
+  acceptsExchanges: boolean
+  refundMethods: RefundMethod[]
+  returnShippingPaidBy: ReturnShippingPaidBy
+  restockingFee: number
+  description: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateReturnInput {
+  orderId: string
+  userId: string
+  reason: ReturnReason
+  description: string
+  images?: string[]
+  type?: ReturnType
+}
+
+// ----- Social Feature Types -----
+
+export interface ShopFollow {
+  id: string
+  userId: string
+  shopId: string
+  createdAt: string
+  shop?: Shop
+  user?: User
+}
+
+export interface Activity {
+  id: string
+  userId: string
+  shopId: string | null
+  productId: string | null
+  type: 'new_product' | 'new_review' | 'shop_update' | 'sale_milestone' | 'restock' | 'promotion' | 'story'
+  title: string
+  description: string | null
+  image: string | null
+  metadata: Record<string, unknown>
+  isActive: boolean
+  createdAt: string
+  user?: { id: string; name: string; avatar: string | null }
+  shop?: { id: string; name: string; logo: string | null }
+  product?: { id: string; name: string; price: number; images: string[] }
+}
+
+export interface ShopStory {
+  id: string
+  shopId: string
+  type: 'image' | 'text' | 'promotion' | 'product_highlight'
+  content: string | null
+  imageUrl: string | null
+  productId: string | null
+  isActive: boolean
+  expiresAt: string
+  viewCount: number
+  createdAt: string
+  shop?: { id: string; name: string; logo: string | null }
+  isViewed?: boolean
+}
+
+export interface StoryView {
+  id: string
+  storyId: string
+  userId: string
+  createdAt: string
+}
+
+export interface SharedProduct {
+  id: string
+  productId: string
+  userId: string
+  platform: 'link' | 'whatsapp' | 'twitter' | 'facebook' | 'copy'
+  createdAt: string
 }

@@ -12,43 +12,98 @@ function slugify(text: string): string {
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const search = searchParams.get('search') || '';
+    const search = searchParams.get('search') || searchParams.get('query') || '';
     const type = searchParams.get('type') || '';
     const category = searchParams.get('category') || '';
     const shopId = searchParams.get('shopId') || '';
     const featured = searchParams.get('featured');
+    const showAll = searchParams.get('showAll');
+    const minPrice = searchParams.get('minPrice');
+    const maxPrice = searchParams.get('maxPrice');
+    const rating = searchParams.get('rating');
+    const tags = searchParams.get('tags') || '';
+    const inStock = searchParams.get('inStock');
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '12', 10);
-    const sort = searchParams.get('sort') || 'newest';
+    const sort = searchParams.get('sort') || searchParams.get('sortBy') || 'newest';
     const skip = (page - 1) * limit;
 
-    const where: Prisma.ProductWhereInput = {
-      isActive: true,
-      isApproved: true,
-    };
+    const where: Prisma.ProductWhereInput = {};
+
+    // Build AND conditions for proper filter composition
+    const andConditions: Prisma.ProductWhereInput[] = [];
+
+    if (showAll !== 'true') {
+      andConditions.push({ isActive: true });
+      andConditions.push({ isApproved: true });
+    }
 
     if (search) {
-      where.OR = [
-        { name: { contains: search } },
-        { description: { contains: search } },
-        { shortDesc: { contains: search } },
-      ];
+      andConditions.push({
+        OR: [
+          { name: { contains: search } },
+          { description: { contains: search } },
+          { shortDesc: { contains: search } },
+        ],
+      });
     }
 
     if (type) {
-      where.type = type;
+      andConditions.push({ type });
     }
 
     if (category) {
-      where.category = { slug: category };
+      andConditions.push({ category: { slug: category } });
     }
 
     if (shopId) {
-      where.shopId = shopId;
+      andConditions.push({ shopId });
     }
 
     if (featured === 'true') {
-      where.isFeatured = true;
+      andConditions.push({ isFeatured: true });
+    }
+
+    // Price range filter
+    if (minPrice || maxPrice) {
+      andConditions.push({
+        price: {
+          ...(minPrice && { gte: parseFloat(minPrice) }),
+          ...(maxPrice && { lte: parseFloat(maxPrice) }),
+        },
+      });
+    }
+
+    // Minimum average rating filter
+    if (rating) {
+      andConditions.push({ averageRating: { gte: parseFloat(rating) } });
+    }
+
+    // Tags filter - filter products whose tags JSON string contains any of the specified tags
+    if (tags) {
+      const tagList = tags.split(',').map((t) => t.trim()).filter(Boolean);
+      if (tagList.length > 0) {
+        andConditions.push({
+          OR: tagList.map((tag) => ({
+            tags: { contains: tag, mode: 'insensitive' as const },
+          })),
+        });
+      }
+    }
+
+    // In-stock filter — exclude products with stock = 0
+    if (inStock === 'true') {
+      andConditions.push({
+        OR: [
+          { stock: { gt: 0 } },   // Physical products with stock > 0
+          { stock: -1 },           // Digital products (unlimited)
+        ],
+      });
+    }
+
+    // Apply all conditions as AND
+    if (andConditions.length > 0) {
+      where.AND = andConditions;
     }
 
     let orderBy: Prisma.ProductOrderByWithRelationInput = { createdAt: 'desc' };
@@ -104,6 +159,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
+        items: parsedProducts,
         products: parsedProducts,
         pagination: {
           page,
@@ -188,6 +244,7 @@ export async function POST(request: NextRequest) {
         sku,
         tags: typeof tags === 'string' ? tags : JSON.stringify(tags || []),
         isFeatured: isFeatured || false,
+        isApproved: true, // Auto-approve products
         deliveryInfo,
         deliveryCountries: typeof deliveryCountries === 'string' ? deliveryCountries : JSON.stringify(deliveryCountries || []),
         requirements,

@@ -33,7 +33,7 @@ export function FeaturedProductsSection() {
   }, [])
 
   const handleProductClick = (productId: string) => {
-    setCurrentView('product-detail', { id: productId })
+    setCurrentView('product-detail', { productId })
   }
 
   return (

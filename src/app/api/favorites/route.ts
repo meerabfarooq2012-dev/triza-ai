@@ -61,6 +61,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Verify the product exists
+    const product = await db.product.findUnique({
+      where: { id: productId },
+      select: { id: true },
+    });
+
+    if (!product) {
+      return NextResponse.json(
+        { success: false, error: 'Product not found' },
+        { status: 404 }
+      );
+    }
+
     const existing = await db.favorite.findUnique({
       where: {
         userId_productId: { userId, productId },
@@ -72,9 +85,14 @@ export async function POST(request: NextRequest) {
         where: { id: existing.id },
       });
 
+      // Count remaining favorites for this product
+      const favoriteCount = await db.favorite.count({
+        where: { productId },
+      });
+
       return NextResponse.json({
         success: true,
-        data: { favorited: false, message: 'Removed from favorites' },
+        data: { isFavorited: false, favoriteCount, message: 'Removed from favorites' },
       });
     }
 
@@ -82,9 +100,13 @@ export async function POST(request: NextRequest) {
       data: { userId, productId },
     });
 
+    const favoriteCount = await db.favorite.count({
+      where: { productId },
+    });
+
     return NextResponse.json({
       success: true,
-      data: { favorited: true, message: 'Added to favorites' },
+      data: { isFavorited: true, favoriteCount, message: 'Added to favorites' },
     });
   } catch (error) {
     console.error('Toggle favorite error:', error);

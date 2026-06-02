@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { RatingStars } from '@/components/marketplace/shared/rating-stars'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { api } from '@/lib/api'
 import { PRODUCT_TYPE_LABELS } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import type { Product, ProductType } from '@/types'
@@ -47,10 +48,21 @@ export function ProductCard({ product, className }: ProductCardProps) {
     setCurrentView('product-detail', { productId: product.id })
   }
 
-  const handleFavorite = (e: React.MouseEvent) => {
+  const handleFavorite = async (e: React.MouseEvent) => {
     e.stopPropagation()
+    if (!currentUser) return
+    // Optimistic update for instant feedback
+    const previousState = isFavorited
     setIsFavorited(!isFavorited)
-    // TODO: API call to toggle favorite
+    try {
+      const res = await api.favorites.toggleFavorite(product.id, currentUser.id)
+      if (res.data) {
+        setIsFavorited(res.data.isFavorited)
+      }
+    } catch {
+      // Revert on error
+      setIsFavorited(previousState)
+    }
   }
 
   const handleShopClick = (e: React.MouseEvent) => {

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { Prisma } from '@prisma/client';
+import { sendEmailAsync } from '@/lib/email';
+import { orderConfirmationBuyerEmail, newOrderSellerEmail } from '@/lib/email-templates';
+import { notifyOrderCreated } from '@/lib/notifications';
 
 export async function GET(request: NextRequest) {
   try {
@@ -65,6 +68,8 @@ export async function GET(request: NextRequest) {
               createdAt: true,
             },
           },
+          statusLogs: { orderBy: { createdAt: 'asc' } },
+          shipment: true,
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -118,8 +123,12 @@ export async function POST(request: NextRequest) {
       shippingName,
       shippingAddr,
       shippingCity,
+      shippingState,
       shippingZip,
+      shippingCountry,
       shippingPhone,
+      shippingMethod,
+      shippingCost,
       notes,
     } = body;
 
@@ -189,8 +198,12 @@ export async function POST(request: NextRequest) {
         shippingName,
         shippingAddr,
         shippingCity,
+        shippingState,
         shippingZip,
+        shippingCountry: shippingCountry || 'PK',
         shippingPhone,
+        shippingMethod,
+        shippingCost: shippingCost || 0,
         notes,
         items: {
           create: orderItemsData,
@@ -215,6 +228,16 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Create initial status log
+    await db.orderStatusLog.create({
+      data: {
+        orderId: order.id,
+        status: 'pending',
+        note: 'Order placed',
+        changedBy: buyerId,
+      },
+    });
+
     // Update product sales and stock
     for (const item of orderItemsData) {
       const product = products.find((p) => p.id === item.productId)!;
@@ -235,16 +258,53 @@ export async function POST(request: NextRequest) {
       data: { totalSales: { increment: 1 } },
     });
 
-    // Create notification for seller
-    await db.notification.create({
-      data: {
-        userId: sellerId,
-        title: 'New Order Received',
-        message: `You have a new order #${order.id.slice(-8)}`,
-        type: 'order',
-        link: `/orders/${order.id}`,
-      },
-    });
+    // Create notifications for buyer and seller (non-blocking)
+    notifyOrderCreated(buyerId, sellerId, order.id, totalAmount).catch(() => {});
+
+    // Send order confirmation emails (non-blocking)
+    const orderItemsForEmail = order.items.map((item) => ({
+      name: item.product?.name || 'Unknown Product',
+      quantity: item.quantity,
+      price: item.price,
+      type: item.type,
+    }));
+
+    // Fetch buyer and seller emails
+    const [buyerUser, sellerUser] = await Promise.all([
+      db.user.findUnique({ where: { id: buyerId }, select: { email: true, name: true } }),
+      db.user.findUnique({ where: { id: sellerId }, select: { email: true, name: true } }),
+    ]);
+
+    if (buyerUser?.email) {
+      sendEmailAsync({
+        to: buyerUser.email,
+        subject: `Order Confirmation #${order.id.slice(-8)} — Marketo`,
+        html: orderConfirmationBuyerEmail({
+          orderNumber: order.id.slice(-8),
+          buyerName: buyerUser.name,
+          items: orderItemsForEmail,
+          totalAmount,
+          sellerName: sellerUser?.name || 'Seller',
+          paymentMethod,
+        }),
+      });
+    }
+
+    if (sellerUser?.email) {
+      sendEmailAsync({
+        to: sellerUser.email,
+        subject: `🎉 New Order #${order.id.slice(-8)} — Marketo`,
+        html: newOrderSellerEmail({
+          orderNumber: order.id.slice(-8),
+          sellerName: sellerUser.name,
+          buyerName: buyerUser?.name || 'Buyer',
+          items: orderItemsForEmail,
+          totalAmount,
+          platformFee,
+          sellerPayout: Math.round((totalAmount - platformFee) * 100) / 100,
+        }),
+      });
+    }
 
     const parsedOrder = {
       ...order,

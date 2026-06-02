@@ -1,0 +1,35 @@
+-- STEP 5: Gig Subcategories Part 3 - Graphic Design (next 30)
+-- Paste this in Supabase SQL Editor and click Run
+
+INSERT INTO "Category" ("id", "name", "slug", "icon", "description", "parentId", "sortOrder", "isActive", "createdAt") VALUES
+  ('cat-g001-s61', 'Adobe Photoshop Work', 'graphic-design--adobe-photoshop-work', NULL, NULL, 'cat-g001', 60, true, NOW()),
+  ('cat-g001-s62', 'Figma Design', 'graphic-design--figma-design', NULL, NULL, 'cat-g001', 61, true, NOW()),
+  ('cat-g001-s63', 'Textile Pattern Design', 'graphic-design--textile-pattern-design', NULL, NULL, 'cat-g001', 62, true, NOW()),
+  ('cat-g001-s64', 'Fabric Print Design', 'graphic-design--fabric-print-design', NULL, NULL, 'cat-g001', 63, true, NOW()),
+  ('cat-g001-s65', 'Embroidery Design', 'graphic-design--embroidery-design', NULL, NULL, 'cat-g001', 64, true, NOW()),
+  ('cat-g001-s66', 'Fashion Illustration', 'graphic-design--fashion-illustration', NULL, NULL, 'cat-g001', 65, true, NOW()),
+  ('cat-g001-s67', 'T-Shirt Design', 'graphic-design--t-shirt-design', NULL, NULL, 'cat-g001', 66, true, NOW()),
+  ('cat-g001-s68', 'Hoodie Design', 'graphic-design--hoodie-design', NULL, NULL, 'cat-g001', 67, true, NOW()),
+  ('cat-g001-s69', 'Merchandise Design', 'graphic-design--merchandise-design', NULL, NULL, 'cat-g001', 68, true, NOW()),
+  ('cat-g001-s70', 'Mug Design', 'graphic-design--mug-design', NULL, NULL, 'cat-g001', 69, true, NOW()),
+  ('cat-g001-s71', 'Tote Bag Design', 'graphic-design--tote-bag-design', NULL, NULL, 'cat-g001', 70, true, NOW()),
+  ('cat-g001-s72', 'Jewelry Design', 'graphic-design--jewelry-design', NULL, NULL, 'cat-g001', 71, true, NOW()),
+  ('cat-g001-s73', 'Ring Design', 'graphic-design--ring-design', NULL, NULL, 'cat-g001', 72, true, NOW()),
+  ('cat-g001-s74', 'Necklace Design', 'graphic-design--necklace-design', NULL, NULL, 'cat-g001', 73, true, NOW()),
+  ('cat-g001-s75', 'Bracelet Design', 'graphic-design--bracelet-design', NULL, NULL, 'cat-g001', 74, true, NOW()),
+  ('cat-g001-s76', 'Earrings Design', 'graphic-design--earrings-design', NULL, NULL, 'cat-g001', 75, true, NOW()),
+  ('cat-g001-s77', 'Pendant Design', 'graphic-design--pendant-design', NULL, NULL, 'cat-g001', 76, true, NOW()),
+  ('cat-g001-s78', 'Luxury Jewelry Design', 'graphic-design--luxury-jewelry-design', NULL, NULL, 'cat-g001', 77, true, NOW()),
+  ('cat-g001-s79', 'Bridal Jewelry Design', 'graphic-design--bridal-jewelry-design', NULL, NULL, 'cat-g001', 78, true, NOW()),
+  ('cat-g001-s80', 'Handmade Jewelry Design', 'graphic-design--handmade-jewelry-design', NULL, NULL, 'cat-g001', 79, true, NOW()),
+  ('cat-g001-s81', 'Jewelry Rendering', 'graphic-design--jewelry-rendering', NULL, NULL, 'cat-g001', 80, true, NOW()),
+  ('cat-g001-s82', '3D Jewelry Modeling', 'graphic-design--3d-jewelry-modeling', NULL, NULL, 'cat-g001', 81, true, NOW()),
+  ('cat-g001-s83', 'CAD Jewelry Design', 'graphic-design--cad-jewelry-design', NULL, NULL, 'cat-g001', 82, true, NOW()),
+  ('cat-g001-s84', 'Jewelry Packaging Design', 'graphic-design--jewelry-packaging-design', NULL, NULL, 'cat-g001', 83, true, NOW()),
+  ('cat-g001-s85', 'Gold Jewelry Design', 'graphic-design--gold-jewelry-design', NULL, NULL, 'cat-g001', 84, true, NOW()),
+  ('cat-g001-s86', 'Silver Jewelry Design', 'graphic-design--silver-jewelry-design', NULL, NULL, 'cat-g001', 85, true, NOW()),
+  ('cat-g001-s87', 'Gemstone Jewelry Design', 'graphic-design--gemstone-jewelry-design', NULL, NULL, 'cat-g001', 86, true, NOW()),
+  ('cat-g001-s88', 'Tattoo Design', 'graphic-design--tattoo-design', NULL, NULL, 'cat-g001', 87, true, NOW()),
+  ('cat-g001-s89', 'Calligraphy Design', 'graphic-design--calligraphy-design', NULL, NULL, 'cat-g001', 88, true, NOW()),
+  ('cat-g001-s90', 'Arabic Calligraphy', 'graphic-design--arabic-calligraphy', NULL, NULL, 'cat-g001', 89, true, NOW());
+

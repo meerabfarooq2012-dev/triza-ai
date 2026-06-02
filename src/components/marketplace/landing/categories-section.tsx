@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { useState, useEffect, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   Download,
   BookOpen,
@@ -37,11 +37,15 @@ import {
   Layers,
   Megaphone,
   Printer,
+  ChevronDown,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { PHYSICAL_CATEGORIES, GIG_CATEGORIES, DIGITAL_CATEGORIES } from '@/lib/constants'
+import { PHYSICAL_CATEGORIES, GIG_CATEGORIES, DIGITAL_CATEGORIES, GIG_SUBCATEGORIES } from '@/lib/constants'
+import { DIGITAL_SUBCATEGORIES } from '@/lib/digital-subcategories'
+import { PHYSICAL_SUBCATEGORIES } from '@/lib/physical-subcategories'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import type { Category } from '@/types'
 
 const iconMap: Record<string, React.ReactNode> = {
   Download: <Download className="h-5 w-5" />,
@@ -112,21 +116,192 @@ const cardVariants = {
 
 type ProductTab = 'digital' | 'physical' | 'gigs'
 
+interface SubcategoryItem {
+  name: string
+  slug: string
+}
+
+interface CategoryDisplay {
+  id?: string
+  name: string
+  slug: string
+  icon: string
+  description?: string | null
+  children?: SubcategoryItem[]
+  _count?: { products?: number; gigs?: number }
+}
+
+function getSubcategoriesForCategory(slug: string, tab: ProductTab): SubcategoryItem[] {
+  if (tab === 'gigs') {
+    const subs = GIG_SUBCATEGORIES[slug]
+    if (subs) return subs.map(s => ({ name: s.name, slug: s.slug }))
+  } else if (tab === 'digital') {
+    const subs = DIGITAL_SUBCATEGORIES[slug]
+    if (subs) return subs
+  } else if (tab === 'physical') {
+    const subs = PHYSICAL_SUBCATEGORIES[slug]
+    if (subs) return subs
+  }
+  return []
+}
+
+function mergeApiWithFallback(
+  apiCategories: Category[],
+  staticCategories: readonly { name: string; slug: string; icon: string; description?: string; sortOrder: number }[],
+  tab: ProductTab
+): CategoryDisplay[] {
+  // Build a map from API results for quick lookup
+  const apiMap = new Map<string, Category>()
+  for (const cat of apiCategories) {
+    apiMap.set(cat.slug, cat)
+  }
+
+  return staticCategories.map((staticCat) => {
+    const apiCat = apiMap.get(staticCat.slug)
+    const fallbackSubs = getSubcategoriesForCategory(staticCat.slug, tab)
+
+    if (apiCat && apiCat.children && apiCat.children.length > 0) {
+      // Use API data with children
+      return {
+        id: apiCat.id,
+        name: apiCat.name,
+        slug: apiCat.slug,
+        icon: apiCat.icon || staticCat.icon,
+        description: apiCat.description || staticCat.description || null,
+        children: apiCat.children.map(child => ({ name: child.name, slug: child.slug })),
+        _count: apiCat._count as { products?: number; gigs?: number } | undefined,
+      }
+    }
+
+    // Fall back to static subcategories
+    return {
+      id: apiCat?.id,
+      name: staticCat.name,
+      slug: staticCat.slug,
+      icon: staticCat.icon,
+      description: staticCat.description || null,
+      children: fallbackSubs.length > 0 ? fallbackSubs : undefined,
+      _count: apiCat?._count as { products?: number; gigs?: number } | undefined,
+    }
+  })
+}
+
 export function CategoriesSection() {
   const { setCurrentView, setSearchCategory } = useMarketplaceStore()
   const [activeTab, setActiveTab] = useState<ProductTab>('physical')
+  const [expandedSlug, setExpandedSlug] = useState<string | null>(null)
+  const [categories, setCategories] = useState<CategoryDisplay[]>([])
+  const [isLoading, setIsLoading] = useState(false)
 
-  const handleCategoryClick = (slug: string, type: 'products' | 'gigs') => {
+  const handleCategoryClick = (slug: string, type: 'products' | 'gigs', productType?: 'digital' | 'physical') => {
     setSearchCategory(slug)
     if (type === 'gigs') {
       setCurrentView('gigs-browse')
     } else {
+      // Set product type filter when browsing from landing page
+      if (productType) {
+        useMarketplaceStore.getState().setSearchType(productType)
+      }
       setCurrentView('search')
     }
   }
 
-  // Show top 10 freelance categories on landing page
-  const topGigCategories = GIG_CATEGORIES.slice(0, 10)
+  const handleSubcategoryClick = (subSlug: string, type: 'products' | 'gigs', productType?: 'digital' | 'physical', e?: React.MouseEvent) => {
+    e?.stopPropagation()
+    setSearchCategory(subSlug)
+    if (type === 'gigs') {
+      setCurrentView('gigs-browse')
+    } else {
+      if (productType) {
+        useMarketplaceStore.getState().setSearchType(productType)
+      }
+      setCurrentView('search')
+    }
+  }
+
+  const handleToggleExpand = (slug: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setExpandedSlug(prev => prev === slug ? null : slug)
+  }
+
+  const fetchCategories = useCallback(async (tab: ProductTab) => {
+    setIsLoading(true)
+    try {
+      const res = await fetch(`/api/categories?type=${tab}`)
+      if (!res.ok) throw new Error('API error')
+      const json = await res.json()
+      if (json.success && Array.isArray(json.data)) {
+        const staticSource = tab === 'gigs'
+          ? GIG_CATEGORIES.slice(0, 10)
+          : tab === 'digital'
+            ? DIGITAL_CATEGORIES
+            : PHYSICAL_CATEGORIES
+        const merged = mergeApiWithFallback(json.data as Category[], staticSource, tab)
+        setCategories(merged)
+        return
+      }
+    } catch {
+      // Fall back to static data
+    }
+    // Static fallback
+    const staticSource = tab === 'gigs'
+      ? GIG_CATEGORIES.slice(0, 10)
+      : tab === 'digital'
+        ? DIGITAL_CATEGORIES
+        : PHYSICAL_CATEGORIES
+    const merged = mergeApiWithFallback([], staticSource, tab)
+    setCategories(merged)
+    setIsLoading(false)
+  }, [])
+
+  useEffect(() => {
+    setExpandedSlug(null)
+    fetchCategories(activeTab)
+  }, [activeTab, fetchCategories])
+
+  // Reset expanded state when categories change
+  useEffect(() => {
+    setIsLoading(false)
+  }, [categories])
+
+  const getHoverColor = (tab: ProductTab) => {
+    if (tab === 'gigs') return 'hover:border-emerald-200 dark:hover:border-emerald-800'
+    if (tab === 'digital') return 'hover:border-cyan-200 dark:hover:border-cyan-800'
+    return 'hover:border-violet-200 dark:hover:border-violet-800'
+  }
+
+  const getActiveHoverTextColor = (tab: ProductTab) => {
+    if (tab === 'gigs') return 'group-hover:text-emerald-600 dark:group-hover:text-emerald-400'
+    if (tab === 'digital') return 'group-hover:text-cyan-600 dark:group-hover:text-cyan-400'
+    return 'group-hover:text-violet-600 dark:group-hover:text-violet-400'
+  }
+
+  const getExpandedBorderColor = (tab: ProductTab) => {
+    if (tab === 'gigs') return 'border-emerald-300 dark:border-emerald-700'
+    if (tab === 'digital') return 'border-cyan-300 dark:border-cyan-700'
+    return 'border-violet-300 dark:border-violet-700'
+  }
+
+  const getChevronColor = (tab: ProductTab) => {
+    if (tab === 'gigs') return 'text-emerald-500'
+    if (tab === 'digital') return 'text-cyan-500'
+    return 'text-violet-500'
+  }
+
+  const getBadgeColor = (tab: ProductTab) => {
+    if (tab === 'gigs') return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+    if (tab === 'digital') return 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300'
+    return 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300'
+  }
+
+  const getPillColor = (tab: ProductTab) => {
+    if (tab === 'gigs') return 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-300 dark:hover:bg-emerald-900/40'
+    if (tab === 'digital') return 'bg-cyan-50 text-cyan-700 hover:bg-cyan-100 dark:bg-cyan-950/30 dark:text-cyan-300 dark:hover:bg-cyan-900/40'
+    return 'bg-violet-50 text-violet-700 hover:bg-violet-100 dark:bg-violet-950/30 dark:text-violet-300 dark:hover:bg-violet-900/40'
+  }
+
+  const categoryType = activeTab === 'gigs' ? 'gigs' : 'products'
+  const productTypeFilter = activeTab === 'digital' ? 'digital' : activeTab === 'physical' ? 'physical' : undefined
 
   return (
     <section className="py-20 sm:py-28 bg-muted/30">
@@ -177,111 +352,131 @@ export function CategoriesSection() {
           </Button>
         </div>
 
-        {/* Physical Product Categories */}
-        {activeTab === 'physical' && (
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-50px' }}
-            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"
-          >
-            {PHYSICAL_CATEGORIES.map((category, i) => (
-              <motion.div key={category.slug} variants={cardVariants}>
+        {/* Categories Grid */}
+        <motion.div
+          key={activeTab}
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"
+        >
+          {categories.map((category, i) => {
+            const isExpanded = expandedSlug === category.slug
+            const subcategories = category.children || []
+            const hasSubcategories = subcategories.length > 0
+            const previewSubs = subcategories.slice(0, 3)
+            const moreCount = subcategories.length - previewSubs.length
+
+            return (
+              <motion.div key={category.slug} variants={cardVariants} className="col-span-1">
                 <Card
-                  className="group cursor-pointer border-border/50 hover:border-violet-200 dark:hover:border-violet-800 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 overflow-hidden"
-                  onClick={() => handleCategoryClick(category.slug, 'products')}
+                  className={`group cursor-pointer border-border/50 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 overflow-visible ${
+                    isExpanded ? `${getExpandedBorderColor(activeTab)} shadow-md -translate-y-1 border-2` : getHoverColor(activeTab)
+                  }`}
+                  onClick={() => handleCategoryClick(category.slug, categoryType, productTypeFilter)}
                 >
-                  <CardContent className={`p-5 bg-gradient-to-br ${categoryGradients[i % categoryGradients.length]}`}>
-                    <div className={`mb-3 ${iconColors[i % iconColors.length]}`}>
-                      {iconMap[category.icon] || <Package className="h-5 w-5" />}
+                  <CardContent className={`p-5 bg-gradient-to-br ${categoryGradients[i % categoryGradients.length]} relative`}>
+                    {/* Subcategory count badge */}
+                    {hasSubcategories && (
+                      <span className={`absolute top-2 right-2 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${getBadgeColor(activeTab)}`}>
+                        +{subcategories.length}
+                      </span>
+                    )}
+
+                    {/* Icon and name */}
+                    <div className={`mb-2 ${iconColors[i % iconColors.length]}`}>
+                      {iconMap[category.icon] || (activeTab === 'gigs' ? <Briefcase className="h-5 w-5" /> : <Package className="h-5 w-5" />)}
                     </div>
-                    <h3 className="text-sm font-semibold group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
-                      {category.name}
-                    </h3>
+                    <div className="flex items-center gap-1">
+                      <h3 className={`text-sm font-semibold ${getActiveHoverTextColor(activeTab)} transition-colors`}>
+                        {category.name}
+                      </h3>
+                      {hasSubcategories && (
+                        <button
+                          onClick={(e) => handleToggleExpand(category.slug, e)}
+                          className={`ml-auto p-0.5 rounded-full transition-transform duration-200 ${getChevronColor(activeTab)} ${
+                            isExpanded ? 'rotate-180' : ''
+                          }`}
+                          aria-label={isExpanded ? 'Collapse subcategories' : 'Expand subcategories'}
+                        >
+                          <ChevronDown className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
                     {category.description && (
                       <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                         {category.description}
                       </p>
                     )}
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </motion.div>
-        )}
 
-        {/* Digital Product Categories */}
-        {activeTab === 'digital' && (
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-50px' }}
-            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"
-          >
-            {DIGITAL_CATEGORIES.map((category, i) => (
-              <motion.div key={category.slug} variants={cardVariants}>
-                <Card
-                  className="group cursor-pointer border-border/50 hover:border-cyan-200 dark:hover:border-cyan-800 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 overflow-hidden"
-                  onClick={() => handleCategoryClick(category.slug, 'products')}
-                >
-                  <CardContent className={`p-5 bg-gradient-to-br ${categoryGradients[i % categoryGradients.length]}`}>
-                    <div className={`mb-3 ${iconColors[i % iconColors.length]}`}>
-                      {iconMap[category.icon] || <Download className="h-5 w-5" />}
-                    </div>
-                    <h3 className="text-sm font-semibold group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
-                      {category.name}
-                    </h3>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </motion.div>
-        )}
-
-        {/* Freelance Gig Categories */}
-        {activeTab === 'gigs' && (
-          <>
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: '-50px' }}
-              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"
-            >
-              {topGigCategories.map((category, i) => (
-                <motion.div key={category.slug} variants={cardVariants}>
-                  <Card
-                    className="group cursor-pointer border-border/50 hover:border-emerald-200 dark:hover:border-emerald-800 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 overflow-hidden"
-                    onClick={() => handleCategoryClick(category.slug, 'gigs')}
-                  >
-                    <CardContent className={`p-5 bg-gradient-to-br ${categoryGradients[i % categoryGradients.length]}`}>
-                      <div className={`mb-3 ${iconColors[i % iconColors.length]}`}>
-                        {iconMap[category.icon] || <Briefcase className="h-5 w-5" />}
+                    {/* Preview pills (shown when collapsed) */}
+                    {hasSubcategories && !isExpanded && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {previewSubs.map((sub) => (
+                          <button
+                            key={sub.slug}
+                            onClick={(e) => handleSubcategoryClick(sub.slug, categoryType, productTypeFilter, e)}
+                            className={`text-[10px] px-2 py-0.5 rounded-full transition-colors duration-150 ${getPillColor(activeTab)}`}
+                          >
+                            {sub.name}
+                          </button>
+                        ))}
+                        {moreCount > 0 && (
+                          <button
+                            onClick={(e) => handleToggleExpand(category.slug, e)}
+                            className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${getBadgeColor(activeTab)} transition-colors duration-150`}
+                          >
+                            +{moreCount} more
+                          </button>
+                        )}
                       </div>
-                      <h3 className="text-sm font-semibold group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                        {category.name}
-                      </h3>
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                        {category.description}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </motion.div>
-            <div className="text-center mt-8">
-              <Button
-                variant="outline"
-                className="gap-2"
-                onClick={() => setCurrentView('gigs-browse')}
-              >
-                <LayoutGrid className="h-4 w-4" />
-                View All {GIG_CATEGORIES.length} Categories
-              </Button>
-            </div>
-          </>
+                    )}
+                  </CardContent>
+
+                  {/* Expanded subcategories */}
+                  <AnimatePresence>
+                    {isExpanded && hasSubcategories && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25, ease: 'easeInOut' }}
+                        className="overflow-hidden"
+                      >
+                        <div className="px-4 pb-4 pt-1 border-t border-border/30">
+                          <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto custom-scrollbar">
+                            {subcategories.map((sub) => (
+                              <button
+                                key={sub.slug}
+                                onClick={(e) => handleSubcategoryClick(sub.slug, categoryType, productTypeFilter, e)}
+                                className={`text-[11px] px-2.5 py-1 rounded-full transition-all duration-150 border border-transparent hover:border-current/20 ${getPillColor(activeTab)}`}
+                              >
+                                {sub.name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </Card>
+              </motion.div>
+            )
+          })}
+        </motion.div>
+
+        {/* View All Categories button for gigs */}
+        {activeTab === 'gigs' && (
+          <div className="text-center mt-8">
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => setCurrentView('gigs-browse')}
+            >
+              <LayoutGrid className="h-4 w-4" />
+              View All {GIG_CATEGORIES.length} Categories
+            </Button>
+          </div>
         )}
       </div>
     </section>

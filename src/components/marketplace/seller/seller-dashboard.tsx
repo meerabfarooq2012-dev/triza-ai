@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Store, Settings, Loader2, AlertCircle } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -14,12 +14,14 @@ import { SellerShopSettings } from './seller-shop-settings'
 import { SellerAnalytics } from './seller-analytics'
 import { SellerMessages } from './seller-messages'
 import { SellerWallet } from '@/components/marketplace/payment/seller-wallet'
+import { ShippingSettings } from '@/components/marketplace/shipping/shipping-settings'
+import { ReturnsPage } from '@/components/marketplace/returns/returns-page'
 import { PaymentSettingsPage } from '@/components/marketplace/payment/payment-settings-page'
 import { toast } from 'sonner'
 
 export function SellerDashboard() {
-  const { currentUser } = useMarketplaceStore()
-  const [activeTab, setActiveTab] = useState('overview')
+  const { currentUser, viewParams } = useMarketplaceStore()
+  const [manualTab, setManualTab] = useState<string | null>(null)
   const [shopLoading, setShopLoading] = useState(true)
   const [creatingShop, setCreatingShop] = useState(false)
   const [shopData, setShopData] = useState<Record<string, unknown> | null>(null)
@@ -125,6 +127,14 @@ export function SellerDashboard() {
   const userName = currentUser?.name || 'Seller'
   const hasShop = !!(shopData || currentUser?.shop)
 
+  // Support deep-linking to a specific tab via viewParams
+  const validTabs = ['overview', 'products', 'gigs', 'orders', 'wallet', 'payment-settings', 'shipping', 'messages', 'settings', 'analytics']
+  const activeTab = useMemo(() => {
+    if (manualTab) return manualTab
+    if (viewParams?.tab && validTabs.includes(viewParams.tab)) return viewParams.tab
+    return 'overview'
+  }, [manualTab, viewParams?.tab])
+
   // Loading state while checking for shop
   if (shopLoading) {
     return (
@@ -221,7 +231,7 @@ export function SellerDashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
         >
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <Tabs value={activeTab} onValueChange={setManualTab}>
             <div className="mb-6 overflow-x-auto">
               <TabsList className="flex w-max min-w-full flex-wrap gap-1">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -234,6 +244,8 @@ export function SellerDashboard() {
                   Payment Info
                 </TabsTrigger>
                 <TabsTrigger value="messages">Messages</TabsTrigger>
+                <TabsTrigger value="shipping" className="gap-1">📦 Shipping</TabsTrigger>
+                <TabsTrigger value="returns" className="gap-1">🔄 Returns</TabsTrigger>
                 <TabsTrigger value="settings">Settings</TabsTrigger>
                 <TabsTrigger value="analytics">Analytics</TabsTrigger>
               </TabsList>
@@ -261,6 +273,12 @@ export function SellerDashboard() {
             </TabsContent>
             <TabsContent value="messages">
               <SellerMessages />
+            </TabsContent>
+            <TabsContent value="shipping">
+              <ShippingSettings shopId={(shopData?.id || currentUser?.shop?.id) as string} userId={currentUser?.id} />
+            </TabsContent>
+            <TabsContent value="returns">
+              {currentUser && <ReturnsPage userId={currentUser.id} isSeller={true} shopId={(shopData?.id || currentUser?.shop?.id) as string} />}
             </TabsContent>
             <TabsContent value="settings">
               <SellerShopSettings />

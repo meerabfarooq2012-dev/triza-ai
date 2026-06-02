@@ -20,7 +20,9 @@ export function openCartDrawer() {
 export function CartDrawer() {
   const [open, setOpen] = useState(false)
   const [checkoutOpen, setCheckoutOpen] = useState(false)
-  const { cart, cartTotal, removeFromCart, updateCartQuantity, clearCart } = useMarketplaceStore()
+  const { cart: rawCart, cartTotal, removeFromCart, updateCartQuantity, clearCart } = useMarketplaceStore()
+  // Defensive: ensure cart is always an array (can be corrupted in localStorage)
+  const cart = Array.isArray(rawCart) ? rawCart : []
 
   // Register listener
   useEffect(() => {
@@ -112,9 +114,17 @@ function CartItemRow({
     <div className="flex gap-3 py-3">
       {/* Image */}
       <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-muted/30">
-        <div className="flex h-full items-center justify-center">
-          <ShoppingBag className="h-5 w-5 text-muted-foreground/40" />
-        </div>
+        {item.image ? (
+          <img
+            src={item.image}
+            alt={item.name}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center">
+            <ShoppingBag className="h-5 w-5 text-muted-foreground/40" />
+          </div>
+        )}
       </div>
 
       {/* Details */}

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import bcrypt from 'bcryptjs';
+import { sendEmailAsync } from '@/lib/email';
+import { welcomeEmail } from '@/lib/email-templates';
+import { notifyWelcome } from '@/lib/notifications';
 
 function slugify(text: string): string {
   return text
@@ -80,6 +83,16 @@ export async function POST(request: NextRequest) {
     });
 
     const { password: _, ...userWithoutPassword } = fullUser!;
+
+    // Send welcome email (non-blocking)
+    sendEmailAsync({
+      to: email,
+      subject: 'Welcome to Marketo! 🎉',
+      html: welcomeEmail({ name, role }),
+    });
+
+    // Send welcome notification (non-blocking)
+    notifyWelcome(user.id, name).catch(() => {});
 
     return NextResponse.json(
       { success: true, data: userWithoutPassword },

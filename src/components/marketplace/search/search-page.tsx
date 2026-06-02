@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
-import { motion } from 'framer-motion'
+import { useEffect, useState, useCallback, useMemo } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search,
   SlidersHorizontal,
@@ -12,13 +12,22 @@ import {
   Briefcase,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Filter,
   Clock,
+  LayoutGrid,
+  Loader2,
+  RotateCcw,
+  CheckCircle2,
+  ShoppingCart,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
+import { Slider } from '@/components/ui/slider'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -26,7 +35,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter, SheetClose } from '@/components/ui/sheet'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { api } from '@/lib/api'
@@ -34,10 +44,22 @@ import {
   PRODUCT_TYPE_LABELS,
   SORT_OPTIONS,
   DEFAULT_PAGE_SIZE,
-  DEFAULT_CATEGORIES,
   GIG_CATEGORIES,
 } from '@/lib/constants'
 import type { Product, Gig, GigPackage, Category, SearchFilters, ProductType, GigSearchParams } from '@/types'
+
+// ----- Price preset ranges -----
+const PRICE_PRESETS = [
+  { label: 'Under $10', min: undefined as number | undefined, max: 10 },
+  { label: '$10 – $25', min: 10, max: 25 },
+  { label: '$25 – $50', min: 25, max: 50 },
+  { label: '$50 – $100', min: 50, max: 100 },
+  { label: 'Over $100', min: 100, max: undefined as number | undefined },
+] as const
+
+const MAX_PRICE_SLIDER = 500
+
+// ----- Helpers -----
 
 function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
   if (!value) return fallback
@@ -47,6 +69,17 @@ function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
     return fallback
   }
 }
+
+function useDebounce<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState(value)
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delay)
+    return () => clearTimeout(timer)
+  }, [value, delay])
+  return debounced
+}
+
+// ----- Sub-components -----
 
 function ProductTypeIcon({ type }: { type: string }) {
   switch (type) {
@@ -71,11 +104,12 @@ function ProductCard({
   const images = safeJsonParse<string[]>(product.images, [])
   const tags = safeJsonParse<string[]>(product.tags, [])
   const firstImage = images[0]
+  const outOfStock = product.type === 'physical' && product.stock === 0
 
   return (
     <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
       <Card
-        className="overflow-hidden cursor-pointer group border-0 shadow-sm hover:shadow-lg transition-all h-full"
+        className={`overflow-hidden cursor-pointer group border-0 shadow-sm hover:shadow-lg transition-all h-full ${outOfStock ? 'opacity-75' : ''}`}
         onClick={onClick}
       >
         <div className="aspect-square relative overflow-hidden bg-muted">
@@ -102,6 +136,11 @@ function ProductCard({
             <ProductTypeIcon type={product.type} />
             {PRODUCT_TYPE_LABELS[product.type]}
           </Badge>
+          {outOfStock && (
+            <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
+              <Badge variant="secondary" className="text-xs font-semibold">Out of Stock</Badge>
+            </div>
+          )}
         </div>
         <CardContent className="p-4">
           <h3 className="font-semibold text-sm line-clamp-2 mb-1 group-hover:text-primary transition-colors">
@@ -147,38 +186,400 @@ function ProductCard({
   )
 }
 
+function CategoryTree({
+  categories,
+  selectedSlug,
+  onSelect,
+  expandedSlugs,
+  onToggleExpand,
+  categorySearch,
+  activeTab,
+}: {
+  categories: Category[]
+  selectedSlug: string | undefined
+  onSelect: (slug: string | undefined) => void
+  expandedSlugs: Set<string>
+  onToggleExpand: (slug: string) => void
+  categorySearch: string
+  activeTab: 'products' | 'gigs'
+}) {
+  const getCount = (cat: Category): number => {
+    if (!cat._count) return 0
+    if (activeTab === 'gigs') return cat._count.gigs ?? 0
+    return cat._count.products ?? 0
+  }
+
+  const searchLower = categorySearch.toLowerCase()
+
+  const filteredCategories = categories.filter((cat) => {
+    if (!searchLower) return true
+    if (cat.name.toLowerCase().includes(searchLower)) return true
+    if (cat.children?.some((child) => child.name.toLowerCase().includes(searchLower))) return true
+    return false
+  })
+
+  const autoExpanded = new Set<string>()
+  if (searchLower) {
+    ;(Array.isArray(categories) ? categories : []).forEach((cat) => {
+      if (cat.children?.some((child) => child.name.toLowerCase().includes(searchLower))) {
+        autoExpanded.add(cat.slug)
+      }
+    })
+  }
+
+  const isExpanded = (slug: string) => expandedSlugs.has(slug) || autoExpanded.has(slug)
+
+  if (filteredCategories.length === 0) {
+    return (
+      <p className="text-xs text-muted-foreground py-3 text-center">
+        {categorySearch ? 'No categories match your search' : 'No categories available'}
+      </p>
+    )
+  }
+
+  return (
+    <div className="space-y-0.5">
+      {filteredCategories.map((cat) => {
+        const children = cat.children ?? []
+        const hasChildren = children.length > 0
+        const expanded = isExpanded(cat.slug)
+        const isSelected = selectedSlug === cat.slug
+        const isChildSelected = children.some((c) => selectedSlug === c.slug)
+        const count = getCount(cat)
+
+        return (
+          <div key={cat.id}>
+            <div className="flex items-center">
+              <button
+                onClick={() => onSelect(cat.slug)}
+                className={`flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-sm transition-all duration-150 ${
+                  isSelected
+                    ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-medium shadow-sm'
+                    : isChildSelected
+                      ? 'bg-emerald-50/50 text-emerald-600 font-medium'
+                      : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <span className="flex-shrink-0 text-emerald-600">
+                  <Briefcase size={14} />
+                </span>
+                <span className="flex-1 truncate">{cat.name}</span>
+                {count > 0 && (
+                  <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full flex-shrink-0">
+                    {count}
+                  </span>
+                )}
+              </button>
+              {hasChildren && (
+                <button
+                  onClick={() => onToggleExpand(cat.slug)}
+                  className={`flex-shrink-0 p-1.5 rounded-md hover:bg-muted/50 transition-colors ${
+                    expanded ? 'text-emerald-600' : 'text-muted-foreground'
+                  }`}
+                >
+                  <ChevronDown
+                    size={14}
+                    className={`transition-transform duration-200 ${expanded ? 'rotate-0' : '-rotate-90'}`}
+                  />
+                </button>
+              )}
+            </div>
+            <motion.div
+              initial={false}
+              animate={{
+                height: expanded ? 'auto' : 0,
+                opacity: expanded ? 1 : 0,
+              }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              {expanded && hasChildren && (
+                <div className="ml-7 pl-2 border-l border-muted">
+                  <button
+                    onClick={() => onSelect(cat.slug)}
+                    className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs transition-colors ${
+                      isSelected
+                        ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-medium'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                    }`}
+                  >
+                    All {cat.name}
+                  </button>
+                  {children
+                    .filter((child) => !searchLower || child.name.toLowerCase().includes(searchLower))
+                    .map((child) => {
+                      const childCount = getCount(child)
+                      return (
+                        <button
+                          key={child.id}
+                          onClick={() => onSelect(child.slug)}
+                          className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs transition-colors flex items-center justify-between gap-2 ${
+                            selectedSlug === child.slug
+                              ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-medium'
+                              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                          }`}
+                        >
+                          <span className="truncate">{child.name}</span>
+                          {childCount > 0 && (
+                            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full flex-shrink-0">
+                              {childCount}
+                            </span>
+                          )}
+                        </button>
+                      )
+                    })}
+                </div>
+              )}
+            </motion.div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ----- Collapsible Section -----
+
+function FilterSection({
+  title,
+  children,
+  defaultOpen = true,
+}: {
+  title: string
+  children: React.ReactNode
+  defaultOpen?: boolean
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <div className="border-b border-border/60 pb-4">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center justify-between w-full py-1 group"
+      >
+        <h4 className="font-medium text-sm group-hover:text-primary transition-colors">{title}</h4>
+        <ChevronDown
+          size={14}
+          className={`text-muted-foreground transition-transform duration-200 ${open ? 'rotate-0' : '-rotate-90'}`}
+        />
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="pt-3">{children}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+// ----- Rating Filter -----
+
+function RatingFilter({
+  value,
+  onChange,
+}: {
+  value: number | undefined
+  onChange: (rating: number | undefined) => void
+}) {
+  return (
+    <div className="space-y-1.5">
+      {[5, 4, 3, 2, 1].map((stars) => {
+        const isSelected = value === stars
+        return (
+          <button
+            key={stars}
+            onClick={() => onChange(isSelected ? undefined : stars)}
+            className={`flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-sm transition-colors ${
+              isSelected
+                ? 'bg-yellow-50 dark:bg-yellow-950/30 text-yellow-700 dark:text-yellow-300'
+                : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <span className="flex items-center gap-0.5">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Star
+                  key={i}
+                  size={13}
+                  className={i < stars ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground/40'}
+                />
+              ))}
+            </span>
+            <span className="text-xs">& up</span>
+            {isSelected && (
+              <X size={12} className="ml-auto text-yellow-600" />
+            )}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+// ----- Price Range Slider -----
+
+function PriceRangeSlider({
+  minPrice,
+  maxPrice,
+  onRangeChange,
+}: {
+  minPrice: number | undefined
+  maxPrice: number | undefined
+  onRangeChange: (min: number | undefined, max: number | undefined) => void
+}) {
+  const [localRange, setLocalRange] = useState<[number, number]>([minPrice ?? 0, maxPrice ?? MAX_PRICE_SLIDER])
+  const [isDragging, setIsDragging] = useState(false)
+
+  // When not dragging, sync from props
+  const range = isDragging ? localRange : [minPrice ?? 0, maxPrice ?? MAX_PRICE_SLIDER] as [number, number]
+
+  const handleSliderChange = (value: number[]) => {
+    setIsDragging(true)
+    setLocalRange(value as [number, number])
+  }
+
+  const handleSliderCommit = (value: number[]) => {
+    setIsDragging(false)
+    const newMin = value[0]
+    const newMax = value[1]
+    onRangeChange(
+      newMin === 0 ? undefined : newMin,
+      newMax >= MAX_PRICE_SLIDER ? undefined : newMax
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Slider */}
+      <Slider
+        min={0}
+        max={MAX_PRICE_SLIDER}
+        step={5}
+        value={range}
+        onValueChange={(val) => handleSliderChange(val)}
+        onValueCommit={(val) => handleSliderCommit(val)}
+        className="w-full"
+      />
+      {/* Display values */}
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <span>${range[0]}</span>
+        <span>${range[1] >= MAX_PRICE_SLIDER ? `${MAX_PRICE_SLIDER}+` : range[1]}</span>
+      </div>
+      {/* Custom min / max inputs */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+          <Input
+            type="number"
+            placeholder="Min"
+            value={minPrice ?? ''}
+            onChange={(e) =>
+              onRangeChange(
+                e.target.value ? Number(e.target.value) : undefined,
+                maxPrice
+              )
+            }
+            className="w-full pl-6 h-8 text-xs"
+            min={0}
+          />
+        </div>
+        <span className="text-muted-foreground text-xs">–</span>
+        <div className="relative flex-1">
+          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+          <Input
+            type="number"
+            placeholder="Max"
+            value={maxPrice ?? ''}
+            onChange={(e) =>
+              onRangeChange(
+                minPrice,
+                e.target.value ? Number(e.target.value) : undefined
+              )
+            }
+            className="w-full pl-6 h-8 text-xs"
+            min={0}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ----- Filter Sidebar -----
+
 function FilterSidebar({
   filters,
   onFilterChange,
   categories,
   onReset,
+  activeTab,
+  activeFilterCount,
 }: {
   filters: SearchFilters
-  onFilterChange: (key: keyof SearchFilters, value: string | number | undefined) => void
+  onFilterChange: (key: keyof SearchFilters, value: string | number | boolean | undefined) => void
   categories: Category[]
   onReset: () => void
+  activeTab: 'products' | 'gigs'
+  activeFilterCount: number
 }) {
-  const hasActiveFilters =
-    filters.type !== undefined ||
-    filters.category !== undefined ||
-    filters.minPrice !== undefined ||
-    filters.maxPrice !== undefined
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
+  const [categorySearch, setCategorySearch] = useState('')
+
+  const toggleCategoryExpand = (slug: string) => {
+    setExpandedCategories((prev) => {
+      const next = new Set(prev)
+      if (next.has(slug)) {
+        next.delete(slug)
+      } else {
+        next.add(slug)
+      }
+      return next
+    })
+  }
+
+  const handleCategorySelect = (slug: string | undefined) => {
+    onFilterChange('category', slug)
+  }
+
+  const handlePriceRangeChange = (min: number | undefined, max: number | undefined) => {
+    onFilterChange('minPrice', min)
+    onFilterChange('maxPrice', max)
+  }
+
+  // Find matching price preset
+  const activePricePresetIdx = PRICE_PRESETS.findIndex(
+    (p) => p.min === filters.minPrice && p.max === filters.maxPrice
+  )
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {/* Header with Clear All */}
       <div className="flex items-center justify-between">
-        <h3 className="font-bold text-lg">Filters</h3>
-        {hasActiveFilters && (
-          <Button variant="ghost" size="sm" onClick={onReset} className="text-xs">
-            Reset All
+        <div className="flex items-center gap-2">
+          <h3 className="font-bold text-lg">Filters</h3>
+          {activeFilterCount > 0 && (
+            <Badge variant="secondary" className="text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+              {activeFilterCount}
+            </Badge>
+          )}
+        </div>
+        {activeFilterCount > 0 && (
+          <Button variant="ghost" size="sm" onClick={onReset} className="text-xs gap-1 text-muted-foreground hover:text-foreground">
+            <RotateCcw size={12} />
+            Clear All
           </Button>
         )}
       </div>
 
       {/* Product Type */}
-      <div>
-        <h4 className="font-medium text-sm mb-3">Product Type</h4>
-        <div className="space-y-2">
+      <FilterSection title="Product Type" defaultOpen>
+        <div className="space-y-1.5">
           {(['digital', 'physical', 'freelance'] as ProductType[]).map((type) => (
             <button
               key={type}
@@ -196,71 +597,115 @@ function FilterSidebar({
             </button>
           ))}
         </div>
-      </div>
+      </FilterSection>
 
-      {/* Category */}
-      <div>
-        <h4 className="font-medium text-sm mb-3">Category</h4>
-        <Select
-          value={filters.category || '__all__'}
-          onValueChange={(val) =>
-            onFilterChange('category', val === '__all__' ? undefined : val)
-          }
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="All Categories" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">All Categories</SelectItem>
-            {categories.map((cat) => (
-              <SelectItem key={cat.id} value={cat.slug}>
-                {cat.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Price Range */}
-      <div>
-        <h4 className="font-medium text-sm mb-3">Price Range</h4>
-        <div className="flex items-center gap-2">
-          <Input
-            type="number"
-            placeholder="Min"
-            value={filters.minPrice ?? ''}
-            onChange={(e) =>
-              onFilterChange(
-                'minPrice',
-                e.target.value ? Number(e.target.value) : undefined
-              )
-            }
-            className="w-full"
-          />
-          <span className="text-muted-foreground">-</span>
-          <Input
-            type="number"
-            placeholder="Max"
-            value={filters.maxPrice ?? ''}
-            onChange={(e) =>
-              onFilterChange(
-                'maxPrice',
-                e.target.value ? Number(e.target.value) : undefined
-              )
-            }
-            className="w-full"
-          />
+      {/* Category - Hierarchical Tree */}
+      <FilterSection title="Category" defaultOpen>
+        <div className="flex items-center justify-between mb-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`h-7 text-xs ${!filters.category ? 'text-emerald-600 font-semibold' : ''}`}
+            onClick={() => handleCategorySelect(undefined)}
+          >
+            <LayoutGrid className="h-3.5 w-3.5 mr-1" />
+            All
+          </Button>
         </div>
-      </div>
+        <div className="relative mb-2">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Search categories..."
+            value={categorySearch}
+            onChange={(e) => setCategorySearch(e.target.value)}
+            className="h-8 pl-8 pr-3 text-xs"
+          />
+          {categorySearch && (
+            <button
+              onClick={() => setCategorySearch('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X size={12} />
+            </button>
+          )}
+        </div>
+        <ScrollArea className="max-h-72 overflow-y-auto [&>div]:scrollbar-thin [&>div]:scrollbar-thumb-muted-foreground/20 [&>div]:scrollbar-track-transparent">
+          <div className="pr-3">
+            <CategoryTree
+              categories={categories}
+              selectedSlug={filters.category}
+              onSelect={handleCategorySelect}
+              expandedSlugs={expandedCategories}
+              onToggleExpand={toggleCategoryExpand}
+              categorySearch={categorySearch}
+              activeTab={activeTab}
+            />
+          </div>
+        </ScrollArea>
+      </FilterSection>
+
+      {/* Price Range with Slider */}
+      <FilterSection title="Price Range" defaultOpen>
+        {/* Preset buttons */}
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {PRICE_PRESETS.map((preset, idx) => (
+            <button
+              key={preset.label}
+              onClick={() => handlePriceRangeChange(preset.min, preset.max)}
+              className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+                activePricePresetIdx === idx
+                  ? 'bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800'
+                  : 'bg-background text-muted-foreground border-border hover:border-emerald-300 hover:text-foreground'
+              }`}
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
+        {/* Price slider */}
+        <PriceRangeSlider
+          minPrice={filters.minPrice}
+          maxPrice={filters.maxPrice}
+          onRangeChange={handlePriceRangeChange}
+        />
+      </FilterSection>
+
+      {/* Rating */}
+      <FilterSection title="Rating" defaultOpen>
+        <RatingFilter
+          value={filters.rating}
+          onChange={(r) => onFilterChange('rating', r)}
+        />
+      </FilterSection>
+
+      {/* Availability */}
+      {activeTab === 'products' && (
+        <FilterSection title="Availability" defaultOpen={false}>
+          <div className="flex items-center gap-3">
+            <Checkbox
+              id="inStock"
+              checked={filters.inStock ?? false}
+              onCheckedChange={(checked) => onFilterChange('inStock', checked === true ? true : undefined)}
+            />
+            <Label htmlFor="inStock" className="text-sm cursor-pointer flex items-center gap-2">
+              <ShoppingCart size={14} className="text-muted-foreground" />
+              In Stock Only
+            </Label>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Hide products that are out of stock
+          </p>
+        </FilterSection>
+      )}
 
       {/* Sort */}
-      <div>
-        <h4 className="font-medium text-sm mb-3">Sort By</h4>
+      <FilterSection title="Sort By" defaultOpen={false}>
         <Select
           value={filters.sortBy || 'newest'}
           onValueChange={(val) => onFilterChange('sortBy', val as SearchFilters['sortBy'])}
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger className="w-full h-9 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -271,13 +716,129 @@ function FilterSidebar({
             ))}
           </SelectContent>
         </Select>
-      </div>
+      </FilterSection>
     </div>
   )
 }
 
+// ----- Active Filter Tags -----
+
+function ActiveFilterTags({
+  filters,
+  onRemoveFilter,
+  categories,
+}: {
+  filters: SearchFilters
+  onRemoveFilter: (key: keyof SearchFilters) => void
+  categories: Category[]
+}) {
+  const tags: { key: keyof SearchFilters; label: string }[] = []
+
+  if (filters.type) {
+    tags.push({ key: 'type', label: PRODUCT_TYPE_LABELS[filters.type] ?? filters.type })
+  }
+  if (filters.category) {
+    const cat = categories.find((c) => c.slug === filters.category)
+    const childCat = categories.flatMap((c) => c.children ?? []).find((c) => c.slug === filters.category)
+    tags.push({ key: 'category', label: cat?.name ?? childCat?.name ?? filters.category })
+  }
+  if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
+    const min = filters.minPrice
+    const max = filters.maxPrice
+    let label = ''
+    if (min !== undefined && max !== undefined) label = `$${min} – $${max}`
+    else if (min !== undefined) label = `Over $${min}`
+    else label = `Under $${max}`
+    tags.push({ key: 'minPrice', label })
+  }
+  if (filters.rating !== undefined) {
+    tags.push({ key: 'rating', label: `${filters.rating}★+` })
+  }
+  if (filters.inStock) {
+    tags.push({ key: 'inStock', label: 'In Stock' })
+  }
+  if (filters.sortBy && filters.sortBy !== 'newest') {
+    const opt = SORT_OPTIONS.find((o) => o.value === filters.sortBy)
+    if (opt) tags.push({ key: 'sortBy', label: opt.label })
+  }
+
+  if (tags.length === 0) return null
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 mb-4">
+      <span className="text-xs text-muted-foreground mr-1">Active:</span>
+      <AnimatePresence>
+        {tags.map((tag) => (
+          <motion.button
+            key={tag.key}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.15 }}
+            onClick={() => onRemoveFilter(tag.key)}
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted text-xs font-medium text-foreground hover:bg-muted/80 transition-colors group"
+          >
+            {tag.label}
+            <X size={11} className="text-muted-foreground group-hover:text-foreground transition-colors" />
+          </motion.button>
+        ))}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+// ----- Quick Filter Chips -----
+
+function QuickFilterChips({
+  filters,
+  onFilterChange,
+}: {
+  filters: SearchFilters
+  onFilterChange: (key: keyof SearchFilters, value: string | number | boolean | undefined) => void
+}) {
+  const typeChips: { type: ProductType; icon: React.ReactNode; label: string }[] = [
+    { type: 'digital', icon: <Download size={14} />, label: 'Digital' },
+    { type: 'physical', icon: <Package size={14} />, label: 'Physical' },
+    { type: 'freelance', icon: <Briefcase size={14} />, label: 'Services' },
+  ]
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {typeChips.map((chip) => (
+        <button
+          key={chip.type}
+          onClick={() => onFilterChange('type', filters.type === chip.type ? undefined : chip.type)}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200 ${
+            filters.type === chip.type
+              ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+              : 'bg-background text-muted-foreground border-border hover:border-primary/40 hover:text-foreground'
+          }`}
+        >
+          {chip.icon}
+          {chip.label}
+        </button>
+      ))}
+      <div className="w-px h-5 bg-border mx-1 hidden sm:block" />
+      {/* In stock quick toggle */}
+      <button
+        onClick={() => onFilterChange('inStock', filters.inStock ? undefined : true)}
+        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200 ${
+          filters.inStock
+            ? 'bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800'
+            : 'bg-background text-muted-foreground border-border hover:border-emerald-300 hover:text-foreground'
+        }`}
+      >
+        <CheckCircle2 size={14} />
+        In Stock
+      </button>
+    </div>
+  )
+}
+
+// ----- Main Search Page -----
+
 export default function SearchPage() {
-  const { setCurrentView, searchQuery, setSearchQuery } = useMarketplaceStore()
+  const { setCurrentView, searchQuery, setSearchQuery, searchCategory, searchType } = useMarketplaceStore()
 
   const [activeTab, setActiveTab] = useState<'products' | 'gigs'>('products')
   const [products, setProducts] = useState<Product[]>([])
@@ -289,6 +850,9 @@ export default function SearchPage() {
   const [totalPages, setTotalPages] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
   const [localQuery, setLocalQuery] = useState(searchQuery)
+  const [searchTiming, setSearchTiming] = useState<number | null>(null)
+  const [mobileSheetOpen, setMobileSheetOpen] = useState(false)
+  const [initialFiltersApplied, setInitialFiltersApplied] = useState(false)
 
   const [filters, setFilters] = useState<SearchFilters>({
     sortBy: 'newest',
@@ -296,12 +860,42 @@ export default function SearchPage() {
     limit: DEFAULT_PAGE_SIZE,
   })
 
+  // Apply initial filters from navigation (category from landing page, etc.)
+  useEffect(() => {
+    if (initialFiltersApplied) return
+    setInitialFiltersApplied(true)
+
+    const initialFilters: SearchFilters = {
+      sortBy: 'newest',
+      page: 1,
+      limit: DEFAULT_PAGE_SIZE,
+    }
+
+    if (searchCategory) {
+      initialFilters.category = searchCategory
+    }
+    if (searchType) {
+      initialFilters.type = searchType as ProductType
+    }
+    if (searchQuery) {
+      setLocalQuery(searchQuery)
+    }
+
+    setFilters(initialFilters)
+  }, [searchCategory, searchType, searchQuery, initialFiltersApplied])
+
+  // Debounced search query (300ms)
+  const debouncedQuery = useDebounce(localQuery, 300)
+
+  // Debounced filters (150ms)
+  const debouncedFilters = useDebounce(filters, 150)
+
   // Fetch categories
   useEffect(() => {
-    api.categories
-      .getCategories()
-      .then((res) => {
-        if (res.data) setCategories(res.data as Category[])
+    fetch('/api/categories')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.data) setCategories(Array.isArray(data.data) ? data.data : [])
       })
       .catch(() => setCategories([]))
   }, [])
@@ -309,10 +903,11 @@ export default function SearchPage() {
   // Search products
   const searchProducts = useCallback(async () => {
     setLoading(true)
+    const start = performance.now()
     try {
       const searchFilters: SearchFilters = {
-        ...filters,
-        query: searchQuery || undefined,
+        ...debouncedFilters,
+        query: debouncedQuery || undefined,
         page: currentPage,
         limit: DEFAULT_PAGE_SIZE,
       }
@@ -327,20 +922,24 @@ export default function SearchPage() {
     } catch {
       setProducts([])
     } finally {
+      const elapsed = performance.now() - start
+      setSearchTiming(Math.round(elapsed))
       setLoading(false)
     }
-  }, [filters, searchQuery, currentPage])
+  }, [debouncedFilters, debouncedQuery, currentPage])
 
   // Search gigs
   const searchGigs = useCallback(async () => {
     setLoading(true)
+    const start = performance.now()
     try {
       const gigParams: GigSearchParams = {
-        query: searchQuery || undefined,
-        category: filters.category || undefined,
-        minPrice: filters.minPrice,
-        maxPrice: filters.maxPrice,
-        sortBy: filters.sortBy,
+        query: debouncedQuery || undefined,
+        category: debouncedFilters.category || undefined,
+        minPrice: debouncedFilters.minPrice,
+        maxPrice: debouncedFilters.maxPrice,
+        rating: debouncedFilters.rating,
+        sortBy: debouncedFilters.sortBy,
         page: currentPage,
         limit: DEFAULT_PAGE_SIZE,
       }
@@ -355,9 +954,11 @@ export default function SearchPage() {
     } catch {
       setGigs([])
     } finally {
+      const elapsed = performance.now() - start
+      setSearchTiming(Math.round(elapsed))
       setLoading(false)
     }
-  }, [filters, searchQuery, currentPage])
+  }, [debouncedFilters, debouncedQuery, currentPage])
 
   useEffect(() => {
     if (activeTab === 'products') {
@@ -367,11 +968,37 @@ export default function SearchPage() {
     }
   }, [activeTab, searchProducts, searchGigs])
 
+  // Count active filters (excluding defaults)
+  const activeFilterCount = useMemo(() => {
+    let count = 0
+    if (filters.type !== undefined) count++
+    if (filters.category !== undefined) count++
+    if (filters.minPrice !== undefined) count++
+    if (filters.maxPrice !== undefined) count++
+    if (filters.rating !== undefined) count++
+    if (filters.inStock) count++
+    if (filters.sortBy && filters.sortBy !== 'newest') count++
+    return count
+  }, [filters])
+
   const handleFilterChange = (
     key: keyof SearchFilters,
-    value: string | number | undefined
+    value: string | number | boolean | undefined
   ) => {
     setFilters((prev) => ({ ...prev, [key]: value }))
+    setCurrentPage(1)
+  }
+
+  const handleRemoveFilterTag = (key: keyof SearchFilters) => {
+    if (key === 'minPrice') {
+      setFilters((prev) => ({ ...prev, minPrice: undefined, maxPrice: undefined }))
+    } else if (key === 'sortBy') {
+      setFilters((prev) => ({ ...prev, sortBy: 'newest' }))
+    } else if (key === 'inStock') {
+      setFilters((prev) => ({ ...prev, inStock: undefined }))
+    } else {
+      setFilters((prev) => ({ ...prev, [key]: undefined }))
+    }
     setCurrentPage(1)
   }
 
@@ -401,6 +1028,8 @@ export default function SearchPage() {
     return Math.min(...packages.map((p) => p.price))
   }
 
+  const totalResults = activeTab === 'products' ? totalProducts : totalGigs
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">
       {/* Search header */}
@@ -429,7 +1058,7 @@ export default function SearchPage() {
         <h1 className="text-2xl md:text-3xl font-bold mb-4">
           {activeTab === 'gigs'
             ? `Explore ${searchQuery ? `gig results for "${searchQuery}"` : 'Freelance Gigs'}`
-            : `Explore ${searchQuery ? `results for "${searchQuery}"` : 'Products'}`
+            : `Explore ${searchQuery ? `results for "${searchQuery}"` : filters.category ? 'Filtered Products' : 'All Products'}`
           }
         </h1>
         <div className="flex items-center gap-3">
@@ -441,8 +1070,7 @@ export default function SearchPage() {
               value={localQuery}
               onChange={(e) => setLocalQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              className="w-full pl-10 pr-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 bg-background"
-              autoFocus
+              className="w-full pl-10 pr-10 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 bg-background"
             />
             {localQuery && (
               <button
@@ -462,26 +1090,50 @@ export default function SearchPage() {
           </Button>
 
           {/* Mobile filter button */}
-          <Sheet>
+          <Sheet open={mobileSheetOpen} onOpenChange={setMobileSheetOpen}>
             <SheetTrigger asChild>
-              <Button variant="outline" size="icon" className="md:hidden">
+              <Button variant="outline" size="icon" className="md:hidden relative">
                 <Filter size={18} />
+                {activeFilterCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {activeFilterCount}
+                  </span>
+                )}
               </Button>
             </SheetTrigger>
-            <SheetContent side="left">
+            <SheetContent side="left" className="w-80">
               <SheetHeader>
                 <SheetTitle>Filters</SheetTitle>
               </SheetHeader>
-              <div className="mt-4">
+              <ScrollArea className="h-[calc(100vh-140px)] mt-4 pr-3">
                 <FilterSidebar
                   filters={filters}
                   onFilterChange={handleFilterChange}
                   categories={categories}
                   onReset={handleReset}
+                  activeTab={activeTab}
+                  activeFilterCount={activeFilterCount}
                 />
-              </div>
+              </ScrollArea>
+              <SheetFooter className="mt-4">
+                <SheetClose asChild>
+                  <Button className="w-full gap-2">
+                    Apply Filters
+                    {activeFilterCount > 0 && (
+                      <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 ml-1">
+                        {activeFilterCount}
+                      </Badge>
+                    )}
+                  </Button>
+                </SheetClose>
+              </SheetFooter>
             </SheetContent>
           </Sheet>
+        </div>
+
+        {/* Quick filter chips */}
+        <div className="mt-4">
+          <QuickFilterChips filters={filters} onFilterChange={handleFilterChange} />
         </div>
       </div>
 
@@ -494,24 +1146,36 @@ export default function SearchPage() {
               onFilterChange={handleFilterChange}
               categories={categories}
               onReset={handleReset}
+              activeTab={activeTab}
+              activeFilterCount={activeFilterCount}
             />
           </div>
         </aside>
 
         {/* Results */}
         <main className="flex-1">
-          {/* Results count & sort */}
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm text-muted-foreground">
-              {loading ? (
-                'Searching...'
-              ) : (
-                <>
-                  Showing <strong>{activeTab === 'products' ? products.length : gigs.length}</strong> of{' '}
-                  <strong>{activeTab === 'products' ? totalProducts : totalGigs}</strong> {activeTab === 'products' ? 'products' : 'gigs'}
-                </>
+          {/* Results count & sort & timing */}
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <p className="text-sm text-muted-foreground">
+                {loading ? (
+                  <span className="flex items-center gap-1.5">
+                    <Loader2 size={14} className="animate-spin" />
+                    Searching...
+                  </span>
+                ) : (
+                  <>
+                    <strong>{totalResults}</strong> {activeTab === 'products' ? 'products' : 'gigs'} found
+                  </>
+                )}
+              </p>
+              {!loading && searchTiming !== null && (
+                <span className="text-xs text-muted-foreground/60 flex items-center gap-1">
+                  <Clock size={10} />
+                  {(searchTiming / 1000).toFixed(1)}s
+                </span>
               )}
-            </p>
+            </div>
             <div className="hidden sm:flex items-center gap-2">
               <SlidersHorizontal size={14} className="text-muted-foreground" />
               <Select
@@ -534,6 +1198,13 @@ export default function SearchPage() {
             </div>
           </div>
 
+          {/* Active filter tags */}
+          <ActiveFilterTags
+            filters={filters}
+            onRemoveFilter={handleRemoveFilterTag}
+            categories={categories}
+          />
+
           {/* Results grid */}
           {loading ? (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -554,15 +1225,43 @@ export default function SearchPage() {
                 </Button>
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {products.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    onClick={() => handleProductClick(product.id)}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {products.map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      onClick={() => handleProductClick(product.id)}
+                    />
+                  ))}
+                </div>
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-8">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={currentPage <= 1}
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    >
+                      <ChevronLeft size={16} />
+                      Previous
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={currentPage >= totalPages}
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    >
+                      Next
+                      <ChevronRight size={16} />
+                    </Button>
+                  </div>
+                )}
+              </>
             )
           ) : gigs.length === 0 ? (
             <div className="text-center py-16">
@@ -576,171 +1275,107 @@ export default function SearchPage() {
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {gigs.map((gig) => {
-                const images = safeJsonParse<string[]>(gig.images, [])
-                const tags = safeJsonParse<string[]>(gig.tags, [])
-                const packages = safeJsonParse<GigPackage[]>(gig.packages, [])
-                const startingPrice = getGigStartingPrice(gig)
-                return (
-                  <motion.div key={gig.id} whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
-                    <Card
-                      className="overflow-hidden cursor-pointer group border-0 shadow-sm hover:shadow-lg transition-all h-full"
-                      onClick={() => handleGigClick(gig.id)}
-                    >
-                      <div className="aspect-video relative overflow-hidden bg-muted">
-                        {images[0] ? (
-                          <img
-                            src={images[0]}
-                            alt={gig.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-emerald-50">
-                            <Briefcase size={32} className="text-emerald-300" />
-                          </div>
-                        )}
-                        {gig.isFeatured && (
-                          <Badge className="absolute top-2 left-2 text-xs bg-amber-500 text-white">
-                            Featured
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {gigs.map((gig) => {
+                  const images = safeJsonParse<string[]>(gig.images, [])
+                  const tags = safeJsonParse<string[]>(gig.tags, [])
+                  const startingPrice = getGigStartingPrice(gig)
+                  return (
+                    <motion.div key={gig.id} whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
+                      <Card
+                        className="overflow-hidden cursor-pointer group border-0 shadow-sm hover:shadow-lg transition-all h-full"
+                        onClick={() => handleGigClick(gig.id)}
+                      >
+                        <div className="aspect-video relative overflow-hidden bg-muted">
+                          {images[0] ? (
+                            <img
+                              src={images[0]}
+                              alt={gig.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-emerald-50">
+                              <Briefcase size={32} className="text-emerald-300" />
+                            </div>
+                          )}
+                          {gig.isFeatured && (
+                            <Badge className="absolute top-2 left-2 text-xs bg-amber-500 text-white">
+                              Featured
+                            </Badge>
+                          )}
+                          <Badge className="absolute top-2 right-2 text-xs gap-1 bg-emerald-500 text-white">
+                            <Briefcase size={10} />
+                            Gig
                           </Badge>
-                        )}
-                        <Badge className="absolute top-2 right-2 text-xs gap-1 bg-emerald-500 text-white">
-                          <Briefcase size={10} />
-                          Gig
-                        </Badge>
-                      </div>
-                      <CardContent className="p-4">
-                        <h3 className="font-semibold text-sm line-clamp-2 mb-1 group-hover:text-emerald-600 transition-colors">
-                          {gig.title}
-                        </h3>
-                        {gig.shop && (
-                          <p className="text-xs text-muted-foreground mb-1.5">
-                            {gig.shop.name}
-                          </p>
-                        )}
-                        <div className="flex items-center gap-1 mb-2">
-                          <Star size={12} className="fill-yellow-400 text-yellow-400" />
-                          <span className="text-xs font-medium">{(gig.averageRating ?? 0).toFixed(1)}</span>
-                          <span className="text-xs text-muted-foreground">({gig.totalReviews})</span>
                         </div>
-                        <div className="flex items-baseline gap-1.5">
-                          <span className="text-xs text-muted-foreground">Starting at</span>
-                          <span className="font-bold text-lg text-emerald-600">${(startingPrice ?? 0).toFixed(2)}</span>
-                        </div>
-                        {packages.length > 0 && (
-                          <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
-                            <Clock size={10} />
-                            <span>{Math.min(...packages.map(p => p.deliveryDays))}-{Math.max(...packages.map(p => p.deliveryDays))} days</span>
+                        <CardContent className="p-4">
+                          <h3 className="font-semibold text-sm line-clamp-2 mb-1 group-hover:text-emerald-600 transition-colors">
+                            {gig.title}
+                          </h3>
+                          {gig.shop && (
+                            <p className="text-xs text-muted-foreground mb-1.5">
+                              {gig.shop.name}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-1 mb-2">
+                            <Star size={12} className="fill-yellow-400 text-yellow-400" />
+                            <span className="text-xs font-medium">
+                              {(gig.averageRating ?? 0).toFixed(1)}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              ({gig.totalReviews})
+                            </span>
                           </div>
-                        )}
-                        {tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {tags.slice(0, 2).map((tag) => (
-                              <Badge key={tag} variant="outline" className="text-xs">
-                                {tag}
-                              </Badge>
-                            ))}
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-xs text-muted-foreground">From</span>
+                            <span className="font-bold text-lg">${startingPrice.toFixed(2)}</span>
                           </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                )
-              })}
-            </div>
-          )}
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-8">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-              >
-                <ChevronLeft size={16} />
-              </Button>
-              {Array.from({ length: Math.min(totalPages, 5) }).map((_, i) => {
-                const page = i + 1
-                return (
+                          {tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {tags.slice(0, 3).map((tag) => (
+                                <Badge key={tag} variant="outline" className="text-xs">
+                                  {tag}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  )
+                })}
+              </div>
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-8">
                   <Button
-                    key={page}
-                    variant={currentPage === page ? 'default' : 'outline'}
-                    size="icon"
-                    onClick={() => setCurrentPage(page)}
-                    className="w-9 h-9"
+                    variant="outline"
+                    size="sm"
+                    disabled={currentPage <= 1}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   >
-                    {page}
+                    <ChevronLeft size={16} />
+                    Previous
                   </Button>
-                )
-              })}
-              {totalPages > 5 && (
-                <>
-                  <span className="text-muted-foreground">...</span>
+                  <span className="text-sm text-muted-foreground">
+                    Page {currentPage} of {totalPages}
+                  </span>
                   <Button
-                    variant={currentPage === totalPages ? 'default' : 'outline'}
-                    size="icon"
-                    onClick={() => setCurrentPage(totalPages)}
-                    className="w-9 h-9"
+                    variant="outline"
+                    size="sm"
+                    disabled={currentPage >= totalPages}
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   >
-                    {totalPages}
+                    Next
+                    <ChevronRight size={16} />
                   </Button>
-                </>
+                </div>
               )}
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-              >
-                <ChevronRight size={16} />
-              </Button>
-            </div>
+            </>
           )}
         </main>
       </div>
-
-      {/* Browse by Category (shown when no search query) */}
-      {!searchQuery && (
-        <section className="mt-16">
-          <h2 className="text-xl font-bold mb-6">Browse by Category</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-            {(activeTab === 'gigs' ? GIG_CATEGORIES : DEFAULT_CATEGORIES).map((cat) => (
-              <button
-                key={cat.slug}
-                onClick={() => {
-                  handleFilterChange('category', cat.slug)
-                  setLocalQuery('')
-                  setSearchQuery('')
-                }}
-                className="p-4 rounded-xl border hover:shadow-md transition-all text-left group"
-              >
-                <p className="font-medium text-sm group-hover:text-primary transition-colors">
-                  {cat.name}
-                </p>
-                {'description' in cat && cat.description && (
-                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                    {cat.description}
-                  </p>
-                )}
-              </button>
-            ))}
-          </div>
-          {activeTab === 'gigs' && (
-            <div className="text-center mt-6">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentView('gigs-browse')}
-              >
-                View All Categories & Gigs
-              </Button>
-            </div>
-          )}
-        </section>
-      )}
     </div>
   )
 }

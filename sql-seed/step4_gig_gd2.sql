@@ -1,0 +1,35 @@
+-- STEP 4: Gig Subcategories Part 2 - Graphic Design (next 30)
+-- Paste this in Supabase SQL Editor and click Run
+
+INSERT INTO "Category" ("id", "name", "slug", "icon", "description", "parentId", "sortOrder", "isActive", "createdAt") VALUES
+  ('cat-g001-s31', 'Business Card Design', 'graphic-design--business-card-design', NULL, NULL, 'cat-g001', 30, true, NOW()),
+  ('cat-g001-s32', 'Letterhead Design', 'graphic-design--letterhead-design', NULL, NULL, 'cat-g001', 31, true, NOW()),
+  ('cat-g001-s33', 'Invoice Design', 'graphic-design--invoice-design', NULL, NULL, 'cat-g001', 32, true, NOW()),
+  ('cat-g001-s34', 'Stationery Design', 'graphic-design--stationery-design', NULL, NULL, 'cat-g001', 33, true, NOW()),
+  ('cat-g001-s35', 'Presentation Design', 'graphic-design--presentation-design', NULL, NULL, 'cat-g001', 34, true, NOW()),
+  ('cat-g001-s36', 'PowerPoint Design', 'graphic-design--powerpoint-design', NULL, NULL, 'cat-g001', 35, true, NOW()),
+  ('cat-g001-s37', 'Pitch Deck Design', 'graphic-design--pitch-deck-design', NULL, NULL, 'cat-g001', 36, true, NOW()),
+  ('cat-g001-s38', 'Infographic Design', 'graphic-design--infographic-design', NULL, NULL, 'cat-g001', 37, true, NOW()),
+  ('cat-g001-s39', 'Resume/CV Design', 'graphic-design--resumecv-design', NULL, NULL, 'cat-g001', 38, true, NOW()),
+  ('cat-g001-s40', 'UI Design', 'graphic-design--ui-design', NULL, NULL, 'cat-g001', 39, true, NOW()),
+  ('cat-g001-s41', 'Web Banner Design', 'graphic-design--web-banner-design', NULL, NULL, 'cat-g001', 40, true, NOW()),
+  ('cat-g001-s42', 'Landing Page Design', 'graphic-design--landing-page-design', NULL, NULL, 'cat-g001', 41, true, NOW()),
+  ('cat-g001-s43', 'App Interface Design', 'graphic-design--app-interface-design', NULL, NULL, 'cat-g001', 42, true, NOW()),
+  ('cat-g001-s44', 'Icon Design', 'graphic-design--icon-design', NULL, NULL, 'cat-g001', 43, true, NOW()),
+  ('cat-g001-s45', 'Sticker Design', 'graphic-design--sticker-design', NULL, NULL, 'cat-g001', 44, true, NOW()),
+  ('cat-g001-s46', 'Emoji Design', 'graphic-design--emoji-design', NULL, NULL, 'cat-g001', 45, true, NOW()),
+  ('cat-g001-s47', 'Illustration Design', 'graphic-design--illustration-design', NULL, NULL, 'cat-g001', 46, true, NOW()),
+  ('cat-g001-s48', 'Character Illustration', 'graphic-design--character-illustration', NULL, NULL, 'cat-g001', 47, true, NOW()),
+  ('cat-g001-s49', 'Cartoon Design', 'graphic-design--cartoon-design', NULL, NULL, 'cat-g001', 48, true, NOW()),
+  ('cat-g001-s50', 'Anime Art', 'graphic-design--anime-art', NULL, NULL, 'cat-g001', 49, true, NOW()),
+  ('cat-g001-s51', 'NFT Art', 'graphic-design--nft-art', NULL, NULL, 'cat-g001', 50, true, NOW()),
+  ('cat-g001-s52', 'Digital Painting', 'graphic-design--digital-painting', NULL, NULL, 'cat-g001', 51, true, NOW()),
+  ('cat-g001-s53', 'Vector Tracing', 'graphic-design--vector-tracing', NULL, NULL, 'cat-g001', 52, true, NOW()),
+  ('cat-g001-s54', 'Photo Manipulation', 'graphic-design--photo-manipulation', NULL, NULL, 'cat-g001', 53, true, NOW()),
+  ('cat-g001-s55', 'Photo Retouching', 'graphic-design--photo-retouching', NULL, NULL, 'cat-g001', 54, true, NOW()),
+  ('cat-g001-s56', 'Background Removal', 'graphic-design--background-removal', NULL, NULL, 'cat-g001', 55, true, NOW()),
+  ('cat-g001-s57', 'Color Correction', 'graphic-design--color-correction', NULL, NULL, 'cat-g001', 56, true, NOW()),
+  ('cat-g001-s58', 'Photoshop Editing', 'graphic-design--photoshop-editing', NULL, NULL, 'cat-g001', 57, true, NOW()),
+  ('cat-g001-s59', 'Canva Design', 'graphic-design--canva-design', NULL, NULL, 'cat-g001', 58, true, NOW()),
+  ('cat-g001-s60', 'Adobe Illustrator Design', 'graphic-design--adobe-illustrator-design', NULL, NULL, 'cat-g001', 59, true, NOW());
+

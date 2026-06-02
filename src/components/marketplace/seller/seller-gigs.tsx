@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus,
@@ -21,6 +21,9 @@ import {
   Crown,
   Check,
   ChevronsUpDown,
+  Upload,
+  Cloud,
+  Loader2,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -109,6 +112,8 @@ interface GigFormData {
   isFeatured: boolean
   packages: GigPackage[]
   faqs: GigFAQ[]
+  images: string[] // base64 encoded gallery images
+  portfolio: string[] // base64 encoded portfolio images
 }
 
 const defaultPackages: GigPackage[] = [
@@ -151,6 +156,171 @@ const emptyForm: GigFormData = {
   isFeatured: false,
   packages: defaultPackages,
   faqs: [],
+  images: [],
+  portfolio: [],
+}
+
+// ---------------------------------------------------------------------------
+// Image Uploader Component
+// ---------------------------------------------------------------------------
+
+function ImageUploader({ images, onImagesChange, maxImages = 5, label = 'Images', folder = 'gigs' }: {
+  images: string[]
+  onImagesChange: (images: string[]) => void
+  maxImages?: number
+  label?: string
+  folder?: string
+}) {
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const [uploading, setUploading] = useState(false)
+
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = (event) => resolve(event.target?.result as string)
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+  }
+
+  const processFiles = async (filesToProcess: File[]) => {
+    const remaining = maxImages - images.length
+    if (remaining <= 0) return
+    const files = filesToProcess.slice(0, remaining)
+
+    setUploading(true)
+    const newImages: string[] = []
+
+    for (const file of files) {
+      if (file.size > 5 * 1024 * 1024) continue // Skip > 5MB
+
+      try {
+        // Try cloud upload first
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('folder', folder)
+
+        const res = await fetch('/api/upload', { method: 'POST', body: formData })
+        const data = await res.json()
+
+        if (data.success && data.url) {
+          // Cloud upload succeeded - use the cloud URL
+          newImages.push(data.url)
+        } else {
+          // Cloud upload not available - fall back to base64
+          const base64 = await fileToBase64(file)
+          newImages.push(base64)
+        }
+      } catch {
+        // Error - fall back to base64
+        const base64 = await fileToBase64(file)
+        newImages.push(base64)
+      }
+    }
+
+    if (newImages.length > 0) {
+      onImagesChange([...images, ...newImages])
+    }
+    setUploading(false)
+  }
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files) return
+    await processFiles(Array.from(files))
+    e.target.value = '' // Reset input
+  }
+
+  const removeImage = (index: number) => {
+    onImagesChange(images.filter((_, i) => i !== index))
+  }
+
+  const isCloudImage = (img: string) => img.startsWith('http')
+
+  return (
+    <div className="space-y-2">
+      <Label className="flex items-center gap-1.5">
+        <ImageIcon className="h-4 w-4 text-gray-500" />
+        {label}
+        <span className="text-xs text-gray-400">
+          ({images.length}/{maxImages})
+        </span>
+      </Label>
+
+      {/* Drop zone */}
+      <div
+        className={`relative flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50/50 px-4 py-6 transition-colors hover:border-emerald-300 hover:bg-emerald-50/30 ${uploading ? 'pointer-events-none' : ''}`}
+        onClick={() => !uploading && fileInputRef.current?.click()}
+        onDragOver={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+        }}
+        onDrop={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          if (uploading) return
+          const files = e.dataTransfer.files
+          if (!files) return
+          processFiles(Array.from(files))
+        }}
+      >
+        {uploading ? (
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+            <p className="text-sm font-medium text-emerald-600">Uploading...</p>
+          </div>
+        ) : (
+          <>
+            <Upload className="mb-2 h-8 w-8 text-gray-300" />
+            <p className="text-sm text-gray-500">
+              Drag & drop or click to upload
+            </p>
+            <p className="mt-1 text-xs text-gray-400">
+              Max {maxImages} images, 5MB each (jpg, png, gif, webp)
+            </p>
+          </>
+        )}
+      </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/gif,image/webp"
+        multiple
+        className="hidden"
+        onChange={handleFileSelect}
+        disabled={uploading}
+      />
+
+      {/* Preview thumbnails */}
+      {images.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {images.map((img, index) => (
+            <div key={index} className="group relative h-20 w-20 overflow-hidden rounded-lg border border-gray-200 bg-gray-100">
+              <img
+                src={img}
+                alt={`${label} ${index + 1}`}
+                className="h-full w-full object-cover"
+              />
+              {/* Cloud badge */}
+              {isCloudImage(img) && (
+                <span className="absolute bottom-0.5 left-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-white">
+                  <Cloud className="h-2.5 w-2.5" />
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => removeImage(index)}
+                className="absolute right-0.5 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-600"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -249,6 +419,8 @@ export function SellerGigs() {
       packages: defaultPackages.map((p) => ({ ...p, id: generateId() })),
       faqs: [],
       subcategoryId: '',
+      images: [],
+      portfolio: [],
     })
     setDialogOpen(true)
   }
@@ -265,6 +437,9 @@ export function SellerGigs() {
     const parentCategoryId = isSubcategory ? gigCategory!.parentId! : (gig.categoryId || '')
     const subcategoryId = isSubcategory ? (gig.categoryId || '') : ''
 
+    const gigImages = safeJsonParse<string[]>(gig.images, [])
+    const gigPortfolio = safeJsonParse<string[]>((gig as Record<string, unknown>).portfolio as string | null | undefined, [])
+
     setFormData({
       title: gig.title,
       description: gig.description,
@@ -278,6 +453,8 @@ export function SellerGigs() {
           ? packages
           : defaultPackages.map((p) => ({ ...p, id: generateId() })),
       faqs,
+      images: gigImages,
+      portfolio: gigPortfolio,
     })
     setDialogOpen(true)
   }
@@ -413,6 +590,7 @@ export function SellerGigs() {
         tags,
         requirements: formData.requirements || undefined,
         isFeatured: formData.isFeatured,
+        images: [...formData.images, ...formData.portfolio],
       }
 
       if (editingGig) {
@@ -1081,6 +1259,24 @@ export function SellerGigs() {
                 placeholder="web design, logo, branding"
               />
             </div>
+
+            {/* Gallery Images */}
+            <ImageUploader
+              images={formData.images}
+              onImagesChange={(images) => setFormData({ ...formData, images })}
+              maxImages={5}
+              label="Gallery Images"
+              folder="gigs"
+            />
+
+            {/* Portfolio */}
+            <ImageUploader
+              images={formData.portfolio}
+              onImagesChange={(portfolio) => setFormData({ ...formData, portfolio })}
+              maxImages={5}
+              label="Portfolio"
+              folder="gigs/portfolio"
+            />
 
             {/* ===================== Packages Section ===================== */}
             <div className="space-y-3">

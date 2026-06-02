@@ -115,9 +115,13 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
     name: currentUser?.name || '',
     address: '',
     city: '',
+    state: '',
     zip: '',
+    country: 'PK',
     phone: currentUser?.phone || '',
   })
+  const [shippingMethod, setShippingMethod] = useState<string>('standard')
+  const [shippingCost, setShippingCost] = useState<number>(0)
   const [orderId, setOrderId] = useState<string>('')
   const [paymentId, setPaymentId] = useState<string>('')
   const [paymentAuthConfirmed, setPaymentAuthConfirmed] = useState(false)
@@ -208,9 +212,13 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
       name: currentUser?.name || '',
       address: '',
       city: '',
+      state: '',
       zip: '',
+      country: 'PK',
       phone: currentUser?.phone || '',
     })
+    setShippingMethod('standard')
+    setShippingCost(0)
     setOrderId('')
     setPaymentId('')
     setPaymentAuthConfirmed(false)
@@ -308,8 +316,12 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
           shippingName: shippingInfo.name || undefined,
           shippingAddr: shippingInfo.address || undefined,
           shippingCity: shippingInfo.city || undefined,
+          shippingState: shippingInfo.state || undefined,
           shippingZip: shippingInfo.zip || undefined,
+          shippingCountry: shippingInfo.country || undefined,
           shippingPhone: shippingInfo.phone || undefined,
+          shippingMethod: hasPhysicalItems ? shippingMethod : undefined,
+          shippingCost: hasPhysicalItems ? shippingCost : undefined,
         }),
       })
 

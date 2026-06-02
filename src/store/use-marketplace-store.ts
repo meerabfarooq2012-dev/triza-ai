@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { User, CartItem, ViewMode } from '@/types'
+import type { User, CartItem, ViewMode, DeliveryAddress, ShippingRate } from '@/types'
 
 // =============================================================================
 // Marketo Marketplace - Zustand Store
@@ -31,9 +31,16 @@ interface MarketplaceState {
   // Notifications
   unreadNotifications: number
 
+  // Favorites
+  favoriteIds: string[]
+
   // UI state
   sidebarOpen: boolean
   mobileMenuOpen: boolean
+
+  // Shipping state
+  selectedAddress: DeliveryAddress | null
+  selectedShippingMethod: ShippingRate | null
 
   // Auth actions
   login: (user: User) => void
@@ -60,15 +67,24 @@ interface MarketplaceState {
   // Notification actions
   setUnreadNotifications: (count: number) => void
 
+  // Favorites actions
+  setFavoriteIds: (ids: string[]) => void
+  toggleFavoriteId: (productId: string) => void
+
   // UI actions
   toggleSidebar: () => void
   setSidebarOpen: (open: boolean) => void
   toggleMobileMenu: () => void
   setMobileMenuOpen: (open: boolean) => void
+
+  // Shipping actions
+  setSelectedAddress: (address: DeliveryAddress | null) => void
+  setSelectedShippingMethod: (method: ShippingRate | null) => void
 }
 
 function calculateCartTotal(cart: CartItem[]): number {
-  return cart.reduce((total, item) => total + item.price * item.quantity, 0)
+  if (!Array.isArray(cart)) return 0
+  return cart.reduce((total, item) => total + (item.price ?? 0) * (item.quantity ?? 1), 0)
 }
 
 export const useMarketplaceStore = create<MarketplaceState>()(
@@ -101,9 +117,16 @@ export const useMarketplaceStore = create<MarketplaceState>()(
       // ----- Notifications State -----
       unreadNotifications: 0,
 
+      // ----- Favorites State -----
+      favoriteIds: [],
+
       // ----- UI State -----
       sidebarOpen: true,
       mobileMenuOpen: false,
+
+      // ----- Shipping State -----
+      selectedAddress: null,
+      selectedShippingMethod: null,
 
       // ----- Auth Actions -----
       login: (user: User) => {
@@ -128,6 +151,9 @@ export const useMarketplaceStore = create<MarketplaceState>()(
           cartTotal: 0,
           activeRole: 'buyer',
           unreadNotifications: 0,
+          favoriteIds: [],
+          selectedAddress: null,
+          selectedShippingMethod: null,
         })
       },
 
@@ -233,6 +259,20 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         set({ unreadNotifications: count })
       },
 
+      // ----- Favorites Actions -----
+      setFavoriteIds: (ids: string[]) => {
+        set({ favoriteIds: ids })
+      },
+
+      toggleFavoriteId: (productId: string) => {
+        const { favoriteIds } = get()
+        if (favoriteIds.includes(productId)) {
+          set({ favoriteIds: favoriteIds.filter((id) => id !== productId) })
+        } else {
+          set({ favoriteIds: [...favoriteIds, productId] })
+        }
+      },
+
       // ----- UI Actions -----
       toggleSidebar: () => {
         set((state) => ({ sidebarOpen: !state.sidebarOpen }))
@@ -249,6 +289,15 @@ export const useMarketplaceStore = create<MarketplaceState>()(
       setMobileMenuOpen: (open: boolean) => {
         set({ mobileMenuOpen: open })
       },
+
+      // ----- Shipping Actions -----
+      setSelectedAddress: (address: DeliveryAddress | null) => {
+        set({ selectedAddress: address })
+      },
+
+      setSelectedShippingMethod: (method: ShippingRate | null) => {
+        set({ selectedShippingMethod: method })
+      },
     }),
     {
       name: 'marketo-storage',
@@ -262,49 +311,65 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         currentView: state.currentView,
         viewParams: state.viewParams,
       }),
+      // Synchronously sanitize persisted state BEFORE it's applied to the store.
+      // This prevents "forEach is not a function" crashes when localStorage
+      // has corrupted data (e.g. an array field stored as null/object).
+      merge: (persistedState, currentState) => {
+        const p = persistedState as Record<string, unknown>
+
+        // Ensure array fields are actually arrays
+        if (!Array.isArray(p.cart)) p.cart = []
+        if (!Array.isArray(p.favoriteIds)) p.favoriteIds = []
+
+        // Guard any other fields that might be arrays from corrupted localStorage
+        const arrayFields = ['notifications', 'orders', 'messages', 'disputes', 'stories', 'favorites', 'products', 'categories']
+        for (const field of arrayFields) {
+          if (field in p && !Array.isArray(p[field])) {
+            delete p[field]
+          }
+        }
+
+        // Ensure viewParams is a plain object
+        if (!p.viewParams || typeof p.viewParams !== 'object' || Array.isArray(p.viewParams)) {
+          p.viewParams = {}
+        }
+
+        // Validate currentUser — if invalid, clear auth
+        if (p.isAuthenticated && (!p.currentUser || !(p.currentUser as Record<string, unknown>)?.role)) {
+          p.currentUser = null
+          p.isAuthenticated = false
+          p.activeRole = 'buyer'
+        }
+
+        // Reset detail views on page reload to prevent crashes from stale data
+        const detailViews = ['product-detail', 'gig-detail', 'shop-view', 'return-detail', 'dispute-detail']
+        if (p.currentView && detailViews.includes(p.currentView as string)) {
+          p.currentView = 'landing'
+          p.viewParams = {}
+        }
+
+        return {
+          ...currentState,
+          ...(p as Partial<MarketplaceState>),
+        }
+      },
       onRehydrateStorage: () => {
-        // Return a function that will be called after rehydration completes
-        return (state, error) => {
-          // If there was an error during rehydration, reset auth state
+        return (_state, error) => {
           if (error) {
             console.error('Zustand rehydration error:', error)
-            // Use a setTimeout to ensure the store is ready
-            setTimeout(() => {
-              useMarketplaceStore.setState({
-                currentUser: null,
-                isAuthenticated: false,
-                isLoadingAuth: false,
-                activeRole: 'buyer',
-                currentView: 'landing',
-                viewParams: {},
-              })
-            }, 0)
-            return
-          }
-
-          // Validate rehydrated state - if currentUser is invalid, clear auth
-          if (state?.isAuthenticated && (!state.currentUser || !state.currentUser.role)) {
-            setTimeout(() => {
-              useMarketplaceStore.setState({
-                currentUser: null,
-                isAuthenticated: false,
-                isLoadingAuth: false,
-                activeRole: 'buyer',
-                currentView: 'landing',
-                viewParams: {},
-              })
-            }, 0)
-          }
-
-          // Reset detail views on page reload to prevent crashes from stale data
-          const detailViews = ['product-detail', 'gig-detail', 'shop-view']
-          if (state?.currentView && detailViews.includes(state.currentView)) {
-            setTimeout(() => {
-              useMarketplaceStore.setState({
-                currentView: 'landing',
-                viewParams: {},
-              })
-            }, 0)
+            // Clear corrupted localStorage
+            try { localStorage.removeItem('marketo-storage') } catch {}
+            useMarketplaceStore.setState({
+              currentUser: null,
+              isAuthenticated: false,
+              isLoadingAuth: false,
+              activeRole: 'buyer',
+              currentView: 'landing',
+              viewParams: {},
+              cart: [],
+              cartTotal: 0,
+              favoriteIds: [],
+            })
           }
         }
       },

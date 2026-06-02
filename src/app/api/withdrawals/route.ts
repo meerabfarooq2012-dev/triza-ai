@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { Prisma } from '@prisma/client';
+import { sendEmailAsync } from '@/lib/email';
+import { withdrawalNotificationEmail } from '@/lib/email-templates';
 
 export async function GET(request: NextRequest) {
   try {
@@ -246,6 +248,24 @@ export async function POST(request: NextRequest) {
       ...withdrawal,
       accountDetails: JSON.parse(withdrawal.accountDetails || '{}'),
     };
+
+    // Send withdrawal notification email (non-blocking)
+    if (withdrawal.user?.email) {
+      sendEmailAsync({
+        to: withdrawal.user.email,
+        subject: `⏳ Withdrawal Request — $${amount.toFixed(2)} — Marketo`,
+        html: withdrawalNotificationEmail({
+          userName: withdrawal.user.name,
+          amount,
+          method,
+          status: 'pending',
+          withdrawalId: withdrawal.id,
+          netAmount,
+          fee: 0,
+          expectedTimeline: '1–3 business days',
+        }),
+      });
+    }
 
     return NextResponse.json({ success: true, data: parsedWithdrawal }, { status: 201 });
   } catch (error) {

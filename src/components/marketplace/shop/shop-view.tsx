@@ -14,6 +14,7 @@ import {
   Download,
   Briefcase,
   Heart,
+  Share2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -22,6 +23,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { api } from '@/lib/api'
 import {
@@ -30,6 +38,7 @@ import {
   SOCIAL_PLATFORM_ICONS,
   SOCIAL_PLATFORM_LABELS,
 } from '@/lib/constants'
+import { ShareShopUrl } from '@/components/marketplace/shared/share-shop-url'
 import type { Shop, Product, Review, SocialLink, CustomSection } from '@/types'
 
 // Helper to parse JSON strings safely
@@ -425,6 +434,7 @@ export default function ShopView() {
   const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('products')
+  const [shareDialogOpen, setShareDialogOpen] = useState(false)
 
   const shopColors = shop
     ? {
@@ -610,7 +620,36 @@ export default function ShopView() {
                   <SocialIcon platform={link.platform} />
                 </a>
               ))}
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 ml-1"
+                onClick={() => setShareDialogOpen(true)}
+              >
+                <Share2 size={14} />
+                Share
+              </Button>
             </div>
+
+            {/* Share Dialog */}
+            <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Share2 size={18} />
+                    Share This Shop
+                  </DialogTitle>
+                  <DialogDescription>
+                    Share {shop.name} with your friends and followers
+                  </DialogDescription>
+                </DialogHeader>
+                <ShareShopUrl
+                  url={`${window.location.origin}/?shop=${shopSlug}`}
+                  title={shop.name}
+                  shareText={`Check out ${shop.name} on Marketo! 🛍️ ${shop.description ? shop.description.slice(0, 100) : ''}`}
+                />
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </div>

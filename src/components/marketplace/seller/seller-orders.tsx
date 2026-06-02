@@ -56,7 +56,7 @@ const STATUS_OPTIONS: OrderStatus[] = [
 ]
 
 export function SellerOrders() {
-  const { currentUser } = useMarketplaceStore()
+  const { currentUser, setCurrentView } = useMarketplaceStore()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('all')
@@ -301,10 +301,11 @@ export function SellerOrders() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setSelectedOrder(order)}
+                          onClick={() => setCurrentView('order-tracking', { orderId: order.id })}
+                          className="gap-1.5 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 border-emerald-200"
                         >
-                          <Eye className="mr-1.5 h-3.5 w-3.5" />
-                          Detail
+                          <Eye className="h-3.5 w-3.5" />
+                          Manage
                         </Button>
                       </div>
                     </div>

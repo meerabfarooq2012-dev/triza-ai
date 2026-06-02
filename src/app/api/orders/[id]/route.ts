@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { sendEmailAsync } from '@/lib/email';
+import { orderStatusUpdateEmail } from '@/lib/email-templates';
+import { notifyOrderStatusUpdate } from '@/lib/notifications';
 
 export async function GET(
   request: NextRequest,
@@ -28,6 +31,10 @@ export async function GET(
         buyer: { select: { id: true, name: true, avatar: true, email: true } },
         seller: { select: { id: true, name: true, avatar: true, email: true } },
         disputes: true,
+        statusLogs: {
+          orderBy: { createdAt: 'asc' as const },
+        },
+        shipment: true,
         payment: {
           select: {
             id: true,
@@ -111,6 +118,15 @@ export async function PUT(
     const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'];
     if (status && validStatuses.includes(status)) {
       data.status = status;
+      // Create status log entry
+      await db.orderStatusLog.create({
+        data: {
+          orderId: id,
+          status: status,
+          note: body.note || null,
+          changedBy: userId,
+        },
+      });
     }
 
     const validPaymentStatuses = ['pending', 'paid', 'failed', 'refunded'];
@@ -145,36 +161,45 @@ export async function PUT(
     });
 
     // Create notifications based on status changes
-    if (status === 'shipped') {
-      await db.notification.create({
-        data: {
-          userId: order.buyerId,
-          title: 'Order Shipped',
-          message: `Your order #${order.id.slice(-8)} has been shipped${trackingNo ? ` (Tracking: ${trackingNo})` : ''}`,
-          type: 'order',
-          link: `/orders/${order.id}`,
-        },
-      });
-    } else if (status === 'delivered') {
-      await db.notification.create({
-        data: {
-          userId: order.buyerId,
-          title: 'Order Delivered',
-          message: `Your order #${order.id.slice(-8)} has been delivered`,
-          type: 'success',
-          link: `/orders/${order.id}`,
-        },
-      });
-    } else if (status === 'cancelled') {
-      await db.notification.create({
-        data: {
-          userId: order.sellerId,
-          title: 'Order Cancelled',
-          message: `Order #${order.id.slice(-8)} has been cancelled`,
-          type: 'warning',
-          link: `/orders/${order.id}`,
-        },
-      });
+    if (status && validStatuses.includes(status)) {
+      // Notify both buyer and seller of status changes
+      notifyOrderStatusUpdate(order.buyerId, id, status).catch(() => {});
+      if (status === 'cancelled') {
+        notifyOrderStatusUpdate(order.sellerId, id, status).catch(() => {});
+      }
+
+      // Send order status update emails (non-blocking)
+      const emailItems = updatedOrder.items.map((item) => ({
+        name: item.product?.name || 'Unknown Product',
+        quantity: item.quantity,
+        price: item.price,
+        type: item.type,
+      }));
+
+      const targetUserId = ['cancelled'].includes(status) ? order.sellerId : order.buyerId;
+      const targetUser = await db.user.findUnique({ where: { id: targetUserId }, select: { email: true, name: true } });
+
+      if (targetUser?.email) {
+        const statusEmoji: Record<string, string> = {
+          processing: '⏳',
+          shipped: '🚚',
+          delivered: '📦',
+          cancelled: '❌',
+          refunded: '💰',
+        };
+        sendEmailAsync({
+          to: targetUser.email,
+          subject: `${statusEmoji[status] || '📋'} Your Order #${order.id.slice(-8)} — ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+          html: orderStatusUpdateEmail({
+            orderNumber: order.id.slice(-8),
+            userName: targetUser.name,
+            newStatus: status,
+            items: emailItems,
+            trackingNumber: trackingNo || undefined,
+            totalAmount: order.totalAmount,
+          }),
+        });
+      }
     }
 
     const parsedOrder = {
@@ -198,4 +223,12 @@ export async function PUT(
       { status: 500 }
     );
   }
+}
+
+// PATCH — alias for PUT (components use PATCH method)
+export async function PATCH(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  return PUT(request, context);
 }

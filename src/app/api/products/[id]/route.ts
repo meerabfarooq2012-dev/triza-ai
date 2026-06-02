@@ -90,7 +90,7 @@ export async function PUT(
     const allowedFields = [
       'name', 'description', 'shortDesc', 'price', 'comparePrice',
       'type', 'images', 'fileUrl', 'fileSize', 'stock', 'sku',
-      'tags', 'isFeatured', 'categoryId', 'deliveryInfo', 'deliveryCountries', 'requirements',
+      'tags', 'isFeatured', 'isActive', 'categoryId', 'deliveryInfo', 'deliveryCountries', 'requirements',
     ];
 
     const data: Record<string, unknown> = {};

@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
     const featured = searchParams.get('featured');
     const minPrice = searchParams.get('minPrice');
     const maxPrice = searchParams.get('maxPrice');
+    const rating = searchParams.get('rating');
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '12', 10);
     const sort = searchParams.get('sort') || 'newest';
@@ -70,6 +71,11 @@ export async function GET(request: NextRequest) {
 
     // Price filtering - needs to check within packages JSON
     // Since packages is a JSON string, we'll filter in-memory after query for price ranges
+
+    // Minimum average rating filter
+    if (rating) {
+      where.averageRating = { gte: parseFloat(rating) };
+    }
 
     let orderBy: Prisma.GigOrderByWithRelationInput = { createdAt: 'desc' };
     switch (sort) {
@@ -126,21 +132,27 @@ export async function GET(request: NextRequest) {
         if (maxPrice && minGigPrice > parseFloat(maxPrice)) return false;
         return true;
       });
+    }
 
-      // Price sorting
-      if (sort === 'price_asc') {
-        parsedGigs.sort((a, b) => {
-          const aMin = Math.min(...(a.packages as { price: number }[]).map((p) => p.price));
-          const bMin = Math.min(...(b.packages as { price: number }[]).map((p) => p.price));
-          return aMin - bMin;
-        });
-      } else if (sort === 'price_desc') {
-        parsedGigs.sort((a, b) => {
-          const aMin = Math.min(...(a.packages as { price: number }[]).map((p) => p.price));
-          const bMin = Math.min(...(b.packages as { price: number }[]).map((p) => p.price));
-          return bMin - aMin;
-        });
-      }
+    // In-memory rating filtering (double-check since SQLite might not handle float comparison well)
+    if (rating) {
+      const ratingNum = parseFloat(rating);
+      parsedGigs = parsedGigs.filter((gig) => (gig.averageRating ?? 0) >= ratingNum);
+    }
+
+    // Price sorting
+    if (sort === 'price_asc') {
+      parsedGigs.sort((a, b) => {
+        const aMin = Math.min(...(a.packages as { price: number }[]).map((p) => p.price));
+        const bMin = Math.min(...(b.packages as { price: number }[]).map((p) => p.price));
+        return aMin - bMin;
+      });
+    } else if (sort === 'price_desc') {
+      parsedGigs.sort((a, b) => {
+        const aMin = Math.min(...(a.packages as { price: number }[]).map((p) => p.price));
+        const bMin = Math.min(...(b.packages as { price: number }[]).map((p) => p.price));
+        return bMin - aMin;
+      });
     }
 
     return NextResponse.json({

@@ -20,6 +20,9 @@ import {
   Globe,
   Check,
   ChevronDown,
+  Upload,
+  Cloud,
+  Loader2,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -61,6 +64,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { toast } from 'sonner'
 import {
   PRODUCT_TYPE_LABELS,
   DEFAULT_CATEGORIES,
@@ -85,6 +89,7 @@ interface ProductFormData {
   deliveryCountries: string[] // array of country codes
   requirements: string
   isFeatured: boolean
+  images: string[] // base64 encoded images
 }
 
 const emptyForm: ProductFormData = {
@@ -102,12 +107,173 @@ const emptyForm: ProductFormData = {
   deliveryCountries: [],
   requirements: '',
   isFeatured: false,
+  images: [],
 }
 
 const PRODUCT_TYPE_OPTIONS: { value: ProductType; label: string }[] = [
   { value: 'digital', label: 'Digital Product' },
   { value: 'physical', label: 'Physical Product' },
 ]
+
+// ---- Image Uploader Component ----
+function ImageUploader({ images, onImagesChange, maxImages = 5, label = 'Images', folder = 'products' }: {
+  images: string[]
+  onImagesChange: (images: string[]) => void
+  maxImages?: number
+  label?: string
+  folder?: string
+}) {
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const [uploading, setUploading] = useState(false)
+
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = (event) => resolve(event.target?.result as string)
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+  }
+
+  const processFiles = async (filesToProcess: File[]) => {
+    const remaining = maxImages - images.length
+    if (remaining <= 0) return
+    const files = filesToProcess.slice(0, remaining)
+
+    setUploading(true)
+    const newImages: string[] = []
+
+    for (const file of files) {
+      if (file.size > 5 * 1024 * 1024) continue // Skip > 5MB
+
+      try {
+        // Try cloud upload first
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('folder', folder)
+
+        const res = await fetch('/api/upload', { method: 'POST', body: formData })
+        const data = await res.json()
+
+        if (data.success && data.url) {
+          // Cloud upload succeeded - use the cloud URL
+          newImages.push(data.url)
+        } else {
+          // Cloud upload not available - fall back to base64
+          const base64 = await fileToBase64(file)
+          newImages.push(base64)
+        }
+      } catch {
+        // Error - fall back to base64
+        const base64 = await fileToBase64(file)
+        newImages.push(base64)
+      }
+    }
+
+    if (newImages.length > 0) {
+      onImagesChange([...images, ...newImages])
+    }
+    setUploading(false)
+  }
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files) return
+    await processFiles(Array.from(files))
+    e.target.value = '' // Reset input
+  }
+
+  const removeImage = (index: number) => {
+    onImagesChange(images.filter((_, i) => i !== index))
+  }
+
+  const isCloudImage = (img: string) => img.startsWith('http')
+
+  return (
+    <div className="space-y-2">
+      <Label className="flex items-center gap-1.5">
+        <ImageIcon className="h-4 w-4 text-gray-500" />
+        {label}
+        <span className="text-xs text-gray-400">
+          ({images.length}/{maxImages})
+        </span>
+      </Label>
+
+      {/* Drop zone */}
+      <div
+        className={`relative flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50/50 px-4 py-6 transition-colors hover:border-emerald-300 hover:bg-emerald-50/30 ${uploading ? 'pointer-events-none' : ''}`}
+        onClick={() => !uploading && fileInputRef.current?.click()}
+        onDragOver={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+        }}
+        onDrop={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          if (uploading) return
+          const files = e.dataTransfer.files
+          if (!files) return
+          processFiles(Array.from(files))
+        }}
+      >
+        {uploading ? (
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+            <p className="text-sm font-medium text-emerald-600">Uploading...</p>
+          </div>
+        ) : (
+          <>
+            <Upload className="mb-2 h-8 w-8 text-gray-300" />
+            <p className="text-sm text-gray-500">
+              Drag & drop or click to upload
+            </p>
+            <p className="mt-1 text-xs text-gray-400">
+              Max {maxImages} images, 5MB each (jpg, png, gif, webp)
+            </p>
+          </>
+        )}
+      </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/gif,image/webp"
+        multiple
+        className="hidden"
+        onChange={handleFileSelect}
+        disabled={uploading}
+      />
+
+      {/* Preview thumbnails */}
+      {images.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {images.map((img, index) => (
+            <div key={index} className="group relative h-20 w-20 overflow-hidden rounded-lg border border-gray-200 bg-gray-100">
+              <img
+                src={img}
+                alt={`Image ${index + 1}`}
+                className="h-full w-full object-cover"
+              />
+              {/* Cloud badge */}
+              {isCloudImage(img) && (
+                <span className="absolute bottom-0.5 left-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-white">
+                  <Cloud className="h-2.5 w-2.5" />
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => removeImage(index)}
+                className="absolute right-0.5 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-600"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 // ---- Country Multi-Select Component ----
 function CountryMultiSelect({
@@ -317,6 +483,7 @@ export function SellerProducts() {
         shopId: currentUser.shop.id,
         page: String(page),
         limit: '10',
+        showAll: 'true',
       })
       if (typeFilter !== 'all') params.set('type', typeFilter)
       if (searchQuery) params.set('query', searchQuery)
@@ -382,6 +549,11 @@ export function SellerProducts() {
     if (productCategory?.parentId) {
       subcategoryId = catId
     }
+    let images: string[] = []
+    try {
+      const raw = (product as Record<string, unknown>).images
+      images = JSON.parse(typeof raw === 'string' && raw ? raw : '[]')
+    } catch { images = [] }
     setFormData({
       name: product.name,
       description: product.description,
@@ -397,12 +569,25 @@ export function SellerProducts() {
       deliveryCountries,
       requirements: product.requirements || '',
       isFeatured: product.isFeatured,
+      images,
     })
     setDialogOpen(true)
   }
 
   const handleSubmit = async () => {
     if (!currentUser?.shop) return
+    if (!formData.name.trim()) {
+      toast.error('Product name is required')
+      return
+    }
+    if (!formData.description.trim()) {
+      toast.error('Description is required')
+      return
+    }
+    if (!formData.price || parseFloat(formData.price) <= 0) {
+      toast.error('Price must be greater than 0')
+      return
+    }
     setSubmitting(true)
     try {
       const tags = formData.tags
@@ -412,6 +597,7 @@ export function SellerProducts() {
 
       const payload = {
         shopId: currentUser.shop.id,
+        userId: currentUser.id,
         name: formData.name,
         description: formData.description,
         shortDesc: formData.shortDesc || undefined,
@@ -427,6 +613,7 @@ export function SellerProducts() {
         deliveryCountries: formData.deliveryCountries,
         requirements: formData.requirements || undefined,
         isFeatured: formData.isFeatured,
+        images: formData.images,
       }
 
       if (editingProduct) {
@@ -437,7 +624,9 @@ export function SellerProducts() {
         })
         const data = await res.json()
         if (!data.success) {
-          console.error('Update failed:', data.error)
+          toast.error(data.error || 'Failed to update product')
+        } else {
+          toast.success('Product updated successfully!')
         }
       } else {
         const res = await fetch('/api/products', {
@@ -447,7 +636,9 @@ export function SellerProducts() {
         })
         const data = await res.json()
         if (!data.success) {
-          console.error('Create failed:', data.error)
+          toast.error(data.error || 'Failed to create product')
+        } else {
+          toast.success('Product created successfully!')
         }
       }
 
@@ -461,33 +652,42 @@ export function SellerProducts() {
   }
 
   const handleToggleActive = async (product: Product) => {
+    if (!currentUser) return
     try {
       const res = await fetch(`/api/products/${product.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isActive: !product.isActive }),
+        body: JSON.stringify({ isActive: !product.isActive, userId: currentUser.id }),
       })
       const data = await res.json()
       if (data.success) {
+        toast.success(product.isActive ? 'Product deactivated' : 'Product activated')
         fetchProducts()
+      } else {
+        toast.error(data.error || 'Failed to update product')
       }
     } catch (error) {
       console.error('Failed to toggle product:', error)
+      toast.error('Failed to update product')
     }
   }
 
   const handleDelete = async () => {
-    if (!deleteTarget) return
+    if (!deleteTarget || !currentUser) return
     try {
-      const res = await fetch(`/api/products/${deleteTarget.id}`, {
+      const res = await fetch(`/api/products/${deleteTarget.id}?userId=${currentUser.id}`, {
         method: 'DELETE',
       })
       const data = await res.json()
       if (data.success) {
+        toast.success('Product deleted')
         fetchProducts()
+      } else {
+        toast.error(data.error || 'Failed to delete product')
       }
     } catch (error) {
       console.error('Failed to delete product:', error)
+      toast.error('Failed to delete product')
     } finally {
       setDeleteTarget(null)
     }
@@ -862,6 +1062,14 @@ export function SellerProducts() {
                 placeholder="Enter product name"
               />
             </div>
+
+            {/* Product Images */}
+            <ImageUploader
+              images={formData.images}
+              onImagesChange={(images) => setFormData({ ...formData, images })}
+              maxImages={5}
+              label="Product Images"
+            />
 
             {/* Short Description */}
             <div className="grid gap-2">

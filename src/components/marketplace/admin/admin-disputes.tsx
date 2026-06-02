@@ -64,7 +64,7 @@ export default function AdminDisputes() {
       const res = await api.admin.getDisputes(params)
       if (res.data) {
         const data = res.data as any
-        if (data.items) {
+        if (data.items && Array.isArray(data.items)) {
           setDisputes(data.items)
           setTotalPages(data.totalPages)
           setTotalDisputes(data.total)

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { Prisma } from '@prisma/client';
+import { notifyNewReview } from '@/lib/notifications';
 
 export async function GET(request: NextRequest) {
   try {
@@ -76,7 +77,35 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, shopId, productId, rating, title, comment } = body;
+
+    // Handle helpful vote action
+    if (body.action === 'helpful' && body.reviewId) {
+      const review = await db.review.findUnique({
+        where: { id: body.reviewId },
+      });
+
+      if (!review) {
+        return NextResponse.json(
+          { success: false, error: 'Review not found' },
+          { status: 404 }
+        );
+      }
+
+      const updatedReview = await db.review.update({
+        where: { id: body.reviewId },
+        data: {
+          helpfulCount: { increment: 1 },
+        },
+        include: {
+          user: { select: { id: true, name: true, avatar: true } },
+        },
+      });
+
+      return NextResponse.json({ success: true, data: updatedReview });
+    }
+
+    // Default: create a new review
+    const { userId, shopId, productId, gigId, rating, title, comment } = body;
 
     if (!userId || !comment || !rating) {
       return NextResponse.json(
@@ -85,9 +114,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!shopId && !productId) {
+    if (!shopId && !productId && !gigId) {
       return NextResponse.json(
-        { success: false, error: 'shopId or productId is required' },
+        { success: false, error: 'shopId, productId, or gigId is required' },
         { status: 400 }
       );
     }
@@ -103,7 +132,7 @@ export async function POST(request: NextRequest) {
     const existingReview = await db.review.findFirst({
       where: {
         userId,
-        ...(productId ? { productId } : { shopId }),
+        ...(productId ? { productId } : gigId ? { gigId } : { shopId }),
       },
     });
 
@@ -134,6 +163,7 @@ export async function POST(request: NextRequest) {
         userId,
         shopId,
         productId,
+        gigId,
         rating,
         title,
         comment,
@@ -181,6 +211,37 @@ export async function POST(request: NextRequest) {
           averageRating: Math.round(avgRating * 10) / 10,
         },
       });
+    }
+
+    // Update gig average rating if applicable
+    if (gigId) {
+      const gigReviews = await db.review.findMany({
+        where: { gigId },
+        select: { rating: true },
+      });
+      const avgRating =
+        gigReviews.length > 0
+          ? gigReviews.reduce((sum, r) => sum + r.rating, 0) / gigReviews.length
+          : 0;
+
+      await db.gig.update({
+        where: { id: gigId },
+        data: {
+          totalReviews: gigReviews.length,
+          averageRating: Math.round(avgRating * 10) / 10,
+        },
+      });
+    }
+
+    // Notify seller about new review (non-blocking)
+    if (productId) {
+      const product = await db.product.findUnique({
+        where: { id: productId },
+        select: { name: true, shop: { select: { userId: true } } },
+      });
+      if (product?.shop?.userId) {
+        notifyNewReview(product.shop.userId, product.name, rating, productId).catch(() => {});
+      }
     }
 
     return NextResponse.json({ success: true, data: review }, { status: 201 });

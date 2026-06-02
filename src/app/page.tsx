@@ -1,8 +1,10 @@
 'use client'
 
-import { useState, useCallback, Component, useSyncExternalStore } from 'react'
+import { useState, useCallback, useEffect, useRef, Component, useSyncExternalStore, Suspense } from 'react'
 import dynamic from 'next/dynamic'
+import { useSearchParams } from 'next/navigation'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { useRealtimeNotifications } from '@/hooks/use-realtime-notifications'
 
 function PageLoader() {
   return (
@@ -112,9 +114,54 @@ const MessagesPage = dynamic(
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
+const OrderTrackingPage = dynamic(
+  () => import('@/components/marketplace/orders/order-tracking-page'),
+  { ssr: false, loading: () => <ViewLoader /> }
+)
+
+const ShippingSettings = dynamic(
+  () => import('@/components/marketplace/shipping/shipping-settings').then(m => ({ default: m.ShippingSettings })),
+  { ssr: false, loading: () => <ViewLoader /> }
+)
+
+const AddressBook = dynamic(
+  () => import('@/components/marketplace/shipping/address-book').then(m => ({ default: m.AddressBook })),
+  { ssr: false, loading: () => <ViewLoader /> }
+)
+
 const FeedbackWidget = dynamic(
   () => import('@/components/marketplace/shared/feedback-widget').then(m => ({ default: m.FeedbackWidget })),
   { ssr: false }
+)
+
+const ReturnsPage = dynamic(
+  () => import('@/components/marketplace/returns/returns-page').then(m => ({ default: m.ReturnsPage })),
+  { ssr: false, loading: () => <ViewLoader /> }
+)
+
+const ReturnDetailPage = dynamic(
+  () => import('@/components/marketplace/returns/return-detail-page').then(m => ({ default: m.ReturnDetailPage })),
+  { ssr: false, loading: () => <ViewLoader /> }
+)
+
+const ReturnPolicyPage = dynamic(
+  () => import('@/components/marketplace/returns/return-policy-page').then(m => ({ default: m.ReturnPolicyPage })),
+  { ssr: false, loading: () => <ViewLoader /> }
+)
+
+const ActivityFeedPage = dynamic(
+  () => import('@/components/marketplace/social/activity-feed-page').then(m => ({ default: m.ActivityFeedPage })),
+  { ssr: false, loading: () => <ViewLoader /> }
+)
+
+const DisputeCenterPage = dynamic(
+  () => import('@/components/marketplace/disputes/dispute-center-page').then(m => ({ default: m.DisputeCenterPage })),
+  { ssr: false, loading: () => <ViewLoader /> }
+)
+
+const DisputeDetailPage = dynamic(
+  () => import('@/components/marketplace/disputes/dispute-detail-page').then(m => ({ default: m.DisputeDetailPage })),
+  { ssr: false, loading: () => <ViewLoader /> }
 )
 
 // Error boundary component to catch rendering errors in child components
@@ -142,9 +189,15 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
         <div className="flex items-center justify-center min-h-[300px] p-8">
           <div className="text-center max-w-md">
             <h2 className="text-lg font-semibold text-red-600 mb-2">Something went wrong</h2>
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="text-sm text-muted-foreground mb-2">
               {this.state.error?.message || 'An unexpected error occurred while rendering this section.'}
             </p>
+            <details className="text-left mb-4">
+              <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">Show details</summary>
+              <pre className="mt-2 text-xs bg-muted p-3 rounded-lg overflow-auto max-h-32 whitespace-pre-wrap break-all">
+                {this.state.error?.stack || this.state.error?.message || 'No details available'}
+              </pre>
+            </details>
             <div className="flex items-center justify-center gap-3">
               <button
                 onClick={() => this.setState({ hasError: false, error: null })}
@@ -154,7 +207,13 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
               </button>
               <button
                 onClick={() => {
-                  try { localStorage.removeItem('marketo-storage') } catch {}
+                  try {
+                    localStorage.removeItem('marketo-storage')
+                    // Clear any other zustand persisted stores
+                    Object.keys(localStorage).forEach(key => {
+                      if (key.startsWith('marketo')) localStorage.removeItem(key)
+                    })
+                  } catch {}
                   window.location.reload()
                 }}
                 className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 text-sm"
@@ -192,13 +251,54 @@ export default function Home() {
 
   return (
     <ErrorBoundary>
-      <MarketplaceApp />
+      <Suspense fallback={<PageLoader />}>
+        <MarketplaceApp />
+      </Suspense>
     </ErrorBoundary>
   )
 }
 
 function MarketplaceApp() {
-  const { currentView, isAuthenticated, currentUser } = useMarketplaceStore()
+  const { currentView, isAuthenticated, currentUser, setCurrentView, viewParams, activeRole } = useMarketplaceStore()
+  const searchParams = useSearchParams()
+
+  // Initialize real-time notification system
+  useRealtimeNotifications()
+
+  const urlNavDone = useRef(false)
+
+  // Handle URL-based navigation from shared links (only once on mount)
+  useEffect(() => {
+    if (urlNavDone.current) return
+    urlNavDone.current = true
+
+    const shopSlug = searchParams.get('shop')
+    const productId = searchParams.get('product')
+    const gigId = searchParams.get('gig')
+
+    if (shopSlug) {
+      setCurrentView('shop-view', { shopSlug })
+    } else if (productId) {
+      setCurrentView('product-detail', { productId })
+    } else if (gigId) {
+      setCurrentView('gig-detail', { gigId })
+    }
+  }, [searchParams, setCurrentView])
+
+  // Sync browser URL with current view so users can share the current page
+  useEffect(() => {
+    const params = new URLSearchParams()
+    if (currentView === 'shop-view' && viewParams.shopSlug) {
+      params.set('shop', viewParams.shopSlug)
+    } else if (currentView === 'product-detail' && viewParams.productId) {
+      params.set('product', viewParams.productId)
+    } else if (currentView === 'gig-detail' && viewParams.gigId) {
+      params.set('gig', viewParams.gigId)
+    }
+    const queryString = params.toString()
+    const newUrl = queryString ? `${window.location.pathname}?${queryString}` : window.location.pathname
+    window.history.replaceState({}, '', newUrl)
+  }, [currentView, viewParams])
 
   const renderView = useCallback(() => {
     try {
@@ -227,10 +327,41 @@ function MarketplaceApp() {
         case 'messages':
           if (!isAuthenticated) return <AuthModal />
           return <MessagesPage />
+        case 'order-tracking':
+          if (!isAuthenticated) return <AuthModal />
+          return <OrderTrackingPage />
+        case 'shipping-settings':
+          if (!isAuthenticated) return <AuthModal />
+          return <ShippingSettings shopId={currentUser?.shop?.id} userId={currentUser?.id} />
+        case 'address-book':
+          if (!isAuthenticated) return <AuthModal />
+          return <AddressBook userId={currentUser?.id || ''} />
+        case 'orders':
+          if (!isAuthenticated) return <AuthModal />
+          // Show the appropriate dashboard with orders tab active
+          return activeRole === 'seller' ? <SellerDashboard /> : <BuyerDashboard />
         case 'privacy':
           return <PrivacyPolicy />
         case 'terms':
           return <TermsOfService />
+        case 'returns':
+          if (!isAuthenticated) return <AuthModal />
+          return <ReturnsPage userId={currentUser?.id || ''} isSeller={activeRole === 'seller'} shopId={currentUser?.shop?.id} />
+        case 'return-detail':
+          if (!isAuthenticated) return <AuthModal />
+          return <ReturnDetailPage returnId={viewParams.id} isSeller={activeRole === 'seller'} />
+        case 'return-policy':
+          if (!isAuthenticated) return <AuthModal />
+          return <ReturnPolicyPage shopId={currentUser?.shop?.id || ''} />
+        case 'activity-feed':
+          if (!isAuthenticated) return <AuthModal />
+          return <ActivityFeedPage userId={currentUser?.id || ''} />
+        case 'disputes':
+          if (!isAuthenticated) return <AuthModal />
+          return <DisputeCenterPage userId={currentUser?.id || ''} isSeller={activeRole === 'seller'} />
+        case 'dispute-detail':
+          if (!isAuthenticated) return <AuthModal />
+          return <DisputeDetailPage disputeId={viewParams.id} userId={currentUser?.id || ''} isSeller={activeRole === 'seller'} isAdmin={currentUser?.isAdmin} />
         case 'admin':
           if (!isAuthenticated || !currentUser?.isAdmin) {
             return (
@@ -260,7 +391,7 @@ function MarketplaceApp() {
         </div>
       )
     }
-  }, [currentView, isAuthenticated, currentUser])
+  }, [currentView, isAuthenticated, currentUser, activeRole, setCurrentView, viewParams])
 
   if (currentView === 'auth') {
     return <AuthModal />

@@ -126,6 +126,11 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   error: 'Error',
   order: 'Order Update',
   message: 'New Message',
+  payment: 'Payment',
+  review: 'New Review',
+  shop: 'Shop Update',
+  promotion: 'Promotion',
+  system: 'System',
 }
 
 export const NOTIFICATION_TYPE_COLORS: Record<NotificationType, string> = {
@@ -135,6 +140,52 @@ export const NOTIFICATION_TYPE_COLORS: Record<NotificationType, string> = {
   error: 'text-red-600',
   order: 'text-purple-600',
   message: 'text-cyan-600',
+  payment: 'text-emerald-600',
+  review: 'text-amber-600',
+  shop: 'text-pink-600',
+  promotion: 'text-orange-600',
+  system: 'text-gray-600',
+}
+
+// ----- Notification Categories -----
+
+export const NOTIFICATION_CATEGORY_LABELS: Record<string, string> = {
+  order: 'Orders',
+  payment: 'Payments',
+  message: 'Messages',
+  review: 'Reviews',
+  shop: 'Shop',
+  promotion: 'Promotions',
+  system: 'System',
+}
+
+export const NOTIFICATION_CATEGORY_COLORS: Record<string, string> = {
+  order: 'bg-purple-100 text-purple-700 border-purple-200',
+  payment: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+  message: 'bg-cyan-100 text-cyan-700 border-cyan-200',
+  review: 'bg-amber-100 text-amber-700 border-amber-200',
+  shop: 'bg-pink-100 text-pink-700 border-pink-200',
+  promotion: 'bg-orange-100 text-orange-700 border-orange-200',
+  system: 'bg-gray-100 text-gray-700 border-gray-200',
+}
+
+export const NOTIFICATION_CATEGORY_ICONS: Record<string, string> = {
+  order: 'ShoppingCart',
+  payment: 'CreditCard',
+  message: 'MessageSquare',
+  review: 'Star',
+  shop: 'Store',
+  promotion: 'Tag',
+  system: 'Settings',
+}
+
+// ----- Notification Priority -----
+
+export const NOTIFICATION_PRIORITY_COLORS: Record<string, string> = {
+  low: 'bg-gray-100 text-gray-600',
+  normal: '',
+  high: 'bg-amber-50 text-amber-600',
+  urgent: 'bg-red-50 text-red-600',
 }
 
 // ----- Dispute Status -----

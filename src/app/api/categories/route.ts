@@ -6,16 +6,20 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type'); // 'gigs', 'physical', 'digital', or undefined (all)
+    const includeInactive = searchParams.get('includeInactive') === 'true';
 
     const gigCategorySlugs = GIG_CATEGORIES.map(c => c.slug);
     const physicalCategorySlugs = PHYSICAL_CATEGORIES.map(c => c.slug);
     const digitalCategorySlugs = DIGITAL_CATEGORIES.map(c => c.slug);
 
+    const activeFilter = includeInactive ? {} : { isActive: true };
+    const childrenActiveFilter = includeInactive ? {} : { isActive: true };
+
     const categories = await db.category.findMany({
-      where: { isActive: true },
+      where: activeFilter,
       include: {
         children: {
-          where: { isActive: true },
+          where: childrenActiveFilter,
           include: {
             _count: { select: { products: { where: { isActive: true, isApproved: true } }, gigs: { where: { isActive: true, isApproved: true } } } },
           },

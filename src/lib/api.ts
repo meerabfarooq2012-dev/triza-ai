@@ -8,6 +8,7 @@ import type {
   Order,
   Review,
   Notification,
+  NotificationPreference,
   Message,
   Dispute,
   Category,
@@ -158,6 +159,10 @@ const productsApi = {
       searchParams.set('minPrice', String(params.minPrice))
     if (params?.maxPrice !== undefined)
       searchParams.set('maxPrice', String(params.maxPrice))
+    if (params?.rating !== undefined)
+      searchParams.set('rating', String(params.rating))
+    if (params?.tags) searchParams.set('tags', params.tags)
+    if (params?.inStock) searchParams.set('inStock', 'true')
     if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
     if (params?.page) searchParams.set('page', String(params.page))
     if (params?.limit) searchParams.set('limit', String(params.limit))
@@ -221,10 +226,10 @@ const ordersApi = {
       body: JSON.stringify(data),
     }),
 
-  updateOrderStatus: (id: string, status: string) =>
-    request<ApiResponse<Order>>(`/orders/${id}/status`, {
+  updateOrderStatus: (id: string, status: string, userId?: string, trackingNo?: string) =>
+    request<ApiResponse<Order>>(`/orders/${id}`, {
       method: 'PATCH',
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status, userId, trackingNo }),
     }),
 }
 
@@ -237,10 +242,11 @@ const reviewsApi = {
       body: JSON.stringify(data),
     }),
 
-  getProductReviews: (productId: string, params?: { page?: number; limit?: number }) => {
+  getProductReviews: (productId: string, params?: { page?: number; limit?: number; sort?: string }) => {
     const searchParams = new URLSearchParams()
     if (params?.page) searchParams.set('page', String(params.page))
     if (params?.limit) searchParams.set('limit', String(params.limit))
+    if (params?.sort) searchParams.set('sort', params.sort)
     const qs = searchParams.toString()
     return request<ApiResponse<PaginatedResponse<Review>>>(
       `/reviews/product/${productId}${qs ? `?${qs}` : ''}`
@@ -257,30 +263,90 @@ const reviewsApi = {
     )
   },
 
-  deleteReview: (id: string) =>
-    request<ApiResponse>(`/reviews/${id}`, { method: 'DELETE' }),
+  markHelpful: (id: string) =>
+    request<ApiResponse<Review>>(`/reviews/${id}/helpful`, { method: 'POST' }),
+
+  sellerReply: (id: string, reply: string) =>
+    request<ApiResponse<Review>>(`/reviews/${id}/reply`, {
+      method: 'POST',
+      body: JSON.stringify({ reply }),
+    }),
+
+  deleteReview: (id: string, userId?: string) =>
+    request<ApiResponse>(`/reviews/${id}`, {
+      method: 'DELETE',
+      body: userId ? JSON.stringify({ userId }) : undefined,
+    }),
 }
 
 // ----- Notifications API -----
 
 const notificationsApi = {
-  getNotifications: (params?: { page?: number; limit?: number }) => {
+  getNotifications: (params?: { userId?: string; page?: number; limit?: number; category?: string; type?: string; unreadOnly?: boolean }) => {
     const searchParams = new URLSearchParams()
+    if (params?.userId) searchParams.set('userId', params.userId)
     if (params?.page) searchParams.set('page', String(params.page))
     if (params?.limit) searchParams.set('limit', String(params.limit))
+    if (params?.category) searchParams.set('category', params.category)
+    if (params?.type) searchParams.set('type', params.type)
+    if (params?.unreadOnly) searchParams.set('unreadOnly', 'true')
     const qs = searchParams.toString()
-    return request<ApiResponse<PaginatedResponse<Notification>>>(
+    return request<ApiResponse<{ notifications: Notification[]; totalCount: number; unreadCount: number; hasMore: boolean }>>(
       `/notifications${qs ? `?${qs}` : ''}`
     )
   },
 
-  markNotificationRead: (id: string) =>
-    request<ApiResponse<Notification>>(`/notifications/${id}/read`, {
-      method: 'PATCH',
+  createNotification: (data: {
+    userId: string
+    title: string
+    message: string
+    type?: string
+    category?: string
+    link?: string
+    image?: string
+    priority?: string
+    metadata?: Record<string, unknown>
+  }) =>
+    request<ApiResponse<{ notification: Notification }>>('/notifications', {
+      method: 'POST',
+      body: JSON.stringify(data),
     }),
 
-  markAllNotificationsRead: () =>
-    request<ApiResponse>('/notifications/read-all', { method: 'PATCH' }),
+  markNotificationRead: (notificationId: string, userId: string) =>
+    request<ApiResponse>('/notifications', {
+      method: 'PUT',
+      body: JSON.stringify({ notificationId, userId }),
+    }),
+
+  markAllNotificationsRead: (userId: string) =>
+    request<ApiResponse>('/notifications', {
+      method: 'PUT',
+      body: JSON.stringify({ markAll: true, userId }),
+    }),
+
+  deleteNotification: (notificationId: string) =>
+    request<ApiResponse>('/notifications', {
+      method: 'DELETE',
+      body: JSON.stringify({ notificationId }),
+    }),
+
+  deleteReadNotifications: (userId: string) =>
+    request<ApiResponse>('/notifications', {
+      method: 'DELETE',
+      body: JSON.stringify({ userId }),
+    }),
+
+  getUnreadCount: (userId: string) =>
+    request<ApiResponse<{ count: number; byCategory: Record<string, number> }>>(`/notifications/unread-count?userId=${userId}`),
+
+  getPreferences: (userId: string) =>
+    request<ApiResponse<{ preferences: Record<string, unknown> }>>(`/notifications/preferences?userId=${userId}`),
+
+  updatePreferences: (userId: string, data: Record<string, boolean>) =>
+    request<ApiResponse<{ preferences: Record<string, unknown> }>>('/notifications/preferences', {
+      method: 'PUT',
+      body: JSON.stringify({ userId, ...data }),
+    }),
 }
 
 // ----- Messages API -----
@@ -324,14 +390,17 @@ const categoriesApi = {
 // ----- Favorites API -----
 
 const favoritesApi = {
-  getFavorites: () =>
-    request<ApiResponse<Favorite[]>>('/favorites'),
+  getFavorites: (userId: string) =>
+    request<ApiResponse<Favorite[]>>(`/favorites?userId=${userId}`),
 
-  toggleFavorite: (productId: string) =>
-    request<ApiResponse<{ isFavorited: boolean }>>('/favorites/toggle', {
+  toggleFavorite: (productId: string, userId: string) =>
+    request<ApiResponse<{ isFavorited: boolean; favoriteCount: number }>>('/favorites/toggle', {
       method: 'POST',
-      body: JSON.stringify({ productId }),
+      body: JSON.stringify({ productId, userId }),
     }),
+
+  getFavoritesCount: (userId: string) =>
+    request<ApiResponse<{ count: number }>>(`/favorites/count?userId=${userId}`),
 }
 
 // ----- Search API -----
@@ -431,6 +500,8 @@ const gigsApi = {
       searchParams.set('minPrice', String(params.minPrice))
     if (params?.maxPrice !== undefined)
       searchParams.set('maxPrice', String(params.maxPrice))
+    if (params?.rating !== undefined)
+      searchParams.set('rating', String(params.rating))
     if (params?.sortBy) searchParams.set('sort', params.sortBy)
     if (params?.page) searchParams.set('page', String(params.page))
     if (params?.limit) searchParams.set('limit', String(params.limit))

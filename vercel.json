@@ -1,0 +1,4 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "node scripts/switch-db.mjs && next build"
+}

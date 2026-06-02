@@ -21,6 +21,11 @@ import {
   Briefcase,
   CreditCard,
   MessageSquare,
+  Truck,
+  MapPin,
+  RotateCcw,
+  Rss,
+  Scale,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -48,6 +53,7 @@ import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { PLATFORM_NAME, USER_ROLE_LABELS } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import type { ViewMode } from '@/types'
+import { NotificationBell } from '@/components/marketplace/notifications/notification-bell'
 
 export function Header() {
   const {
@@ -219,21 +225,9 @@ export function Header() {
               </Button>
             )}
 
-            {/* Notifications */}
+            {/* Notifications Bell Dropdown */}
             {isAuthenticated && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-9 w-9 relative"
-                onClick={() => handleNavClick('notifications')}
-              >
-                <Bell className="h-4.5 w-4.5" />
-                {unreadNotifications > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] font-bold bg-red-500 text-white border-0">
-                    {unreadNotifications > 99 ? '99+' : unreadNotifications}
-                  </Badge>
-                )}
-              </Button>
+              <NotificationBell />
             )}
 
             {/* User Menu */}
@@ -314,7 +308,10 @@ export function Header() {
                         </Badge>
                       )}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleNavClick('orders')}>
+                    <DropdownMenuItem onClick={() => {
+                      const dashboard = (activeRole === 'seller' || currentUser?.role === 'seller') ? 'seller-dashboard' : 'buyer-dashboard'
+                      setCurrentView(dashboard as ViewMode, { tab: 'orders' })
+                    }}>
                       <Package className="mr-2 h-4 w-4" />
                       Orders
                     </DropdownMenuItem>
@@ -330,6 +327,30 @@ export function Header() {
                     >
                       <CreditCard className="mr-2 h-4 w-4" />
                       Payment Info
+                    </DropdownMenuItem>
+                    {(activeRole === 'seller' || currentUser?.role === 'seller' || currentUser?.role === 'both') && (
+                      <DropdownMenuItem onClick={() => setCurrentView('seller-dashboard', { tab: 'shipping' })}>
+                        <Truck className="mr-2 h-4 w-4" />
+                        Shipping Settings
+                      </DropdownMenuItem>
+                    )}
+                    {(activeRole === 'buyer' || currentUser?.role === 'buyer' || currentUser?.role === 'both') && (
+                      <DropdownMenuItem onClick={() => setCurrentView('buyer-dashboard', { tab: 'addresses' })}>
+                        <MapPin className="mr-2 h-4 w-4" />
+                        My Addresses
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem onClick={() => setCurrentView('returns')}>
+                      <RotateCcw className="mr-2 h-4 w-4" />
+                      My Returns
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setCurrentView('disputes')}>
+                      <Scale className="mr-2 h-4 w-4" />
+                      Dispute Center
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setCurrentView('activity-feed')}>
+                      <Rss className="mr-2 h-4 w-4" />
+                      Activity Feed
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
 
@@ -538,7 +559,10 @@ export function Header() {
                   <Button
                     variant="ghost"
                     className="w-full justify-start gap-3"
-                    onClick={() => handleNavClick('orders')}
+                    onClick={() => {
+                      const dashboard = (activeRole === 'seller' || currentUser?.role === 'seller') ? 'seller-dashboard' : 'buyer-dashboard'
+                      setCurrentView(dashboard as ViewMode, { tab: 'orders' })
+                    }}
                   >
                     <Package className="h-4.5 w-4.5" />
                     Orders
@@ -563,6 +587,54 @@ export function Header() {
                   >
                     <CreditCard className="h-4.5 w-4.5" />
                     Payment Info
+                  </Button>
+
+                  {(activeRole === 'seller' || currentUser?.role === 'seller' || currentUser?.role === 'both') && (
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start gap-3"
+                      onClick={() => setCurrentView('seller-dashboard', { tab: 'shipping' })}
+                    >
+                      <Truck className="h-4.5 w-4.5" />
+                      Shipping Settings
+                    </Button>
+                  )}
+                  {(activeRole === 'buyer' || currentUser?.role === 'buyer' || currentUser?.role === 'both') && (
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start gap-3"
+                      onClick={() => setCurrentView('buyer-dashboard', { tab: 'addresses' })}
+                    >
+                      <MapPin className="h-4.5 w-4.5" />
+                      My Addresses
+                    </Button>
+                  )}
+
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start gap-3"
+                    onClick={() => setCurrentView('returns')}
+                  >
+                    <RotateCcw className="h-4.5 w-4.5" />
+                    My Returns
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start gap-3"
+                    onClick={() => setCurrentView('disputes')}
+                  >
+                    <Scale className="h-4.5 w-4.5" />
+                    Dispute Center
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start gap-3"
+                    onClick={() => setCurrentView('activity-feed')}
+                  >
+                    <Rss className="h-4.5 w-4.5" />
+                    Activity Feed
                   </Button>
 
                   {currentUser?.isAdmin && (

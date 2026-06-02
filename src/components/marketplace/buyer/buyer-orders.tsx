@@ -15,6 +15,7 @@ import {
   Loader2,
   Lock,
   ShieldCheck,
+  RotateCcw,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -67,7 +68,7 @@ const ORDER_FILTERS: { value: string; label: string }[] = [
 ]
 
 export function BuyerOrders() {
-  const { currentUser } = useMarketplaceStore()
+  const { currentUser, setCurrentView } = useMarketplaceStore()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('all')
@@ -346,14 +347,17 @@ export function BuyerOrders() {
                             onClick={() => setSelectedOrder(order)}
                           >
                             <Eye className="mr-1.5 h-3.5 w-3.5" />
-                            View Detail
+                            Detail
                           </Button>
-                          {order.status === 'shipped' && order.trackingNo && (
-                            <Button variant="outline" size="sm">
-                              <Truck className="mr-1.5 h-3.5 w-3.5" />
-                              Track
-                            </Button>
-                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentView('order-tracking', { orderId: order.id })}
+                            className="gap-1.5 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 border-emerald-200"
+                          >
+                            <Truck className="h-3.5 w-3.5" />
+                            Track
+                          </Button>
                           {(order.status === 'pending' || order.status === 'processing') && (
                             <Button
                               variant="outline"
@@ -576,6 +580,34 @@ export function BuyerOrders() {
                     <span>No payment information available for this order</span>
                   </div>
                 </div>
+              )}
+
+              {/* Track Order Button */}
+              <Button
+                variant="outline"
+                className="w-full gap-2 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 border-emerald-200"
+                onClick={() => {
+                  setSelectedOrder(null)
+                  setCurrentView('order-tracking', { orderId: selectedOrder.id })
+                }}
+              >
+                <Truck className="h-4 w-4" />
+                Track Order
+              </Button>
+
+              {/* Request Return Button — available for delivered/shipped orders that aren't already refunded */}
+              {(selectedOrder.status === 'delivered' || selectedOrder.status === 'shipped') && selectedOrder.status !== 'refunded' && (
+                <Button
+                  variant="outline"
+                  className="w-full gap-2 text-amber-600 hover:bg-amber-50 hover:text-amber-700 border-amber-200"
+                  onClick={() => {
+                    setSelectedOrder(null)
+                    setCurrentView('returns', { orderId: selectedOrder.id, action: 'create' })
+                  }}
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  Request Return / Refund
+                </Button>
               )}
             </div>
           )}

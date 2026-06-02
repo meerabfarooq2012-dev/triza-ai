@@ -1,0 +1,528 @@
+// =============================================================================
+// PRODUCTION Prisma Schema — PostgreSQL (Supabase)
+// =============================================================================
+// This is the production schema for Supabase PostgreSQL.
+// When deploying to Vercel, replace prisma/schema.prisma with this file.
+//
+// Steps to switch to production:
+// 1. Copy this file to prisma/schema.prisma
+// 2. Update .env with Supabase connection strings (see .env comments)
+// 3. Run: npx prisma db push
+// 4. Run: npx prisma generate
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String
+  avatar        String?
+  bio           String?
+  role          String    @default("buyer") // buyer, seller, both
+  phone         String?
+  location      String?
+  isVerified    Boolean   @default(false)
+  isAdmin       Boolean   @default(false)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  shop          Shop?
+  buyerOrders   Order[]   @relation("BuyerOrders")
+  sellerOrders  Order[]   @relation("SellerOrders")
+  reviews       Review[]
+  notifications Notification[]
+  sentMessages  Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  conversationsAsP1 Conversation[] @relation("ConvParticipant1")
+  conversationsAsP2 Conversation[] @relation("ConvParticipant2")
+  disputes      Dispute[] @relation("DisputesByUser")
+  favorites     Favorite[]
+  socialLinks   SocialLink[]
+  wallet        Wallet?
+  payments      Payment[]  @relation("UserPayments")
+  sellerPayments Payment[] @relation("SellerPayments")
+  withdrawals   Withdrawal[] @relation("UserWithdrawals")
+  paymentInfo   PaymentInfo[]
+}
+
+model Shop {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  name            String
+  slug            String    @unique
+  description     String?
+  logo            String?
+  banner          String?
+  primaryColor    String    @default("#6366f1")
+  secondaryColor  String    @default("#8b5cf6")
+  accentColor     String    @default("#a78bfa")
+  layoutStyle     String    @default("grid") // grid, list, featured
+  displayStyle    String    @default("modern") // modern, classic, minimal
+  about           String?
+  contactEmail    String?
+  contactPhone    String?
+  address         String?
+  isApproved      Boolean   @default(true)
+  isActive        Boolean   @default(true)
+  totalSales      Int       @default(0)
+  totalReviews    Int       @default(0)
+  averageRating   Float     @default(0)
+  customSections  String    @default("[]") // JSON array of custom sections
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  products        Product[]
+  reviews         Review[]
+  socialLinks     SocialLink[]
+  gigs            Gig[]
+
+  @@index([slug])
+  @@index([userId])
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  icon        String?
+  description String?
+  parentId    String?
+  sortOrder   Int       @default(0)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  products    Product[]
+  gigs        Gig[]
+}
+
+model Product {
+  id            String    @id @default(cuid())
+  shopId        String
+  categoryId    String?
+  name          String
+  slug          String
+  description   String
+  shortDesc     String?
+  price         Float
+  comparePrice  Float?
+  type          String    @default("digital") // digital, physical, freelance
+  images        String    @default("[]") // JSON array of image URLs
+  fileUrl       String?   // For digital products
+  fileSize      String?
+  stock         Int       @default(-1) // -1 = unlimited for digital
+  sku           String?
+  tags          String    @default("[]") // JSON array
+  isFeatured    Boolean   @default(false)
+  isApproved    Boolean   @default(true)
+  isActive      Boolean   @default(true)
+  totalSales    Int       @default(0)
+  totalReviews  Int       @default(0)
+  averageRating Float     @default(0)
+  deliveryInfo       String?   // Shipping info for physical, or delivery timeline for freelance
+  deliveryCountries  String    @default("[]") // JSON array of country codes seller can deliver to
+  requirements       String?   // For freelance services - what buyer needs to provide
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  shop          Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  category      Category? @relation(fields: [categoryId], references: [id])
+  orderItems    OrderItem[]
+  reviews       Review[]
+  favorites     Favorite[]
+  conversations Conversation[]
+
+  @@unique([shopId, slug])
+  @@index([shopId])
+  @@index([type])
+  @@index([isFeatured])
+  @@index([categoryId])
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  buyerId       String
+  sellerId      String
+  status        String      @default("pending")
+  totalAmount   Float
+  platformFee   Float       @default(0)
+  paymentMethod String      @default("card")
+  paymentStatus String      @default("pending")
+  shippingName  String?
+  shippingAddr  String?
+  shippingCity  String?
+  shippingZip   String?
+  shippingPhone String?
+  notes         String?
+  trackingNo    String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  buyer         User        @relation("BuyerOrders", fields: [buyerId], references: [id])
+  seller        User        @relation("SellerOrders", fields: [sellerId], references: [id])
+  items         OrderItem[]
+  disputes      Dispute[]
+  payment       Payment?
+
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([status])
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  productId   String
+  quantity    Int      @default(1)
+  price       Float
+  type        String   @default("digital")
+  status      String   @default("pending")
+  createdAt   DateTime @default(now())
+
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product  @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  userId    String
+  shopId    String?
+  productId String?
+  gigId     String?
+  rating    Int
+  title     String?
+  comment   String
+  isVerified Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id])
+  shop      Shop?    @relation(fields: [shopId], references: [id])
+  product   Product? @relation(fields: [productId], references: [id])
+  gig       Gig?     @relation(fields: [gigId], references: [id])
+
+  @@index([shopId])
+  @@index([productId])
+  @@index([gigId])
+  @@index([userId])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String   @default("info")
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+}
+
+model Conversation {
+  id             String    @id @default(cuid())
+  participant1Id String
+  participant2Id String
+  productId      String?
+  gigId          String?
+  orderId        String?
+  lastMessageAt  DateTime  @default(now())
+  lastMessagePreview String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  participant1   User      @relation("ConvParticipant1", fields: [participant1Id], references: [id])
+  participant2   User      @relation("ConvParticipant2", fields: [participant2Id], references: [id])
+  product        Product?  @relation(fields: [productId], references: [id])
+  gig            Gig?      @relation(fields: [gigId], references: [id])
+  messages       Message[]
+
+  @@unique([participant1Id, participant2Id, productId, gigId])
+  @@index([participant1Id])
+  @@index([participant2Id])
+  @@index([lastMessageAt])
+  @@index([productId])
+  @@index([gigId])
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String?
+  senderId       String
+  receiverId     String
+  content        String
+  messageType    String   @default("text")
+  isRead         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  sender         User          @relation("SentMessages", fields: [senderId], references: [id])
+  receiver       User          @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  conversation   Conversation? @relation(fields: [conversationId], references: [id])
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([conversationId])
+  @@index([createdAt])
+}
+
+model Dispute {
+  id          String   @id @default(cuid())
+  orderId     String
+  userId      String
+  reason      String
+  description String
+  status      String   @default("open")
+  resolution  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  order       Order    @relation(fields: [orderId], references: [id])
+  user        User     @relation("DisputesByUser", fields: [userId], references: [id])
+
+  @@index([orderId])
+  @@index([status])
+}
+
+model SocialLink {
+  id        String   @id @default(cuid())
+  userId    String
+  shopId    String?
+  platform  String
+  url       String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shop      Shop?    @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([shopId])
+}
+
+model Gig {
+  id              String    @id @default(cuid())
+  shopId          String
+  categoryId      String?
+  title           String
+  slug            String
+  description     String
+  images          String    @default("[]")
+  tags            String    @default("[]")
+  packages        String    @default("[]")
+  faqs            String    @default("[]")
+  requirements    String?
+  isFeatured      Boolean   @default(false)
+  isApproved      Boolean   @default(true)
+  isActive        Boolean   @default(true)
+  totalOrders     Int       @default(0)
+  totalReviews    Int       @default(0)
+  averageRating   Float     @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  shop            Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  category        Category? @relation(fields: [categoryId], references: [id])
+  reviews         Review[]
+  conversations   Conversation[]
+
+  @@unique([shopId, slug])
+  @@index([shopId])
+  @@index([isFeatured])
+  @@index([categoryId])
+}
+
+model PlatformStats {
+  id            String   @id @default(cuid())
+  totalUsers    Int      @default(0)
+  totalSellers  Int      @default(0)
+  totalProducts Int      @default(0)
+  totalOrders   Int      @default(0)
+  totalRevenue  Float    @default(0)
+  updatedAt     DateTime @updatedAt
+}
+
+model Wallet {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  balance         Float    @default(0)
+  pendingBalance  Float    @default(0)
+  totalEarnings   Float    @default(0)
+  totalWithdrawn  Float    @default(0)
+  currency        String   @default("USD")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions    Transaction[]
+  withdrawals     Withdrawal[]
+
+  @@index([userId])
+}
+
+model Payment {
+  id              String   @id @default(cuid())
+  orderId         String   @unique
+  buyerId         String
+  sellerId        String
+  amount          Float
+  platformFee     Float    @default(0)
+  sellerPayout    Float    @default(0)
+  paymentMethod   String   @default("easypaisa")
+  paymentProvider String?
+  status          String   @default("pending")
+  escrowStatus    String   @default("held")
+  paidAt          DateTime?
+  releasedAt      DateTime?
+  failureReason   String?
+  metadata        String   @default("{}")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  order           Order    @relation(fields: [orderId], references: [id])
+  buyer           User     @relation("UserPayments", fields: [buyerId], references: [id])
+  seller          User     @relation("SellerPayments", fields: [sellerId], references: [id])
+  transactions    Transaction[]
+
+  @@index([orderId])
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([status])
+  @@index([escrowStatus])
+  @@index([paymentMethod])
+}
+
+model Transaction {
+  id              String   @id @default(cuid())
+  walletId        String
+  paymentId       String?
+  type            String
+  amount          Float
+  balance         Float
+  description     String
+  status          String   @default("completed")
+  referenceType   String?
+  referenceId     String?
+  metadata        String   @default("{}")
+  createdAt       DateTime @default(now())
+
+  wallet          Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  payment         Payment? @relation(fields: [paymentId], references: [id])
+
+  @@index([walletId])
+  @@index([paymentId])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Withdrawal {
+  id              String   @id @default(cuid())
+  walletId        String
+  userId          String
+  amount          Float
+  fee             Float    @default(0)
+  netAmount       Float
+  method          String
+  accountDetails  String
+  status          String   @default("pending")
+  adminNote       String?
+  processedAt     DateTime?
+  rejectedAt      DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  wallet          Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  user            User     @relation("UserWithdrawals", fields: [userId], references: [id])
+
+  @@index([walletId])
+  @@index([userId])
+  @@index([status])
+  @@index([method])
+  @@index([createdAt])
+}
+
+model PaymentInfo {
+  id              String   @id @default(cuid())
+  userId          String
+  type            String
+  method          String
+  label           String
+  accountDetails  String
+  isDefault       Boolean  @default(false)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([method])
+  @@index([isDefault])
+}
+
+model FeedbackThread {
+  id          String   @id @default(cuid())
+  userId      String?
+  sessionId   String   @unique
+  status      String   @default("open")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  messages    FeedbackMessage[]
+
+  @@index([userId])
+  @@index([sessionId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model FeedbackMessage {
+  id          String   @id @default(cuid())
+  threadId    String
+  senderType  String
+  content     String
+  messageType String   @default("text")
+  category    String?
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  thread      FeedbackThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([threadId])
+  @@index([senderType])
+  @@index([isRead])
+  @@index([createdAt])
+}

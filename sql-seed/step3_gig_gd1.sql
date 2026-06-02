@@ -1,0 +1,35 @@
+-- STEP 3: Gig Subcategories Part 1 - Graphic Design (first 30)
+-- Paste this in Supabase SQL Editor and click Run
+
+INSERT INTO "Category" ("id", "name", "slug", "icon", "description", "parentId", "sortOrder", "isActive", "createdAt") VALUES
+  ('cat-g001-s01', 'Logo Design', 'graphic-design--logo-design', NULL, NULL, 'cat-g001', 0, true, NOW()),
+  ('cat-g001-s02', 'Minimalist Logo Design', 'graphic-design--minimalist-logo-design', NULL, NULL, 'cat-g001', 1, true, NOW()),
+  ('cat-g001-s03', '3D Logo Design', 'graphic-design--3d-logo-design', NULL, NULL, 'cat-g001', 2, true, NOW()),
+  ('cat-g001-s04', 'Mascot Logo Design', 'graphic-design--mascot-logo-design', NULL, NULL, 'cat-g001', 3, true, NOW()),
+  ('cat-g001-s05', 'Signature Logo Design', 'graphic-design--signature-logo-design', NULL, NULL, 'cat-g001', 4, true, NOW()),
+  ('cat-g001-s06', 'Vintage Logo Design', 'graphic-design--vintage-logo-design', NULL, NULL, 'cat-g001', 5, true, NOW()),
+  ('cat-g001-s07', 'Gaming Logo Design', 'graphic-design--gaming-logo-design', NULL, NULL, 'cat-g001', 6, true, NOW()),
+  ('cat-g001-s08', 'Esports Logo Design', 'graphic-design--esports-logo-design', NULL, NULL, 'cat-g001', 7, true, NOW()),
+  ('cat-g001-s09', 'Brand Identity Design', 'graphic-design--brand-identity-design', NULL, NULL, 'cat-g001', 8, true, NOW()),
+  ('cat-g001-s10', 'Brand Guidelines', 'graphic-design--brand-guidelines', NULL, NULL, 'cat-g001', 9, true, NOW()),
+  ('cat-g001-s11', 'Social Media Post Design', 'graphic-design--social-media-post-design', NULL, NULL, 'cat-g001', 10, true, NOW()),
+  ('cat-g001-s12', 'Instagram Post Design', 'graphic-design--instagram-post-design', NULL, NULL, 'cat-g001', 11, true, NOW()),
+  ('cat-g001-s13', 'Facebook Cover Design', 'graphic-design--facebook-cover-design', NULL, NULL, 'cat-g001', 12, true, NOW()),
+  ('cat-g001-s14', 'YouTube Thumbnail Design', 'graphic-design--youtube-thumbnail-design', NULL, NULL, 'cat-g001', 13, true, NOW()),
+  ('cat-g001-s15', 'Twitch Banner Design', 'graphic-design--twitch-banner-design', NULL, NULL, 'cat-g001', 14, true, NOW()),
+  ('cat-g001-s16', 'LinkedIn Banner Design', 'graphic-design--linkedin-banner-design', NULL, NULL, 'cat-g001', 15, true, NOW()),
+  ('cat-g001-s17', 'Poster Design', 'graphic-design--poster-design', NULL, NULL, 'cat-g001', 16, true, NOW()),
+  ('cat-g001-s18', 'Flyer Design', 'graphic-design--flyer-design', NULL, NULL, 'cat-g001', 17, true, NOW()),
+  ('cat-g001-s19', 'Brochure Design', 'graphic-design--brochure-design', NULL, NULL, 'cat-g001', 18, true, NOW()),
+  ('cat-g001-s20', 'Menu Design', 'graphic-design--menu-design', NULL, NULL, 'cat-g001', 19, true, NOW()),
+  ('cat-g001-s21', 'Catalog Design', 'graphic-design--catalog-design', NULL, NULL, 'cat-g001', 20, true, NOW()),
+  ('cat-g001-s22', 'Magazine Design', 'graphic-design--magazine-design', NULL, NULL, 'cat-g001', 21, true, NOW()),
+  ('cat-g001-s23', 'Book Cover Design', 'graphic-design--book-cover-design', NULL, NULL, 'cat-g001', 22, true, NOW()),
+  ('cat-g001-s24', 'Ebook Cover Design', 'graphic-design--ebook-cover-design', NULL, NULL, 'cat-g001', 23, true, NOW()),
+  ('cat-g001-s25', 'Album Cover Design', 'graphic-design--album-cover-design', NULL, NULL, 'cat-g001', 24, true, NOW()),
+  ('cat-g001-s26', 'Podcast Cover Design', 'graphic-design--podcast-cover-design', NULL, NULL, 'cat-g001', 25, true, NOW()),
+  ('cat-g001-s27', 'Packaging Design', 'graphic-design--packaging-design', NULL, NULL, 'cat-g001', 26, true, NOW()),
+  ('cat-g001-s28', 'Label Design', 'graphic-design--label-design', NULL, NULL, 'cat-g001', 27, true, NOW()),
+  ('cat-g001-s29', 'Product Packaging Design', 'graphic-design--product-packaging-design', NULL, NULL, 'cat-g001', 28, true, NOW()),
+  ('cat-g001-s30', 'Mockup Design', 'graphic-design--mockup-design', NULL, NULL, 'cat-g001', 29, true, NOW());
+
