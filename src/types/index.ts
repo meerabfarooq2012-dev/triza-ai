@@ -1324,6 +1324,92 @@ export const TIER_CONFIG: Record<SellerTierLevel, {
   },
 }
 
+// ----- Coupon & Promo Code Types -----
+
+export type CouponType = 'percentage' | 'fixed' | 'free_shipping'
+export type CouponAppliesToType = 'all' | 'digital' | 'physical' | 'freelance'
+
+export interface Coupon {
+  id: string
+  shopId: string
+  code: string
+  description: string | null
+  type: CouponType
+  value: number
+  minOrderAmount: number
+  maxDiscount: number | null
+  usageLimit: number | null
+  usedCount: number
+  perUserLimit: number
+  startDate: string | null
+  endDate: string | null
+  appliesToType: CouponAppliesToType
+  productId: string | null
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+  shop?: { id: string; name: string; slug: string }
+  usages?: CouponUsage[]
+}
+
+export interface CouponUsage {
+  id: string
+  couponId: string
+  userId: string
+  orderId: string
+  discountAmount: number
+  createdAt: string
+}
+
+export interface CreateCouponInput {
+  code: string
+  description?: string
+  type: CouponType
+  value: number
+  minOrderAmount?: number
+  maxDiscount?: number
+  usageLimit?: number
+  perUserLimit?: number
+  startDate?: string
+  endDate?: string
+  appliesToType?: CouponAppliesToType
+  productId?: string
+  isActive?: boolean
+}
+
+export interface ApplyCouponInput {
+  code: string
+  shopId: string
+  cartTotal: number
+  items: {
+    productId: string
+    type: ProductType
+    price: number
+    quantity: number
+  }[]
+}
+
+export interface ApplyCouponResult {
+  valid: boolean
+  coupon?: Coupon
+  discountAmount: number
+  message: string
+  freeShipping?: boolean
+}
+
+export const COUPON_TYPE_LABELS: Record<CouponType, { label: string; description: string; icon: string }> = {
+  percentage: { label: 'Percentage Off', description: 'Discount by a percentage of the total', icon: 'Percent' },
+  fixed: { label: 'Fixed Amount Off', description: 'Discount a fixed amount from the total', icon: 'DollarSign' },
+  free_shipping: { label: 'Free Shipping', description: 'Waive the shipping cost', icon: 'Truck' },
+}
+
+export const COUPON_APPLIES_TO_LABELS: Record<CouponAppliesToType, string> = {
+  all: 'All Product Types',
+  digital: 'Digital Products Only',
+  physical: 'Physical Products Only',
+  freelance: 'Freelance Services Only',
+}
+
 export const DOCUMENT_TYPE_LABELS: Record<string, string> = {
   national_id: 'National ID Card',
   passport: 'Passport',

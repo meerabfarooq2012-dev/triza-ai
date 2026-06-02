@@ -19,6 +19,7 @@ import { ShippingSettings } from '@/components/marketplace/shipping/shipping-set
 import { ReturnsPage } from '@/components/marketplace/returns/returns-page'
 import { PaymentSettingsPage } from '@/components/marketplace/payment/payment-settings-page'
 import { SellerReviews } from './seller-reviews'
+import { SellerCoupons } from './seller-coupons'
 import { toast } from 'sonner'
 
 export function SellerDashboard() {
@@ -130,7 +131,7 @@ export function SellerDashboard() {
   const hasShop = !!(shopData || currentUser?.shop)
 
   // Support deep-linking to a specific tab via viewParams
-  const validTabs = ['overview', 'products', 'gigs', 'orders', 'wallet', 'payment-settings', 'shipping', 'messages', 'reviews', 'settings', 'analytics']
+  const validTabs = ['overview', 'products', 'gigs', 'orders', 'coupons', 'wallet', 'payment-settings', 'shipping', 'messages', 'reviews', 'settings', 'analytics']
   const activeTab = useMemo(() => {
     if (manualTab) return manualTab
     if (viewParams?.tab && validTabs.includes(viewParams.tab)) return viewParams.tab
@@ -253,6 +254,7 @@ export function SellerDashboard() {
                   <Settings className="h-3.5 w-3.5" />
                   Payment Info
                 </TabsTrigger>
+                <TabsTrigger value="coupons" className="gap-1">🎟️ Coupons</TabsTrigger>
                 <TabsTrigger value="messages">Messages</TabsTrigger>
                 <TabsTrigger value="shipping" className="gap-1">📦 Shipping</TabsTrigger>
                 <TabsTrigger value="returns" className="gap-1">🔄 Returns</TabsTrigger>
@@ -281,6 +283,9 @@ export function SellerDashboard() {
               {currentUser && (
                 <PaymentSettingsPage userId={currentUser.id} userRole={currentUser.role} />
               )}
+            </TabsContent>
+            <TabsContent value="coupons">
+              <SellerCoupons />
             </TabsContent>
             <TabsContent value="messages">
               <SellerMessages />

@@ -15,6 +15,9 @@ import {
   Building2,
   Mail,
   Star,
+  Ticket,
+  X,
+  Tag,
 } from 'lucide-react'
 import {
   Dialog,
@@ -34,7 +37,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { toast } from 'sonner'
 import { PLATFORM_FEE_PERCENT } from '@/lib/constants'
-import type { PaymentMethod, PaymentInfo, PaymentInfoAccountDetails } from '@/types'
+import type { PaymentMethod, PaymentInfo, PaymentInfoAccountDetails, Coupon, ApplyCouponResult } from '@/types'
 
 interface CheckoutModalProps {
   open: boolean
@@ -144,6 +147,12 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   const [wiseIban, setWiseIban] = useState('')
   const [savePaymentInfo, setSavePaymentInfo] = useState(true)
 
+  // Coupon state
+  const [couponCode, setCouponCode] = useState('')
+  const [appliedCoupon, setAppliedCoupon] = useState<{ coupon: Coupon; discountAmount: number; freeShipping: boolean } | null>(null)
+  const [couponLoading, setCouponLoading] = useState(false)
+  const [couponError, setCouponError] = useState('')
+
   // Saved payment methods
   const [savedPaymentMethods, setSavedPaymentMethods] = useState<PaymentInfo[]>([])
   const [selectedSavedMethodId, setSelectedSavedMethodId] = useState<string | null>(null)
@@ -202,8 +211,65 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   }
 
   const hasPhysicalItems = cart.some((item) => item.type === 'physical')
-  const platformFee = cartTotal * (PLATFORM_FEE_PERCENT / 100)
-  const sellerPayout = cartTotal - platformFee
+  const couponDiscount = appliedCoupon ? appliedCoupon.discountAmount : 0
+  const effectiveCartTotal = Math.max(0, (cartTotal ?? 0) - couponDiscount)
+  const platformFee = effectiveCartTotal * (PLATFORM_FEE_PERCENT / 100)
+  const sellerPayout = effectiveCartTotal - platformFee
+
+  // Apply coupon handler
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return
+    setCouponLoading(true)
+    setCouponError('')
+    try {
+      // Get the shopId from cart items
+      const shopId = cart[0]?.shopId
+      if (!shopId) {
+        setCouponError('No shop found in cart')
+        return
+      }
+      const res = await fetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: couponCode.trim().toUpperCase(),
+          shopId,
+          userId: currentUser?.id,
+          cartTotal: cartTotal ?? 0,
+          items: cart.map(item => ({
+            productId: item.productId,
+            type: item.type,
+            price: item.price,
+            quantity: item.quantity,
+          })),
+        }),
+      })
+      const data = await res.json()
+      if (data.success && data.data?.valid) {
+        setAppliedCoupon({
+          coupon: data.data.coupon,
+          discountAmount: data.data.discountAmount,
+          freeShipping: data.data.freeShipping || false,
+        })
+        toast.success(`Coupon applied! You save $${data.data.discountAmount.toFixed(2)}${data.data.freeShipping ? ' + Free Shipping' : ''}`)
+      } else {
+        setCouponError(data.data?.message || data.error || 'Invalid coupon code')
+        setAppliedCoupon(null)
+      }
+    } catch {
+      setCouponError('Failed to validate coupon')
+      setAppliedCoupon(null)
+    } finally {
+      setCouponLoading(false)
+    }
+  }
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null)
+    setCouponCode('')
+    setCouponError('')
+    toast.info('Coupon removed')
+  }
 
   const resetState = () => {
     setStep('summary')
@@ -238,6 +304,9 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
     setSavePaymentInfo(true)
     setSelectedSavedMethodId(null)
     setUseSavedMethod(false)
+    setCouponCode('')
+    setAppliedCoupon(null)
+    setCouponError('')
   }
 
   const handleOpenChange = (newOpen: boolean) => {
@@ -322,6 +391,8 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
           shippingPhone: shippingInfo.phone || undefined,
           shippingMethod: hasPhysicalItems ? shippingMethod : undefined,
           shippingCost: hasPhysicalItems ? shippingCost : undefined,
+          couponCode: appliedCoupon?.coupon.code || undefined,
+          discountAmount: appliedCoupon?.discountAmount || undefined,
         }),
       })
 
@@ -332,6 +403,24 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
 
       const createdOrderId = orderData.data?.id || orderData.data?.order?.id || ''
       setOrderId(createdOrderId)
+
+      // Redeem coupon after order is created
+      if (appliedCoupon && createdOrderId) {
+        try {
+          await fetch('/api/coupons/redeem', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              couponId: appliedCoupon.coupon.id,
+              userId: currentUser.id,
+              orderId: createdOrderId,
+              discountAmount: appliedCoupon.discountAmount,
+            }),
+          })
+        } catch {
+          // Non-critical - coupon redemption failure shouldn't block checkout
+        }
+      }
 
       // Find the sellerId from the cart items
       const sellerId = cart[0]?.shopId || ''
@@ -345,7 +434,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
           buyerId: currentUser.id,
           sellerId,
           paymentMethod,
-          amount: cartTotal,
+          amount: effectiveCartTotal,
         }),
       })
 
@@ -568,11 +657,93 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
 
               <Separator />
 
+              {/* Coupon Code Input */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center gap-1.5">
+                  <Ticket className="h-3.5 w-3.5" />
+                  Promo Code
+                </Label>
+                {appliedCoupon ? (
+                  <div className="flex items-center gap-2 rounded-lg border-2 border-emerald-200 bg-emerald-50 p-3">
+                    <Tag className="h-4 w-4 text-emerald-600 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-emerald-800 font-mono">
+                        {appliedCoupon.coupon.code}
+                      </p>
+                      <p className="text-xs text-emerald-600">
+                        {appliedCoupon.coupon.type === 'percentage'
+                          ? `${appliedCoupon.coupon.value}% off`
+                          : appliedCoupon.coupon.type === 'fixed'
+                            ? `$${appliedCoupon.coupon.value.toFixed(2)} off`
+                            : 'Free Shipping'}
+                        {appliedCoupon.freeShipping && appliedCoupon.coupon.type !== 'free_shipping' ? ' + Free Shipping' : ''}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-emerald-700">-${appliedCoupon.discountAmount.toFixed(2)}</p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleRemoveCoupon}
+                      className="h-7 w-7 p-0 text-emerald-600 hover:text-red-600 hover:bg-red-50"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Enter promo code"
+                      value={couponCode}
+                      onChange={(e) => {
+                        setCouponCode(e.target.value.toUpperCase())
+                        setCouponError('')
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleApplyCoupon()
+                      }}
+                      className="flex-1 font-mono uppercase"
+                      disabled={couponLoading}
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={handleApplyCoupon}
+                      disabled={couponLoading || !couponCode.trim()}
+                      className="shrink-0"
+                    >
+                      {couponLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        'Apply'
+                      )}
+                    </Button>
+                  </div>
+                )}
+                {couponError && (
+                  <p className="text-xs text-red-600 flex items-center gap-1">
+                    <X className="h-3 w-3" />
+                    {couponError}
+                  </p>
+                )}
+              </div>
+
+              <Separator />
+
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
                   <span>${(cartTotal ?? 0).toFixed(2)}</span>
                 </div>
+                {appliedCoupon && (
+                  <div className="flex justify-between text-sm text-emerald-600">
+                    <span className="flex items-center gap-1">
+                      <Tag className="h-3 w-3" />
+                      Coupon ({appliedCoupon.coupon.code})
+                    </span>
+                    <span>-${appliedCoupon.discountAmount.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Platform Fee (10%)</span>
                   <span>${(platformFee ?? 0).toFixed(2)}</span>
@@ -584,7 +755,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 <Separator />
                 <div className="flex justify-between font-bold text-lg">
                   <span>Total</span>
-                  <span>${(cartTotal ?? 0).toFixed(2)}</span>
+                  <span>${effectiveCartTotal.toFixed(2)}</span>
                 </div>
               </div>
 

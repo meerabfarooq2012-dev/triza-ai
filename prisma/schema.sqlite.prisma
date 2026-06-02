@@ -98,6 +98,7 @@ model Shop {
   verificationDocs SellerVerification[]
   sellerBadges     SellerBadge[]
   sellerTier        SellerTier?
+  coupons          Coupon[]
 
   @@index([slug])
   @@index([userId])
@@ -1040,6 +1041,59 @@ model SellerTier {
   @@index([userId])
   @@index([tier])
   @@index([calculatedAt])
+}
+
+// =============================================================================
+// COUPON & PROMO CODE MODELS
+// =============================================================================
+
+model Coupon {
+  id              String    @id @default(cuid())
+  shopId          String    // Shop that created the coupon
+  code            String    // The coupon code (e.g., "SAVE20", "FREESHIP")
+  description     String?   // Internal description for seller
+  type            String    // percentage, fixed, free_shipping
+  value           Float     // Discount value (e.g., 20 for 20% or 5.00 for $5 off)
+  minOrderAmount  Float     @default(0) // Minimum order total to apply coupon
+  maxDiscount     Float?    // Maximum discount amount (for percentage coupons)
+  usageLimit      Int?      // Total times coupon can be used (null = unlimited)
+  usedCount       Int       @default(0) // Times coupon has been used
+  perUserLimit    Int       @default(1) // Times each user can use this coupon
+  startDate       DateTime? // When coupon becomes active (null = immediately)
+  endDate         DateTime? // When coupon expires (null = never)
+  appliesToType   String    @default("all") // all, digital, physical, freelance
+  productId       String?   // Specific product ID (null = all products in shop)
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  shop            Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  usages          CouponUsage[]
+
+  @@unique([shopId, code])
+  @@index([shopId])
+  @@index([code])
+  @@index([isActive])
+  @@index([startDate])
+  @@index([endDate])
+  @@index([createdAt])
+}
+
+model CouponUsage {
+  id          String   @id @default(cuid())
+  couponId    String
+  userId      String   // Buyer who used the coupon
+  orderId     String   // Order it was applied to
+  discountAmount Float  // Actual discount applied
+  createdAt   DateTime @default(now())
+
+  coupon      Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+
+  @@unique([couponId, userId, orderId])
+  @@index([couponId])
+  @@index([userId])
+  @@index([orderId])
+  @@index([createdAt])
 }
 
 
