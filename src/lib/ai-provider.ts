@@ -3,14 +3,13 @@
  *
  * Priority order:
  * 1. Cohere (production - works in Pakistan, free tier)
- * 2. Google Gemini (production - if API key is set and enabled)
+ * 2. Google Gemini (production - if API key is set and package available)
  * 3. Z-AI SDK (development/sandbox only)
  *
  * Falls back to next provider if the primary one fails.
  */
 
 import ZAI from 'z-ai-web-dev-sdk'
-import { GoogleGenerativeAI } from '@google/generative-ai'
 
 // ──────────────────────────────────────────────
 // Cohere Provider (Production - Primary)
@@ -143,15 +142,36 @@ async function generateWithZAI(systemPrompt: string, userPrompt: string): Promis
 
 // ──────────────────────────────────────────────
 // Gemini Provider (Production - Secondary)
+// Uses dynamic import so build doesn't fail if @google/generative-ai is not installed
 // ──────────────────────────────────────────────
 
-let geminiAI: GoogleGenerativeAI | null = null
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let GoogleGenerativeAIClass: any = null
+let geminiLoadAttempted = false
 
-function getGeminiAI(): GoogleGenerativeAI {
+async function getGoogleGenerativeAI(): Promise<typeof GoogleGenerativeAIClass | null> {
+  if (geminiLoadAttempted) return GoogleGenerativeAIClass
+  geminiLoadAttempted = true
+  try {
+    const mod = await import('@google/generative-ai')
+    GoogleGenerativeAIClass = mod.GoogleGenerativeAI
+    return GoogleGenerativeAIClass
+  } catch {
+    console.warn('[AI Provider] @google/generative-ai not available — Gemini provider disabled')
+    return null
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let geminiAI: any = null
+
+async function getGeminiAI() {
+  const GenAI = await getGoogleGenerativeAI()
+  if (!GenAI) return null
   if (!geminiAI) {
     const key = process.env.GEMINI_API_KEY
-    if (!key) throw new Error('GEMINI_API_KEY is not set')
-    geminiAI = new GoogleGenerativeAI(key)
+    if (!key) return null
+    geminiAI = new GenAI(key)
   }
   return geminiAI
 }
@@ -160,7 +180,10 @@ async function chatWithGemini(
   systemPrompt: string,
   messages: { role: 'user' | 'assistant'; content: string }[]
 ): Promise<string> {
-  const model = getGeminiAI().getGenerativeModel({ model: 'gemini-2.0-flash' })
+  const ai = await getGeminiAI()
+  if (!ai) throw new Error('Gemini is not available')
+
+  const model = ai.getGenerativeModel({ model: 'gemini-2.0-flash' })
 
   const history: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [
     {
@@ -193,7 +216,10 @@ async function chatWithGemini(
 }
 
 async function generateWithGemini(systemPrompt: string, userPrompt: string): Promise<string> {
-  const model = getGeminiAI().getGenerativeModel({ model: 'gemini-2.0-flash' })
+  const ai = await getGeminiAI()
+  if (!ai) throw new Error('Gemini is not available')
+
+  const model = ai.getGenerativeModel({ model: 'gemini-2.0-flash' })
   const fullPrompt = `${systemPrompt}\n\n${userPrompt}`
   const result = await model.generateContent({
     contents: [{ role: 'user', parts: [{ text: fullPrompt }] }],

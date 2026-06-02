@@ -1,34 +1,53 @@
-import { GoogleGenerativeAI } from '@google/generative-ai'
-
 /**
- * Singleton instance of the Google Generative AI client.
- * Lazily initialized so the env variable is read at runtime, not import time.
+ * Google Gemini AI Client — optional dependency
+ *
+ * Uses dynamic import so the build doesn't fail if @google/generative-ai
+ * is not installed.  The module is loaded lazily on first use.
  */
-let generativeAI: GoogleGenerativeAI | null = null
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let GoogleGenerativeAIClass: any = null
+let loadAttempted = false
+
+async function loadGeminiSDK() {
+  if (loadAttempted) return GoogleGenerativeAIClass
+  loadAttempted = true
+  try {
+    const mod = await import('@google/generative-ai')
+    GoogleGenerativeAIClass = mod.GoogleGenerativeAI
+    return GoogleGenerativeAIClass
+  } catch {
+    console.warn('[Gemini] @google/generative-ai not installed — Gemini provider disabled')
+    return null
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let generativeAI: any = null
 
 /**
  * Returns a singleton GoogleGenerativeAI instance.
- * Throws a clear error if the API key is missing.
+ * Returns null if the SDK is not installed or the API key is missing.
  */
-function getGenerativeAI(): GoogleGenerativeAI {
+async function getGenerativeAI() {
+  const GenAI = await loadGeminiSDK()
+  if (!GenAI) return null
   if (!generativeAI) {
     const key = process.env.GEMINI_API_KEY
-    if (!key) {
-      throw new Error(
-        'GEMINI_API_KEY is not set. Please add it to your environment variables.'
-      )
-    }
-    generativeAI = new GoogleGenerativeAI(key)
+    if (!key) return null
+    generativeAI = new GenAI(key)
   }
   return generativeAI
 }
 
 /**
  * Returns a singleton generative model instance configured with gemini-2.0-flash.
- * Use this when you need direct access to the model.
+ * Returns null if Gemini is not available.
  */
-export function getGeminiModel() {
-  return getGenerativeAI().getGenerativeModel({ model: 'gemini-2.0-flash' })
+export async function getGeminiModel() {
+  const ai = await getGenerativeAI()
+  if (!ai) return null
+  return ai.getGenerativeModel({ model: 'gemini-2.0-flash' })
 }
 
 interface GenerateTextOptions {
@@ -51,7 +70,8 @@ export async function chatWithGemini(
   messages: { role: 'user' | 'assistant'; content: string }[]
 ): Promise<string> {
   try {
-    const model = getGeminiModel()
+    const model = await getGeminiModel()
+    if (!model) return "AI service is not available right now."
 
     // Build the history in the format the SDK expects. The system prompt is
     // injected as the first user turn with an immediate model acknowledgement.
@@ -113,7 +133,8 @@ export async function generateText(
   promptOrOptions: string | GenerateTextOptions
 ): Promise<string> {
   try {
-    const model = getGeminiModel()
+    const model = await getGeminiModel()
+    if (!model) throw new Error('AI service is not available.')
 
     if (typeof promptOrOptions === 'string') {
       // Simple usage: generateText("Write a product description for...")
