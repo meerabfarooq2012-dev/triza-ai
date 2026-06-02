@@ -1367,3 +1367,72 @@ Stage Summary:
 - Vercel deployment is AUTOMATIC - every push to main triggers auto-deploy
 - User needs to connect repo via Vercel dashboard (one-time setup)
 - Environment variables needed: DATABASE_URL and DIRECT_URL for Supabase PostgreSQL
+
+---
+Task ID: 11-store
+Agent: Store Agent
+Task: Add language state to the Zustand marketplace store
+
+Work Log:
+- Read existing store at `/home/z/my-project/src/store/use-marketplace-store.ts`
+- Added `language: 'en' | 'ur' | 'ar'` to `MarketplaceState` interface (line 46)
+- Added `setLanguage: (locale: 'en' | 'ur' | 'ar') => void` action to interface (line 88)
+- Added `language: 'en' as 'en' | 'ur' | 'ar',` state value in store (line 138)
+- Added `setLanguage: (locale) => set({ language: locale }),` action (line 312)
+- Added `language: state.language,` to `partialize` config so it persists in localStorage (line 325)
+- Added language validation guard in `merge` function: `if (!p.language || !['en', 'ur', 'ar'].includes(p.language as string)) { p.language = 'en' }` (lines 350-353)
+- Kept `language` out of `logout` action so user preference persists across sessions
+- Added `language: 'en',` to `onRehydrateStorage` error handler reset state (line 395)
+- ESLint passes with zero errors on the store file
+
+Stage Summary:
+- Language state (`'en' | 'ur' | 'ar'`) added to Zustand store with default `'en'`
+- `setLanguage` action added for changing language
+- Language persists in localStorage via `partialize`
+- Language validated on rehydration via `merge` guard
+- Language NOT reset on logout (user preference persists)
+- Language reset to `'en'` on rehydration error
+
+---
+Task ID: 11-core
+Agent: i18n Core Builder
+Task: Implement Multi-Language / i18n system core for Marketo
+
+Work Log:
+- Read worklog to understand previous agents' work and project structure
+- Examined existing marketplace store (use-marketplace-store.ts) — found it already had partial language state from a previous agent, but with duplicate declarations and hardcoded types
+- Created `src/lib/i18n/locales/en.json` — English translations with 120 keys across 7 categories (common, nav, auth, product, landing, dashboard, language)
+- Created `src/lib/i18n/locales/ur.json` — Urdu translations in proper Urdu script (not Roman Urdu), covering all 120 keys with natural Pakistani Urdu phrasing
+- Created `src/lib/i18n/locales/ar.json` — Arabic translations in proper Arabic script, covering all 120 keys with natural Modern Standard Arabic phrasing
+- Created `src/lib/i18n/index.ts` — i18n engine with:
+  - Locale type ('en' | 'ur' | 'ar')
+  - RTL_LOCALES array for RTL detection
+  - LOCALE_CONFIG with label, nativeLabel, direction, and flag for each locale
+  - `t()` function with deep key access (e.g., "common.home"), English fallback, and parameter interpolation
+  - `isRTL()` and `getDirection()` helper functions
+- Created `src/hooks/use-language.ts` — React hook with:
+  - Zustand store integration via useMarketplaceStore
+  - `locale`, `rtl`, `direction` computed state
+  - `translate()` function (memoized with useCallback)
+  - `setLocale()` function that updates store + HTML dir/lang attributes
+  - `useEffect` to sync HTML dir/lang attributes on locale change
+  - Returns `localeConfig` and `allLocales` for UI rendering
+- Updated `src/store/use-marketplace-store.ts`:
+  - Fixed duplicate `language` state declarations (was declared twice: once as `Locale` type, once as hardcoded union)
+  - Fixed duplicate `setLanguage` action type (was using hardcoded union instead of `Locale` type)
+  - Changed `language: 'en' as 'en' | 'ur' | 'ar'` to `language: 'en' as Locale` for consistency
+  - Language is already persisted in `partialize` config and validated in `merge` function
+  - Language is preserved on logout (not cleared)
+- Verified all 3 locale files have matching keys (120 keys each, 0 missing, 0 extra)
+- Tested i18n engine: translations work correctly for all 3 locales, fallback works for missing keys, parameter interpolation works
+- Dev server running correctly (GET / 200)
+- Pre-existing lint errors in gig-detail.tsx and product-detail.tsx are NOT related to i18n changes
+
+Stage Summary:
+- Complete i18n system core with 3 locale files (en, ur, ar)
+- Urdu uses proper Urdu script (not Roman Urdu), Arabic uses proper Arabic script
+- Both RTL languages (ur, ar) properly configured with RTL direction
+- i18n engine supports deep key access, English fallback, and parameter interpolation
+- useLanguage hook integrates with Zustand store and manages HTML dir/lang attributes
+- Store properly persists and validates language preference
+- All 5 required files created: en.json, ur.json, ar.json, index.ts, use-language.ts

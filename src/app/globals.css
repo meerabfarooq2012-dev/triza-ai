@@ -120,3 +120,78 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* =============================================================================
+   RTL Support for Urdu & Arabic
+   ============================================================================= */
+
+/* RTL: Flip directional utilities */
+[dir="rtl"] .rtl\:flex-row-reverse {
+  flex-direction: row-reverse;
+}
+
+/* RTL: Fix text alignment */
+[dir="rtl"] .rtl\:text-right {
+  text-align: right;
+}
+
+[dir="rtl"] .rtl\:text-left {
+  text-align: left;
+}
+
+/* RTL: Flip margin/padding for icon+text combos */
+[dir="rtl"] .rtl\:mr-0 {
+  margin-right: 0;
+}
+
+[dir="rtl"] .rtl\:ml-1\.5 {
+  margin-left: 0.375rem;
+  margin-right: 0;
+}
+
+/* RTL: Fix search icon position */
+[dir="rtl"] input[type="text"],
+[dir="rtl"] input[type="search"] {
+  text-align: right;
+}
+
+/* RTL: Fix dropdown alignment */
+[dir="rtl"] [data-radix-popper-content-wrapper] {
+  direction: rtl;
+}
+
+/* RTL: Smooth transition when switching direction */
+html {
+  transition: direction 0s;
+}
+
+/* RTL: Fix navigation link icon spacing */
+[dir="rtl"] .rtl\:icon-flip {
+  transform: scaleX(-1);
+}
+
+/* RTL: Fix absolute positioned elements (like cart badges) */
+[dir="rtl"] .rtl\:left-3 {
+  left: auto;
+  right: 0.75rem;
+}
+
+[dir="rtl"] .rtl\:right-3 {
+  right: auto;
+  left: 0.75rem;
+}
+
+/* RTL: Scrollbar for RTL content */
+[dir="rtl"] .overflow-y-auto,
+[dir="rtl"] .overflow-auto {
+  direction: rtl;
+}
+
+/* RTL: Fix border radius for directional elements */
+[dir="rtl"] .rtl\:rounded-l-lg {
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+[dir="rtl"] .rtl\:rounded-r-lg {
+  border-radius: 0.5rem 0 0 0.5rem;
+}
