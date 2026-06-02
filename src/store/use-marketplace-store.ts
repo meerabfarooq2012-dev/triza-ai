@@ -315,6 +315,11 @@ export const useMarketplaceStore = create<MarketplaceState>()(
       // This prevents "forEach is not a function" crashes when localStorage
       // has corrupted data (e.g. an array field stored as null/object).
       merge: (persistedState, currentState) => {
+        // Guard against undefined/null persistedState (first visit, cleared localStorage, etc.)
+        if (!persistedState || typeof persistedState !== 'object') {
+          return currentState
+        }
+
         const p = persistedState as Record<string, unknown>
 
         // Ensure array fields are actually arrays
