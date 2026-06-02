@@ -253,30 +253,48 @@ const reviewsApi = {
     )
   },
 
-  getShopReviews: (shopSlug: string, params?: { page?: number; limit?: number }) => {
+  getShopReviews: (shopSlug: string, params?: { page?: number; limit?: number; sort?: string }) => {
     const searchParams = new URLSearchParams()
     if (params?.page) searchParams.set('page', String(params.page))
     if (params?.limit) searchParams.set('limit', String(params.limit))
+    if (params?.sort) searchParams.set('sort', params.sort)
     const qs = searchParams.toString()
     return request<ApiResponse<PaginatedResponse<Review>>>(
       `/reviews/shop/${shopSlug}${qs ? `?${qs}` : ''}`
     )
   },
 
-  markHelpful: (id: string) =>
-    request<ApiResponse<Review>>(`/reviews/${id}/helpful`, { method: 'POST' }),
+  markHelpful: (id: string, userId: string) =>
+    request<ApiResponse<Review & { userHasVoted?: boolean }>>(`/reviews/${id}/helpful`, {
+      method: 'POST',
+      body: JSON.stringify({ userId }),
+    }),
 
-  sellerReply: (id: string, reply: string) =>
+  sellerReply: (id: string, reply: string, userId: string) =>
     request<ApiResponse<Review>>(`/reviews/${id}/reply`, {
       method: 'POST',
-      body: JSON.stringify({ reply }),
+      body: JSON.stringify({ reply, userId }),
     }),
 
   deleteReview: (id: string, userId?: string) =>
-    request<ApiResponse>(`/reviews/${id}`, {
-      method: 'DELETE',
-      body: userId ? JSON.stringify({ userId }) : undefined,
+    request<ApiResponse>(`/reviews/${id}${userId ? `?userId=${userId}` : ''}`, { method: 'DELETE' }),
+
+  updateReview: (id: string, data: { rating?: number; title?: string; comment?: string; images?: string[]; userId?: string }) =>
+    request<ApiResponse<Review>>(`/reviews/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
     }),
+
+  getGigReviews: (gigId: string, params?: { page?: number; limit?: number; sort?: string }) => {
+    const searchParams = new URLSearchParams()
+    if (params?.page) searchParams.set('page', String(params.page))
+    if (params?.limit) searchParams.set('limit', String(params.limit))
+    if (params?.sort) searchParams.set('sort', params.sort)
+    const qs = searchParams.toString()
+    return request<ApiResponse<PaginatedResponse<Review>>>(
+      `/reviews/gig/${gigId}${qs ? `?${qs}` : ''}`
+    )
+  },
 }
 
 // ----- Notifications API -----

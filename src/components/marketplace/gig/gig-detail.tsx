@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Star,
   ShoppingCart,
   ChevronLeft,
   ChevronRight,
@@ -25,7 +24,6 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Textarea } from '@/components/ui/textarea'
 import {
   Accordion,
   AccordionContent,
@@ -36,7 +34,8 @@ import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { api } from '@/lib/api'
 import { PLATFORM_NAME } from '@/lib/constants'
 import { RatingStars } from '@/components/marketplace/shared/rating-stars'
-import type { Gig, GigPackage, GigFAQ, Review, CartItem } from '@/types'
+import { ReviewSection } from '@/components/marketplace/shared/review-section'
+import type { Gig, GigPackage, GigFAQ, CartItem } from '@/types'
 
 // =============================================================================
 // Helpers
@@ -50,38 +49,6 @@ function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
   } catch {
     return fallback
   }
-}
-
-function InteractiveStarRating({
-  rating,
-  size = 20,
-  onChange,
-}: {
-  rating: number
-  size?: number
-  onChange?: (rating: number) => void
-}) {
-  const [hovered, setHovered] = useState(0)
-  const interactive = !!onChange
-
-  return (
-    <div className="flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <Star
-          key={i}
-          size={size}
-          className={`${interactive ? 'cursor-pointer' : ''} ${
-            i <= (hovered || Math.round(rating))
-              ? 'fill-amber-400 text-amber-400'
-              : 'text-gray-300'
-          } transition-colors`}
-          onClick={() => interactive && onChange?.(i)}
-          onMouseEnter={() => interactive && setHovered(i)}
-          onMouseLeave={() => interactive && setHovered(0)}
-        />
-      ))}
-    </div>
-  )
 }
 
 // =============================================================================
@@ -209,16 +176,10 @@ export default function GigDetail() {
   const gigId = viewParams.gigId
 
   const [gig, setGig] = useState<Gig | null>(null)
-  const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState(0)
   const [selectedPackageIndex, setSelectedPackageIndex] = useState(1) // default to Standard
   const [openFAQs, setOpenFAQs] = useState<Set<string>>(new Set())
-
-  // Review form state
-  const [reviewRating, setReviewRating] = useState(5)
-  const [reviewComment, setReviewComment] = useState('')
-  const [submittingReview, setSubmittingReview] = useState(false)
 
   const isInCart = cart.some((item) => item.productId === gigId)
 
@@ -231,7 +192,6 @@ export default function GigDetail() {
         const data = res.data
         if (data) {
           setGig(data as Gig)
-          setReviews((data as Gig).reviews || [])
         }
       })
       .catch(() => setGig(null))
@@ -259,31 +219,6 @@ export default function GigDetail() {
       shopName: gig.shop?.name || 'Unknown Shop',
     }
     addToCart(cartItem)
-  }
-
-  const handleSubmitReview = async () => {
-    if (!gig || !reviewComment.trim() || !currentUser) return
-    setSubmittingReview(true)
-    try {
-      await fetch('/api/reviews', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: currentUser.id,
-          gigId: gig.id,
-          shopId: gig.shopId,
-          rating: reviewRating,
-          comment: reviewComment,
-        }),
-      })
-      setReviewComment('')
-      setReviewRating(5)
-      fetchGig()
-    } catch {
-      // silent fail
-    } finally {
-      setSubmittingReview(false)
-    }
   }
 
   const handleVisitShop = () => {
@@ -361,15 +296,6 @@ export default function GigDetail() {
   // Default selected package to "Standard" (middle) if index is out of range
   const effectivePackageIndex = packages.length > selectedPackageIndex ? selectedPackageIndex : 0
   const selectedPkg = packages[effectivePackageIndex]
-
-  // Calculate review distribution
-  const ratingDistribution = [5, 4, 3, 2, 1].map((star) => ({
-    star,
-    count: reviews.filter((r) => Math.round(r.rating) === star).length,
-    percentage: reviews.length
-      ? (reviews.filter((r) => Math.round(r.rating) === star).length / reviews.length) * 100
-      : 0,
-  }))
 
   // ---------------------------------------------------------------------------
   // Render
@@ -684,134 +610,11 @@ export default function GigDetail() {
             <h2 className="text-xl font-bold mb-4">
               Reviews ({gig.totalReviews})
             </h2>
-            <div className="grid lg:grid-cols-3 gap-8">
-              {/* Rating summary */}
-              <Card className="p-6 border-0 shadow-sm h-fit">
-                <h3 className="font-bold text-lg mb-4">Rating Summary</h3>
-                <div className="text-center mb-4">
-                  <div className="text-4xl font-bold">
-                    {(gig.averageRating ?? 0).toFixed(1)}
-                  </div>
-                  <RatingStars rating={gig.averageRating} size="lg" />
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Based on {gig.totalReviews} review{gig.totalReviews !== 1 ? 's' : ''}
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  {ratingDistribution.map(({ star, count, percentage }) => (
-                    <div key={star} className="flex items-center gap-2 text-sm">
-                      <span className="w-3">{star}</span>
-                      <Star size={12} className="fill-amber-400 text-amber-400" />
-                      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-amber-400 rounded-full transition-all"
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
-                      <span className="w-8 text-right text-muted-foreground">
-                        {count}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-
-              {/* Reviews list */}
-              <div className="lg:col-span-2 space-y-4">
-                {/* Write review form */}
-                {currentUser && (
-                  <Card className="p-6 border-0 shadow-sm">
-                    <h3 className="font-bold mb-4">Write a Review</h3>
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">Your Rating:</span>
-                        <InteractiveStarRating
-                          rating={reviewRating}
-                          size={24}
-                          onChange={setReviewRating}
-                        />
-                      </div>
-                      <Textarea
-                        placeholder="Share your experience with this service..."
-                        value={reviewComment}
-                        onChange={(e) => setReviewComment(e.target.value)}
-                        rows={3}
-                      />
-                      <Button
-                        onClick={handleSubmitReview}
-                        disabled={!reviewComment.trim() || submittingReview}
-                        size="sm"
-                        className="bg-emerald-500 hover:bg-emerald-600 text-white"
-                      >
-                        {submittingReview ? 'Submitting...' : 'Submit Review'}
-                      </Button>
-                    </div>
-                  </Card>
-                )}
-
-                {/* Reviews */}
-                {reviews.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Star
-                      size={48}
-                      className="mx-auto text-muted-foreground mb-4"
-                    />
-                    <h3 className="text-lg font-semibold mb-1">No Reviews Yet</h3>
-                    <p className="text-muted-foreground">
-                      Be the first to review this service!
-                    </p>
-                  </div>
-                ) : (
-                  <div className="max-h-96 overflow-y-auto space-y-4 pr-1 scrollbar-thin">
-                    {reviews.map((review) => (
-                      <Card key={review.id} className="p-4 border-0 shadow-sm">
-                        <div className="flex items-start gap-3">
-                          <Avatar className="w-10 h-10">
-                            {review.user?.avatar ? (
-                              <AvatarImage src={review.user.avatar} alt={review.user?.name || ''} />
-                            ) : (
-                              <AvatarFallback>
-                                {(review.user as { name?: string })?.name?.[0] || 'U'}
-                              </AvatarFallback>
-                            )}
-                          </Avatar>
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium text-sm">
-                                  {(review.user as { name?: string })?.name || 'Anonymous'}
-                                </span>
-                                {review.isVerified && (
-                                  <Badge
-                                    variant="secondary"
-                                    className="text-xs gap-1"
-                                  >
-                                    <CheckCircle size={10} />
-                                    Verified
-                                  </Badge>
-                                )}
-                              </div>
-                              <span className="text-xs text-muted-foreground">
-                                {new Date(review.createdAt).toLocaleDateString()}
-                              </span>
-                            </div>
-                            <RatingStars rating={review.rating} size="sm" />
-                            {review.title && (
-                              <p className="font-medium text-sm mt-1">
-                                {review.title}
-                              </p>
-                            )}
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {review.comment}
-                            </p>
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
+            <ReviewSection
+              gigId={gig.id}
+              currentUserId={currentUser?.id}
+              shopOwnerId={gig.shop?.userId}
+            />
           </div>
         </div>
 

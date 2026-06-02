@@ -8,13 +8,18 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const productId = searchParams.get('productId') || '';
     const shopId = searchParams.get('shopId') || '';
+    const gigId = searchParams.get('gigId') || '';
+    const sort = searchParams.get('sort') || 'newest';
+    const ratingFilter = searchParams.get('rating');
+    const hasImages = searchParams.get('hasImages');
+    const userId = searchParams.get('userId') || '';
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '20', 10);
     const skip = (page - 1) * limit;
 
-    if (!productId && !shopId) {
+    if (!productId && !shopId && !gigId) {
       return NextResponse.json(
-        { success: false, error: 'productId or shopId is required' },
+        { success: false, error: 'productId, shopId, or gigId is required' },
         { status: 400 }
       );
     }
@@ -22,23 +27,72 @@ export async function GET(request: NextRequest) {
     const where: Prisma.ReviewWhereInput = {};
     if (productId) where.productId = productId;
     if (shopId) where.shopId = shopId;
+    if (gigId) where.gigId = gigId;
+
+    // Rating filter
+    if (ratingFilter) {
+      const ratingVal = parseInt(ratingFilter, 10);
+      if (ratingVal >= 1 && ratingVal <= 5) {
+        where.rating = ratingVal;
+      }
+    }
+
+    // Has images filter
+    if (hasImages === 'true') {
+      where.images = { not: '[]' };
+    }
+
+    // Build sort order
+    let orderBy: Prisma.ReviewOrderByWithRelationInput = { createdAt: 'desc' };
+    switch (sort) {
+      case 'newest':
+        orderBy = { createdAt: 'desc' };
+        break;
+      case 'highest':
+        orderBy = { rating: 'desc' };
+        break;
+      case 'lowest':
+        orderBy = { rating: 'asc' };
+        break;
+      case 'helpful':
+        orderBy = { helpfulCount: 'desc' };
+        break;
+    }
 
     const [reviews, total] = await Promise.all([
       db.review.findMany({
         where,
         include: {
           user: { select: { id: true, name: true, avatar: true } },
+          helpfulVotes: userId ? { where: { userId }, select: { id: true } } : false,
+          _count: { select: { helpfulVotes: true } },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         skip,
         take: limit,
       }),
       db.review.count({ where }),
     ]);
 
-    // Calculate rating summary
+    // Transform reviews to include parsed images and computed fields
+    const transformedReviews = reviews.map((review) => {
+      const { _count, helpfulVotes, ...rest } = review;
+      const images = JSON.parse(rest.images || '[]') as string[];
+      return {
+        ...rest,
+        images,
+        helpfulCount: rest.helpfulCount ?? _count?.helpfulVotes ?? 0,
+        userHasVoted: userId ? (helpfulVotes as unknown as { id: string }[])?.length > 0 : false,
+      };
+    });
+
+    // Calculate rating summary (use same where but without image/rating filters for accurate distribution)
+    const summaryWhere: Prisma.ReviewWhereInput = {};
+    if (productId) summaryWhere.productId = productId;
+    if (shopId) summaryWhere.shopId = shopId;
+    if (gigId) summaryWhere.gigId = gigId;
     const allReviews = await db.review.findMany({
-      where,
+      where: summaryWhere,
       select: { rating: true },
     });
     const ratingSummary = {
@@ -46,16 +100,22 @@ export async function GET(request: NextRequest) {
         ? Math.round((allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length) * 10) / 10
         : 0,
       count: allReviews.length,
-      distribution: [1, 2, 3, 4, 5].map((star) => ({
-        star,
-        count: allReviews.filter((r) => r.rating === star).length,
-      })),
+      distribution: [1, 2, 3, 4, 5].map((star) => {
+        const starCount = allReviews.filter((r) => r.rating === star).length;
+        return {
+          star,
+          count: starCount,
+          percentage: allReviews.length > 0
+            ? Math.round((starCount / allReviews.length) * 100)
+            : 0,
+        };
+      }),
     };
 
     return NextResponse.json({
       success: true,
       data: {
-        reviews,
+        reviews: transformedReviews,
         ratingSummary,
         pagination: {
           page,
@@ -78,7 +138,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    // Handle helpful vote action
+    // Handle helpful vote action (legacy support)
     if (body.action === 'helpful' && body.reviewId) {
       const review = await db.review.findUnique({
         where: { id: body.reviewId },
@@ -105,7 +165,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Default: create a new review
-    const { userId, shopId, productId, gigId, rating, title, comment } = body;
+    const { userId, shopId, productId, gigId, rating, title, comment, images } = body;
 
     if (!userId || !comment || !rating) {
       return NextResponse.json(
@@ -158,17 +218,40 @@ export async function POST(request: NextRequest) {
       isVerifiedPurchase = !!hasPurchased;
     }
 
+    // Verify purchase if reviewing a gig
+    if (!isVerifiedPurchase && gigId) {
+      const hasOrderedGig = await db.orderItem.findFirst({
+        where: {
+          order: {
+            buyerId: userId,
+            status: { in: ['delivered'] },
+          },
+          product: { shop: { gigs: { some: { id: gigId } } } },
+        },
+      });
+      isVerifiedPurchase = !!hasOrderedGig;
+    }
+
+    // Build review data with images
+    const reviewData: Record<string, unknown> = {
+      userId,
+      shopId,
+      productId,
+      gigId,
+      rating,
+      title,
+      comment,
+      isVerified: isVerifiedPurchase,
+      helpfulCount: 0,
+    };
+
+    // Add images if provided
+    if (images && Array.isArray(images)) {
+      reviewData.images = JSON.stringify(images);
+    }
+
     const review = await db.review.create({
-      data: {
-        userId,
-        shopId,
-        productId,
-        gigId,
-        rating,
-        title,
-        comment,
-        isVerified: isVerifiedPurchase,
-      },
+      data: reviewData,
       include: {
         user: { select: { id: true, name: true, avatar: true } },
       },
@@ -244,7 +327,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ success: true, data: review }, { status: 201 });
+    // Parse images for response
+    const responseReview = {
+      ...review,
+      images: JSON.parse(review.images || '[]') as string[],
+    };
+
+    return NextResponse.json({ success: true, data: responseReview }, { status: 201 });
   } catch (error) {
     console.error('Create review error:', error);
     return NextResponse.json(

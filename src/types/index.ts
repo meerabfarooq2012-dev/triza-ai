@@ -223,16 +223,19 @@ export interface Review {
   rating: number
   title: string | null
   comment: string
-  isVerified: boolean
+  images?: string[]  // Photo review URLs
   helpfulCount?: number
   sellerReply?: string
   sellerReplyAt?: string | Date
+  isVerified: boolean
   createdAt: string
   updatedAt: string
   user?: User
   shop?: Shop | null
   product?: Product | null
   gig?: Gig | null
+  helpfulVotes?: ReviewHelpfulVote[]
+  userHasVoted?: boolean  // Computed field for current user
 }
 
 export interface Notification {
@@ -560,6 +563,7 @@ export interface CreateReviewInput {
   rating: number
   title?: string
   comment: string
+  images?: string[]  // Photo URLs to attach
 }
 
 export interface SendMessageInput {
@@ -1037,6 +1041,25 @@ export interface ReturnPolicy {
   description: string | null
   createdAt: string
   updatedAt: string
+}
+
+export interface ReviewHelpfulVote {
+  id: string
+  reviewId: string
+  userId: string
+  createdAt: string
+}
+
+export interface ReviewStats {
+  average: number
+  count: number
+  distribution: { star: number; count: number; percentage: number }[]
+}
+
+export interface ReviewsResponse {
+  reviews: Review[]
+  ratingSummary: ReviewStats
+  pagination: { page: number; limit: number; total: number; totalPages: number }
 }
 
 export interface CreateReturnInput {

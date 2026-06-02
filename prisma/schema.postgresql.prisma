@@ -241,26 +241,45 @@ model OrderItem {
 }
 
 model Review {
-  id        String   @id @default(cuid())
-  userId    String
-  shopId    String?
-  productId String?
-  gigId     String?
-  rating    Int
-  title     String?
-  comment   String
-  isVerified Boolean @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String    @id @default(cuid())
+  userId       String
+  shopId       String?
+  productId    String?
+  gigId        String?
+  rating       Int
+  title        String?
+  comment      String
+  images       String    @default("[]") // JSON array of image URLs for photo reviews
+  helpfulCount Int       @default(0)
+  sellerReply  String?
+  sellerReplyAt DateTime?
+  isVerified   Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  user      User     @relation(fields: [userId], references: [id])
-  shop      Shop?    @relation(fields: [shopId], references: [id])
-  product   Product? @relation(fields: [productId], references: [id])
-  gig       Gig?     @relation(fields: [gigId], references: [id])
+  user          User              @relation(fields: [userId], references: [id])
+  shop          Shop?             @relation(fields: [shopId], references: [id])
+  product       Product?          @relation(fields: [productId], references: [id])
+  gig           Gig?              @relation(fields: [gigId], references: [id])
+  helpfulVotes  ReviewHelpfulVote[]
 
   @@index([shopId])
   @@index([productId])
   @@index([gigId])
+  @@index([userId])
+  @@index([images])
+}
+
+model ReviewHelpfulVote {
+  id        String   @id @default(cuid())
+  reviewId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, userId])
+  @@index([reviewId])
   @@index([userId])
 }
 

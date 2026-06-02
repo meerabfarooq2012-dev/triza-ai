@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { Store, Settings, Loader2, AlertCircle } from 'lucide-react'
+import { Store, Settings, Loader2, AlertCircle, Star } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
@@ -18,6 +18,7 @@ import { SellerWallet } from '@/components/marketplace/payment/seller-wallet'
 import { ShippingSettings } from '@/components/marketplace/shipping/shipping-settings'
 import { ReturnsPage } from '@/components/marketplace/returns/returns-page'
 import { PaymentSettingsPage } from '@/components/marketplace/payment/payment-settings-page'
+import { SellerReviews } from './seller-reviews'
 import { toast } from 'sonner'
 
 export function SellerDashboard() {
@@ -112,7 +113,7 @@ export function SellerDashboard() {
           useMarketplaceStore.getState().login(meData.data)
         }
         toast.success('Shop created successfully!')
-        setActiveTab('settings')
+        setManualTab('settings')
       } else {
         toast.error(data.error || 'Failed to create shop')
       }
@@ -129,7 +130,7 @@ export function SellerDashboard() {
   const hasShop = !!(shopData || currentUser?.shop)
 
   // Support deep-linking to a specific tab via viewParams
-  const validTabs = ['overview', 'products', 'gigs', 'orders', 'wallet', 'payment-settings', 'shipping', 'messages', 'settings', 'analytics']
+  const validTabs = ['overview', 'products', 'gigs', 'orders', 'wallet', 'payment-settings', 'shipping', 'messages', 'reviews', 'settings', 'analytics']
   const activeTab = useMemo(() => {
     if (manualTab) return manualTab
     if (viewParams?.tab && validTabs.includes(viewParams.tab)) return viewParams.tab
@@ -256,6 +257,7 @@ export function SellerDashboard() {
                 <TabsTrigger value="shipping" className="gap-1">📦 Shipping</TabsTrigger>
                 <TabsTrigger value="returns" className="gap-1">🔄 Returns</TabsTrigger>
                 <TabsTrigger value="settings">Settings</TabsTrigger>
+                <TabsTrigger value="reviews" className="gap-1">⭐ Reviews</TabsTrigger>
                 <TabsTrigger value="analytics">Analytics</TabsTrigger>
               </TabsList>
             </div>
@@ -288,6 +290,14 @@ export function SellerDashboard() {
             </TabsContent>
             <TabsContent value="returns">
               {currentUser && <ReturnsPage userId={currentUser.id} isSeller={true} shopId={(shopData?.id || currentUser?.shop?.id) as string} />}
+            </TabsContent>
+            <TabsContent value="reviews">
+              {currentUser && (
+                <SellerReviews
+                  shopId={(shopData?.id || currentUser?.shop?.id) as string}
+                  userId={currentUser.id}
+                />
+              )}
             </TabsContent>
             <TabsContent value="settings">
               <SellerShopSettings />

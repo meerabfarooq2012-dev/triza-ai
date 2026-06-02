@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
-  Star,
   ShoppingBag,
   MapPin,
   Mail,
@@ -39,8 +38,10 @@ import {
   SOCIAL_PLATFORM_LABELS,
 } from '@/lib/constants'
 import { ShareShopUrl } from '@/components/marketplace/shared/share-shop-url'
+import { RatingStars } from '@/components/marketplace/shared/rating-stars'
+import { ReviewSection } from '@/components/marketplace/shared/review-section'
 import { SellerTierCard } from '@/components/marketplace/verification/seller-tier-card'
-import type { Shop, Product, Review, SocialLink, CustomSection } from '@/types'
+import type { Shop, Product, SocialLink, CustomSection } from '@/types'
 
 // Helper to parse JSON strings safely
 function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
@@ -50,21 +51,6 @@ function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
   } catch {
     return fallback
   }
-}
-
-// Star rating display
-function StarRating({ rating, size = 16 }: { rating: number; size?: number }) {
-  return (
-    <div className="flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <Star
-          key={i}
-          size={size}
-          className={i <= Math.round(rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}
-        />
-      ))}
-    </div>
-  )
 }
 
 // Product type icon
@@ -154,7 +140,7 @@ function ProductGridCard({
             {product.name}
           </h3>
           <div className="flex items-center gap-1 mb-2">
-            <StarRating rating={product.averageRating} size={12} />
+            <RatingStars rating={product.averageRating} size="sm" />
             <span className="text-xs text-muted-foreground">
               ({product.totalReviews})
             </span>
@@ -251,7 +237,7 @@ function ProductListCard({
                     {PRODUCT_TYPE_LABELS[product.type]}
                   </Badge>
                   <div className="flex items-center gap-1">
-                    <StarRating rating={product.averageRating} size={12} />
+                    <RatingStars rating={product.averageRating} size="sm" />
                     <span className="text-xs text-muted-foreground">
                       ({product.totalReviews})
                     </span>
@@ -330,7 +316,7 @@ function FeaturedProductCard({
               <p className="text-muted-foreground mb-4">{product.shortDesc}</p>
             )}
             <div className="flex items-center gap-2 mb-4">
-              <StarRating rating={product.averageRating} />
+              <RatingStars rating={product.averageRating} />
               <span className="text-sm text-muted-foreground">
                 ({product.totalReviews} reviews)
               </span>
@@ -427,12 +413,11 @@ function CustomSectionRenderer({
 
 // Main ShopView component
 export default function ShopView() {
-  const { viewParams, setCurrentView } = useMarketplaceStore()
+  const { viewParams, setCurrentView, currentUser } = useMarketplaceStore()
   const shopSlug = viewParams.shopSlug
 
   const [shop, setShop] = useState<Shop | null>(null)
   const [products, setProducts] = useState<Product[]>([])
-  const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('products')
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
@@ -466,14 +451,6 @@ export default function ShopView() {
       })
     return () => { cancelled = true }
   }, [shopSlug])
-
-  // Fetch reviews when about tab is active
-  useEffect(() => {
-    if (activeTab !== 'reviews' || !shopSlug) return
-    api.shops.getShop(shopSlug).then((res) => {
-      if (res.data?.reviews) setReviews(res.data.reviews)
-    })
-  }, [activeTab, shopSlug])
 
   const handleProductClick = (productId: string) => {
     setCurrentView('product-detail', { productId })
@@ -588,7 +565,7 @@ export default function ShopView() {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
               <div className="flex items-center gap-1.5">
-                <StarRating rating={shop.averageRating} />
+                <RatingStars rating={shop.averageRating} />
                 <span className="text-sm font-medium">{(shop.averageRating ?? 0).toFixed(1)}</span>
                 <span className="text-sm text-muted-foreground">({shop.totalReviews} reviews)</span>
               </div>
@@ -918,69 +895,12 @@ export default function ShopView() {
 
             {/* Reviews Tab */}
             <TabsContent value="reviews" className="mt-6 pb-10">
-              <div className="max-w-3xl">
-                {/* Rating summary */}
-                <Card className="p-6 mb-6 border-0 shadow-sm">
-                  <div className="flex items-center gap-6">
-                    <div className="text-center">
-                      <div className="text-4xl font-bold" style={{ color: shopColors.primary }}>
-                        {(shop.averageRating ?? 0).toFixed(1)}
-                      </div>
-                      <StarRating rating={shop.averageRating} />
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {shop.totalReviews} reviews
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-
-                {/* Reviews list */}
-                {reviews.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Star size={48} className="mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold mb-1">No Reviews Yet</h3>
-                    <p className="text-muted-foreground">
-                      Be the first to review this shop!
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {reviews.map((review) => (
-                      <Card key={review.id} className="p-4 border-0 shadow-sm">
-                        <div className="flex items-start gap-3">
-                          <Avatar className="w-10 h-10">
-                            <AvatarFallback>
-                              {review.user?.name?.[0] || 'U'}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between">
-                              <span className="font-medium text-sm">
-                                {review.user?.name || 'Anonymous'}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {new Date(review.createdAt).toLocaleDateString()}
-                              </span>
-                            </div>
-                            <StarRating rating={review.rating} size={14} />
-                            {review.title && (
-                              <p className="font-medium text-sm mt-1">{review.title}</p>
-                            )}
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {review.comment}
-                            </p>
-                            {review.isVerified && (
-                              <Badge variant="secondary" className="mt-2 text-xs">
-                                Verified Purchase
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <ReviewSection
+                shopId={shop.id}
+                shopSlug={shop.slug}
+                currentUserId={currentUser?.id}
+                shopOwnerId={shop.userId}
+              />
             </TabsContent>
           </Tabs>
         </div>

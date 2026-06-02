@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
 // Helper to recalculate average rating for a product or shop
-async function recalculateRating(productId?: string | null, shopId?: string | null) {
+async function recalculateRating(productId?: string | null, shopId?: string | null, gigId?: string | null) {
   if (productId) {
     const productReviews = await db.review.findMany({
       where: { productId },
@@ -38,6 +38,26 @@ async function recalculateRating(productId?: string | null, shopId?: string | nu
       where: { id: shopId },
       data: {
         totalReviews: shopReviews.length,
+        averageRating: Math.round(avgRating * 10) / 10,
+      },
+    });
+  }
+
+  if (gigId) {
+    const gigReviews = await db.review.findMany({
+      where: { gigId },
+      select: { rating: true },
+    });
+    const avgRating =
+      gigReviews.length > 0
+        ? gigReviews.reduce((sum, r) => sum + r.rating, 0) /
+          gigReviews.length
+        : 0;
+
+    await db.gig.update({
+      where: { id: gigId },
+      data: {
+        totalReviews: gigReviews.length,
         averageRating: Math.round(avgRating * 10) / 10,
       },
     });
@@ -87,7 +107,7 @@ export async function DELETE(
     });
 
     // Recalculate average rating after deletion
-    await recalculateRating(review.productId, review.shopId);
+    await recalculateRating(review.productId, review.shopId, review.gigId);
 
     return NextResponse.json({
       success: true,
@@ -110,7 +130,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { userId, rating, title, comment } = body;
+    const { userId, rating, title, comment, images } = body;
 
     if (!userId) {
       return NextResponse.json(
@@ -152,6 +172,7 @@ export async function PATCH(
     if (rating !== undefined) updateData.rating = rating;
     if (title !== undefined) updateData.title = title;
     if (comment !== undefined) updateData.comment = comment;
+    if (images !== undefined) updateData.images = JSON.stringify(images);
 
     const updatedReview = await db.review.update({
       where: { id },
@@ -163,7 +184,7 @@ export async function PATCH(
 
     // Recalculate average rating if rating changed
     if (rating !== undefined) {
-      await recalculateRating(review.productId, review.shopId);
+      await recalculateRating(review.productId, review.shopId, review.gigId);
     }
 
     return NextResponse.json({

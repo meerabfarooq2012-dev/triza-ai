@@ -4,10 +4,10 @@ import { Prisma } from '@prisma/client';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ productId: string }> }
+  { params }: { params: Promise<{ gigId: string }> }
 ) {
   try {
-    const { productId } = await params;
+    const { gigId } = await params;
     const searchParams = request.nextUrl.searchParams;
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '20', 10);
@@ -17,9 +17,9 @@ export async function GET(
     const userId = searchParams.get('userId') || '';
     const skip = (page - 1) * limit;
 
-    if (!productId) {
+    if (!gigId) {
       return NextResponse.json(
-        { success: false, error: 'productId is required' },
+        { success: false, error: 'gigId is required' },
         { status: 400 }
       );
     }
@@ -41,7 +41,7 @@ export async function GET(
         break;
     }
 
-    const where: Prisma.ReviewWhereInput = { productId };
+    const where: Prisma.ReviewWhereInput = { gigId };
 
     // Rating filter
     if (ratingFilter) {
@@ -85,7 +85,7 @@ export async function GET(
 
     // Calculate rating summary from all reviews (not just current page)
     const allReviews = await db.review.findMany({
-      where: { productId },
+      where: { gigId },
       select: { rating: true },
     });
 
@@ -126,9 +126,9 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('Get product reviews error:', error);
+    console.error('Get gig reviews error:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch product reviews' },
+      { success: false, error: 'Failed to fetch gig reviews' },
       { status: 500 }
     );
   }

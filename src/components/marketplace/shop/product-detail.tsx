@@ -1,9 +1,8 @@
 'use client'
 
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Star,
   ShoppingCart,
   Zap,
   Heart,
@@ -22,10 +21,6 @@ import {
   Globe,
   MessageSquare,
   Share2,
-  ThumbsUp,
-  Trash2,
-  Loader2,
-  AlertCircle,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -34,7 +29,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Textarea } from '@/components/ui/textarea'
 import {
   Dialog,
   DialogContent,
@@ -42,34 +36,18 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { openCartDrawer } from '@/components/marketplace/shared/cart-drawer'
 import { ShareShopUrl } from '@/components/marketplace/shared/share-shop-url'
+import { RatingStars } from '@/components/marketplace/shared/rating-stars'
+import { ReviewSection } from '@/components/marketplace/shared/review-section'
 import { api } from '@/lib/api'
 import {
   PRODUCT_TYPE_LABELS,
   PLATFORM_NAME,
 } from '@/lib/constants'
 import { countryCodeData } from '@/lib/country-codes'
-import type { Product, Review, CartItem } from '@/types'
+import type { Product, CartItem } from '@/types'
 
 function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
   if (!value) return fallback
@@ -78,35 +56,6 @@ function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
   } catch {
     return fallback
   }
-}
-
-function StarRating({
-  rating,
-  size = 16,
-  interactive = false,
-  onChange,
-}: {
-  rating: number
-  size?: number
-  interactive?: boolean
-  onChange?: (rating: number) => void
-}) {
-  return (
-    <div className="flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <Star
-          key={i}
-          size={size}
-          className={`${interactive ? 'cursor-pointer' : ''} ${
-            i <= Math.round(rating)
-              ? 'fill-yellow-400 text-yellow-400'
-              : 'text-gray-300'
-          } transition-colors`}
-          onClick={() => interactive && onChange?.(i)}
-        />
-      ))}
-    </div>
-  )
 }
 
 function ProductTypeIcon({ type, size = 20 }: { type: string; size?: number }) {
@@ -122,36 +71,11 @@ function ProductTypeIcon({ type, size = 20 }: { type: string; size?: number }) {
   }
 }
 
-type ReviewSortOption = 'recent' | 'highest' | 'lowest' | 'helpful'
-
-const HELPED_STORAGE_KEY = 'marketo_helped_reviews'
-
-function getHelpedReviewIds(): Set<string> {
-  if (typeof window === 'undefined') return new Set()
-  try {
-    const stored = localStorage.getItem(HELPED_STORAGE_KEY)
-    return stored ? new Set(JSON.parse(stored)) : new Set()
-  } catch {
-    return new Set()
-  }
-}
-
-function markReviewHelped(reviewId: string) {
-  try {
-    const ids = getHelpedReviewIds()
-    ids.add(reviewId)
-    localStorage.setItem(HELPED_STORAGE_KEY, JSON.stringify([...ids]))
-  } catch {
-    // silent
-  }
-}
-
 export default function ProductDetail() {
   const { viewParams, setCurrentView, addToCart, currentUser, cart } = useMarketplaceStore()
   const productId = viewParams.productId
 
   const [product, setProduct] = useState<Product | null>(null)
-  const [reviews, setReviews] = useState<Review[]>([])
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState(0)
@@ -159,28 +83,6 @@ export default function ProductDetail() {
   const [isFavorited, setIsFavorited] = useState(false)
   const [activeTab, setActiveTab] = useState('details')
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
-
-  // Review form state
-  const [reviewRating, setReviewRating] = useState(5)
-  const [reviewComment, setReviewComment] = useState('')
-  const [reviewTitle, setReviewTitle] = useState('')
-  const [submittingReview, setSubmittingReview] = useState(false)
-  const [reviewError, setReviewError] = useState('')
-  const [reviewSuccess, setReviewSuccess] = useState(false)
-
-  // Review sorting & pagination state
-  const [reviewSort, setReviewSort] = useState<ReviewSortOption>('recent')
-  const [reviewPage, setReviewPage] = useState(1)
-  const [reviewTotal, setReviewTotal] = useState(0)
-  const [loadingMoreReviews, setLoadingMoreReviews] = useState(false)
-  const REVIEWS_PER_PAGE = 10
-
-  // Helpful votes state
-  const [helpedReviewIds, setHelpedReviewIds] = useState<Set<string>>(getHelpedReviewIds())
-  const [helpfulLoading, setHelpfulLoading] = useState<string | null>(null)
-
-  // Delete review state
-  const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null)
 
   // Check if product is already in cart
   const isInCart = cart.some((item) => item.productId === productId)
@@ -201,56 +103,9 @@ export default function ProductDetail() {
       .finally(() => setLoading(false))
   }, [productId])
 
-  // Fetch reviews from API with pagination & sorting
-  const fetchReviews = useCallback(async (page: number = 1, append: boolean = false) => {
-    if (!productId) return
-    if (page === 1 && !append) setLoadingMoreReviews(false)
-    else setLoadingMoreReviews(true)
-
-    try {
-      const sortParam = reviewSort === 'recent' ? 'recent'
-        : reviewSort === 'highest' ? 'highest'
-        : reviewSort === 'lowest' ? 'lowest'
-        : 'helpful'
-
-      const res = await api.reviews.getProductReviews(productId, {
-        page,
-        limit: REVIEWS_PER_PAGE,
-        sort: sortParam,
-      })
-
-      if (res.data) {
-        const newReviews = res.data.items || res.data.products || []
-        const total = res.data.total || res.data.pagination?.total || 0
-        setReviewTotal(total)
-        if (append) {
-          setReviews((prev) => [...prev, ...newReviews])
-        } else {
-          setReviews(newReviews)
-        }
-      }
-    } catch {
-      // Fallback to product reviews if API fails
-      if (!append && product?.reviews) {
-        setReviews(product.reviews)
-        setReviewTotal(product.reviews.length)
-      }
-    } finally {
-      setLoadingMoreReviews(false)
-    }
-  }, [productId, reviewSort, product?.reviews])
-
   useEffect(() => {
     fetchProduct()
   }, [fetchProduct])
-
-  // When product loads, fetch first page of reviews
-  useEffect(() => {
-    if (productId) {
-      setReviewPage(1)
-      fetchReviews(1, false)
-    }
-  }, [productId, reviewSort])
 
   // Fetch related products
   useEffect(() => {
@@ -310,109 +165,11 @@ export default function ProductDetail() {
     }
   }
 
-  const handleSubmitReview = async () => {
-    if (!product || !reviewComment.trim()) return
-    setSubmittingReview(true)
-    setReviewError('')
-    setReviewSuccess(false)
-    try {
-      await api.reviews.createReview({
-        productId: product.id,
-        shopId: product.shopId,
-        rating: reviewRating,
-        title: reviewTitle || undefined,
-        comment: reviewComment,
-      })
-      setReviewComment('')
-      setReviewTitle('')
-      setReviewRating(5)
-      setReviewSuccess(true)
-      // Refresh product & reviews
-      fetchProduct()
-      setReviewPage(1)
-      fetchReviews(1, false)
-      // Clear success after 3 seconds
-      setTimeout(() => setReviewSuccess(false), 3000)
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to submit review. Please try again.'
-      setReviewError(message)
-    } finally {
-      setSubmittingReview(false)
-    }
-  }
-
-  const handleLoadMoreReviews = () => {
-    const nextPage = reviewPage + 1
-    setReviewPage(nextPage)
-    fetchReviews(nextPage, true)
-  }
-
-  const handleMarkHelpful = async (reviewId: string) => {
-    if (helpedReviewIds.has(reviewId) || helpfulLoading === reviewId) return
-    setHelpfulLoading(reviewId)
-    try {
-      await api.reviews.markHelpful(reviewId)
-      markReviewHelped(reviewId)
-      setHelpedReviewIds(getHelpedReviewIds())
-      // Optimistically update the count
-      setReviews((prev) =>
-        prev.map((r) =>
-          r.id === reviewId
-            ? { ...r, helpfulCount: (r.helpfulCount || 0) + 1 }
-            : r
-        )
-      )
-    } catch {
-      // silent fail
-    } finally {
-      setHelpfulLoading(null)
-    }
-  }
-
-  const handleDeleteReview = async (reviewId: string) => {
-    setDeletingReviewId(reviewId)
-    try {
-      await api.reviews.deleteReview(reviewId, currentUser?.id)
-      setReviews((prev) => prev.filter((r) => r.id !== reviewId))
-      setReviewTotal((prev) => Math.max(0, prev - 1))
-      // Refresh product to update total review count
-      fetchProduct()
-    } catch {
-      // silent fail
-    } finally {
-      setDeletingReviewId(null)
-    }
-  }
-
   const handleVisitShop = () => {
     if (product?.shop?.slug) {
       setCurrentView('shop-view', { shopSlug: product.shop.slug })
     }
   }
-
-  // Sorted reviews (client-side fallback if API doesn't sort)
-  const sortedReviews = useMemo(() => {
-    if (reviews.length === 0) return []
-    const sorted = [...reviews]
-    switch (reviewSort) {
-      case 'highest':
-        sorted.sort((a, b) => b.rating - a.rating)
-        break
-      case 'lowest':
-        sorted.sort((a, b) => a.rating - b.rating)
-        break
-      case 'helpful':
-        sorted.sort((a, b) => (b.helpfulCount || 0) - (a.helpfulCount || 0))
-        break
-      case 'recent':
-      default:
-        sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        break
-    }
-    return sorted
-  }, [reviews, reviewSort])
-
-  const hasMoreReviews = reviews.length < reviewTotal
 
   if (loading) {
     return (
@@ -455,15 +212,6 @@ export default function ProductDetail() {
   const discount = product.comparePrice && product.price
     ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
     : 0
-
-  // Calculate review distribution from ALL reviews
-  const ratingDistribution = [5, 4, 3, 2, 1].map((star) => ({
-    star,
-    count: reviews.filter((r) => Math.round(r.rating) === star).length,
-    percentage: reviews.length
-      ? (reviews.filter((r) => Math.round(r.rating) === star).length / reviews.length) * 100
-      : 0,
-  }))
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-4 md:py-8">
@@ -562,7 +310,7 @@ export default function ProductDetail() {
 
           {/* Rating */}
           <div className="flex items-center gap-2">
-            <StarRating rating={product.averageRating} />
+            <RatingStars rating={product.averageRating} />
             <span className="text-sm font-medium">
               {(product.averageRating ?? 0).toFixed(1)}
             </span>
@@ -800,7 +548,7 @@ export default function ProductDetail() {
                   <div>
                     <p className="font-medium text-sm">{product.shop.name}</p>
                     <div className="flex items-center gap-1">
-                      <StarRating rating={product.shop.averageRating} size={12} />
+                      <RatingStars rating={product.shop.averageRating} size="sm" />
                       <span className="text-xs text-muted-foreground">
                         {(product.shop.averageRating ?? 0).toFixed(1)}
                       </span>
@@ -872,7 +620,7 @@ export default function ProductDetail() {
           <TabsList>
             <TabsTrigger value="details">Description</TabsTrigger>
             <TabsTrigger value="reviews">
-              Reviews ({reviewTotal || product.totalReviews})
+              Reviews ({product.totalReviews ?? 0})
             </TabsTrigger>
           </TabsList>
 
@@ -887,314 +635,11 @@ export default function ProductDetail() {
           </TabsContent>
 
           <TabsContent value="reviews" className="mt-6">
-            <div className="grid lg:grid-cols-3 gap-8">
-              {/* Rating summary */}
-              <Card className="p-6 border-0 shadow-sm h-fit">
-                <h3 className="font-bold text-lg mb-4">Rating Summary</h3>
-                <div className="text-center mb-4">
-                  <div className="text-4xl font-bold">
-                    {(product.averageRating ?? 0).toFixed(1)}
-                  </div>
-                  <StarRating rating={product.averageRating} />
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Based on {reviewTotal || product.totalReviews} reviews
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  {ratingDistribution.map(({ star, count, percentage }) => (
-                    <div key={star} className="flex items-center gap-2 text-sm">
-                      <span className="w-3">{star}</span>
-                      <Star size={12} className="fill-yellow-400 text-yellow-400" />
-                      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-yellow-400 rounded-full transition-all"
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
-                      <span className="w-8 text-right text-muted-foreground">
-                        {count}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-
-              {/* Reviews list */}
-              <div className="lg:col-span-2 space-y-4">
-                {/* Write review form */}
-                {currentUser && (
-                  <Card className="p-6 border-0 shadow-sm">
-                    <h3 className="font-bold mb-4">Write a Review</h3>
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">Your Rating:</span>
-                        <StarRating
-                          rating={reviewRating}
-                          size={24}
-                          interactive
-                          onChange={setReviewRating}
-                        />
-                      </div>
-
-                      {/* Purchase note */}
-                      {!product.isVerified && (
-                        <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                          <AlertCircle size={16} className="text-amber-600 mt-0.5 flex-shrink-0" />
-                          <p className="text-xs text-amber-700 dark:text-amber-400">
-                            Did you purchase this product? Only verified purchasers can receive a &quot;Verified&quot; badge on their review.
-                          </p>
-                        </div>
-                      )}
-
-                      <input
-                        type="text"
-                        placeholder="Review title (optional)"
-                        value={reviewTitle}
-                        onChange={(e) => setReviewTitle(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                      />
-                      <Textarea
-                        placeholder="Share your experience with this product..."
-                        value={reviewComment}
-                        onChange={(e) => setReviewComment(e.target.value)}
-                        rows={3}
-                      />
-
-                      {/* Error state */}
-                      {reviewError && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -4 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800"
-                        >
-                          <AlertCircle size={14} className="text-red-500 flex-shrink-0" />
-                          <p className="text-xs text-red-600 dark:text-red-400">{reviewError}</p>
-                        </motion.div>
-                      )}
-
-                      {/* Success state */}
-                      {reviewSuccess && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -4 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800"
-                        >
-                          <CheckCircle size={14} className="text-green-500 flex-shrink-0" />
-                          <p className="text-xs text-green-600 dark:text-green-400">Your review has been submitted successfully!</p>
-                        </motion.div>
-                      )}
-
-                      <Button
-                        onClick={handleSubmitReview}
-                        disabled={!reviewComment.trim() || submittingReview}
-                        size="sm"
-                        className="gap-2"
-                      >
-                        {submittingReview && <Loader2 size={14} className="animate-spin" />}
-                        {submittingReview ? 'Submitting...' : 'Submit Review'}
-                      </Button>
-                    </div>
-                  </Card>
-                )}
-
-                {/* Sort dropdown & count */}
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm text-muted-foreground">
-                    {reviewTotal} review{reviewTotal !== 1 ? 's' : ''}
-                  </p>
-                  <Select
-                    value={reviewSort}
-                    onValueChange={(val) => setReviewSort(val as ReviewSortOption)}
-                  >
-                    <SelectTrigger size="sm" className="w-[160px]">
-                      <SelectValue placeholder="Sort by" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="recent">Most Recent</SelectItem>
-                      <SelectItem value="highest">Highest Rated</SelectItem>
-                      <SelectItem value="lowest">Lowest Rated</SelectItem>
-                      <SelectItem value="helpful">Most Helpful</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Reviews */}
-                {sortedReviews.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Star
-                      size={48}
-                      className="mx-auto text-muted-foreground mb-4"
-                    />
-                    <h3 className="text-lg font-semibold mb-1">No Reviews Yet</h3>
-                    <p className="text-muted-foreground">
-                      Be the first to review this product!
-                    </p>
-                  </div>
-                ) : (
-                  sortedReviews.map((review) => (
-                    <motion.div
-                      key={review.id}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <Card className="p-4 border-0 shadow-sm">
-                        <div className="flex items-start gap-3">
-                          <Avatar className="w-10 h-10">
-                            <AvatarFallback>
-                              {review.user?.name?.[0] || 'U'}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="font-medium text-sm">
-                                  {review.user?.name || 'Anonymous'}
-                                </span>
-                                {review.isVerified && (
-                                  <Badge
-                                    variant="secondary"
-                                    className="text-xs gap-1"
-                                  >
-                                    <CheckCircle size={10} />
-                                    Verified
-                                  </Badge>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-1 flex-shrink-0">
-                                <span className="text-xs text-muted-foreground">
-                                  {new Date(review.createdAt).toLocaleDateString()}
-                                </span>
-                                {/* Delete button - only for review author */}
-                                {currentUser && currentUser.id === review.userId && (
-                                  <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                        disabled={deletingReviewId === review.id}
-                                      >
-                                        {deletingReviewId === review.id ? (
-                                          <Loader2 size={14} className="animate-spin" />
-                                        ) : (
-                                          <Trash2 size={14} />
-                                        )}
-                                      </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle>Delete Review</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                          Are you sure you want to delete your review? This action cannot be undone.
-                                        </AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction
-                                          onClick={() => handleDeleteReview(review.id)}
-                                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                        >
-                                          Delete
-                                        </AlertDialogAction>
-                                      </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                  </AlertDialog>
-                                )}
-                              </div>
-                            </div>
-                            <StarRating rating={review.rating} size={14} />
-                            {review.title && (
-                              <p className="font-medium text-sm mt-1">
-                                {review.title}
-                              </p>
-                            )}
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {review.comment}
-                            </p>
-
-                            {/* Helpful button */}
-                            <div className="flex items-center gap-3 mt-3">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className={`h-7 gap-1.5 text-xs px-2 ${
-                                  helpedReviewIds.has(review.id)
-                                    ? 'text-primary'
-                                    : 'text-muted-foreground'
-                                }`}
-                                onClick={() => handleMarkHelpful(review.id)}
-                                disabled={helpedReviewIds.has(review.id) || helpfulLoading === review.id}
-                              >
-                                {helpfulLoading === review.id ? (
-                                  <Loader2 size={12} className="animate-spin" />
-                                ) : (
-                                  <ThumbsUp size={12} />
-                                )}
-                                Helpful{review.helpfulCount ? ` (${review.helpfulCount})` : ''}
-                              </Button>
-                            </div>
-
-                            {/* Seller reply */}
-                            {review.sellerReply && (
-                              <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                transition={{ duration: 0.2 }}
-                                className="mt-3 ml-2 pl-4 border-l-2 border-primary/20"
-                              >
-                                <div className="bg-muted/40 rounded-lg p-3">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <Badge variant="outline" className="text-xs gap-1 bg-primary/5 border-primary/20 text-primary">
-                                      <Store size={10} />
-                                      Seller
-                                    </Badge>
-                                    {review.sellerReplyAt && (
-                                      <span className="text-xs text-muted-foreground">
-                                        {new Date(review.sellerReplyAt).toLocaleDateString()}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <p className="text-sm text-muted-foreground">
-                                    {review.sellerReply}
-                                  </p>
-                                </div>
-                              </motion.div>
-                            )}
-                          </div>
-                        </div>
-                      </Card>
-                    </motion.div>
-                  ))
-                )}
-
-                {/* Load More button */}
-                {hasMoreReviews && (
-                  <div className="flex justify-center pt-2">
-                    <Button
-                      variant="outline"
-                      onClick={handleLoadMoreReviews}
-                      disabled={loadingMoreReviews}
-                      className="gap-2"
-                    >
-                      {loadingMoreReviews ? (
-                        <>
-                          <Loader2 size={14} className="animate-spin" />
-                          Loading...
-                        </>
-                      ) : (
-                        <>
-                          Load More Reviews
-                          <span className="text-xs text-muted-foreground">
-                            ({reviews.length} of {reviewTotal})
-                          </span>
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </div>
+            <ReviewSection
+              productId={product.id}
+              currentUserId={currentUser?.id}
+              shopOwnerId={product.shop?.userId}
+            />
           </TabsContent>
         </Tabs>
       </div>
