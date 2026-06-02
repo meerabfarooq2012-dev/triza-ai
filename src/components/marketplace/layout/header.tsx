@@ -27,7 +27,6 @@ import {
   Rss,
   Scale,
   ShieldCheck,
-  Heart,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -210,21 +209,6 @@ export function Header() {
               )}
             </Button>
 
-            {/* Wishlist */}
-            {isAuthenticated && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn(
-                  "h-9 w-9 relative",
-                  currentView === 'wishlist' && "text-red-500"
-                )}
-                onClick={() => handleNavClick('wishlist')}
-              >
-                <Heart className={cn("h-4.5 w-4.5", currentView === 'wishlist' && "fill-current")} />
-              </Button>
-            )}
-
             {/* Messages */}
             {isAuthenticated && (
               <Button
@@ -315,10 +299,6 @@ export function Header() {
                           {unreadMessages}
                         </Badge>
                       )}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleNavClick('wishlist')}>
-                      <Heart className="mr-2 h-4 w-4" />
-                      Wishlist
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleNavClick('notifications')}>
                       <Bell className="mr-2 h-4 w-4" />
@@ -567,15 +547,6 @@ export function Header() {
                         {unreadMessages}
                       </Badge>
                     )}
-                  </Button>
-
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start gap-3"
-                    onClick={() => handleNavClick('wishlist')}
-                  >
-                    <Heart className="h-4.5 w-4.5" />
-                    Wishlist
                   </Button>
 
                   <Button

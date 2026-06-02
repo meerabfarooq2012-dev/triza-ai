@@ -1131,3 +1131,36 @@ Work Log:
 
 Stage Summary:
 - Wishlist accessible from header bar, dropdown menu, mobile menu, and buyer dashboard tab
+
+---
+Task ID: 10
+Agent: Main Agent
+Task: Remove redundant Wishlist feature (Favorites tab already exists in buyer dashboard)
+
+Work Log:
+- Explored both Wishlist and Favorites features to understand overlap
+- Wishlist was more complex (products + gigs, collections, price tracking) but never integrated into ProductCard/ProductDetail
+- Favorites was simpler but already integrated throughout the app (ProductCard, ProductDetail, store, API client)
+- Deleted all Wishlist API route files (6 files in /api/wishlist/ directory)
+- Deleted Wishlist component files: wishlist-button.tsx, wishlist-page.tsx
+- Removed Wishlist tab from buyer-dashboard.tsx (validTabs, TabsTrigger, TabsContent, import)
+- Added Heart icon to Favorites tab in buyer-dashboard for visual consistency
+- Removed Wishlist from header.tsx navigation (Heart button, dropdown menu item, mobile sidebar button)
+- Removed unused Heart import from header.tsx
+- Removed Wishlist dynamic import and case from page.tsx router
+- Removed Wishlist types from types/index.ts (WishlistItem, WishlistCollection, CreateWishlistItemInput, CreateWishlistCollectionInput, UpdateWishlistCollectionInput, 'wishlist' from ViewMode)
+- Removed WishlistCollection and WishlistItem models from both schema.sqlite.prisma and schema.postgresql.prisma
+- Removed wishlistItems and wishlistCollections relations from User model in both schemas
+- Removed wishlistItems relation from Product and Gig models in both schemas
+- Ran db:push to sync schema changes
+- Ran lint check — zero errors
+- Browser verification: landing page loads, login works, buyer dashboard shows correct tabs (Overview, Orders, Payments, Payment Info, Favorites, Messages, Addresses), Wishlist is completely gone, Favorites tab works correctly
+- No browser console errors
+
+Stage Summary:
+- Wishlist feature completely removed from the codebase
+- Favorites tab retained as the single "save for later" feature
+- All 3 schema files updated (relations + models removed)
+- All navigation references removed (header, page router, buyer dashboard)
+- All type definitions removed
+- Database schema synced, lint passes, browser verified

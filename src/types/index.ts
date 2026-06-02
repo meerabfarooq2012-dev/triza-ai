@@ -51,7 +51,6 @@ export type ViewMode =
   | 'disputes'
   | 'dispute-detail'
   | 'verification-center'
-  | 'wishlist'
 
 // ----- Core Domain Models -----
 
@@ -584,63 +583,6 @@ export interface ResolveDisputeInput {
   resolution: string
   resolutionType?: DisputeResolutionType
   refundAmount?: number
-}
-
-// ----- Wishlist Types -----
-
-export interface WishlistItem {
-  id: string
-  userId: string
-  productId: string | null
-  gigId: string | null
-  collectionId: string | null
-  priceWhenSaved: number
-  currentPrice: number
-  notes: string | null
-  notifyPriceDrop: boolean
-  notifyRestock: boolean
-  isActive: boolean
-  createdAt: string
-  updatedAt: string
-  product?: Product | null
-  gig?: Gig | null
-  collection?: WishlistCollection | null
-}
-
-export interface WishlistCollection {
-  id: string
-  userId: string
-  name: string
-  icon: string
-  color: string
-  isDefault: boolean
-  sortOrder: number
-  createdAt: string
-  updatedAt: string
-  items?: WishlistItem[]
-  _count?: { items: number }
-}
-
-export interface CreateWishlistItemInput {
-  productId?: string
-  gigId?: string
-  collectionId?: string
-  notes?: string
-  notifyPriceDrop?: boolean
-  notifyRestock?: boolean
-}
-
-export interface CreateWishlistCollectionInput {
-  name: string
-  icon?: string
-  color?: string
-}
-
-export interface UpdateWishlistCollectionInput {
-  name?: string
-  icon?: string
-  color?: string
-  sortOrder?: number
 }
 
 // ----- API Response Types -----

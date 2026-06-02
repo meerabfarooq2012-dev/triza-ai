@@ -51,8 +51,6 @@ model User {
   verificationDocs SellerVerification[]
   sellerBadges     SellerBadge[]
   sellerTier        SellerTier?
-  wishlistItems       WishlistItem[]
-  wishlistCollections WishlistCollection[]
 }
 
 model Shop {
@@ -160,7 +158,6 @@ model Product {
   conversations Conversation[]
   activities     Activity[]
   sharedProducts SharedProduct[]
-  wishlistItems       WishlistItem[]
 
   @@unique([shopId, slug])
   @@index([shopId])
@@ -490,7 +487,6 @@ model Gig {
   category        Category? @relation(fields: [categoryId], references: [id])
   reviews         Review[]
   conversations   Conversation[]
-  wishlistItems       WishlistItem[]
 
   @@unique([shopId, slug])
   @@index([shopId])
@@ -1027,55 +1023,4 @@ model SellerTier {
   @@index([calculatedAt])
 }
 
-// =============================================================================
-// WISHLIST & SAVE FOR LATER MODELS
-// =============================================================================
 
-model WishlistCollection {
-  id          String   @id @default(cuid())
-  userId      String
-  name        String
-  icon        String   @default("Heart") // Lucide icon name
-  color       String   @default("#ef4444") // Collection color
-  isDefault   Boolean  @default(false) // "All Items" is the default collection
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items       WishlistItem[]
-
-  @@index([userId])
-  @@index([isDefault])
-  @@index([sortOrder])
-}
-
-model WishlistItem {
-  id              String   @id @default(cuid())
-  userId          String
-  productId       String?
-  gigId           String?
-  collectionId    String?  // null = uncategorized / "All Items"
-  priceWhenSaved  Float    @default(0) // Price at the time of saving (for price drop detection)
-  currentPrice    Float    @default(0) // Latest known price (updated on fetch)
-  notes           String?  // User's personal notes
-  notifyPriceDrop Boolean  @default(true) // Get notified when price drops
-  notifyRestock   Boolean  @default(false) // Get notified when back in stock
-  isActive        Boolean  @default(true) // Soft delete support
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product         Product?          @relation(fields: [productId], references: [id], onDelete: Cascade)
-  gig             Gig?              @relation(fields: [gigId], references: [id], onDelete: Cascade)
-  collection      WishlistCollection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
-
-  @@unique([userId, productId, gigId]) // Can't save same item twice
-  @@index([userId])
-  @@index([productId])
-  @@index([gigId])
-  @@index([collectionId])
-  @@index([isActive])
-  @@index([notifyPriceDrop])
-  @@index([createdAt])
-}
