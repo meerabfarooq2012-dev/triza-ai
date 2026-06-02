@@ -871,3 +871,263 @@ Stage Summary:
 - Toast notifications for success/error feedback
 - Review API updated to support under_review status transition
 - Integrated as tab in admin panel with ShieldCheck icon
+
+---
+Task ID: 2
+Agent: Schema & Types Agent
+Task: Update schema & types for Wishlist & Save for Later feature
+
+Work Log:
+- Read worklog to understand previous agents work
+- Examined all 3 Prisma schema files (schema.prisma, schema.sqlite.prisma, schema.postgresql.prisma) and src/types/index.ts
+- Discovered main schema.prisma already had WishlistItem and WishlistCollection models but with incorrect defaults (notifyPriceDrop=false, icon="heart", color="#10b981") and wrong model ordering
+- Updated `prisma/schema.sqlite.prisma`:
+  - Added `wishlistItems WishlistItem[]` and `wishlistCollections WishlistCollection[]` relations to User model
+  - Added `wishlistItems WishlistItem[]` relation to Product model
+  - Added `wishlistItems WishlistItem[]` relation to Gig model
+  - Added WishlistCollection model (id, userId, name, icon, color, isDefault, sortOrder, createdAt, updatedAt)
+  - Added WishlistItem model (id, userId, productId, gigId, collectionId, priceWhenSaved, currentPrice, notes, notifyPriceDrop, notifyRestock, isActive, createdAt, updatedAt)
+  - Added all indexes and unique constraints per spec
+- Updated `prisma/schema.postgresql.prisma`:
+  - Same changes as schema.sqlite.prisma (identical models and relations)
+- Updated `prisma/schema.prisma` (main schema used by db:push):
+  - Fixed WishlistCollection defaults: icon "heart" → "Heart", color "#10b981" → "#ef4444"
+  - Fixed WishlistItem.notifyPriceDrop default: false → true
+  - Added comments to WishlistItem fields per spec
+  - Reordered models: WishlistCollection before WishlistItem
+- Updated `src/types/index.ts`:
+  - Added `wishlist` to ViewMode union type
+  - Added WishlistItem interface
+  - Added WishlistCollection interface with items and _count
+  - Added CreateWishlistItemInput interface
+  - Added CreateWishlistCollectionInput interface
+  - Added UpdateWishlistCollectionInput interface
+- Ran `bun run db:push` — database synced successfully
+- Ran `bun run lint` — zero errors
+
+Stage Summary:
+- All 3 Prisma schema files updated with WishlistCollection and WishlistItem models
+- User, Product, and Gig models have wishlist relation fields in all schemas
+- WishlistItem has price tracking (priceWhenSaved, currentPrice), notification preferences (notifyPriceDrop, notifyRestock), soft delete (isActive), and unique constraint on [userId, productId, gigId]
+- WishlistCollection supports custom icons (Lucide icon names), colors, default collections, and sort ordering
+- TypeScript types updated with 5 new interfaces + ViewMode extension
+- Database synced via db:push, Prisma client regenerated
+- All lint checks pass
+
+---
+Task ID: 3
+Agent: Wishlist API Builder
+Task: Create API routes for Wishlist & Save for Later feature
+
+Work Log:
+- Read worklog to understand previous agents' work (search filters, order tracking, analytics, notifications, shipping, disputes)
+- Examined Prisma schema: WishlistItem and WishlistCollection models did not exist yet
+- Examined existing API route patterns from disputes route for consistency
+- Added WishlistItem model to Prisma schema:
+  - Fields: id, userId, productId?, gigId?, collectionId?, priceWhenSaved, currentPrice, notes?, notifyPriceDrop, notifyRestock, isActive, createdAt, updatedAt
+  - Relations: user (User), product (Product), gig (Gig), collection (WishlistCollection)
+  - Unique constraint on [userId, productId, gigId]
+  - Indexes on userId, productId, gigId, collectionId, isActive, notifyPriceDrop, createdAt
+- Added WishlistCollection model to Prisma schema:
+  - Fields: id, userId, name, icon, color, isDefault, sortOrder, createdAt, updatedAt
+  - Relations: user (User), items (WishlistItem[])
+  - Indexes on userId, isDefault, sortOrder
+- Added wishlistItems and wishlistCollections relations to User model
+- Added wishlistItems relation to Product model
+- Added wishlistItems relation to Gig model
+- Ran db:push to sync schema with SQLite database
+- Created 6 API route files (10 endpoints total):
+
+1. `src/app/api/wishlist/route.ts` — GET + POST
+   - GET: Fetch active wishlist items with product/gig/shop/collection includes; filter by collectionId, type (product|gig), search (product/gig name); calculate priceDropPercent; sort by createdAt desc
+   - POST: Validate productId XOR gigId; check for existing items (reactivate if isActive=false); fetch current price from product/gig; auto-create default "All Items" collection; create wishlist item; return with parsed images
+
+2. `src/app/api/wishlist/[id]/route.ts` — DELETE + PATCH
+   - DELETE: Verify ownership via userId query param; soft delete (set isActive=false)
+   - PATCH: Verify ownership; update collectionId, notes, notifyPriceDrop, notifyRestock; return with priceDropPercent calculation
+
+3. `src/app/api/wishlist/collections/route.ts` — GET + POST
+   - GET: Fetch all collections with active item count; auto-create default "All Items" collection if missing; sort by sortOrder then createdAt
+   - POST: Create collection with auto-incrementing sortOrder; default icon=folder, color=#10b981
+
+4. `src/app/api/wishlist/collections/[id]/route.ts` — PATCH + DELETE
+   - PATCH: Verify ownership; prevent renaming default collection; update name, icon, color, sortOrder
+   - DELETE: Verify ownership; prevent deleting default collection; move items to uncategorized (collectionId=null); delete collection
+
+5. `src/app/api/wishlist/check/route.ts` — GET
+   - Check if product/gig is in user's wishlist; return { wishlisted: boolean, itemId: string|null }
+
+6. `src/app/api/wishlist/check-prices/route.ts` — POST
+   - Find all active items with notifyPriceDrop=true; compare stored currentPrice with actual product/gig price; update currentPrice on change; create notification on price drop with item name, old/new price, drop percentage; return count of price drops detected
+
+- All routes use `import { db } from '@/lib/db'` and `import { NextRequest, NextResponse } from 'next/server'`
+- All routes follow `{ success: true, data: ... }` / `{ success: false, error: ... }` response format
+- All routes parse product/gig images with `JSON.parse(images || '[]')`
+- All ESLint checks pass with zero errors
+- Dev server running correctly
+
+Stage Summary:
+- 6 API route files created with 10 endpoints total under src/app/api/wishlist/
+- WishlistItem + WishlistCollection models added to Prisma schema and synced to DB
+- Product, Gig, User models updated with wishlist relations
+- Consistent error handling, response format, and ownership verification across all routes
+- Price drop detection with notification creation
+- Default "All Items" collection auto-creation
+- Soft delete for wishlist items, hard delete for collections (with item reassignment)
+- All lint checks pass
+
+---
+Task ID: 5
+Agent: WishlistButton Agent
+Task: Create WishlistButton component for product cards and detail pages
+
+Work Log:
+- Read worklog for previous agents' context (search filters, order tracking, analytics, notifications, shipping, disputes)
+- Examined existing ProductCard component (uses Heart icon with simple favorites toggle via api.favorites)
+- Examined wishlist API routes: /api/wishlist/check, /api/wishlist (GET/POST), /api/wishlist/[id] (DELETE/PATCH)
+- Examined store (useMarketplaceStore with currentUser), types (WishlistItem, WishlistCollection), and UI patterns
+- Created `/home/z/my-project/src/components/marketplace/shared/wishlist-button.tsx` with:
+  - **Props**: productId, gigId, variant (icon/button/badge), size (sm/md/lg), className, count, onToggle
+  - **On mount**: Calls GET /api/wishlist/check?userId=xxx&productId=xxx (or gigId) to determine wishlisted state
+  - **variant='icon'**: Rounded ghost button with Heart icon, used on product cards. White translucent background with backdrop blur.
+  - **variant='button'**: Outline/default button with Heart icon + text ("Save" / "Saved"). Red fill when wishlisted.
+  - **variant='badge'**: Small inline badge with Heart + count display. Red tint when wishlisted.
+  - **Toggle behavior**: 
+    - Not wishlisted → POST /api/wishlist with userId, productId/gigId → captures returned item ID
+    - Wishlisted → DELETE /api/wishlist/[id]?userId=xxx using stored itemId → falls back to re-check if itemId unknown
+    - Optimistic update: UI updates instantly, reverts on API error
+    - Toast notifications: "Added to wishlist" / "Removed from wishlist" via sonner
+  - **Framer Motion animations**: 
+    - Adding: heartScale animates [1 → 1.3 → 1] (bounce up), fill opacity transitions to 1
+    - Removing: heartScale animates [1 → 0.8 → 1] (bounce down), fill opacity transitions to 0
+    - Uses useMotionValue and animate() from framer-motion for smooth spring-like animation
+  - **Disabled state**: When not logged in, shows cursor-not-allowed + opacity-50, click shows "Please sign in" toast
+  - **Loading state**: Shows Loader2 spinner while checking status on mount and while toggling
+  - **Size maps**: Separate config for icon (h-7/9/11), button (h-7/9/11 with text), and badge variants
+  - **Colors**: Wishlisted = red-500 fill + red-500 stroke; Not wishlisted = gray-500 stroke, no fill
+  - Uses cn() for conditional classes, Button from shadcn/ui, Heart/Loader2 from lucide-react
+- Fixed ESLint warning: Removed unused eslint-disable directive (exhaustive-deps rule was satisfied)
+- All ESLint checks pass with zero errors/warnings
+- Dev server running correctly
+
+Stage Summary:
+- WishlistButton component created at src/components/marketplace/shared/wishlist-button.tsx
+- Supports 3 variants (icon for cards, button for detail pages, badge for nav/header)
+- Full API integration with /api/wishlist/check, POST /api/wishlist, DELETE /api/wishlist/[id]
+- Framer Motion scale bounce animation on toggle (1→1.3→1 on add, 1→0.8→1 on remove)
+- Optimistic updates with error revert and sonner toast notifications
+- Disabled when not logged in with helpful toast message
+- Loading states for initial check and toggle operations
+- All lint checks pass, dev server running
+
+---
+Task ID: 4
+Agent: Wishlist Page Agent
+Task: Create WishlistPage component for Marketo marketplace
+
+Work Log:
+- Read worklog.md to understand previous agents' work (search filters, order tracking, analytics, notifications, shipping, disputes, verification)
+- Examined existing API routes: /api/wishlist (GET/POST), /api/wishlist/[id] (DELETE/PATCH), /api/wishlist/collections (GET/POST), /api/wishlist/collections/[id] (PATCH/DELETE), /api/wishlist/check (GET)
+- Examined types: WishlistItem, WishlistCollection, CreateWishlistItemInput, CreateWishlistCollectionInput, UpdateWishlistCollectionInput
+- Examined store: useMarketplaceStore with currentUser, setCurrentView, addToCart
+- Examined existing buyer-favorites.tsx for style reference (similar component but simpler)
+- Created `/home/z/my-project/src/components/marketplace/buyer/wishlist-page.tsx` with:
+  1. **Page Header**: "My Wishlist" title with emerald/teal gradient icon, item count badge, collection name subtitle
+  2. **Search + Filter Controls**: Search bar with clear button, type filter pills (All/Products/Gigs), sort dropdown (Recently Added, Price Low-High, Price High-Low, Name A-Z, Price Drop)
+  3. **Collections Sidebar (desktop)** / **Dropdown (mobile)**: All Items (default), user collections with color dots and item counts, Uncategorized virtual collection, New Collection button with dialog, Edit/Delete per collection (3-dot menu with AlertDialog confirmation), active collection highlighting
+  4. **Collection Form Dialog**: Shared between Create and Edit modes, with name input, icon picker (Heart/Folder/Star/Shopping), color picker (10 preset colors)
+  5. **Wishlist Item Cards**: Product/gig image (or icon placeholder), name (clickable → product-detail/gig-detail), current price vs saved price, price drop indicator (green badge with %), price increase indicator (amber badge with %), shop name, type badge (Digital/Physical/Gig), notes preview, notification toggles (Bell/BellOff for price drop, Package for restock), Add to Cart button (products), View Gig button (gigs), Move to collection dropdown, Remove button (with AlertDialog confirmation), date saved
+  6. **Empty State**: Illustration with heart icon, "Your Wishlist is Empty" message, "Start Browsing" CTA → search view
+  7. **Filtered Empty State**: Context-aware messaging with "Show All Items" button
+  8. **Loading Skeleton State**: Header, search, grid skeleton cards
+- All sub-components (WishlistItemCard, CollectionsSidebarContent, CollectionFormDialog) defined OUTSIDE WishlistPage to pass react-hooks/static-components lint rule
+- Data fetching: single useEffect with Promise.all for items + collections, cancelled flag for cleanup, dataLoaded state (avoids setState-in-effect lint issues)
+- Refresh helpers (refreshItems, refreshCollections) called after mutations
+- Framer Motion animations: containerVariants with stagger, itemVariants with spring, AnimatePresence for layout changes
+- Responsive: cards grid (1 col mobile, 2 sm, 3 xl), sidebar hidden on mobile with DropdownMenu, touch-friendly targets
+- Added WishlistPage dynamic import and route case to `src/app/page.tsx` (case 'wishlist' → WishlistPage with auth guard)
+- ESLint: zero errors, zero warnings
+- Dev server running correctly (HTTP 200)
+
+Stage Summary:
+- Full-featured WishlistPage component created with collections sidebar, search/filter, item cards with price tracking, and responsive design
+- All lint checks pass (zero errors, zero warnings)
+- Route integration added to page.tsx
+---
+Task ID: 2
+Agent: Schema/Types Agent
+Task: Update database schema and TypeScript types for Wishlist feature
+
+Work Log:
+- Added WishlistCollection and WishlistItem models to both schema.sqlite.prisma and schema.postgresql.prisma
+- Added wishlistItems and wishlistCollections relations to User model
+- Added wishlistItems relation to Product and Gig models
+- Added 'wishlist' to ViewMode union type in types/index.ts
+- Added WishlistItem, WishlistCollection, CreateWishlistItemInput, CreateWishlistCollectionInput, UpdateWishlistCollectionInput interfaces
+- Ran db:push successfully
+
+Stage Summary:
+- Schema changes synced to SQLite database
+- TypeScript types available for frontend consumption
+
+---
+Task ID: 3
+Agent: API Routes Agent
+Task: Create wishlist API routes (CRUD + collections)
+
+Work Log:
+- Created GET/POST /api/wishlist/route.ts for listing and adding wishlist items
+- Created PATCH/DELETE /api/wishlist/[id]/route.ts for updating and removing items
+- Created GET/POST /api/wishlist/collections/route.ts for collection management
+- Created PATCH/DELETE /api/wishlist/collections/[id]/route.ts for collection editing/deletion
+- Created GET /api/wishlist/check/route.ts for checking if item is wishlisted
+- Created POST /api/wishlist/check-prices/route.ts for price drop detection
+
+Stage Summary:
+- 10 API endpoints across 6 files
+- Smart deduplication, auto default collection, price drop detection, ownership verification, soft delete
+
+---
+Task ID: 4
+Agent: Frontend Agent
+Task: Create WishlistPage component
+
+Work Log:
+- Created /src/components/marketplace/buyer/wishlist-page.tsx (1295 lines)
+- Full-featured wishlist page with collections sidebar, search, filters, sorting
+- Price drop/increase indicators, notification toggles, move to collection
+- Create/edit/delete collection dialogs
+- Empty state, loading skeleton, responsive design
+- Added WishlistPage route to page.tsx
+
+Stage Summary:
+- Complete wishlist UI with all planned features
+
+---
+Task ID: 5
+Agent: Frontend Agent
+Task: Create WishlistButton component
+
+Work Log:
+- Created /src/components/marketplace/shared/wishlist-button.tsx (372 lines)
+- 3 variants: icon, button, badge
+- Optimistic updates with Framer Motion animations
+- Toast notifications, disabled state for non-authenticated users
+
+Stage Summary:
+- Reusable WishlistButton ready for integration into product/gig cards
+
+---
+Task ID: 6
+Agent: Main Agent
+Task: Integrate wishlist into navigation and buyer dashboard
+
+Work Log:
+- Added Heart icon import and Wishlist entry to header dropdown menu
+- Added Wishlist entry to mobile menu
+- Added Heart wishlist button in header action bar (next to cart)
+- Added Wishlist tab to BuyerDashboard with WishlistPage component
+- Updated validTabs array
+
+Stage Summary:
+- Wishlist accessible from header bar, dropdown menu, mobile menu, and buyer dashboard tab

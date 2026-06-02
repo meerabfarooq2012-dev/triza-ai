@@ -169,6 +169,11 @@ const VerificationPage = dynamic(
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
+const WishlistPage = dynamic(
+  () => import('@/components/marketplace/buyer/wishlist-page').then(m => ({ default: m.WishlistPage })),
+  { ssr: false, loading: () => <ViewLoader /> }
+)
+
 // Error boundary component to catch rendering errors in child components
 type ErrorBoundaryProps = { children: React.ReactNode; fallback?: React.ReactNode }
 type ErrorBoundaryState = { hasError: boolean; error: Error | null }
@@ -370,6 +375,9 @@ function MarketplaceApp() {
         case 'verification-center':
           if (!isAuthenticated) return <AuthModal />
           return <VerificationPage />
+        case 'wishlist':
+          if (!isAuthenticated) return <AuthModal />
+          return <WishlistPage />
         case 'admin':
           if (!isAuthenticated || !currentUser?.isAdmin) {
             return (
