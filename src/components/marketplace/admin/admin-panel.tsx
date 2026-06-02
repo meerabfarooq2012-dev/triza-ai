@@ -12,6 +12,7 @@ import {
   Shield,
   CreditCard,
   FolderTree,
+  ShieldCheck,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -24,8 +25,9 @@ import AdminDisputes from './admin-disputes'
 import AdminSettings from './admin-settings'
 import { AdminTransactions } from './admin-transactions'
 import AdminCategories from './admin-categories'
+import AdminVerifications from './admin-verifications'
 
-type AdminTab = 'dashboard' | 'users' | 'products' | 'orders' | 'transactions' | 'disputes' | 'categories' | 'settings'
+type AdminTab = 'dashboard' | 'users' | 'products' | 'orders' | 'transactions' | 'disputes' | 'categories' | 'verifications' | 'settings'
 
 const tabs: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
@@ -35,6 +37,7 @@ const tabs: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
   { id: 'transactions', label: 'Transactions', icon: <CreditCard size={18} /> },
   { id: 'disputes', label: 'Disputes', icon: <AlertTriangle size={18} /> },
   { id: 'categories', label: 'Categories', icon: <FolderTree size={18} /> },
+  { id: 'verifications', label: 'Verifications', icon: <ShieldCheck size={18} /> },
   { id: 'settings', label: 'Settings', icon: <Settings size={18} /> },
 ]
 
@@ -86,6 +89,8 @@ export default function AdminPanel() {
         return <AdminDisputes />
       case 'categories':
         return <AdminCategories />
+      case 'verifications':
+        return <AdminVerifications />
       case 'settings':
         return <AdminSettings />
       default:

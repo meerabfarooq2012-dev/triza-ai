@@ -39,6 +39,7 @@ import {
   SOCIAL_PLATFORM_LABELS,
 } from '@/lib/constants'
 import { ShareShopUrl } from '@/components/marketplace/shared/share-shop-url'
+import { SellerTierCard } from '@/components/marketplace/verification/seller-tier-card'
 import type { Shop, Product, Review, SocialLink, CustomSection } from '@/types'
 
 // Helper to parse JSON strings safely
@@ -599,6 +600,10 @@ export default function ShopView() {
                 <Package size={14} />
                 <span>{shop.totalSales} sales</span>
               </div>
+              {/* Seller Tier Badge */}
+              {shop.id && (
+                <SellerTierCard shopId={shop.id} size="compact" className="mt-1" />
+              )}
               {shop.address && (
                 <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                   <MapPin size={14} />

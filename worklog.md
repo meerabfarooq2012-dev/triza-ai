@@ -654,3 +654,220 @@ Stage Summary:
 - Fixed the critical crash bug with synchronous state validation during Zustand rehydration
 - All changes deployed to Vercel successfully
 - Dispute Resolution Center is now live on production
+
+---
+Task ID: 2
+Agent: Schema Update Agent
+Task: Add Seller Verification & Trust Badges models and fields to all Prisma schema files
+
+Work Log:
+- Read worklog.md to understand previous agents' work context
+- Examined all 3 Prisma schema files (schema.prisma, schema.sqlite.prisma, schema.postgresql.prisma)
+- Discovered schema.prisma already had a different version of verification models (VerificationDocument, ShopBadge with different structures)
+- Updated schema.sqlite.prisma:
+  - Added `trustLevel` (String, default "none") and `verifiedAt` (DateTime?) to User model after `isVerified`
+  - Added `verificationStatus`, `trustLevel`, `trustScore`, `badges`, `verifiedAt` to Shop model after `averageRating`
+  - Added `verificationDocs SellerVerification[]` and `sellerBadges SellerBadge[]` relations to User model
+  - Added `verificationDocs SellerVerification[]` and `sellerBadges SellerBadge[]` relations to Shop model
+  - Added 3 new models: SellerVerification, TrustBadge, SellerBadge (after SharedProduct)
+  - Added `user` and `shop` relation fields to SellerBadge model (required by Prisma for the reverse relations)
+- Updated schema.postgresql.prisma with identical changes
+- Replaced schema.prisma entirely with schema.sqlite.prisma content (as it should match for local dev mode)
+- Ran `bun run db:push` — database synced successfully, Prisma Client regenerated
+- Ran `bun run lint` — zero errors
+- Wrote work log to /agent-ctx directory
+
+Stage Summary:
+- All 3 Prisma schema files now have identical Seller Verification & Trust Badges models
+- User model: added trustLevel and verifiedAt fields + verificationDocs/sellerBadges relations
+- Shop model: added verificationStatus, trustLevel, trustScore, badges, verifiedAt fields + verificationDocs/sellerBadges relations
+- New models: SellerVerification (document submissions), TrustBadge (badge definitions), SellerBadge (awarded badges per user)
+- SellerBadge has proper Prisma relations back to User and Shop
+- Database synced, Prisma Client regenerated, all lint checks pass
+
+---
+Task ID: 3
+Agent: Verification API Builder
+Task: Create API routes for Seller Verification & Trust Badges feature
+
+Work Log:
+- Read worklog to understand previous agents' work (search filters, order tracking, analytics, notifications, shipping, disputes)
+- Examined Prisma schema: confirmed SellerVerification, TrustBadge, SellerBadge models already existed from prior agent
+- Verified User and Shop models already had verification/trust fields (trustLevel, verifiedAt, verificationStatus, trustScore, badges)
+- Ran db:push — schema was already in sync with database
+- Created 7 API route files under `src/app/api/verification/`:
+  1. `submit/route.ts` — POST: Submit verification document for review
+     - Validates required fields (userId, shopId, documentType, documentUrl)
+     - Validates documentType against allowed values
+     - Creates SellerVerification record with status "pending"
+     - Updates Shop.verificationStatus to "pending" if currently "none"
+  2. `status/route.ts` — GET: Get verification status for user/shop
+     - Accepts userId or shopId query param (at least one required)
+     - Resolves shopId from userId and vice versa
+     - Returns all submitted documents, shop trust info (verificationStatus, trustLevel, trustScore, badges), and user trust info (isVerified, trustLevel, verifiedAt)
+     - Parses Shop.badges JSON with Array.isArray() guard
+  3. `review/route.ts` — POST: Admin reviews verification submission
+     - Validates status is "approved" or "rejected"
+     - Verifies reviewer is admin (isAdmin check)
+     - On approval: updates SellerVerification, sets Shop.verificationStatus="verified", Shop.verifiedAt=now, User.isVerified=true, User.verifiedAt=now
+     - Recalculates trust score and trust level on approval
+     - Auto-awards "verified_seller" badge on approval (creates SellerBadge + updates Shop.badges JSON)
+     - On rejection: updates SellerVerification with rejectionReason, sets Shop.verificationStatus="rejected"
+  4. `badges/route.ts` — GET: Get all trust badges with shop's earned badges
+     - Returns all active TrustBadge definitions with parsed criteria JSON
+     - If shopId provided, includes earned badges with isEarned flag and earnedAt timestamp
+  5. `trust-score/route.ts` — GET: Calculate and return trust score for a shop
+     - Full breakdown: verified(+20), sales≥10(+15), sales≥50(+10), rating≥4.0(+10), rating≥4.5(+15), reviews≥10(+10), reviews≥50(+10), active30d(+5), returnPolicy(+5), unresolved disputes(-10 each)
+     - Clamps score to 0-100
+     - Calculates trust level tier: platinum(90+), gold(75-89), silver(50-74), bronze(25-49), none(0-24)
+     - Updates Shop record with calculated trustScore and trustLevel
+     - Updates User.trustLevel to match
+  6. `award-badge/route.ts` — POST: Award a badge to a seller
+     - Validates userId, shopId, badgeSlug
+     - Checks badge exists in TrustBadge table
+     - Prevents duplicate awards via @@unique([userId, badgeSlug])
+     - Creates SellerBadge record
+     - Updates Shop.badges JSON array with badgeSlug
+  7. `seed-badges/route.ts` — POST: Seed 7 default trust badges
+     - verified_seller (Shield, green, standard) — { verified: true }
+     - top_rated (Star, amber, premium) — { minRating: 4.5, minReviews: 20 }
+     - power_seller (Zap, purple, elite) — { minSales: 100 }
+     - fast_shipper (Truck, blue, standard) — { avgShipDays: 2 }
+     - trusted_buyer (Heart, pink, standard) — { minOrders: 5, noDisputes: true }
+     - new_seller (Sparkles, gray, standard) — { maxDays: 30 }
+     - response_pro (MessageCircle, teal, standard) — { avgResponseHours: 2 }
+     - Upserts badges (creates if not exists, updates if exists)
+- Fixed TypeScript errors:
+  - seed-badges: added type annotation `any[]` for createdBadges array
+  - status: added `Record<string, any> | null` type for shopTrustInfo and userTrustInfo variables
+- All ESLint checks pass (0 errors, 2 pre-existing warnings in unrelated file)
+
+Stage Summary:
+- 7 API route files created under src/app/api/verification/
+- submit: Document submission with validation, auto-updates Shop.verificationStatus
+- status: Full verification/trust info retrieval with resolved IDs
+- review: Admin review with approval cascade (verification → trust score → badge) and rejection handling
+- badges: Active badge definitions with earned status per shop
+- trust-score: Comprehensive score calculation with breakdown, auto-updates Shop and User
+- award-badge: Badge awarding with duplicate prevention and Shop.badges JSON update
+- seed-badges: 7 default badges with upsert logic
+- Consistent { success: true/false, data/error } response format
+- All routes use import { db } from '@/lib/db'
+- All routes use try/catch with proper error handling
+- Array.isArray() guards on JSON-parsed data
+- Lint passes with zero errors
+
+---
+Task ID: 2-b
+Agent: types-agent
+Task: Add Seller Verification & Trust Badges TypeScript types
+
+Work Log:
+- Read existing types/index.ts
+- Added SellerTierLevel, SellerTierInfo, SellerTierDetail types
+- Added AdminVerificationItem, AdminVerificationListResponse types
+- Added PublicVerificationInfo type
+- Added TIER_CONFIG with colors, icons, descriptions, requirements
+- Added DOCUMENT_TYPE_LABELS and VERIFICATION_STATUS_LABELS constants
+
+Stage Summary:
+- All TypeScript types for the verification feature added
+- TIER_CONFIG provides tier visual configuration (Bronze/Silver/Gold/Platinum)
+- Constants for document types and verification status labels added
+
+---
+Task ID: 2
+Agent: schema-update-agent
+Task: Add SellerTier model and new fields to Prisma schemas
+
+Work Log:
+- Added SellerTier model to schema.sqlite.prisma with all fields (id, shopId, userId, tier, totalSales, averageRating, totalReviews, isVerified, avgShipDays, trustScore, nextTier, progressPercent, calculatedAt, createdAt, updatedAt) and relations (shop, user) with indexes
+- Added SellerTier model to schema.postgresql.prisma (identical structure)
+- Added SellerTier model to schema.prisma (identical structure)
+- Added sellerTier relation field (SellerTier?) to Shop model in all 3 schemas
+- Added sellerTier relation field (SellerTier?) to User model in all 3 schemas
+- Added businessName (String?), businessAddress (String?), notes (String?) fields to SellerVerification model in all 3 schemas (before user/shop relations)
+- Fixed SellerTier.userId to include @unique attribute (required for one-to-one relation with User model)
+- Ran db:push successfully — database now in sync with schema
+- Verified all 3 schema files are in sync (schema.prisma matches schema.sqlite.prisma exactly)
+
+Stage Summary:
+- SellerTier model created with tier, metrics, and progress tracking fields
+- All 3 schema files are in sync (schema.prisma, schema.sqlite.prisma, schema.postgresql.prisma)
+- Database updated with new SellerTier table and SellerVerification fields (businessName, businessAddress, notes)
+- SellerTier has one-to-one relations with both Shop (via shopId @unique) and User (via userId @unique)
+
+---
+Task ID: 4-a
+Agent: seller-tier-card-agent
+Task: Build SellerTierCard component
+
+Work Log:
+- Read worklog and existing codebase: types, TIER_CONFIG, API routes, UI components
+- Examined existing `/api/seller-tier/[shopId]` API route — confirmed it returns SellerTierDetail with currentTier, metrics, nextTier, progressPercent
+- Created `src/components/marketplace/verification/seller-tier-card.tsx` with:
+  - Compact mode: tier badge icon + name + mini progress bar in horizontal layout
+  - Full mode: animated gradient border emblem (conic-gradient rotation), tier name with description, metrics row (sales, rating, reviews, verified badge), progress bar to next tier, requirements checklist with ✅/❌ indicators, max tier (Platinum) celebration message
+  - AnimatedTierEmblem sub-component with rotating conic-gradient border using useState/useEffect interval
+  - CompactTierCard sub-component with framer-motion fade-in and animated progress bar
+  - FullTierCard sub-component with staggered animations and per-requirement animation delays
+  - TierCardSkeleton sub-component for loading states (compact and full variants)
+  - Data fetching via useEffect from `/api/seller-tier/[shopId]` with cancellation support
+  - Error state with graceful fallback (compact: "Tier unavailable", full: card with icon and error message)
+  - No-data state: defaults to Bronze tier with 0% progress for new shops
+  - Uses TIER_CONFIG from types for colors, icons, labels, bgColors, borderColors
+  - Uses framer-motion for all animations, lucide-react icons (Medal, Award, Crown, Gem, Shield, Star, Check, X, TrendingUp), shadcn/ui (Card, Badge, Separator, Skeleton)
+- Fixed JSX closing tag bug (`</motion.div>` → `</div>`) and removed unused imports (AnimatePresence, CardTitle, Progress)
+- All ESLint checks pass (only pre-existing error in verification/review/route.ts unrelated to this component)
+
+Stage Summary:
+- SellerTierCard component complete with both compact and full layouts
+- Fetches data from /api/seller-tier/[shopId]
+- Uses TIER_CONFIG for visual styling per tier level
+- Animated emblem with rotating conic-gradient border in full mode
+- Requirements checklist with met/unmet indicators showing current vs required values
+- Handles loading/error/no-data states gracefully
+
+---
+Task ID: 4-b
+Agent: admin-verifications-agent
+Task: Build AdminVerificationPanel component
+
+Work Log:
+- Read worklog to understand previous agents' work (search filters, order tracking, analytics, notifications, shipping, disputes, verification system)
+- Examined existing admin panel structure (admin-panel.tsx with sidebar tabs) and verification API routes
+- Examined Prisma schema: SellerVerification model with businessName, businessAddress, notes fields
+- Examined verification review API at /api/verification/review/route.ts — only supported approved/rejected statuses
+- Updated /api/verification/review/route.ts to support "under_review" status:
+  - Changed status validation from ['approved', 'rejected'] to ['approved', 'rejected', 'under_review']
+  - Changed already-reviewed check from whitelist to blacklist (blocks approved/rejected, allows pending/under_review)
+  - Changed if/else to if/else-if/else for three statuses: approved → rejected → under_review
+  - Added under_review handler that updates verification status with reviewedBy and reviewedAt
+- Created src/components/marketplace/admin/admin-verifications.tsx with:
+  1. Stats Bar: 4 cards showing Pending (amber), Under Review (blue), Approved (green), Rejected (red) counts with icons
+  2. Filter Bar: Tabs for All/Pending/Under Review/Approved/Rejected + search input for shop/user name
+  3. Verification Queue: Card-based list with seller avatar, name, email, shop name, document type badge, country, relative time, status badge, and Review button
+  4. Review Dialog: Full verification review modal with:
+     - Document preview (iframe with sandbox + open in new tab link)
+     - Seller info summary (avatar, name, email, shop, submitted time, trust level, country)
+     - Document details (type, masked number, business info for business_license, seller notes, previous rejection reason)
+     - Action buttons: Approve (green), Reject (red with required reason textarea), Mark Under Review (blue outline)
+  5. Client-side search filtering by shop name, user name, or email
+  6. Pagination with Previous/Next buttons
+  7. Framer-motion stagger animations on list items and filter changes
+  8. Loading skeleton state, empty state with contextual message
+  9. Toast notifications on success/error via sonner
+  10. Responsive design (stat cards stack 2x2 on mobile)
+- Integrated into admin-panel.tsx:
+  - Added "Verifications" tab with ShieldCheck icon to sidebar and mobile navigation
+  - Added AdminTab 'verifications' type and case in renderTabContent
+  - Added import for AdminVerifications component
+- ESLint passes with zero errors
+
+Stage Summary:
+- AdminVerificationPanel complete with full verification review workflow
+- Stats bar shows pending/under_review/approved/rejected counts from API
+- Review dialog with document preview, seller info, and approve/reject/under-review actions
+- Toast notifications for success/error feedback
+- Review API updated to support under_review status transition
+- Integrated as tab in admin panel with ShieldCheck icon

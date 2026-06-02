@@ -26,6 +26,7 @@ import {
   RotateCcw,
   Rss,
   Scale,
+  ShieldCheck,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -348,6 +349,12 @@ export function Header() {
                       <Scale className="mr-2 h-4 w-4" />
                       Dispute Center
                     </DropdownMenuItem>
+                    {(activeRole === 'seller' || currentUser?.role === 'seller' || currentUser?.role === 'both') && (
+                      <DropdownMenuItem onClick={() => setCurrentView('verification-center')}>
+                        <ShieldCheck className="mr-2 h-4 w-4" />
+                        Trust Center
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={() => setCurrentView('activity-feed')}>
                       <Rss className="mr-2 h-4 w-4" />
                       Activity Feed
@@ -627,6 +634,17 @@ export function Header() {
                     <Scale className="h-4.5 w-4.5" />
                     Dispute Center
                   </Button>
+
+                  {(activeRole === 'seller' || currentUser?.role === 'seller' || currentUser?.role === 'both') && (
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start gap-3"
+                      onClick={() => setCurrentView('verification-center')}
+                    >
+                      <ShieldCheck className="h-4.5 w-4.5" />
+                      Trust Center
+                    </Button>
+                  )}
 
                   <Button
                     variant="ghost"

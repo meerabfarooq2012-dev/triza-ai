@@ -50,6 +50,7 @@ export type ViewMode =
   | 'activity-feed'
   | 'disputes'
   | 'dispute-detail'
+  | 'verification-center'
 
 // ----- Core Domain Models -----
 
@@ -1103,4 +1104,217 @@ export interface SharedProduct {
   userId: string
   platform: 'link' | 'whatsapp' | 'twitter' | 'facebook' | 'copy'
   createdAt: string
+}
+
+// ----- Verification & Trust Badge Types -----
+
+export type VerificationStatus = 'none' | 'pending' | 'under_review' | 'verified' | 'rejected'
+export type TrustLevelType = 'none' | 'bronze' | 'silver' | 'gold' | 'platinum'
+export type DocumentType = 'national_id' | 'passport' | 'business_license' | 'tax_certificate' | 'utility_bill' | 'bank_statement'
+
+export interface VerificationDocument {
+  id: string
+  userId: string
+  shopId: string
+  documentType: DocumentType
+  documentUrl: string
+  documentNumber: string | null
+  country: string | null
+  status: 'pending' | 'under_review' | 'approved' | 'rejected' | 'expired'
+  rejectionReason: string | null
+  submittedAt: string
+  reviewedAt: string | null
+  reviewedBy: string | null
+  expiresAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface TrustBadgeItem {
+  id: string
+  slug: string
+  name: string
+  description: string
+  icon: string
+  color: string
+  criteria: Record<string, unknown>
+  tier: 'standard' | 'premium' | 'elite'
+  isActive: boolean
+  earned?: boolean
+  awardedAt?: string | null
+  expiresAt?: string | null
+}
+
+export interface SellerBadgeItem {
+  id: string
+  userId: string
+  shopId: string
+  badgeSlug: string
+  awardedAt: string
+  expiresAt: string | null
+}
+
+// ──────────────────────────────────────────────
+// SELLER VERIFICATION & TRUST BADGES TYPES
+// ──────────────────────────────────────────────
+
+export type SellerTierLevel = 'bronze' | 'silver' | 'gold' | 'platinum'
+
+export interface SellerTierInfo {
+  id: string
+  shopId: string
+  userId: string
+  tier: SellerTierLevel
+  totalSales: number
+  averageRating: number
+  totalReviews: number
+  isVerified: boolean
+  avgShipDays: number | null
+  trustScore: number
+  nextTier: SellerTierLevel | null
+  progressPercent: number
+  calculatedAt: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface SellerTierDetail {
+  currentTier: {
+    tier: SellerTierLevel
+    label: string
+    color: string
+    icon: string
+    requirements: string[]
+  }
+  metrics: {
+    totalSales: number
+    averageRating: number
+    totalReviews: number
+    isVerified: boolean
+    avgShipDays: number | null
+  }
+  nextTier: {
+    tier: SellerTierLevel
+    label: string
+    requirements: Array<{
+      metric: string
+      current: number | boolean
+      required: number | boolean
+      met: boolean
+    }>
+  } | null
+  progressPercent: number
+}
+
+export interface AdminVerificationItem {
+  id: string
+  userId: string
+  shopId: string
+  status: string
+  documentType: string
+  documentUrl: string
+  documentNumber: string | null
+  country: string | null
+  submittedAt: string
+  rejectionReason: string | null
+  businessName: string | null
+  businessAddress: string | null
+  notes: string | null
+  user: { id: string; name: string; email: string; avatar: string | null }
+  shop: { id: string; name: string; slug: string }
+}
+
+export interface AdminVerificationListResponse {
+  verifications: AdminVerificationItem[]
+  pagination: { page: number; limit: number; total: number; totalPages: number }
+  stats: { pending: number; underReview: number; approved: number; rejected: number }
+}
+
+export interface PublicVerificationInfo {
+  shopId: string
+  shopName: string
+  verificationStatus: string
+  trustLevel: string
+  trustScore: number
+  verifiedAt: string | null
+  badges: Array<{
+    slug: string
+    name: string
+    icon: string
+    color: string
+    tier: string
+    awardedAt: string
+  }>
+  sellerTier: {
+    tier: SellerTierLevel
+    totalSales: number
+    averageRating: number
+    totalReviews: number
+    isVerified: boolean
+  } | null
+}
+
+export const TIER_CONFIG: Record<SellerTierLevel, {
+  label: string
+  color: string
+  bgColor: string
+  borderColor: string
+  icon: string
+  description: string
+  requirements: string[]
+}> = {
+  bronze: {
+    label: 'Bronze Seller',
+    color: '#cd7f32',
+    bgColor: 'bg-amber-50',
+    borderColor: 'border-amber-200',
+    icon: 'Medal',
+    description: 'New seller building their reputation',
+    requirements: ['0-10 sales', 'Getting started on Marketo'],
+  },
+  silver: {
+    label: 'Silver Seller',
+    color: '#c0c0c0',
+    bgColor: 'bg-gray-50',
+    borderColor: 'border-gray-300',
+    icon: 'Award',
+    description: 'Established seller with proven track record',
+    requirements: ['11+ sales', '4.0+ average rating'],
+  },
+  gold: {
+    label: 'Gold Seller',
+    color: '#ffd700',
+    bgColor: 'bg-yellow-50',
+    borderColor: 'border-yellow-200',
+    icon: 'Crown',
+    description: 'Trusted seller with excellent performance',
+    requirements: ['51+ sales', '4.5+ average rating', 'Verified identity'],
+  },
+  platinum: {
+    label: 'Platinum Seller',
+    color: '#e5e4e2',
+    bgColor: 'bg-slate-50',
+    borderColor: 'border-slate-300',
+    icon: 'Gem',
+    description: 'Elite seller with outstanding performance',
+    requirements: ['200+ sales', '4.8+ average rating', 'Verified identity', 'Fast Shipper badge'],
+  },
+}
+
+export const DOCUMENT_TYPE_LABELS: Record<string, string> = {
+  national_id: 'National ID Card',
+  passport: 'Passport',
+  business_license: 'Business License',
+  tax_certificate: 'Tax Certificate',
+  utility_bill: 'Utility Bill',
+  bank_statement: 'Bank Statement',
+}
+
+export const VERIFICATION_STATUS_LABELS: Record<string, { label: string; color: string; bgColor: string }> = {
+  none: { label: 'Not Verified', color: 'text-gray-500', bgColor: 'bg-gray-100' },
+  pending: { label: 'Pending Review', color: 'text-amber-600', bgColor: 'bg-amber-50' },
+  under_review: { label: 'Under Review', color: 'text-blue-600', bgColor: 'bg-blue-50' },
+  approved: { label: 'Verified', color: 'text-emerald-600', bgColor: 'bg-emerald-50' },
+  rejected: { label: 'Rejected', color: 'text-red-600', bgColor: 'bg-red-50' },
+  expired: { label: 'Expired', color: 'text-orange-600', bgColor: 'bg-orange-50' },
 }

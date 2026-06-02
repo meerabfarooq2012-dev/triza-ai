@@ -18,6 +18,8 @@ model User {
   phone         String?
   location      String?
   isVerified    Boolean   @default(false)
+  trustLevel      String    @default("none") // none, bronze, silver, gold, platinum
+  verifiedAt      DateTime?
   isAdmin       Boolean   @default(false)
   isActive      Boolean   @default(true)
   createdAt     DateTime  @default(now())
@@ -46,6 +48,9 @@ model User {
   activities     Activity[]
   storyViews     StoryView[]
   sharedProducts SharedProduct[]
+  verificationDocs SellerVerification[]
+  sellerBadges     SellerBadge[]
+  sellerTier        SellerTier?
 }
 
 model Shop {
@@ -70,6 +75,11 @@ model Shop {
   totalSales      Int       @default(0)
   totalReviews    Int       @default(0)
   averageRating   Float     @default(0)
+  verificationStatus String    @default("none") // none, pending, under_review, verified, rejected
+  trustLevel         String    @default("none") // none, bronze, silver, gold, platinum
+  trustScore         Int       @default(0) // 0-100 calculated trust score
+  badges             String    @default("[]") // JSON array of badge IDs
+  verifiedAt         DateTime?
   customSections  String    @default("[]") // JSON array of custom sections
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -85,6 +95,9 @@ model Shop {
   followers      ShopFollow[]  @relation("ShopFollowers")
   activities     Activity[]
   stories        ShopStory[]
+  verificationDocs SellerVerification[]
+  sellerBadges     SellerBadge[]
+  sellerTier        SellerTier?
 
   @@index([slug])
   @@index([userId])
@@ -912,4 +925,100 @@ model SharedProduct {
   @@index([productId])
   @@index([userId])
   @@index([createdAt])
+}
+
+// =============================================================================
+// SELLER VERIFICATION & TRUST BADGES MODELS
+// =============================================================================
+
+model SellerVerification {
+  id              String   @id @default(cuid())
+  userId          String
+  shopId          String
+  status          String   @default("pending") // pending, under_review, approved, rejected, expired
+  documentType    String   // national_id, passport, business_license, tax_certificate, utility_bill, bank_statement
+  documentUrl     String   // URL to uploaded document
+  documentNumber  String?  // ID/license/certificate number (partially masked)
+  country         String?  // Country of issuance
+  submittedAt     DateTime @default(now())
+  reviewedAt      DateTime?
+  reviewedBy      String?  // Admin userId who reviewed
+  rejectionReason String?
+  businessName      String?
+  businessAddress   String?
+  notes             String?
+  expiresAt       DateTime? // Some documents expire
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shop            Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([shopId])
+  @@index([status])
+  @@index([documentType])
+  @@index([createdAt])
+}
+
+model TrustBadge {
+  id          String   @id @default(cuid())
+  slug        String   @unique // e.g. "verified_seller", "top_rated", "fast_shipper", "power_seller"
+  name        String
+  description String
+  icon        String   // Lucide icon name
+  color       String   @default("#10b981") // Badge color
+  criteria    String   @default("{}") // JSON: { minSales: 100, minRating: 4.5, etc. }
+  tier        String   @default("standard") // standard, premium, elite
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([slug])
+  @@index([tier])
+  @@index([isActive])
+}
+
+model SellerBadge {
+  id        String   @id @default(cuid())
+  userId    String
+  shopId    String
+  badgeSlug String   // References TrustBadge.slug
+  awardedAt DateTime @default(now())
+  expiresAt DateTime? // null = never expires
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shop      Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeSlug])
+  @@index([userId])
+  @@index([shopId])
+  @@index([badgeSlug])
+  @@index([awardedAt])
+}
+
+model SellerTier {
+  id              String   @id @default(cuid())
+  shopId          String   @unique
+  userId          String   @unique
+  tier            String   @default("bronze") // bronze, silver, gold, platinum
+  totalSales      Int      @default(0)
+  averageRating   Float    @default(0)
+  totalReviews    Int      @default(0)
+  isVerified      Boolean  @default(false)
+  avgShipDays     Float?
+  trustScore      Int      @default(0)
+  nextTier        String?
+  progressPercent Int      @default(0)
+  calculatedAt    DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  shop            Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([shopId])
+  @@index([userId])
+  @@index([tier])
+  @@index([calculatedAt])
 }

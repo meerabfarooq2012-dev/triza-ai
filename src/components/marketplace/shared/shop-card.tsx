@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { RatingStars } from '@/components/marketplace/shared/rating-stars'
+import { SellerTrustBadge } from '@/components/marketplace/verification/seller-trust-badge'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { cn } from '@/lib/utils'
 import type { Shop } from '@/types'
@@ -80,9 +81,18 @@ export function ShopCard({ shop, className }: ShopCardProps) {
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0 pb-1">
-              <h3 className="font-semibold text-sm truncate text-foreground">
-                {shop.name}
-              </h3>
+              <div className="flex items-center gap-1.5">
+                <h3 className="font-semibold text-sm truncate text-foreground">
+                  {shop.name}
+                </h3>
+                <SellerTrustBadge
+                  verificationStatus={(shop as Record<string, unknown>).verificationStatus as string || 'none'}
+                  trustLevel={(shop as Record<string, unknown>).trustLevel as string || 'none'}
+                  trustScore={(shop as Record<string, unknown>).trustScore as number | undefined}
+                  size="sm"
+                  showLabel={false}
+                />
+              </div>
               <RatingStars
                 rating={shop.averageRating}
                 size="sm"

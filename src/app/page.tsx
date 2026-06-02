@@ -164,6 +164,11 @@ const DisputeDetailPage = dynamic(
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
+const VerificationPage = dynamic(
+  () => import('@/components/marketplace/verification/verification-page').then(m => ({ default: m.VerificationPage })),
+  { ssr: false, loading: () => <ViewLoader /> }
+)
+
 // Error boundary component to catch rendering errors in child components
 type ErrorBoundaryProps = { children: React.ReactNode; fallback?: React.ReactNode }
 type ErrorBoundaryState = { hasError: boolean; error: Error | null }
@@ -362,6 +367,9 @@ function MarketplaceApp() {
         case 'dispute-detail':
           if (!isAuthenticated) return <AuthModal />
           return <DisputeDetailPage disputeId={viewParams.id} userId={currentUser?.id || ''} isSeller={activeRole === 'seller'} isAdmin={currentUser?.isAdmin} />
+        case 'verification-center':
+          if (!isAuthenticated) return <AuthModal />
+          return <VerificationPage />
         case 'admin':
           if (!isAuthenticated || !currentUser?.isAdmin) {
             return (
