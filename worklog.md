@@ -1436,3 +1436,27 @@ Stage Summary:
 - useLanguage hook integrates with Zustand store and manages HTML dir/lang attributes
 - Store properly persists and validates language preference
 - All 5 required files created: en.json, ur.json, ar.json, index.ts, use-language.ts
+
+---
+Task ID: 11
+Agent: Main Agent
+Task: Feature #11 - Multi-Language / i18n with English, Urdu, Arabic RTL support
+
+Work Log:
+- Created translation files: en.json, ur.json, ar.json with 120 keys across 7 categories (common, nav, auth, product, landing, dashboard, language)
+- Created i18n engine at src/lib/i18n/index.ts with t() function, deep key access, English fallback, param interpolation, RTL detection
+- Created useLanguage hook at src/hooks/use-language.ts integrating with Zustand store
+- Added language state to Zustand store with persistence, merge validation, and logout-preservation
+- Built LanguageSwitcher component with 3 variants: icon, compact, default (full dropdown with flags, RTL badges, native labels)
+- Integrated language switcher into header (icon variant for desktop, compact for mobile sidebar)
+- Created RTLProvider component that syncs HTML dir/lang attributes with current language
+- Added RTL CSS support in globals.css for direction-aware styling
+- Applied translations to all header UI strings (nav links, search placeholder, dropdown menu items, login/signup buttons, mobile sidebar)
+- Browser verified: English → Urdu → Arabic → English switching works correctly
+- Urdu shows native script (اردو), Arabic shows native script (العربية) with RTL layout
+
+Stage Summary:
+- 12 files changed, 908 insertions
+- 3 languages supported: English (LTR), Urdu (RTL), Arabic (RTL)
+- Language preference persists in localStorage across sessions and logouts
+- Committed and pushed as feature #11
