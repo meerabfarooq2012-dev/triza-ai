@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, Fragment } from 'react'
 import {
   Search,
   Plus,
@@ -449,8 +449,8 @@ export default function AdminCategories() {
                   const isExpanded = expandedIds.has(cat.id)
 
                   return (
-                    <>
-                      <TableRow key={cat.id} className={!cat.isActive ? 'opacity-50' : ''}>
+                    <Fragment key={cat.id}>
+                      <TableRow className={!cat.isActive ? 'opacity-50' : ''}>
                         <TableCell>
                           {hasChildren ? (
                             <button
@@ -589,7 +589,7 @@ export default function AdminCategories() {
                           </TableCell>
                         </TableRow>
                       ))}
-                    </>
+                    </Fragment>
                   )
                 })}
               </TableBody>
