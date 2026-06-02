@@ -1347,3 +1347,23 @@ Stage Summary:
 - Gig verified purchase check added
 - API client updated with getGigReviews and enhanced updateReview
 - All review features working: photo reviews, verified purchase badges, helpful votes, seller replies, review sorting/filtering, edit reviews, rating distribution
+
+---
+Task ID: 1
+Agent: Main Agent
+Task: Push code to GitHub and explain Vercel deployment (automatic vs manual)
+
+Work Log:
+- Checked git status - found uncommitted wishlist removal changes
+- Committed changes with message "Remove Wishlist feature - redundant with Favorites tab"
+- Pushed to GitHub origin/main successfully
+- Checked for Vercel CLI credentials - none found
+- Explained Vercel deployment setup process to user
+- Key finding: Vercel uses AUTOMATIC deployment when connected to GitHub repo
+- Provided step-by-step guide for connecting GitHub repo to Vercel
+
+Stage Summary:
+- Code pushed to GitHub: commit a72e858
+- Vercel deployment is AUTOMATIC - every push to main triggers auto-deploy
+- User needs to connect repo via Vercel dashboard (one-time setup)
+- Environment variables needed: DATABASE_URL and DIRECT_URL for Supabase PostgreSQL
