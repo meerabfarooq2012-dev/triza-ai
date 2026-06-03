@@ -1613,6 +1613,30 @@ export interface ProductAnswer {
   user?: { id: string; name: string; avatar: string | null }
 }
 
+export interface GigQuestion {
+  id: string
+  gigId: string
+  userId: string
+  question: string
+  isAnswered: boolean
+  createdAt: string
+  updatedAt: string
+  user?: { id: string; name: string; avatar: string | null }
+  answers?: GigAnswer[]
+}
+
+export interface GigAnswer {
+  id: string
+  questionId: string
+  userId: string
+  answer: string
+  isSellerAnswer: boolean
+  helpfulCount: number
+  createdAt: string
+  updatedAt: string
+  user?: { id: string; name: string; avatar: string | null }
+}
+
 export const DOCUMENT_TYPE_LABELS: Record<string, string> = {
   national_id: 'National ID Card',
   passport: 'Passport',

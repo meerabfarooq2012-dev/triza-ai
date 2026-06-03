@@ -21,7 +21,6 @@ import { PaymentSettingsPage } from '@/components/marketplace/payment/payment-se
 import { SellerReviews } from './seller-reviews'
 import { SellerCoupons } from './seller-coupons'
 import { SellerFlashSales } from './seller-flash-sales'
-import { SellerQA } from './seller-qa'
 import { BulkProductUpload } from './bulk-product-upload'
 import { toast } from 'sonner'
 
@@ -134,7 +133,7 @@ export function SellerDashboard() {
   const hasShop = !!(shopData || currentUser?.shop)
 
   // Support deep-linking to a specific tab via viewParams
-  const validTabs = ['overview', 'products', 'bulk-upload', 'gigs', 'orders', 'coupons', 'flash-sales', 'wallet', 'payment-settings', 'shipping', 'messages', 'reviews', 'qa', 'settings', 'analytics']
+  const validTabs = ['overview', 'products', 'bulk-upload', 'gigs', 'orders', 'coupons', 'flash-sales', 'wallet', 'payment-settings', 'shipping', 'messages', 'reviews', 'settings', 'analytics']
   const activeTab = useMemo(() => {
     if (manualTab) return manualTab
     if (viewParams?.tab && validTabs.includes(viewParams.tab)) return viewParams.tab
@@ -265,7 +264,6 @@ export function SellerDashboard() {
                 <TabsTrigger value="returns" className="gap-1">🔄 Returns</TabsTrigger>
                 <TabsTrigger value="settings">Settings</TabsTrigger>
                 <TabsTrigger value="reviews" className="gap-1">⭐ Reviews</TabsTrigger>
-                <TabsTrigger value="qa" className="gap-1">💬 Q&A</TabsTrigger>
                 <TabsTrigger value="analytics">Analytics</TabsTrigger>
               </TabsList>
             </div>
@@ -316,9 +314,7 @@ export function SellerDashboard() {
                 />
               )}
             </TabsContent>
-            <TabsContent value="qa">
-              <SellerQA />
-            </TabsContent>
+
             <TabsContent value="settings">
               <SellerShopSettings />
             </TabsContent>

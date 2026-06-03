@@ -16,13 +16,17 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Separator } from '@/components/ui/skeleton'
+import { Separator } from '@/components/ui/separator'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { useToast } from '@/hooks/use-toast'
-import type { ProductQuestion, ProductAnswer } from '@/types'
+import type { ProductQuestion, ProductAnswer, GigQuestion, GigAnswer } from '@/types'
+
+type QuestionItem = ProductQuestion | GigQuestion
+type AnswerItem = ProductAnswer | GigAnswer
 
 interface ProductQAProps {
-  productId: string
+  productId?: string
+  gigId?: string
   shopOwnerId?: string
 }
 
@@ -39,11 +43,14 @@ function formatDate(dateStr: string): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-export function ProductQA({ productId, shopOwnerId }: ProductQAProps) {
+export function ProductQA({ productId, gigId, shopOwnerId }: ProductQAProps) {
   const { currentUser } = useMarketplaceStore()
   const { toast } = useToast()
 
-  const [questions, setQuestions] = useState<ProductQuestion[]>([])
+  const itemType = gigId ? 'gig' : 'product'
+  const itemId = gigId || productId || ''
+
+  const [questions, setQuestions] = useState<QuestionItem[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(new Set())
   const [questionText, setQuestionText] = useState('')
@@ -52,10 +59,13 @@ export function ProductQA({ productId, shopOwnerId }: ProductQAProps) {
   const [submittingAnswers, setSubmittingAnswers] = useState<Record<string, boolean>>({})
   const [helpfulLoading, setHelpfulLoading] = useState<Record<string, boolean>>({})
 
+  // Build API base path based on item type
+  const apiBase = itemType === 'gig' ? `/api/gigs/${itemId}` : `/api/products/${itemId}`
+
   const fetchQuestions = useCallback(async () => {
     try {
       setLoading(true)
-      const res = await fetch(`/api/products/${productId}/questions`)
+      const res = await fetch(`${apiBase}/questions`)
       const data = await res.json()
       if (data.success && data.data?.questions) {
         setQuestions(data.data.questions)
@@ -65,7 +75,7 @@ export function ProductQA({ productId, shopOwnerId }: ProductQAProps) {
     } finally {
       setLoading(false)
     }
-  }, [productId])
+  }, [apiBase])
 
   useEffect(() => {
     fetchQuestions()
@@ -87,7 +97,7 @@ export function ProductQA({ productId, shopOwnerId }: ProductQAProps) {
     if (!currentUser || !questionText.trim()) return
     setSubmittingQuestion(true)
     try {
-      const res = await fetch(`/api/products/${productId}/questions`, {
+      const res = await fetch(`${apiBase}/questions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -114,7 +124,7 @@ export function ProductQA({ productId, shopOwnerId }: ProductQAProps) {
     if (!currentUser || !answerTexts[questionId]?.trim()) return
     setSubmittingAnswers((prev) => ({ ...prev, [questionId]: true }))
     try {
-      const res = await fetch(`/api/products/${productId}/questions/${questionId}/answers`, {
+      const res = await fetch(`${apiBase}/questions/${questionId}/answers`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -142,7 +152,7 @@ export function ProductQA({ productId, shopOwnerId }: ProductQAProps) {
     setHelpfulLoading((prev) => ({ ...prev, [answerId]: true }))
     try {
       const res = await fetch(
-        `/api/products/${productId}/questions/${questionId}/answers/${answerId}/helpful`,
+        `${apiBase}/questions/${questionId}/answers/${answerId}/helpful`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -156,7 +166,7 @@ export function ProductQA({ productId, shopOwnerId }: ProductQAProps) {
             if (q.id !== questionId) return q
             return {
               ...q,
-              answers: q.answers?.map((a) =>
+              answers: q.answers?.map((a: AnswerItem) =>
                 a.id === answerId ? { ...a, helpfulCount: a.helpfulCount + 1 } : a
               ),
             }
@@ -169,6 +179,8 @@ export function ProductQA({ productId, shopOwnerId }: ProductQAProps) {
       setHelpfulLoading((prev) => ({ ...prev, [answerId]: false }))
     }
   }
+
+  const itemLabel = itemType === 'gig' ? 'this gig' : 'this product'
 
   if (loading) {
     return (
@@ -204,7 +216,7 @@ export function ProductQA({ productId, shopOwnerId }: ProductQAProps) {
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center gap-2 text-sm font-medium text-emerald-700">
               <MessageCircleQuestion size={16} />
-              Have a question about this product?
+              Have a question about {itemLabel}?
             </div>
             <Textarea
               placeholder="Type your question here..."
@@ -247,7 +259,7 @@ export function ProductQA({ productId, shopOwnerId }: ProductQAProps) {
         <div className="py-8 text-center text-muted-foreground">
           <MessageCircleQuestion size={40} className="mx-auto mb-3 text-muted-foreground/30" />
           <p className="font-medium">No questions yet</p>
-          <p className="text-sm mt-1">Be the first to ask about this product!</p>
+          <p className="text-sm mt-1">Be the first to ask about {itemLabel}!</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -255,7 +267,7 @@ export function ProductQA({ productId, shopOwnerId }: ProductQAProps) {
             const isExpanded = expandedQuestions.has(question.id)
             const answers = question.answers || []
             const answerCount = answers.length
-            const sellerAnswer = answers.find((a) => a.isSellerAnswer)
+            const sellerAnswer = answers.find((a: AnswerItem) => a.isSellerAnswer)
 
             return (
               <div
@@ -328,7 +340,7 @@ export function ProductQA({ productId, shopOwnerId }: ProductQAProps) {
                   <div className="border-t">
                     <div className="p-4 space-y-3">
                       {answers.length > 0 ? (
-                        answers.map((answer) => (
+                        answers.map((answer: AnswerItem) => (
                           <div
                             key={answer.id}
                             className="flex items-start gap-3 p-3 rounded-lg bg-muted/40"

@@ -35,6 +35,7 @@ import { api } from '@/lib/api'
 import { PLATFORM_NAME } from '@/lib/constants'
 import { RatingStars } from '@/components/marketplace/shared/rating-stars'
 import { ReviewSection } from '@/components/marketplace/shared/review-section'
+import { ProductQA } from '@/components/marketplace/shared/product-qa'
 import type { Gig, GigPackage, GigFAQ, CartItem } from '@/types'
 
 // =============================================================================
@@ -602,6 +603,16 @@ export default function GigDetail() {
               ))}
             </div>
           )}
+
+          {/* ------------------------------------------------------------- */}
+          {/* Q&A Section                                                    */}
+          {/* ------------------------------------------------------------- */}
+          <section className="mt-8">
+            <ProductQA
+              gigId={gig.id}
+              shopOwnerId={gig.shop?.userId}
+            />
+          </section>
 
           {/* ------------------------------------------------------------- */}
           {/* Reviews Section                                                */}

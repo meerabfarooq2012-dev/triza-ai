@@ -53,6 +53,8 @@ model User {
   sellerTier        SellerTier?
   questions        ProductQuestion[]
   answers          ProductAnswer[]
+  gigQuestions     GigQuestion[]
+  gigAnswers       GigAnswer[]
   wishlists        Wishlist[]
 }
 
@@ -585,6 +587,7 @@ model Gig {
   category        Category? @relation(fields: [categoryId], references: [id])
   reviews         Review[]
   conversations   Conversation[]
+  questions       GigQuestion[]
 
   @@unique([shopId, slug])
   @@index([shopId])
@@ -1244,6 +1247,47 @@ model ProductAnswer {
 
   question    ProductQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
   user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// =============================================================================
+// GIG Q&A MODELS
+// =============================================================================
+
+model GigQuestion {
+  id         String        @id @default(cuid())
+  gigId      String
+  userId     String
+  question   String
+  isAnswered Boolean       @default(false)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  gig        Gig           @relation(fields: [gigId], references: [id], onDelete: Cascade)
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers    GigAnswer[]
+
+  @@index([gigId])
+  @@index([userId])
+  @@index([isAnswered])
+  @@index([createdAt])
+}
+
+model GigAnswer {
+  id            String   @id @default(cuid())
+  questionId    String
+  userId        String
+  answer        String
+  isSellerAnswer Boolean @default(false)
+  helpfulCount  Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  question      GigQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([questionId])
   @@index([userId])
