@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { Heart, Download, Package, Briefcase, Layers } from 'lucide-react'
+import { Heart, Download, Package, Briefcase, Layers, MessageCircleQuestion } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -185,6 +185,14 @@ export function ProductCard({ product, className }: ProductCardProps) {
             >
               by {product.shop.name}
             </button>
+          )}
+
+          {/* Q&A indicator */}
+          {product._count?.questions != null && product._count.questions > 0 && (
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <MessageCircleQuestion size={12} className="text-emerald-500" />
+              <span>{product._count.questions} question{product._count.questions !== 1 ? 's' : ''}</span>
+            </div>
           )}
         </CardContent>
       </Card>

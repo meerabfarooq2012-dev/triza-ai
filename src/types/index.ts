@@ -162,6 +162,11 @@ export interface Product {
   variants?: ProductVariant[]
   variantPriceMin?: number | null
   variantPriceMax?: number | null
+  _count?: {
+    questions?: number
+    reviews?: number
+    favorites?: number
+  }
 }
 
 export interface Order {

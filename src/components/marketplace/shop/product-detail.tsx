@@ -921,7 +921,6 @@ export default function ProductDetail() {
             <TabsTrigger value="reviews">
               Reviews ({product.totalReviews ?? 0})
             </TabsTrigger>
-            <TabsTrigger value="qa">Q&A</TabsTrigger>
           </TabsList>
 
           <TabsContent value="details" className="mt-6">
@@ -941,14 +940,15 @@ export default function ProductDetail() {
               shopOwnerId={product.shop?.userId}
             />
           </TabsContent>
-
-          <TabsContent value="qa" className="mt-6">
-            <ProductQA
-              productId={product.id}
-              shopOwnerId={product.shop?.userId}
-            />
-          </TabsContent>
         </Tabs>
+      </div>
+
+      {/* Q&A Section — Always visible */}
+      <div className="mt-12">
+        <ProductQA
+          productId={product.id}
+          shopOwnerId={product.shop?.userId}
+        />
       </div>
 
       {/* Related Products */}
