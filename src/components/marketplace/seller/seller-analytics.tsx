@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Component, ReactNode } from 'react'
 import { motion } from 'framer-motion'
+import dynamic from 'next/dynamic'
 import {
   DollarSign,
   ShoppingCart,
@@ -14,6 +15,7 @@ import {
   BarChart3,
   Users,
   MessageSquare,
+  AlertTriangle,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -28,21 +30,125 @@ import {
 } from '@/components/ui/table'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
-import {
-  AreaChart,
-  Area,
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+
+// ─── Dynamic import for recharts (heavy library, code-split into separate chunk) ──
+const RechartsAreaChart = dynamic(
+  () =>
+    import('recharts').then((m) => {
+      const { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = m
+      return {
+        default: function Chart({
+          data,
+          xKey,
+        }: {
+          data: Array<{ month?: string; date?: string; revenue: number; orders: number }>
+          xKey: string
+        }) {
+          return (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={data}>
+                <defs>
+                  <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                    <stop offset="50%" stopColor="#14b8a6" stopOpacity={0.1} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                <XAxis
+                  dataKey={xKey}
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 12, fill: '#9ca3af' }}
+                  dy={8}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 12, fill: '#9ca3af' }}
+                  tickFormatter={(v: number) => `$${v}`}
+                  width={60}
+                />
+                <Tooltip content={<RevenueTooltip />} />
+                <Area
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#10b981"
+                  strokeWidth={2.5}
+                  fill="url(#revenueGradient)"
+                  dot={false}
+                  activeDot={{ r: 5, fill: '#10b981', stroke: '#fff', strokeWidth: 2 }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          )
+        },
+      }
+    }),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[350px] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-600" />
+      </div>
+    ),
+  },
+)
+
+const RechartsPieChart = dynamic(
+  () =>
+    import('recharts').then((m) => {
+      const { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } = m
+      return {
+        default: function Chart({
+          data,
+          colors,
+          innerRadius = 50,
+          outerRadius = 85,
+          paddingAngle = 3,
+          tooltipRenderer,
+        }: {
+          data: Array<{ name: string; value: number }>
+          colors: Record<string, string>
+          innerRadius?: number
+          outerRadius?: number
+          paddingAngle?: number
+          tooltipRenderer?: (props: { active?: boolean; payload?: Array<{ name: string; value: number }> }) => ReactNode | null
+        }) {
+          return (
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={data}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={innerRadius}
+                  outerRadius={outerRadius}
+                  paddingAngle={paddingAngle}
+                  dataKey="value"
+                  stroke="none"
+                >
+                  {data.map((entry) => (
+                    <Cell key={entry.name} fill={colors[entry.name] || '#9ca3af'} />
+                  ))}
+                </Pie>
+                {tooltipRenderer && <Tooltip content={tooltipRenderer} />}
+              </PieChart>
+            </ResponsiveContainer>
+          )
+        },
+      }
+    }),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[220px] items-center justify-center">
+        <div className="h-6 w-6 animate-spin rounded-full border-3 border-emerald-200 border-t-emerald-600" />
+      </div>
+    ),
+  },
+)
 
 // ─── Animation Variants ─────────────────────────────────────────────────────
 
@@ -207,6 +313,48 @@ const TYPE_COLORS: Record<string, string> = {
   freelance: '#8b5cf6',
 }
 
+// ─── Chart Error Boundary ──────────────────────────────────────────────────
+
+type ChartErrorBoundaryProps = { children: ReactNode; fallbackTitle?: string }
+type ChartErrorBoundaryState = { hasError: boolean; error: Error | null }
+
+class ChartErrorBoundary extends Component<ChartErrorBoundaryProps, ChartErrorBoundaryState> {
+  constructor(props: ChartErrorBoundaryProps) {
+    super(props)
+    this.state = { hasError: false, error: null }
+  }
+
+  static getDerivedStateFromError(error: Error): ChartErrorBoundaryState {
+    return { hasError: true, error }
+  }
+
+  componentDidCatch(error: Error) {
+    console.warn('[SellerAnalytics] Chart rendering error:', error.message)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex h-[280px] flex-col items-center justify-center text-center">
+          <AlertTriangle className="mb-2 h-8 w-8 text-amber-300" />
+          <p className="text-sm font-medium text-gray-500">
+            {this.props.fallbackTitle || 'Chart could not load'}
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-3"
+            onClick={() => this.setState({ hasError: false, error: null })}
+          >
+            Try Again
+          </Button>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
 // ─── Skeleton Loader ────────────────────────────────────────────────────────
 
 function AnalyticsSkeleton() {
@@ -284,13 +432,22 @@ export function SellerAnalytics() {
       setLoading(true)
       setError(null)
       const res = await fetch(`/api/analytics/seller?userId=${currentUser.id}`)
+      if (!res.ok) {
+        throw new Error(`Server returned ${res.status}`)
+      }
       const json = await res.json()
       if (json.success) {
         setData(json.data)
       } else {
         setError(json.error || 'Failed to fetch analytics')
       }
-    } catch {
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error'
+      // Don't show ChunkLoadError as an analytics error — the global handler will reload
+      if (msg.includes('ChunkLoadError') || msg.includes('Loading chunk')) {
+        console.warn('[SellerAnalytics] ChunkLoadError during fetch — global handler will reload')
+        return
+      }
       setError('Network error — please try again')
     } finally {
       setLoading(false)
@@ -479,7 +636,7 @@ export function SellerAnalytics() {
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════════════
-          2. Revenue Over Time Chart
+          2. Revenue Over Time Chart (dynamically loaded recharts)
       ═══════════════════════════════════════════════════════════════════════ */}
       <motion.div variants={itemVariants}>
         <Card className="border-0 shadow-sm">
@@ -505,44 +662,11 @@ export function SellerAnalytics() {
           </CardHeader>
           <CardContent>
             {hasChartData ? (
-              <div className="h-[350px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData}>
-                    <defs>
-                      <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                        <stop offset="50%" stopColor="#14b8a6" stopOpacity={0.1} />
-                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                    <XAxis
-                      dataKey={chartXKey}
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 12, fill: '#9ca3af' }}
-                      dy={8}
-                    />
-                    <YAxis
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 12, fill: '#9ca3af' }}
-                      tickFormatter={(v) => `$${v}`}
-                      width={60}
-                    />
-                    <Tooltip content={<RevenueTooltip />} />
-                    <Area
-                      type="monotone"
-                      dataKey="revenue"
-                      stroke="#10b981"
-                      strokeWidth={2.5}
-                      fill="url(#revenueGradient)"
-                      dot={false}
-                      activeDot={{ r: 5, fill: '#10b981', stroke: '#fff', strokeWidth: 2 }}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
+              <ChartErrorBoundary fallbackTitle="Revenue chart could not load">
+                <div className="h-[350px]">
+                  <RechartsAreaChart data={chartData} xKey={chartXKey} />
+                </div>
+              </ChartErrorBoundary>
             ) : (
               <EmptyState
                 icon={DollarSign}
@@ -569,28 +693,21 @@ export function SellerAnalytics() {
                 <div className="flex flex-col items-center gap-4 sm:flex-row">
                   {/* Pie Chart */}
                   <div className="h-[220px] w-full sm:w-1/2">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={orderStatusData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={50}
-                          outerRadius={85}
-                          paddingAngle={3}
-                          dataKey="value"
-                          stroke="none"
-                        >
-                          {orderStatusData.map((entry) => (
-                            <Cell
-                              key={entry.name}
-                              fill={STATUS_COLORS[entry.name] || '#9ca3af'}
-                            />
-                          ))}
-                        </Pie>
-                        <Tooltip content={<PieTooltip />} />
-                      </PieChart>
-                    </ResponsiveContainer>
+                    <ChartErrorBoundary fallbackTitle="Status chart could not load">
+                      <RechartsPieChart
+                        data={orderStatusData}
+                        colors={STATUS_COLORS}
+                        tooltipRenderer={({ active, payload }) => {
+                          if (!active || !payload?.length) return null
+                          return (
+                            <div className="rounded-lg border bg-white px-4 py-3 shadow-lg">
+                              <p className="text-sm font-semibold text-gray-900">{payload[0].name}</p>
+                              <p className="text-xs text-gray-600">{payload[0].value} orders</p>
+                            </div>
+                          )
+                        }}
+                      />
+                    </ChartErrorBoundary>
                   </div>
                   {/* Legend */}
                   <div className="flex w-full flex-col gap-2 sm:w-1/2">
@@ -646,43 +763,29 @@ export function SellerAnalytics() {
                 <div className="flex flex-col items-center gap-4 sm:flex-row">
                   {/* Donut Chart */}
                   <div className="h-[220px] w-full sm:w-1/2">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={revenueByTypeData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={55}
-                          outerRadius={85}
-                          paddingAngle={4}
-                          dataKey="value"
-                          stroke="none"
-                        >
-                          {revenueByTypeData.map((entry) => (
-                            <Cell
-                              key={entry.name}
-                              fill={TYPE_COLORS[entry.name] || '#9ca3af'}
-                            />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          content={({ active, payload }) => {
-                            if (!active || !payload?.length) return null
-                            const item = payload[0]
-                            return (
-                              <div className="rounded-lg border bg-white px-4 py-3 shadow-lg">
-                                <p className="text-sm font-semibold capitalize text-gray-900">
-                                  {item.name}
-                                </p>
-                                <p className="text-xs text-gray-600">
-                                  {formatCurrency(item.value as number)}
-                                </p>
-                              </div>
-                            )
-                          }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
+                    <ChartErrorBoundary fallbackTitle="Revenue chart could not load">
+                      <RechartsPieChart
+                        data={revenueByTypeData}
+                        colors={TYPE_COLORS}
+                        innerRadius={55}
+                        outerRadius={85}
+                        paddingAngle={4}
+                        tooltipRenderer={({ active, payload }) => {
+                          if (!active || !payload?.length) return null
+                          const item = payload[0]
+                          return (
+                            <div className="rounded-lg border bg-white px-4 py-3 shadow-lg">
+                              <p className="text-sm font-semibold capitalize text-gray-900">
+                                {item.name}
+                              </p>
+                              <p className="text-xs text-gray-600">
+                                {formatCurrency(item.value as number)}
+                              </p>
+                            </div>
+                          )
+                        }}
+                      />
+                    </ChartErrorBoundary>
                   </div>
                   {/* Legend with bar indicators */}
                   <div className="flex w-full flex-col gap-3 sm:w-1/2">

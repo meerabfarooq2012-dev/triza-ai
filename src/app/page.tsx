@@ -6,6 +6,49 @@ import { useSearchParams } from 'next/navigation'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { useRealtimeNotifications } from '@/hooks/use-realtime-notifications'
 
+// ── Global ChunkLoadError Recovery ──────────────────────────────────────────
+// When Next.js/Turbopack regenerates chunk hashes (dev server restart, deploy),
+// the browser may still reference old chunk filenames. This handler detects
+// ChunkLoadError and automatically reloads the page ONCE to fetch fresh chunks.
+if (typeof window !== 'undefined') {
+  let chunkReloadAttempted = false
+  const originalOnError = window.onerror
+  // eslint-disable-next-line prefer-rest-params
+  window.onerror = function (message, source, lineno, colno, error) {
+    if (
+      !chunkReloadAttempted &&
+      typeof message === 'string' &&
+      (message.includes('ChunkLoadError') || message.includes('Loading chunk'))
+    ) {
+      chunkReloadAttempted = true
+      console.warn('[Marketo] ChunkLoadError detected — reloading page to fetch fresh chunks')
+      window.location.reload()
+      return true
+    }
+    if (originalOnError) return originalOnError.call(this, message, source, lineno, colno, error)
+    return false
+  }
+
+  // Also catch unhandled promise rejections from dynamic imports
+  const originalOnUnhandledRejection = window.onunhandledrejection
+  window.onunhandledrejection = function (event: PromiseRejectionEvent) {
+    const reason = event.reason
+    if (
+      !chunkReloadAttempted &&
+      reason &&
+      ((reason.name === 'ChunkLoadError') ||
+       (typeof reason.message === 'string' &&
+        (reason.message.includes('ChunkLoadError') || reason.message.includes('Loading chunk'))))
+    ) {
+      chunkReloadAttempted = true
+      console.warn('[Marketo] ChunkLoadError in promise — reloading page to fetch fresh chunks')
+      event.preventDefault()
+      window.location.reload()
+    }
+    if (originalOnUnhandledRejection) return originalOnUnhandledRejection.call(this, event)
+  }
+}
+
 function PageLoader() {
   return (
     <div className="flex items-center justify-center min-h-screen">
