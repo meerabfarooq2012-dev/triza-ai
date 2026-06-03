@@ -4,20 +4,19 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   MessageCircleQuestion,
   ChevronDown,
-  ChevronUp,
   ThumbsUp,
   Send,
   Loader2,
   MessageSquare,
   User,
+  HelpCircle,
 } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Separator } from '@/components/ui/separator'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Separator } from '@/components/ui/skeleton'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { useToast } from '@/hooks/use-toast'
 import type { ProductQuestion, ProductAnswer } from '@/types'
@@ -152,7 +151,6 @@ export function ProductQA({ productId, shopOwnerId }: ProductQAProps) {
       )
       const data = await res.json()
       if (data.success) {
-        // Optimistically update the helpful count in the local state
         setQuestions((prev) =>
           prev.map((q) => {
             if (q.id !== questionId) return q
@@ -166,7 +164,7 @@ export function ProductQA({ productId, shopOwnerId }: ProductQAProps) {
         )
       }
     } catch {
-      // Silent fail for helpful marking
+      // Silent fail
     } finally {
       setHelpfulLoading((prev) => ({ ...prev, [answerId]: false }))
     }
@@ -174,44 +172,46 @@ export function ProductQA({ productId, shopOwnerId }: ProductQAProps) {
 
   if (loading) {
     return (
-      <Card className="border-0 shadow-sm">
-        <CardHeader>
-          <Skeleton className="h-6 w-32" />
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Skeleton className="h-20 w-full" />
-          <Skeleton className="h-16 w-full" />
-          <Skeleton className="h-16 w-full" />
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        <div className="h-8 w-48 bg-muted animate-pulse rounded" />
+        <div className="space-y-3">
+          <div className="h-16 bg-muted animate-pulse rounded-lg" />
+          <div className="h-16 bg-muted animate-pulse rounded-lg" />
+          <div className="h-16 bg-muted animate-pulse rounded-lg" />
+        </div>
+      </div>
     )
   }
 
   return (
-    <Card className="border-0 shadow-sm">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <MessageCircleQuestion size={20} className="text-emerald-600" />
-            Questions & Answers
-            {questions.length > 0 && (
-              <Badge variant="secondary" className="ml-1">
-                {questions.length}
-              </Badge>
-            )}
-          </CardTitle>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Ask a Question Form */}
-        {currentUser && (
-          <div className="space-y-3">
+    <div className="space-y-6">
+      {/* Section Header — Fiverr style */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold flex items-center gap-2">
+          <HelpCircle size={22} className="text-emerald-600" />
+          Questions & Answers
+          {questions.length > 0 && (
+            <Badge variant="secondary" className="font-normal">
+              {questions.length}
+            </Badge>
+          )}
+        </h2>
+      </div>
+
+      {/* Ask a Question — prominent input at top */}
+      {currentUser ? (
+        <Card className="border-0 shadow-sm bg-emerald-50/50">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-emerald-700">
+              <MessageCircleQuestion size={16} />
+              Have a question about this product?
+            </div>
             <Textarea
-              placeholder="Ask a question about this product..."
+              placeholder="Type your question here..."
               value={questionText}
               onChange={(e) => setQuestionText(e.target.value)}
-              rows={3}
-              className="resize-none"
+              rows={2}
+              className="resize-none bg-white"
             />
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">
@@ -221,7 +221,7 @@ export function ProductQA({ productId, shopOwnerId }: ProductQAProps) {
                 size="sm"
                 onClick={handleAskQuestion}
                 disabled={!questionText.trim() || submittingQuestion}
-                className="gap-1.5"
+                className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"
               >
                 {submittingQuestion ? (
                   <Loader2 size={14} className="animate-spin" />
@@ -231,140 +231,150 @@ export function ProductQA({ productId, shopOwnerId }: ProductQAProps) {
                 Ask Question
               </Button>
             </div>
-          </div>
-        )}
-
-        {!currentUser && (
-          <div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="border-0 shadow-sm bg-gray-50">
+          <CardContent className="p-4 text-center text-sm text-muted-foreground">
             <MessageSquare size={20} className="mx-auto mb-2 text-muted-foreground/50" />
             <p>Log in to ask a question or post an answer.</p>
-          </div>
-        )}
+          </CardContent>
+        </Card>
+      )}
 
-        <Separator />
+      {/* Questions List — Fiverr FAQ accordion style */}
+      {questions.length === 0 ? (
+        <div className="py-8 text-center text-muted-foreground">
+          <MessageCircleQuestion size={40} className="mx-auto mb-3 text-muted-foreground/30" />
+          <p className="font-medium">No questions yet</p>
+          <p className="text-sm mt-1">Be the first to ask about this product!</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {questions.map((question) => {
+            const isExpanded = expandedQuestions.has(question.id)
+            const answers = question.answers || []
+            const answerCount = answers.length
+            const sellerAnswer = answers.find((a) => a.isSellerAnswer)
 
-        {/* Questions List */}
-        {questions.length === 0 ? (
-          <div className="py-8 text-center text-muted-foreground">
-            <MessageCircleQuestion size={40} className="mx-auto mb-3 text-muted-foreground/40" />
-            <p className="font-medium">No questions yet</p>
-            <p className="text-sm mt-1">Be the first to ask about this product!</p>
-          </div>
-        ) : (
-          <div className="space-y-3 max-h-96 overflow-y-auto pr-1 custom-scrollbar">
-            {questions.map((question) => {
-              const isExpanded = expandedQuestions.has(question.id)
-              const answers = question.answers || []
-              const answerCount = answers.length
-
-              return (
-                <div
-                  key={question.id}
-                  className="rounded-lg border bg-card"
+            return (
+              <div
+                key={question.id}
+                className="rounded-lg border bg-card overflow-hidden transition-colors"
+              >
+                {/* Question — clickable accordion header */}
+                <button
+                  onClick={() => toggleQuestion(question.id)}
+                  className="w-full text-left p-4 hover:bg-muted/30 transition-colors"
                 >
-                  {/* Question Header */}
-                  <button
-                    onClick={() => toggleQuestion(question.id)}
-                    className="w-full text-left p-4 hover:bg-muted/30 transition-colors rounded-lg"
-                  >
-                    <div className="flex items-start gap-3">
-                      <Avatar className="h-8 w-8 flex-shrink-0 mt-0.5">
-                        {question.user?.avatar ? (
-                          <AvatarImage src={question.user.avatar} alt={question.user.name} />
-                        ) : (
-                          <AvatarFallback className="text-xs">
-                            <User size={14} />
-                          </AvatarFallback>
-                        )}
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-sm">{question.user?.name || 'Anonymous'}</span>
-                          <Badge
-                            variant={question.isAnswered ? 'default' : 'secondary'}
-                            className={`text-[10px] px-1.5 py-0 ${
-                              question.isAnswered
-                                ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100'
-                                : 'bg-amber-100 text-amber-700 hover:bg-amber-100'
-                            }`}
-                          >
-                            {question.isAnswered ? 'Answered' : 'Unanswered'}
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                        question.isAnswered
+                          ? 'bg-emerald-100 text-emerald-600'
+                          : 'bg-amber-100 text-amber-600'
+                      }`}>
+                        <HelpCircle size={14} />
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium leading-relaxed">{question.question}</p>
+                      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                        <span className="text-xs text-muted-foreground">
+                          {question.user?.name || 'Anonymous'}
+                        </span>
+                        <span className="text-xs text-muted-foreground">•</span>
+                        <span className="text-xs text-muted-foreground">
+                          {formatDate(question.createdAt)}
+                        </span>
+                        {question.isAnswered ? (
+                          <Badge className="text-[10px] px-1.5 py-0 bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
+                            Answered
                           </Badge>
+                        ) : (
+                          <Badge className="text-[10px] px-1.5 py-0 bg-amber-100 text-amber-700 hover:bg-amber-100">
+                            Pending
+                          </Badge>
+                        )}
+                        {answerCount > 0 && (
                           <span className="text-xs text-muted-foreground">
                             {answerCount} answer{answerCount !== 1 ? 's' : ''}
                           </span>
-                        </div>
-                        <p className="text-sm mt-1 leading-relaxed">{question.question}</p>
-                        <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                          <span>{formatDate(question.createdAt)}</span>
-                        </div>
-                      </div>
-                      <div className="flex-shrink-0 mt-1">
-                        {isExpanded ? (
-                          <ChevronUp size={16} className="text-muted-foreground" />
-                        ) : (
-                          <ChevronDown size={16} className="text-muted-foreground" />
                         )}
                       </div>
-                    </div>
-                  </button>
-
-                  {/* Expanded Answers */}
-                  {isExpanded && (
-                    <div className="px-4 pb-4">
-                      <Separator className="mb-3" />
-                      {answers.length > 0 ? (
-                        <div className="space-y-3 ml-6">
-                          {answers.map((answer) => (
-                            <div
-                              key={answer.id}
-                              className="flex items-start gap-3 p-3 rounded-md bg-muted/30"
-                            >
-                              <Avatar className="h-7 w-7 flex-shrink-0 mt-0.5">
-                                {answer.user?.avatar ? (
-                                  <AvatarImage src={answer.user.avatar} alt={answer.user.name} />
-                                ) : (
-                                  <AvatarFallback className="text-[10px]">
-                                    <User size={12} />
-                                  </AvatarFallback>
-                                )}
-                              </Avatar>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="font-medium text-sm">{answer.user?.name || 'Anonymous'}</span>
-                                  {answer.isSellerAnswer && (
-                                    <Badge className="text-[10px] px-1.5 py-0 bg-emerald-600 text-white hover:bg-emerald-600">
-                                      Seller
-                                    </Badge>
-                                  )}
-                                </div>
-                                <p className="text-sm mt-1 leading-relaxed">{answer.answer}</p>
-                                <div className="flex items-center gap-3 mt-2">
-                                  <button
-                                    onClick={() => handleMarkHelpful(question.id, answer.id)}
-                                    disabled={helpfulLoading[answer.id] || !currentUser}
-                                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-emerald-600 transition-colors disabled:opacity-50"
-                                  >
-                                    <ThumbsUp size={12} />
-                                    <span>Helpful ({answer.helpfulCount})</span>
-                                  </button>
-                                  <span className="text-xs text-muted-foreground">
-                                    {formatDate(answer.createdAt)}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
+                      {/* Show seller answer preview when collapsed */}
+                      {!isExpanded && sellerAnswer && (
+                        <div className="mt-2 flex items-start gap-2">
+                          <Badge className="text-[9px] px-1 py-0 bg-emerald-600 text-white hover:bg-emerald-600 shrink-0">
+                            Seller
+                          </Badge>
+                          <p className="text-xs text-muted-foreground line-clamp-1">
+                            {sellerAnswer.answer}
+                          </p>
                         </div>
+                      )}
+                    </div>
+                    <ChevronDown
+                      size={16}
+                      className={`flex-shrink-0 mt-1 text-muted-foreground transition-transform ${
+                        isExpanded ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </div>
+                </button>
+
+                {/* Expanded Answers */}
+                {isExpanded && (
+                  <div className="border-t">
+                    <div className="p-4 space-y-3">
+                      {answers.length > 0 ? (
+                        answers.map((answer) => (
+                          <div
+                            key={answer.id}
+                            className="flex items-start gap-3 p-3 rounded-lg bg-muted/40"
+                          >
+                            <Avatar className="h-7 w-7 flex-shrink-0 mt-0.5">
+                              {answer.user?.avatar ? (
+                                <AvatarImage src={answer.user.avatar} alt={answer.user.name} />
+                              ) : (
+                                <AvatarFallback className="text-[10px]">
+                                  <User size={12} />
+                                </AvatarFallback>
+                              )}
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-medium text-sm">{answer.user?.name || 'Anonymous'}</span>
+                                {answer.isSellerAnswer && (
+                                  <Badge className="text-[10px] px-1.5 py-0 bg-emerald-600 text-white hover:bg-emerald-600">
+                                    Seller
+                                  </Badge>
+                                )}
+                                <span className="text-xs text-muted-foreground">
+                                  {formatDate(answer.createdAt)}
+                                </span>
+                              </div>
+                              <p className="text-sm mt-1 leading-relaxed">{answer.answer}</p>
+                              <button
+                                onClick={() => handleMarkHelpful(question.id, answer.id)}
+                                disabled={helpfulLoading[answer.id] || !currentUser}
+                                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-emerald-600 transition-colors disabled:opacity-50 mt-1.5"
+                              >
+                                <ThumbsUp size={11} />
+                                <span>Helpful ({answer.helpfulCount})</span>
+                              </button>
+                            </div>
+                          </div>
+                        ))
                       ) : (
-                        <p className="text-sm text-muted-foreground ml-6 py-2">
+                        <p className="text-sm text-muted-foreground ml-9 py-2">
                           No answers yet. Be the first to answer!
                         </p>
                       )}
 
                       {/* Answer Form */}
                       {currentUser && (
-                        <div className="mt-3 ml-6 space-y-2">
+                        <div className="ml-9 space-y-2 pt-2">
                           <Textarea
                             placeholder="Write your answer..."
                             value={answerTexts[question.id] || ''}
@@ -402,13 +412,13 @@ export function ProductQA({ productId, shopOwnerId }: ProductQAProps) {
                         </div>
                       )}
                     </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
   )
 }

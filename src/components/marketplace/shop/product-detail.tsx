@@ -30,7 +30,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -97,7 +97,6 @@ export default function ProductDetail() {
   const [selectedImage, setSelectedImage] = useState(0)
   const [quantity, setQuantity] = useState(1)
   const [isFavorited, setIsFavorited] = useState(false)
-  const [activeTab, setActiveTab] = useState('details')
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
 
   // Wishlist state
@@ -913,43 +912,40 @@ export default function ProductDetail() {
         </div>
       </div>
 
-      {/* Tabs: Description & Reviews */}
-      <div className="mt-12">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
-            <TabsTrigger value="details">Description</TabsTrigger>
-            <TabsTrigger value="reviews">
-              Reviews ({product.totalReviews ?? 0})
-            </TabsTrigger>
-          </TabsList>
+      {/* About This Product — Description (always visible, Fiverr style) */}
+      <section className="mt-12">
+        <h2 className="text-xl font-bold mb-4">About This Product</h2>
+        <Card className="p-6 border-0 shadow-sm">
+          <div className="prose prose-sm max-w-none">
+            <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+              {product.description}
+            </p>
+          </div>
+        </Card>
+      </section>
 
-          <TabsContent value="details" className="mt-6">
-            <Card className="p-6 border-0 shadow-sm">
-              <div className="prose prose-sm max-w-none">
-                <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                  {product.description}
-                </p>
-              </div>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="reviews" className="mt-6">
-            <ReviewSection
-              productId={product.id}
-              currentUserId={currentUser?.id}
-              shopOwnerId={product.shop?.userId}
-            />
-          </TabsContent>
-        </Tabs>
-      </div>
-
-      {/* Q&A Section — Always visible */}
-      <div className="mt-12">
+      {/* Q&A Section — Always visible (Fiverr style) */}
+      <section className="mt-12">
         <ProductQA
           productId={product.id}
           shopOwnerId={product.shop?.userId}
         />
-      </div>
+      </section>
+
+      {/* Reviews Section — Always visible (Fiverr style) */}
+      <section className="mt-12">
+        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+          Reviews
+          <Badge variant="secondary" className="font-normal">
+            {product.totalReviews ?? 0}
+          </Badge>
+        </h2>
+        <ReviewSection
+          productId={product.id}
+          currentUserId={currentUser?.id}
+          shopOwnerId={product.shop?.userId}
+        />
+      </section>
 
       {/* Related Products */}
       {relatedProducts.length > 0 && (
