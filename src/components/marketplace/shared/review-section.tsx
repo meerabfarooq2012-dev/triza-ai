@@ -1212,7 +1212,7 @@ export function ReviewSection({
       }
 
       if (resData) {
-        const newReviews = resData.reviews || resData.items || []
+        const newReviews = Array.isArray(resData) ? resData : (resData.reviews || resData.items || [])
         const total = resData.pagination?.total || resData.total || 0
         setReviewTotal(total)
         if (resData.ratingSummary) {

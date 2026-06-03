@@ -445,8 +445,16 @@ export function SellerReviews({ shopId, userId }: SellerReviewsProps) {
       const data = await res.json()
 
       if (data.success) {
-        const items = data.data?.items || data.data || []
-        const totalCount = data.data?.total || data.data?.pagination?.total || 0
+        const raw = data.data
+        // API returns { reviews: [], pagination: { total } } or { items: [] } or a raw array
+        const items = Array.isArray(raw)
+          ? raw
+          : Array.isArray(raw?.reviews)
+            ? raw.reviews
+            : Array.isArray(raw?.items)
+              ? raw.items
+              : []
+        const totalCount = raw?.pagination?.total || raw?.total || 0
         setTotal(totalCount)
         if (append) {
           setReviews((prev) => [...prev, ...items])
