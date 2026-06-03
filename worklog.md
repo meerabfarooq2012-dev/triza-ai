@@ -241,3 +241,26 @@ Stage Summary:
 - All 4 features (B: Flash Sales, E: Product Q&A, F: Wishlist Sharing, G: Bulk CSV Upload) are 100% complete
 - Only fix applied: flash-sales/route.ts now uses shared db import from @/lib/db
 - No new features needed — everything was built in previous sessions
+
+---
+Task ID: 8
+Agent: Main Agent
+Task: Make Q&A always visible on product detail page + add question count to product cards
+
+Work Log:
+- Removed Q&A from the tabs section (was hidden behind "Q&A" tab)
+- Moved ProductQA component to its own always-visible section below the Description/Reviews tabs
+- Added MessageCircleQuestion icon import to product-card.tsx
+- Added Q&A question count indicator on product cards (shows "X questions" with green icon)
+- Added `_count` with `questions`, `reviews`, `favorites` fields to Product TypeScript interface
+- Updated products API route to include `_count: { select: { questions: true } }` in Prisma query
+- Committed and pushed to GitHub (auto-deploys to Vercel)
+- Synced Supabase PostgreSQL schema
+- Ran lint — 0 errors, 3 pre-existing warnings
+- Verified Vercel deployment returns 200 OK
+
+Stage Summary:
+- Q&A section is now always visible on product detail page, no tab click needed
+- Product cards show question count when products have questions
+- Products API now returns _count.questions for each product
+- Deployed to Vercel at https://marketo-alpha.vercel.app
