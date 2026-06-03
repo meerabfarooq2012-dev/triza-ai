@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ShoppingCart,
   Zap,
+  Flame,
   Heart,
   ChevronLeft,
   Package,
@@ -22,6 +23,9 @@ import {
   MessageSquare,
   Share2,
   Layers,
+  ListChecks,
+  Check,
+  Loader2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -37,11 +41,21 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+} from '@/components/ui/dropdown-menu'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { useToast } from '@/hooks/use-toast'
 import { openCartDrawer } from '@/components/marketplace/shared/cart-drawer'
 import { ShareShopUrl } from '@/components/marketplace/shared/share-shop-url'
 import { RatingStars } from '@/components/marketplace/shared/rating-stars'
 import { ReviewSection } from '@/components/marketplace/shared/review-section'
+import { ProductQA } from '@/components/marketplace/shared/product-qa'
 import { api } from '@/lib/api'
 import {
   PRODUCT_TYPE_LABELS,
@@ -49,7 +63,7 @@ import {
 } from '@/lib/constants'
 import { countryCodeData } from '@/lib/country-codes'
 import { VariantSelector } from '@/components/marketplace/shared/variant-selector'
-import type { Product, CartItem, ProductVariantOption, ProductVariant } from '@/types'
+import type { Product, CartItem, ProductVariantOption, ProductVariant, FlashSale, Wishlist } from '@/types'
 
 function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
   if (!value) return fallback
@@ -86,6 +100,13 @@ export default function ProductDetail() {
   const [activeTab, setActiveTab] = useState('details')
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
 
+  // Wishlist state
+  const [wishlists, setWishlists] = useState<Wishlist[]>([])
+  const [wishlistDropdownOpen, setWishlistDropdownOpen] = useState(false)
+  const [savingToWishlist, setSavingToWishlist] = useState<string | null>(null) // wishlistId being saved to
+  const [creatingDefaultWishlist, setCreatingDefaultWishlist] = useState(false)
+  const { toast } = useToast()
+
   // Variant state
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
   const [effectivePrice, setEffectivePrice] = useState<number | null>(null)
@@ -93,6 +114,11 @@ export default function ProductDetail() {
   const [variantImage, setVariantImage] = useState<string | null>(null)
   const [variantLabel, setVariantLabel] = useState<string>('')
   const [variantSku, setVariantSku] = useState<string | null>(null)
+
+  // Flash sale state
+  const [activeFlashSale, setActiveFlashSale] = useState<FlashSale | null>(null)
+  const [flashCountdown, setFlashCountdown] = useState('')
+  const flashIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Check if product is already in cart (considering variant)
   const isInCart = cart.some(
@@ -120,6 +146,57 @@ export default function ProductDetail() {
   useEffect(/* eslint-disable react-hooks/set-state-in-effect */ () => {
     fetchProduct()
   }, [fetchProduct])
+
+  // Fetch active flash sale for this product
+  useEffect(() => {
+    if (!productId) return
+    fetch(`/api/flash-sales/active?limit=5`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.data)) {
+          const sale = data.data.find((fs: FlashSale) => fs.productId === productId)
+          setActiveFlashSale(sale || null)
+        }
+      })
+      .catch(() => setActiveFlashSale(null))
+  }, [productId])
+
+  // Flash sale countdown timer
+  useEffect(() => {
+    if (!activeFlashSale) return
+
+    const updateCountdown = () => {
+      const now = new Date().getTime()
+      const end = new Date(activeFlashSale.endDate).getTime()
+      const diff = end - now
+
+      if (diff <= 0) {
+        setFlashCountdown('Ended')
+        if (flashIntervalRef.current) clearInterval(flashIntervalRef.current)
+        return
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+
+      if (days > 0) {
+        setFlashCountdown(`${days}d ${hours}h ${minutes}m ${seconds}s`)
+      } else if (hours > 0) {
+        setFlashCountdown(`${hours}h ${minutes}m ${seconds}s`)
+      } else {
+        setFlashCountdown(`${minutes}m ${seconds}s`)
+      }
+    }
+
+    updateCountdown()
+    flashIntervalRef.current = setInterval(updateCountdown, 1000)
+
+    return () => {
+      if (flashIntervalRef.current) clearInterval(flashIntervalRef.current)
+    }
+  }, [activeFlashSale])
 
   // Fetch related products
   useEffect(() => {
@@ -182,6 +259,73 @@ export default function ProductDetail() {
       }
     } catch {
       // silent fail
+    }
+  }
+
+  // Fetch user's wishlists when dropdown opens
+  const fetchWishlists = useCallback(async () => {
+    if (!currentUser) return
+    try {
+      const res = await fetch(`/api/wishlists?userId=${currentUser.id}`)
+      const data = await res.json()
+      if (data.success) {
+        setWishlists(Array.isArray(data.data) ? data.data : [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch wishlists:', error)
+    }
+  }, [currentUser])
+
+  useEffect(() => {
+    if (wishlistDropdownOpen && currentUser) {
+      fetchWishlists()
+    }
+  }, [wishlistDropdownOpen, currentUser, fetchWishlists])
+
+  const handleSaveToWishlist = async (wishlistId: string) => {
+    if (!currentUser || !productId) return
+    setSavingToWishlist(wishlistId)
+    try {
+      const res = await fetch(`/api/wishlists/${wishlistId}/items`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId, userId: currentUser.id }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast({ title: 'Saved to wishlist', description: `${product?.name} has been added` })
+        setWishlistDropdownOpen(false)
+      } else {
+        toast({ title: 'Couldn\'t save', description: data.error || 'Failed to save to wishlist', variant: 'destructive' })
+      }
+    } catch {
+      toast({ title: 'Error', description: 'Failed to save to wishlist', variant: 'destructive' })
+    } finally {
+      setSavingToWishlist(null)
+    }
+  }
+
+  const handleCreateDefaultWishlist = async () => {
+    if (!currentUser) return
+    setCreatingDefaultWishlist(true)
+    try {
+      const res = await fetch('/api/wishlists', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: currentUser.id, name: 'My Wishlist', isPublic: false }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setWishlists([data.data, ...wishlists])
+        // Now save the product to the new wishlist
+        await handleSaveToWishlist(data.data.id)
+      } else {
+        toast({ title: 'Error', description: data.error, variant: 'destructive' })
+      }
+    } catch {
+      toast({ title: 'Error', description: 'Failed to create wishlist', variant: 'destructive' })
+    } finally {
+      setCreatingDefaultWishlist(false)
     }
   }
 
@@ -348,6 +492,38 @@ export default function ProductDetail() {
               ({product.totalReviews ?? 0} reviews)
             </span>
           </div>
+
+          {/* Flash Sale Badge */}
+          {activeFlashSale && (
+            <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-lg p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <Badge className="bg-red-500 text-white gap-1">
+                  <Flame size={12} />
+                  Flash Sale
+                </Badge>
+                <Badge variant="outline" className="text-orange-600 border-orange-300">
+                  -{activeFlashSale.discountPercent}% OFF
+                </Badge>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-red-600">
+                  ${activeFlashSale.salePrice.toFixed(2)}
+                </span>
+                <span className="text-base text-muted-foreground line-through">
+                  ${activeFlashSale.originalPrice.toFixed(2)}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 text-sm text-orange-600 font-medium">
+                <Clock size={14} />
+                <span>Ends in: {flashCountdown}</span>
+              </div>
+              {activeFlashSale.maxQuantity && activeFlashSale.maxQuantity > 0 && (
+                <div className="text-xs text-muted-foreground">
+                  {activeFlashSale.soldQuantity} / {activeFlashSale.maxQuantity} sold
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Price */}
           <div className="flex items-baseline gap-3">
@@ -566,6 +742,53 @@ export default function ProductDetail() {
               <Zap size={18} />
               Buy Now
             </Button>
+            <DropdownMenu open={wishlistDropdownOpen} onOpenChange={setWishlistDropdownOpen}>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="px-3 gap-1.5"
+                >
+                  <ListChecks size={18} />
+                  <span className="hidden sm:inline text-xs">Wishlist</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Save to Wishlist</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {wishlists.length === 0 ? (
+                  <DropdownMenuItem
+                    onClick={handleCreateDefaultWishlist}
+                    disabled={creatingDefaultWishlist}
+                  >
+                    {creatingDefaultWishlist ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Plus className="mr-2 h-4 w-4" />
+                    )}
+                    Create Wishlist
+                  </DropdownMenuItem>
+                ) : (
+                  wishlists.map((wl) => (
+                    <DropdownMenuItem
+                      key={wl.id}
+                      onClick={() => handleSaveToWishlist(wl.id)}
+                      disabled={savingToWishlist !== null}
+                    >
+                      {savingToWishlist === wl.id ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <ListChecks className="mr-2 h-4 w-4" />
+                      )}
+                      <span className="truncate">{wl.name}</span>
+                      <Badge variant="secondary" className="ml-auto text-[10px]">
+                        {wl._count?.items ?? 0}
+                      </Badge>
+                    </DropdownMenuItem>
+                  ))
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               size="lg"
               variant="outline"
@@ -698,6 +921,7 @@ export default function ProductDetail() {
             <TabsTrigger value="reviews">
               Reviews ({product.totalReviews ?? 0})
             </TabsTrigger>
+            <TabsTrigger value="qa">Q&A</TabsTrigger>
           </TabsList>
 
           <TabsContent value="details" className="mt-6">
@@ -714,6 +938,13 @@ export default function ProductDetail() {
             <ReviewSection
               productId={product.id}
               currentUserId={currentUser?.id}
+              shopOwnerId={product.shop?.userId}
+            />
+          </TabsContent>
+
+          <TabsContent value="qa" className="mt-6">
+            <ProductQA
+              productId={product.id}
               shopOwnerId={product.shop?.userId}
             />
           </TabsContent>

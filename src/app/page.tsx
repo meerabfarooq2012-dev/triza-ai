@@ -212,6 +212,11 @@ const VerificationPage = dynamic(
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
+const PublicWishlist = dynamic(
+  () => import('@/components/marketplace/shared/public-wishlist').then(m => ({ default: m.PublicWishlist })),
+  { ssr: false, loading: () => <ViewLoader /> }
+)
+
 // Error boundary component to catch rendering errors in child components
 type ErrorBoundaryProps = { children: React.ReactNode; fallback?: React.ReactNode }
 type ErrorBoundaryState = { hasError: boolean; error: Error | null }
@@ -323,6 +328,7 @@ function MarketplaceApp() {
     const shopSlug = searchParams.get('shop')
     const productId = searchParams.get('product')
     const gigId = searchParams.get('gig')
+    const wishlistSlug = searchParams.get('wishlist')
 
     if (shopSlug) {
       setCurrentView('shop-view', { shopSlug })
@@ -330,6 +336,8 @@ function MarketplaceApp() {
       setCurrentView('product-detail', { productId })
     } else if (gigId) {
       setCurrentView('gig-detail', { gigId })
+    } else if (wishlistSlug) {
+      setCurrentView('wishlist-view', { slug: wishlistSlug })
     }
   }, [searchParams, setCurrentView])
 
@@ -342,6 +350,8 @@ function MarketplaceApp() {
       params.set('product', viewParams.productId)
     } else if (currentView === 'gig-detail' && viewParams.gigId) {
       params.set('gig', viewParams.gigId)
+    } else if (currentView === 'wishlist-view' && viewParams.slug) {
+      params.set('wishlist', viewParams.slug)
     }
     const queryString = params.toString()
     const newUrl = queryString ? `${window.location.pathname}?${queryString}` : window.location.pathname
@@ -413,6 +423,8 @@ function MarketplaceApp() {
         case 'verification-center':
           if (!isAuthenticated) return <AuthModal />
           return <VerificationPage />
+        case 'wishlist-view':
+          return <PublicWishlist slug={viewParams.slug || ''} />
         case 'admin':
           if (!isAuthenticated || !currentUser?.isAdmin) {
             return (

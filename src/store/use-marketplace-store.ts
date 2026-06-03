@@ -350,7 +350,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         }
 
         // Reset detail views on page reload to prevent crashes from stale data
-        const detailViews = ['product-detail', 'gig-detail', 'shop-view', 'return-detail', 'dispute-detail']
+        const detailViews = ['product-detail', 'gig-detail', 'shop-view', 'return-detail', 'dispute-detail', 'wishlist-view']
         if (p.currentView && detailViews.includes(p.currentView as string)) {
           p.currentView = 'landing'
           p.viewParams = {}

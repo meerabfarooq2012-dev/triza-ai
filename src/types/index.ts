@@ -51,6 +51,7 @@ export type ViewMode =
   | 'disputes'
   | 'dispute-detail'
   | 'verification-center'
+  | 'wishlist-view'
 
 // ----- Core Domain Models -----
 
@@ -1484,6 +1485,127 @@ export interface VariantCombinationInput {
 export interface CreateProductVariantsInput {
   options: CreateVariantOptionInput[]
   variants: VariantCombinationInput[]
+}
+
+// ----- Flash Sale & Deal of the Day Types -----
+
+export type FlashSaleType = 'flash_sale' | 'deal_of_day'
+export type FlashSaleStatus = 'active' | 'upcoming' | 'expired'
+
+export interface FlashSale {
+  id: string
+  shopId: string
+  productId: string
+  title: string
+  description: string | null
+  originalPrice: number
+  salePrice: number
+  discountPercent: number
+  type: FlashSaleType
+  startDate: string
+  endDate: string
+  maxQuantity: number | null
+  soldQuantity: number
+  isActive: boolean
+  banner: string | null
+  createdAt: string
+  updatedAt: string
+  shop?: { id: string; name: string; slug: string; logo: string | null }
+  product?: Product
+  status?: FlashSaleStatus // computed on frontend
+}
+
+export interface CreateFlashSaleInput {
+  shopId: string
+  productId: string
+  title: string
+  description?: string
+  salePrice: number
+  type?: FlashSaleType
+  startDate: string
+  endDate: string
+  maxQuantity?: number
+  banner?: string
+}
+
+export interface UpdateFlashSaleInput {
+  title?: string
+  description?: string
+  salePrice?: number
+  startDate?: string
+  endDate?: string
+  maxQuantity?: number
+  isActive?: boolean
+  banner?: string
+}
+
+export const FLASH_SALE_TYPE_LABELS: Record<FlashSaleType, { label: string; icon: string; color: string }> = {
+  flash_sale: { label: 'Flash Sale', icon: 'Zap', color: 'text-orange-600' },
+  deal_of_day: { label: 'Deal of the Day', icon: 'Flame', color: 'text-red-600' },
+}
+
+// ----- Wishlist Types -----
+
+export interface Wishlist {
+  id: string
+  userId: string
+  name: string
+  slug: string
+  isPublic: boolean
+  createdAt: string
+  updatedAt: string
+  user?: { id: string; name: string; avatar: string | null }
+  items?: WishlistItem[]
+  _count?: { items: number }
+}
+
+export interface WishlistItem {
+  id: string
+  wishlistId: string
+  productId: string
+  addedAt: string
+  product?: Product
+}
+
+export interface CreateWishlistInput {
+  userId: string
+  name: string
+  isPublic?: boolean
+}
+
+export interface UpdateWishlistInput {
+  name?: string
+  isPublic?: boolean
+}
+
+export interface AddWishlistItemInput {
+  productId: string
+}
+
+// ----- Product Q&A Types -----
+
+export interface ProductQuestion {
+  id: string
+  productId: string
+  userId: string
+  question: string
+  isAnswered: boolean
+  createdAt: string
+  updatedAt: string
+  user?: { id: string; name: string; avatar: string | null }
+  answers?: ProductAnswer[]
+}
+
+export interface ProductAnswer {
+  id: string
+  questionId: string
+  userId: string
+  answer: string
+  isSellerAnswer: boolean
+  helpfulCount: number
+  createdAt: string
+  updatedAt: string
+  user?: { id: string; name: string; avatar: string | null }
 }
 
 export const DOCUMENT_TYPE_LABELS: Record<string, string> = {

@@ -20,6 +20,9 @@ import { ReturnsPage } from '@/components/marketplace/returns/returns-page'
 import { PaymentSettingsPage } from '@/components/marketplace/payment/payment-settings-page'
 import { SellerReviews } from './seller-reviews'
 import { SellerCoupons } from './seller-coupons'
+import { SellerFlashSales } from './seller-flash-sales'
+import { SellerQA } from './seller-qa'
+import { BulkProductUpload } from './bulk-product-upload'
 import { toast } from 'sonner'
 
 export function SellerDashboard() {
@@ -131,7 +134,7 @@ export function SellerDashboard() {
   const hasShop = !!(shopData || currentUser?.shop)
 
   // Support deep-linking to a specific tab via viewParams
-  const validTabs = ['overview', 'products', 'gigs', 'orders', 'coupons', 'wallet', 'payment-settings', 'shipping', 'messages', 'reviews', 'settings', 'analytics']
+  const validTabs = ['overview', 'products', 'bulk-upload', 'gigs', 'orders', 'coupons', 'flash-sales', 'wallet', 'payment-settings', 'shipping', 'messages', 'reviews', 'qa', 'settings', 'analytics']
   const activeTab = useMemo(() => {
     if (manualTab) return manualTab
     if (viewParams?.tab && validTabs.includes(viewParams.tab)) return viewParams.tab
@@ -247,6 +250,7 @@ export function SellerDashboard() {
               <TabsList className="flex w-max min-w-full flex-wrap gap-1">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="products">Products</TabsTrigger>
+                <TabsTrigger value="bulk-upload" className="gap-1">📊 Bulk Upload</TabsTrigger>
                 <TabsTrigger value="gigs">Gigs</TabsTrigger>
                 <TabsTrigger value="orders">Orders</TabsTrigger>
                 <TabsTrigger value="wallet">Wallet</TabsTrigger>
@@ -255,11 +259,13 @@ export function SellerDashboard() {
                   Payment Info
                 </TabsTrigger>
                 <TabsTrigger value="coupons" className="gap-1">🎟️ Coupons</TabsTrigger>
+                <TabsTrigger value="flash-sales" className="gap-1">⚡ Flash Sales</TabsTrigger>
                 <TabsTrigger value="messages">Messages</TabsTrigger>
                 <TabsTrigger value="shipping" className="gap-1">📦 Shipping</TabsTrigger>
                 <TabsTrigger value="returns" className="gap-1">🔄 Returns</TabsTrigger>
                 <TabsTrigger value="settings">Settings</TabsTrigger>
                 <TabsTrigger value="reviews" className="gap-1">⭐ Reviews</TabsTrigger>
+                <TabsTrigger value="qa" className="gap-1">💬 Q&A</TabsTrigger>
                 <TabsTrigger value="analytics">Analytics</TabsTrigger>
               </TabsList>
             </div>
@@ -269,6 +275,9 @@ export function SellerDashboard() {
             </TabsContent>
             <TabsContent value="products">
               <SellerProducts />
+            </TabsContent>
+            <TabsContent value="bulk-upload">
+              <BulkProductUpload />
             </TabsContent>
             <TabsContent value="gigs">
               <SellerGigs />
@@ -287,6 +296,9 @@ export function SellerDashboard() {
             <TabsContent value="coupons">
               <SellerCoupons />
             </TabsContent>
+            <TabsContent value="flash-sales">
+              <SellerFlashSales />
+            </TabsContent>
             <TabsContent value="messages">
               <SellerMessages />
             </TabsContent>
@@ -303,6 +315,9 @@ export function SellerDashboard() {
                   userId={currentUser.id}
                 />
               )}
+            </TabsContent>
+            <TabsContent value="qa">
+              <SellerQA />
             </TabsContent>
             <TabsContent value="settings">
               <SellerShopSettings />

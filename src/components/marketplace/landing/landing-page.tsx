@@ -9,12 +9,14 @@ import { AboutSection } from './about-section'
 import { CTASection } from './cta-section'
 import { CommissionSection } from './commission-section'
 import { BrowseByTypeSection } from './browse-by-type-section'
+import { FlashDealsSection } from './flash-deals-section'
 
 export function LandingPage() {
   return (
     <div className="min-h-screen">
       <HeroSection />
       <BrowseByTypeSection />
+      <FlashDealsSection />
       <AboutSection />
       <CommissionSection />
       <FeaturesSection />

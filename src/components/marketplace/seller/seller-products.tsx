@@ -455,7 +455,7 @@ function CountryMultiSelect({
 }
 
 export function SellerProducts() {
-  const { currentUser } = useMarketplaceStore()
+  const { currentUser, setCurrentView } = useMarketplaceStore()
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
@@ -769,13 +769,23 @@ export function SellerProducts() {
             </SelectContent>
           </Select>
         </div>
-        <Button
-          className="gap-2 bg-emerald-600 hover:bg-emerald-700"
-          onClick={handleOpenAdd}
-        >
-          <Plus className="h-4 w-4" />
-          Add Product
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={() => setCurrentView('seller-dashboard', { tab: 'bulk-upload' })}
+          >
+            <Upload className="h-4 w-4" />
+            Bulk Upload
+          </Button>
+          <Button
+            className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+            onClick={handleOpenAdd}
+          >
+            <Plus className="h-4 w-4" />
+            Add Product
+          </Button>
+        </div>
       </div>
 
       {/* Products Table */}

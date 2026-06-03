@@ -111,3 +111,111 @@ Stage Summary:
 - Analytics component uses dynamic imports for recharts, so chart load failures don't crash the whole page
 - Supabase database schema is fully synced
 - Vercel deployment at https://marketo-alpha.vercel.app is live and working
+
+---
+Task ID: 2
+Agent: Schema Builder
+Task: Add FlashSale, ProductQuestion, ProductAnswer, Wishlist, WishlistItem models to both Prisma schemas
+
+Work Log:
+- Added 5 new models to schema.sqlite.prisma and schema.postgresql.prisma
+- Added reverse relations to User (questions, answers, wishlists), Shop (flashSales), Product (flashSales, questions, wishlistItems) models
+- Note: Removed `flashSales FlashSale[]` from User model since FlashSale has no userId field (flash sales are accessed through Shop)
+- Copied schema.sqlite.prisma to schema.prisma for active database
+- Ran db:push to sync database
+
+Stage Summary:
+- 5 new database models created: FlashSale, ProductQuestion, ProductAnswer, Wishlist, WishlistItem
+- Database synced successfully
+
+---
+Task ID: 4
+Agent: Main Agent
+Task: Product Q&A Feature — API Routes, UI Components, Seller Dashboard Integration
+
+Work Log:
+- Created /api/products/[id]/questions/route.ts — GET (list questions with pagination, answered filter, user+answers includes) and POST (ask question with validation)
+- Created /api/products/[id]/questions/[questionId]/answers/route.ts — GET (list answers with user, ordered by helpfulCount desc) and POST (post answer with isSellerAnswer detection, updates question.isAnswered)
+- Created /api/products/[id]/questions/[questionId]/answers/[answerId]/helpful/route.ts — POST (increment helpfulCount)
+- Added ProductQuestion and ProductAnswer TypeScript types to /types/index.ts
+- Created /components/marketplace/shared/product-qa.tsx — buyer-facing Q&A section with question list, expandable answers, ask/answer forms, helpful voting
+- Modified /components/marketplace/shop/product-detail.tsx — added "Q&A" tab alongside Description and Reviews tabs, renders ProductQA component
+- Created /components/marketplace/seller/seller-qa.tsx — seller Q&A management with Unanswered/All tabs, inline answer forms, product grouping, status indicators
+- Modified /components/marketplace/seller/seller-dashboard.tsx — added "💬 Q&A" tab, imported SellerQA component, added 'qa' to validTabs
+
+Stage Summary:
+- 3 new API routes with 5 endpoint handlers (GET questions, POST question, GET answers, POST answer, POST helpful)
+- 2 new UI components (product-qa.tsx, seller-qa.tsx)
+- 2 modified files (product-detail.tsx, seller-dashboard.tsx)
+- Lint passes with 0 errors (2 pre-existing warnings)
+- API route tested and returns proper responses
+
+---
+Task ID: 5+6
+Agent: Main Agent
+Task: Wishlist Sharing + Bulk Product Upload (CSV Import & Export)
+
+Work Log:
+- Added Wishlist, WishlistItem, CreateWishlistInput, UpdateWishlistInput, AddWishlistItemInput types to /types/index.ts
+- Created /api/wishlists/route.ts — GET (list user's wishlists with item counts), POST (create wishlist with auto-generated unique slug)
+- Created /api/wishlists/[id]/route.ts — GET (wishlist with items and product details, private check), PATCH (update name/isPublic/slug), DELETE (owner-only delete)
+- Created /api/wishlists/[id]/items/route.ts — POST (add product to wishlist, duplicate check), DELETE (remove product from wishlist)
+- Created /api/wishlists/public/[slug]/route.ts — GET (public wishlist by slug with product details, only if isPublic=true)
+- Created /components/marketplace/buyer/buyer-wishlists.tsx — full wishlist management with list/detail views, create/edit/delete dialogs, share with clipboard copy, public/private toggle, item removal, add-to-cart
+- Created /api/products/import/route.ts — POST (parse CSV, validate rows, batch create products in groups of 10, returns imported count and per-row errors)
+- Created /api/products/export/route.ts — GET (export active products as downloadable CSV with Content-Type text/csv)
+- Created /components/marketplace/seller/bulk-product-upload.tsx — drag-and-drop CSV upload, client-side preview table (first 10 rows), validation, import with progress, result summary, template download, export button
+- Fixed lint error in import route (CSV parser double-quote comparison)
+- Lint passes with 0 errors (2 pre-existing warnings)
+
+Stage Summary:
+- Wishlist Sharing: 4 new API routes, 1 new UI component, Wishlist/WishlistItem types added
+- Bulk Product Upload: 2 new API routes, 1 new UI component with CSV parsing/preview/import/export
+- Both features fully implemented with loading/error states, ownership checks, and shadcn/ui components
+
+---
+Task ID: 5
+Agent: Bulk Upload Integration Agent
+Task: Integrate Bulk CSV Import/Export into seller dashboard
+
+Work Log:
+- Read seller-dashboard.tsx, seller-products.tsx, and bulk-product-upload.tsx to understand existing structure
+- Added `import { BulkProductUpload } from './bulk-product-upload'` to seller-dashboard.tsx
+- Added `'bulk-upload'` to the `validTabs` array (positioned after 'products')
+- Added `TabsTrigger` for "bulk-upload" with 📊 emoji and "Bulk Upload" text, placed after the Products tab
+- Added `TabsContent` for "bulk-upload" that renders `<BulkProductUpload />`
+- In seller-products.tsx, extracted `setCurrentView` from useMarketplaceStore alongside `currentUser`
+- Added "Bulk Upload" outline variant button with Upload icon next to the "Add Product" button
+- Button navigates to the bulk-upload tab via `setCurrentView('seller-dashboard', { tab: 'bulk-upload' })`
+- Ran `bun run lint` — 0 errors, 2 pre-existing warnings unrelated to changes
+- Verified dev server compiles successfully
+
+Stage Summary:
+- BulkProductUpload component is now accessible via the "📊 Bulk Upload" tab in the seller dashboard
+- Users can also navigate to bulk upload from the Products tab via the "Bulk Upload" button
+- No API routes or schema files were modified
+- All changes follow existing code patterns and use shadcn/ui components
+
+---
+Task ID: 4
+Agent: Wishlist Integration Agent
+Task: Integrate Wishlist Sharing into buyer dashboard and product detail
+
+Work Log:
+- Added "wishlists" tab to buyer dashboard: imported BuyerWishlists and ListChecks, added to validTabs array, created TabsTrigger and TabsContent
+- Added "Save to Wishlist" dropdown button on product detail page with DropdownMenu component: lists user's wishlists, allows saving product, shows "Create Wishlist" option if no wishlists exist
+- Created public-wishlist.tsx component: fetches from /api/wishlists/public/[slug], displays items in grid, handles empty/error/private states
+- Added 'wishlist-view' to ViewMode type in types/index.ts
+- Added dynamic import for PublicWishlist in page.tsx
+- Added 'wishlist-view' case to renderView switch with slug from viewParams
+- Added wishlist URL parameter support in page.tsx navigation (both parsing and syncing)
+- Added 'wishlist-view' to detailViews reset list in store for safe page reloads
+- Updated BuyerWishlists share URL to use query parameter format (?wishlist=slug)
+- Fixed React lint error in public-wishlist.tsx (setState in effect)
+- Ran lint — 0 errors, 3 pre-existing warnings
+
+Stage Summary:
+- BuyerDashboard now has a "📋 Wishlists" tab rendering BuyerWishlists
+- Product detail page has a dropdown "Save to Wishlist" button next to favorite/share buttons
+- Public wishlists are viewable via ?wishlist=<slug> URL parameter
+- All changes use existing shadcn/ui components, toast notifications, and consistent styling
