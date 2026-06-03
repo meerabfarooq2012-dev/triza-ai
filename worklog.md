@@ -73,3 +73,21 @@ Stage Summary:
 - Product Variants feature fully implemented across all layers
 - 4 new database models, 6 new API endpoints, 2 new UI components, 7 modified files
 - Lint clean, code pushed to GitHub
+---
+Task ID: 1
+Agent: Main
+Task: Fix analytics "Failed to fetch seller analytics" error
+
+Work Log:
+- Identified root cause: analytics API route used SQLite-specific `strftime()` in raw SQL queries which don't work with PostgreSQL (Supabase)
+- Rewrote entire `/api/analytics/seller/route.ts` to use database-agnostic Prisma ORM methods instead of raw SQL
+- Replaced `$queryRaw` calls with `findMany`, `aggregate`, `count`, and `groupBy` Prisma methods
+- Processed data grouping in JavaScript (monthly/daily revenue, top products, top customers, revenue by type)
+- Optimized to reduce memory pressure: split into 2 batches (lightweight aggregates in parallel, data queries sequential)
+- Combined top products and revenue by type into a single query to reduce total queries from 17 to 14
+
+Stage Summary:
+- Analytics API now works with both SQLite (local dev) and PostgreSQL (Supabase production)
+- Server stability improved - no more OOM crashes on repeated analytics requests
+- All 3 API test requests returned 200 successfully
+- Coupon & Promo Code System was already fully built in previous sessions
