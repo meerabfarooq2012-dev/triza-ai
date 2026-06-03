@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-// Use a fresh PrismaClient to avoid stale cache issues after schema changes
-const db = new PrismaClient({ log: ['error', 'warn'] })
+import { db } from '@/lib/db'
 
 // GET /api/flash-sales?shopId=xxx&type=flash_sale&active=true&includeExpired=false&page=1&limit=20
 export async function GET(req: NextRequest) {
