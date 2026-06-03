@@ -91,3 +91,23 @@ Stage Summary:
 - Server stability improved - no more OOM crashes on repeated analytics requests
 - All 3 API test requests returned 200 successfully
 - Coupon & Promo Code System was already fully built in previous sessions
+
+---
+Task ID: 1
+Agent: Main Agent
+Task: Fix Seller Analytics ChunkLoadError and deploy to Vercel
+
+Work Log:
+- Investigated ChunkLoadError — caused by stale chunk references after dev server restarts
+- Added global ChunkLoadError recovery in src/app/page.tsx (auto-reloads page once)
+- Refactored seller-analytics.tsx to use dynamic imports for recharts (code-split into separate chunk)
+- Added ChartErrorBoundary around each chart section for graceful degradation
+- Pushed commits to GitHub (which auto-deploys to Vercel)
+- Synced Supabase PostgreSQL schema using prisma db push
+- Verified analytics API returns 200 OK on both local and Vercel
+
+Stage Summary:
+- ChunkLoadError is now handled globally with auto-page-reload
+- Analytics component uses dynamic imports for recharts, so chart load failures don't crash the whole page
+- Supabase database schema is fully synced
+- Vercel deployment at https://marketo-alpha.vercel.app is live and working
