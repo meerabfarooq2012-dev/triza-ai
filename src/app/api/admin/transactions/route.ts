@@ -5,6 +5,23 @@ import { Prisma } from '@prisma/client';
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
+
+    // Admin authentication check
+    const adminUserId = searchParams.get('userId');
+    if (!adminUserId) {
+      return NextResponse.json(
+        { success: false, error: 'userId is required' },
+        { status: 400 }
+      );
+    }
+    const adminUser = await db.user.findUnique({ where: { id: adminUserId } });
+    if (!adminUser?.isAdmin) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized - Admin access required' },
+        { status: 403 }
+      );
+    }
+
     const paymentPage = parseInt(searchParams.get('paymentPage') || '1', 10);
     const paymentLimit = parseInt(searchParams.get('paymentLimit') || '20', 10);
     const withdrawalPage = parseInt(searchParams.get('withdrawalPage') || '1', 10);

@@ -126,25 +126,28 @@ export default function ProductDetail() {
       (item.variantId ?? null) === selectedVariantId
   )
 
-  const fetchProduct = useCallback(() => {
+  useEffect(() => {
     if (!productId) return
+    let cancelled = false
     setLoading(true)
     api.products
       .getProduct(productId)
       .then((res) => {
+        if (cancelled) return
         const data = res.data
         if (data) {
           setProduct(data)
           setIsFavorited(data.isFavorited || false)
         }
       })
-      .catch(() => setProduct(null))
-      .finally(() => setLoading(false))
+      .catch(() => {
+        if (!cancelled) setProduct(null)
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => { cancelled = true }
   }, [productId])
-
-  useEffect(/* eslint-disable react-hooks/set-state-in-effect */ () => {
-    fetchProduct()
-  }, [fetchProduct])
 
   // Fetch active flash sale for this product
   useEffect(() => {
@@ -224,7 +227,7 @@ export default function ProductDetail() {
       productId: product.id,
       shopId: product.shopId,
       name: product.name,
-      price: effectivePrice ?? product.price,
+      price: effectivePrice ?? (activeFlashSale ? activeFlashSale.salePrice : product.price),
       quantity,
       image: variantImage || images[0] || null,
       type: product.type,
@@ -251,13 +254,16 @@ export default function ProductDetail() {
 
   const handleToggleFavorite = async () => {
     if (!currentUser) return
+    const previousState = isFavorited
     try {
+      setIsFavorited(!isFavorited) // Optimistic update
       const res = await api.favorites.toggleFavorite(productId, currentUser.id)
       if (res.data) {
         setIsFavorited(res.data.isFavorited)
       }
     } catch {
-      // silent fail
+      setIsFavorited(previousState) // Revert on error
+      toast({ title: 'Error', description: 'Failed to update favorite', variant: 'destructive' })
     }
   }
 
@@ -333,6 +339,17 @@ export default function ProductDetail() {
       setCurrentView('shop-view', { shopSlug: product.shop.slug })
     }
   }
+
+  // Compute gallery length before early returns for hook ordering
+  const productImages = product ? safeJsonParse<string[]>(product.images, []) : []
+  const galleryLength = variantImage ? 1 + productImages.length : productImages.length
+
+  // Reset selectedImage if it's out of bounds after gallery changes
+  useEffect(() => {
+    if (selectedImage >= galleryLength) {
+      setSelectedImage(Math.max(0, galleryLength - 1))
+    }
+  }, [galleryLength, selectedImage])
 
   if (loading) {
     return (

@@ -142,13 +142,18 @@ export function VariantSelector({
         sku: null,
       })
     }
-  }, [matchedVariant, effectivePrice, variantImage, variantLabel, basePrice, onVariantChange])
+  }, [matchedVariant, effectivePrice, variantImage, variantLabel, basePrice])
 
   const handleSelectValue = (optionId: string, valueId: string) => {
-    setSelectedOptions((prev) => ({
-      ...prev,
-      [optionId]: prev[optionId] === valueId ? '' : valueId,
-    }))
+    setSelectedOptions((prev) => {
+      const next = { ...prev }
+      if (next[optionId] === valueId) {
+        delete next[optionId]
+      } else {
+        next[optionId] = valueId
+      }
+      return next
+    })
   }
 
   if (variantOptions.length === 0) return null

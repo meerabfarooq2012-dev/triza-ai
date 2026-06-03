@@ -138,7 +138,9 @@ export async function PUT(
 
     const isSeller = returnRequest.order.sellerId === userId;
     const isBuyer = returnRequest.order.buyerId === userId;
-    const isAdmin = adminNote !== undefined; // Simplified admin check
+    // Check admin status from database
+    const requestingUser = await db.user.findUnique({ where: { id: userId } });
+    const isAdmin = requestingUser?.isAdmin === true;
 
     // Validate action permissions
     if (action === 'cancel' && !isBuyer) {

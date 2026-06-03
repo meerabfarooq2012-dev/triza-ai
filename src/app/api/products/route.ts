@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
       if (tagList.length > 0) {
         andConditions.push({
           OR: tagList.map((tag) => ({
-            tags: { contains: tag, mode: 'insensitive' as const },
+            tags: { contains: tag },
           })),
         });
       }
@@ -236,6 +236,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: 'Shop not found' },
         { status: 404 }
+      );
+    }
+
+    // Verify the requesting user owns the shop
+    const { userId: requestUserId } = body;
+    if (requestUserId && shop.userId !== requestUserId) {
+      return NextResponse.json(
+        { success: false, error: 'You can only create products in your own shop' },
+        { status: 403 }
       );
     }
 

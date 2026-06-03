@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ShoppingCart,
@@ -184,24 +184,27 @@ export default function GigDetail() {
 
   const isInCart = cart.some((item) => item.productId === gigId)
 
-  const fetchGig = useCallback(() => {
+  useEffect(/* eslint-disable react-hooks/set-state-in-effect */ () => {
     if (!gigId) return
+    let cancelled = false
     setLoading(true)
     api.gigs
       .getGig(gigId)
       .then((res) => {
+        if (cancelled) return
         const data = res.data
         if (data) {
           setGig(data as Gig)
         }
       })
-      .catch(() => setGig(null))
-      .finally(() => setLoading(false))
+      .catch(() => {
+        if (!cancelled) setGig(null)
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => { cancelled = true }
   }, [gigId])
-
-  useEffect(/* eslint-disable react-hooks/set-state-in-effect */ () => {
-    fetchGig()
-  }, [fetchGig])
 
   const handleAddToCart = () => {
     if (!gig || !gig.shop) return

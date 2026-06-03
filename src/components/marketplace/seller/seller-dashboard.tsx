@@ -301,10 +301,10 @@ export function SellerDashboard() {
               <SellerMessages />
             </TabsContent>
             <TabsContent value="shipping">
-              <ShippingSettings shopId={(shopData?.id || currentUser?.shop?.id) as string} userId={currentUser?.id} />
+              {(shopData?.id || currentUser?.shop?.id) && <ShippingSettings shopId={(shopData?.id || currentUser?.shop?.id) as string} userId={currentUser?.id} />}
             </TabsContent>
             <TabsContent value="returns">
-              {currentUser && <ReturnsPage userId={currentUser.id} isSeller={true} shopId={(shopData?.id || currentUser?.shop?.id) as string} />}
+              {currentUser && (shopData?.id || currentUser?.shop?.id) && <ReturnsPage userId={currentUser.id} isSeller={true} shopId={(shopData?.id || currentUser?.shop?.id) as string} />}
             </TabsContent>
             <TabsContent value="reviews">
               {currentUser && (

@@ -1,15 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { completeSimulatedPayment } from '@/lib/payment-gateway';
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
 // =============================================================================
 // GET /api/payments/sandbox
 // Sandbox payment simulation page - shown when PAYMENT_GATEWAY_MODE=sandbox
 // =============================================================================
 
 export async function GET(request: NextRequest) {
-  const token = request.nextUrl.searchParams.get('token') || '';
-  const gateway = request.nextUrl.searchParams.get('gateway') || 'easypaisa';
-  const orderId = request.nextUrl.searchParams.get('orderId') || '';
+  const rawToken = request.nextUrl.searchParams.get('token') || '';
+  const rawGateway = request.nextUrl.searchParams.get('gateway') || 'easypaisa';
+  const rawOrderId = request.nextUrl.searchParams.get('orderId') || '';
+  
+  // Sanitize for HTML output
+  const token = escapeHtml(rawToken);
+  const gateway = escapeHtml(rawGateway);
+  const orderId = escapeHtml(rawOrderId);
+  
+  // For JS/template literals, use encodeURIComponent
+  const jsToken = encodeURIComponent(rawToken);
+  const jsGateway = encodeURIComponent(rawGateway);
+  const jsOrderId = encodeURIComponent(rawOrderId);
 
   const gatewayName = gateway === 'easypaisa' ? 'Easypaisa' : 'JazzCash';
   const gatewayColor = gateway === 'easypaisa' ? '#00C853' : '#F44336';
@@ -122,9 +141,9 @@ export async function GET(request: NextRequest) {
     </div>
   </div>
   <script>
-    const token = '${token}';
-    const gateway = '${gateway}';
-    const orderId = '${orderId}';
+    const token = decodeURIComponent('${jsToken}');
+    const gateway = decodeURIComponent('${jsGateway}');
+    const orderId = decodeURIComponent('${jsOrderId}');
     const callbackBase = window.location.origin;
 
     async function confirmPayment() {
@@ -132,7 +151,7 @@ export async function GET(request: NextRequest) {
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner"></span> Processing...';
       try {
-        const callbackUrl = callbackBase + '/api/payments/callback?gateway=' + gateway + '&token=' + token + '&status=success&orderId=' + orderId;
+        const callbackUrl = callbackBase + '/api/payments/callback?gateway=' + encodeURIComponent(gateway) + '&token=' + encodeURIComponent(token) + '&status=success&orderId=' + encodeURIComponent(orderId);
         await fetch(callbackUrl);
       } catch (e) {
         console.error('Payment confirmation error:', e);

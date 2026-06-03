@@ -62,7 +62,7 @@ function buildProductWhere(params: SearchParams): Prisma.ProductWhereInput {
     if (tagList.length > 0) {
       andConditions.push({
         OR: tagList.map((tag) => ({
-          tags: { contains: tag, mode: 'insensitive' as const },
+          tags: { contains: tag },
         })),
       });
     }
