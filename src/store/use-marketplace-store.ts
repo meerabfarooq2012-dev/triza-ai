@@ -1,7 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { User, CartItem, ViewMode, DeliveryAddress, ShippingRate } from '@/types'
-import type { Locale } from '@/lib/i18n'
 
 // =============================================================================
 // Marketo Marketplace - Zustand Store
@@ -43,9 +42,6 @@ interface MarketplaceState {
   selectedAddress: DeliveryAddress | null
   selectedShippingMethod: ShippingRate | null
 
-  // Language state
-  language: Locale
-
   // Auth actions
   login: (user: User) => void
   logout: () => void
@@ -84,9 +80,6 @@ interface MarketplaceState {
   // Shipping actions
   setSelectedAddress: (address: DeliveryAddress | null) => void
   setSelectedShippingMethod: (method: ShippingRate | null) => void
-
-  // Language actions
-  setLanguage: (locale: Locale) => void
 }
 
 function calculateCartTotal(cart: CartItem[]): number {
@@ -134,9 +127,6 @@ export const useMarketplaceStore = create<MarketplaceState>()(
       // ----- Shipping State -----
       selectedAddress: null,
       selectedShippingMethod: null,
-
-      // ----- Language State -----
-      language: 'en' as Locale,
 
       // ----- Auth Actions -----
       login: (user: User) => {
@@ -311,9 +301,6 @@ export const useMarketplaceStore = create<MarketplaceState>()(
       setSelectedShippingMethod: (method: ShippingRate | null) => {
         set({ selectedShippingMethod: method })
       },
-
-      // ----- Language Actions -----
-      setLanguage: (locale) => set({ language: locale }),
     }),
     {
       name: 'marketo-storage',
@@ -326,7 +313,6 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         cartTotal: state.cartTotal,
         currentView: state.currentView,
         viewParams: state.viewParams,
-        language: state.language,
       }),
       // Synchronously sanitize persisted state BEFORE it's applied to the store.
       // This prevents "forEach is not a function" crashes when localStorage
@@ -349,11 +335,6 @@ export const useMarketplaceStore = create<MarketplaceState>()(
           if (field in p && !Array.isArray(p[field])) {
             delete p[field]
           }
-        }
-
-        // Ensure language is a valid locale
-        if (!p.language || !['en', 'ur', 'ar'].includes(p.language as string)) {
-          p.language = 'en'
         }
 
         // Ensure viewParams is a plain object
@@ -396,7 +377,6 @@ export const useMarketplaceStore = create<MarketplaceState>()(
               cart: [],
               cartTotal: 0,
               favoriteIds: [],
-              language: 'en',
             })
           }
         }

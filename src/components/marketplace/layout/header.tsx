@@ -50,9 +50,7 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { openCartDrawer } from '@/components/marketplace/shared/cart-drawer'
-import { LanguageSwitcher } from '@/components/marketplace/shared/language-switcher'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
-import { useLanguage } from '@/hooks/use-language'
 import { PLATFORM_NAME, USER_ROLE_LABELS } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import type { ViewMode } from '@/types'
@@ -71,8 +69,6 @@ export function Header() {
     logout,
     setSearchQuery,
   } = useMarketplaceStore()
-
-  const { t } = useLanguage()
 
   const [searchInput, setSearchInput] = useState('')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -129,9 +125,9 @@ export function Header() {
   }, [searchExpanded, searchInput])
 
   const navLinks = [
-    { label: t('common.home'), view: 'landing' as ViewMode, icon: Home },
-    { label: t('common.browse'), view: 'search' as ViewMode, icon: Compass },
-    { label: t('common.gigs'), view: 'gigs-browse' as ViewMode, icon: Briefcase },
+    { label: 'Home', view: 'landing' as ViewMode, icon: Home },
+    { label: 'Browse', view: 'search' as ViewMode, icon: Compass },
+    { label: 'Gigs', view: 'gigs-browse' as ViewMode, icon: Briefcase },
   ]
 
   return (
@@ -180,7 +176,7 @@ export function Header() {
                 ref={searchInputRef}
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                placeholder={t('common.searchPlaceholder')}
+                placeholder="Search products, shops..."
                 className="pl-9 pr-4 h-9 bg-muted/40 border-0 focus-visible:bg-background focus-visible:ring-1 focus-visible:ring-ring"
               />
             </form>
@@ -188,9 +184,6 @@ export function Header() {
 
           {/* Right: Actions */}
           <div className="flex items-center gap-1">
-            {/* Language Switcher */}
-            <LanguageSwitcher variant="icon" />
-
             {/* Mobile search toggle */}
             <Button
               variant="ghost"
@@ -273,7 +266,7 @@ export function Header() {
                           onClick={() => setActiveRole(activeRole === 'buyer' ? 'seller' : 'buyer')}
                         >
                           <ArrowLeftRight className="mr-2 h-4 w-4" />
-                          {activeRole === 'buyer' ? t('nav.switchToSeller') : t('nav.switchToBuyer')}
+                          {activeRole === 'buyer' ? 'Switch to Seller Mode' : 'Switch to Buyer Mode'}
                         </DropdownMenuItem>
                       </DropdownMenuGroup>
                       <DropdownMenuSeparator />
@@ -285,13 +278,13 @@ export function Header() {
                     {activeRole === 'buyer' || currentUser?.role === 'buyer' || currentUser?.role === 'both' ? (
                       <DropdownMenuItem onClick={() => handleNavClick('buyer-dashboard')}>
                         <LayoutDashboard className="mr-2 h-4 w-4" />
-                        {t('nav.buyerDashboard')}
+                        Buyer Dashboard
                       </DropdownMenuItem>
                     ) : null}
                     {(activeRole === 'seller' || currentUser?.role === 'seller' || currentUser?.role === 'both') ? (
                       <DropdownMenuItem onClick={() => handleNavClick('seller-dashboard')}>
                         <Store className="mr-2 h-4 w-4" />
-                        {t('nav.sellerDashboard')}
+                        Seller Dashboard
                       </DropdownMenuItem>
                     ) : null}
                   </DropdownMenuGroup>
@@ -300,7 +293,7 @@ export function Header() {
                   <DropdownMenuGroup>
                     <DropdownMenuItem onClick={() => handleNavClick('messages')}>
                       <MessageSquare className="mr-2 h-4 w-4" />
-                      {t('common.messages')}
+                      Messages
                       {unreadMessages > 0 && (
                         <Badge className="ml-auto h-5 px-1.5 text-[10px] bg-emerald-500 text-white border-0">
                           {unreadMessages}
@@ -309,7 +302,7 @@ export function Header() {
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleNavClick('notifications')}>
                       <Bell className="mr-2 h-4 w-4" />
-                      {t('common.notifications')}
+                      Notifications
                       {unreadNotifications > 0 && (
                         <Badge className="ml-auto h-5 px-1.5 text-[10px] bg-red-500 text-white border-0">
                           {unreadNotifications}
@@ -321,11 +314,11 @@ export function Header() {
                       setCurrentView(dashboard as ViewMode, { tab: 'orders' })
                     }}>
                       <Package className="mr-2 h-4 w-4" />
-                      {t('common.orders')}
+                      Orders
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleNavClick('settings')}>
                       <Settings className="mr-2 h-4 w-4" />
-                      {t('common.settings')}
+                      Settings
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => {
@@ -334,37 +327,37 @@ export function Header() {
                       }}
                     >
                       <CreditCard className="mr-2 h-4 w-4" />
-                      {t('nav.paymentInfo')}
+                      Payment Info
                     </DropdownMenuItem>
                     {(activeRole === 'seller' || currentUser?.role === 'seller' || currentUser?.role === 'both') && (
                       <DropdownMenuItem onClick={() => setCurrentView('seller-dashboard', { tab: 'shipping' })}>
                         <Truck className="mr-2 h-4 w-4" />
-                        {t('nav.shippingSettings')}
+                        Shipping Settings
                       </DropdownMenuItem>
                     )}
                     {(activeRole === 'buyer' || currentUser?.role === 'buyer' || currentUser?.role === 'both') && (
                       <DropdownMenuItem onClick={() => setCurrentView('buyer-dashboard', { tab: 'addresses' })}>
                         <MapPin className="mr-2 h-4 w-4" />
-                        {t('nav.myAddresses')}
+                        My Addresses
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuItem onClick={() => setCurrentView('returns')}>
                       <RotateCcw className="mr-2 h-4 w-4" />
-                      {t('nav.myReturns')}
+                      My Returns
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setCurrentView('disputes')}>
                       <Scale className="mr-2 h-4 w-4" />
-                      {t('nav.disputeCenter')}
+                      Dispute Center
                     </DropdownMenuItem>
                     {(activeRole === 'seller' || currentUser?.role === 'seller' || currentUser?.role === 'both') && (
                       <DropdownMenuItem onClick={() => setCurrentView('verification-center')}>
                         <ShieldCheck className="mr-2 h-4 w-4" />
-                        {t('nav.trustCenter')}
+                        Trust Center
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuItem onClick={() => setCurrentView('activity-feed')}>
                       <Rss className="mr-2 h-4 w-4" />
-                      {t('nav.activityFeed')}
+                      Activity Feed
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
 
@@ -374,7 +367,7 @@ export function Header() {
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => handleNavClick('admin')}>
                         <Shield className="mr-2 h-4 w-4" />
-                        {t('nav.adminPanel')}
+                        Admin Panel
                       </DropdownMenuItem>
                     </>
                   )}
@@ -385,7 +378,7 @@ export function Header() {
                     className="text-red-600 focus:text-red-600"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
-                    {t('common.logout')}
+                    Log out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -396,14 +389,14 @@ export function Header() {
                   size="sm"
                   onClick={() => handleNavClick('auth', { mode: 'login' })}
                 >
-                  {t('common.login')}
+                  Log in
                 </Button>
                 <Button
                   size="sm"
                   onClick={() => handleNavClick('auth', { mode: 'register' })}
                   className="bg-gradient-to-r from-violet-600 to-pink-500 hover:from-violet-700 hover:to-pink-600 text-white border-0"
                 >
-                  {t('common.signup')}
+                  Sign up
                 </Button>
               </div>
             )}
@@ -435,7 +428,7 @@ export function Header() {
                 <Input
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  placeholder={t('common.searchPlaceholder')}
+                  placeholder="Search products, shops..."
                   className="pl-9 pr-10 h-9 bg-muted/40 border-0"
                   autoFocus
                 />
@@ -484,13 +477,6 @@ export function Header() {
 
               <Separator className="my-3" />
 
-              {/* Language Switcher (mobile) */}
-              <div className="px-3 py-2">
-                <LanguageSwitcher variant="compact" />
-              </div>
-
-              <Separator className="my-3" />
-
               {/* Auth buttons (mobile) */}
               {isAuthenticated && currentUser ? (
                 <>
@@ -523,7 +509,7 @@ export function Header() {
                       onClick={() => setActiveRole(activeRole === 'buyer' ? 'seller' : 'buyer')}
                     >
                       <ArrowLeftRight className="h-4 w-4 mr-2" />
-                      {activeRole === 'buyer' ? t('nav.switchToSeller') : t('nav.switchToBuyer')}
+                      {activeRole === 'buyer' ? 'Switch to Seller Mode' : 'Switch to Buyer Mode'}
                     </Button>
                   )}
 
@@ -535,7 +521,7 @@ export function Header() {
                       onClick={() => handleNavClick('buyer-dashboard')}
                     >
                       <LayoutDashboard className="h-4.5 w-4.5" />
-                      {t('nav.buyerDashboard')}
+                      Buyer Dashboard
                     </Button>
                   )}
                   {(activeRole === 'seller' || currentUser?.role === 'seller' || currentUser?.role === 'both') && (
@@ -545,7 +531,7 @@ export function Header() {
                       onClick={() => handleNavClick('seller-dashboard')}
                     >
                       <Store className="h-4.5 w-4.5" />
-                      {t('nav.sellerDashboard')}
+                      Seller Dashboard
                     </Button>
                   )}
 
@@ -555,7 +541,7 @@ export function Header() {
                     onClick={() => handleNavClick('messages')}
                   >
                     <MessageSquare className="h-4.5 w-4.5" />
-                    {t('common.messages')}
+                    Messages
                     {unreadMessages > 0 && (
                       <Badge className="ml-auto h-5 px-1.5 text-[10px] bg-emerald-500 text-white border-0">
                         {unreadMessages}
@@ -569,7 +555,7 @@ export function Header() {
                     onClick={() => handleNavClick('notifications')}
                   >
                     <Bell className="h-4.5 w-4.5" />
-                    {t('common.notifications')}
+                    Notifications
                     {unreadNotifications > 0 && (
                       <Badge className="ml-auto h-5 px-1.5 text-[10px] bg-red-500 text-white border-0">
                         {unreadNotifications}
@@ -586,7 +572,7 @@ export function Header() {
                     }}
                   >
                     <Package className="h-4.5 w-4.5" />
-                    {t('common.orders')}
+                    Orders
                   </Button>
 
                   <Button
@@ -595,7 +581,7 @@ export function Header() {
                     onClick={() => handleNavClick('settings')}
                   >
                     <Settings className="h-4.5 w-4.5" />
-                    {t('common.settings')}
+                    Settings
                   </Button>
 
                   <Button
@@ -607,7 +593,7 @@ export function Header() {
                     }}
                   >
                     <CreditCard className="h-4.5 w-4.5" />
-                    {t('nav.paymentInfo')}
+                    Payment Info
                   </Button>
 
                   {(activeRole === 'seller' || currentUser?.role === 'seller' || currentUser?.role === 'both') && (
@@ -617,7 +603,7 @@ export function Header() {
                       onClick={() => setCurrentView('seller-dashboard', { tab: 'shipping' })}
                     >
                       <Truck className="h-4.5 w-4.5" />
-                      {t('nav.shippingSettings')}
+                      Shipping Settings
                     </Button>
                   )}
                   {(activeRole === 'buyer' || currentUser?.role === 'buyer' || currentUser?.role === 'both') && (
@@ -627,7 +613,7 @@ export function Header() {
                       onClick={() => setCurrentView('buyer-dashboard', { tab: 'addresses' })}
                     >
                       <MapPin className="h-4.5 w-4.5" />
-                      {t('nav.myAddresses')}
+                      My Addresses
                     </Button>
                   )}
 
@@ -637,7 +623,7 @@ export function Header() {
                     onClick={() => setCurrentView('returns')}
                   >
                     <RotateCcw className="h-4.5 w-4.5" />
-                    {t('nav.myReturns')}
+                    My Returns
                   </Button>
 
                   <Button
@@ -646,7 +632,7 @@ export function Header() {
                     onClick={() => setCurrentView('disputes')}
                   >
                     <Scale className="h-4.5 w-4.5" />
-                    {t('nav.disputeCenter')}
+                    Dispute Center
                   </Button>
 
                   {(activeRole === 'seller' || currentUser?.role === 'seller' || currentUser?.role === 'both') && (
@@ -656,7 +642,7 @@ export function Header() {
                       onClick={() => setCurrentView('verification-center')}
                     >
                       <ShieldCheck className="h-4.5 w-4.5" />
-                      {t('nav.trustCenter')}
+                      Trust Center
                     </Button>
                   )}
 
@@ -666,7 +652,7 @@ export function Header() {
                     onClick={() => setCurrentView('activity-feed')}
                   >
                     <Rss className="h-4.5 w-4.5" />
-                    {t('nav.activityFeed')}
+                    Activity Feed
                   </Button>
 
                   {currentUser?.isAdmin && (
@@ -676,7 +662,7 @@ export function Header() {
                       onClick={() => handleNavClick('admin')}
                     >
                       <Shield className="h-4.5 w-4.5" />
-                      {t('nav.adminPanel')}
+                      Admin Panel
                     </Button>
                   )}
 
@@ -688,7 +674,7 @@ export function Header() {
                     onClick={() => { logout(); setMobileMenuOpen(false) }}
                   >
                     <LogOut className="h-4.5 w-4.5" />
-                    {t('common.logout')}
+                    Log out
                   </Button>
                 </>
               ) : (
@@ -698,13 +684,13 @@ export function Header() {
                     className="w-full"
                     onClick={() => handleNavClick('auth', { mode: 'login' })}
                   >
-                    {t('common.login')}
+                    Log in
                   </Button>
                   <Button
                     className="w-full bg-gradient-to-r from-violet-600 to-pink-500 hover:from-violet-700 hover:to-pink-600 text-white border-0"
                     onClick={() => handleNavClick('auth', { mode: 'register' })}
                   >
-                    {t('common.signup')}
+                    Sign up
                   </Button>
                 </div>
               )}
