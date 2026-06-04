@@ -143,7 +143,7 @@ export function SellerDashboard() {
   // Loading state while checking for shop
   if (shopLoading) {
     return (
-      <div className="min-h-screen bg-gray-50/50 flex items-center justify-center">
+      <div className="min-h-screen bg-muted/30 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-600" />
           <p className="text-sm text-muted-foreground">Loading your dashboard...</p>
@@ -153,7 +153,7 @@ export function SellerDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
+    <div className="min-h-screen bg-muted/30">
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         {/* Welcome Header */}
         <motion.div
@@ -176,7 +176,7 @@ export function SellerDashboard() {
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-2xl font-bold text-foreground">
                   {shopName}
                 </h1>
                 {(shopData?.id || currentUser?.shop?.id) && (
@@ -186,7 +186,7 @@ export function SellerDashboard() {
                   />
                 )}
               </div>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 Welcome back, {userName}! Manage your shop and products.
               </p>
             </div>
@@ -195,10 +195,10 @@ export function SellerDashboard() {
 
         {/* Error message */}
         {loadError && (
-          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4">
+          <div className="mb-6 rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/50 p-4">
             <div className="flex items-center gap-3">
               <AlertCircle className="h-5 w-5 text-red-600" />
-              <p className="text-sm text-red-700">{loadError}</p>
+              <p className="text-sm text-red-700 dark:text-red-400">{loadError}</p>
             </div>
           </div>
         )}
@@ -208,16 +208,16 @@ export function SellerDashboard() {
           <motion.div
             initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4"
+            className="mb-6 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/50 p-4"
           >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
-                  <AlertCircle className="h-5 w-5 text-amber-600" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900">
+                  <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                 </div>
                 <div>
-                  <p className="font-semibold text-amber-900">Set Up Your Shop</p>
-                  <p className="text-sm text-amber-700">
+                  <p className="font-semibold text-amber-900 dark:text-amber-200">Set Up Your Shop</p>
+                  <p className="text-sm text-amber-700 dark:text-amber-400">
                     You need a shop to start selling. Create one now to add products and gigs.
                   </p>
                 </div>

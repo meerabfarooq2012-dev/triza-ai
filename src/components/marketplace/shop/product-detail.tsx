@@ -511,7 +511,7 @@ export default function ProductDetail() {
 
           {/* Flash Sale Badge */}
           {activeFlashSale && (
-            <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-lg p-3 space-y-2">
+            <div className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/30 dark:to-red-950/30 border border-orange-200 dark:border-orange-800 rounded-lg p-3 space-y-2">
               <div className="flex items-center gap-2">
                 <Badge className="bg-red-500 text-white gap-1">
                   <Flame size={12} />
@@ -522,14 +522,14 @@ export default function ProductDetail() {
                 </Badge>
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-bold text-red-600">
+                <span className="text-2xl font-bold text-red-600 dark:text-red-400">
                   ${activeFlashSale.salePrice.toFixed(2)}
                 </span>
                 <span className="text-base text-muted-foreground line-through">
                   ${activeFlashSale.originalPrice.toFixed(2)}
                 </span>
               </div>
-              <div className="flex items-center gap-1.5 text-sm text-orange-600 font-medium">
+              <div className="flex items-center gap-1.5 text-sm text-orange-600 dark:text-orange-400 font-medium">
                 <Clock size={14} />
                 <span>Ends in: {flashCountdown}</span>
               </div>

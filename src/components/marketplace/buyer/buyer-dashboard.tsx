@@ -29,7 +29,7 @@ export function BuyerDashboard() {
   const userName = currentUser?.name || 'Buyer'
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
+    <div className="min-h-screen bg-muted/30">
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         {/* Welcome Header */}
         <motion.div
@@ -51,10 +51,10 @@ export function BuyerDashboard() {
               )}
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold text-foreground">
                 Welcome back, {userName}!
               </h1>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 Manage your orders, payments, and messages
               </p>
             </div>

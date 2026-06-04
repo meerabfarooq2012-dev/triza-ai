@@ -55,6 +55,7 @@ import { PLATFORM_NAME, USER_ROLE_LABELS } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import type { ViewMode } from '@/types'
 import { NotificationBell } from '@/components/marketplace/notifications/notification-bell'
+import { ThemeToggle } from '@/components/marketplace/layout/theme-toggle'
 
 export function Header() {
   const {
@@ -230,6 +231,9 @@ export function Header() {
             {isAuthenticated && (
               <NotificationBell />
             )}
+
+            {/* Theme Toggle */}
+            <ThemeToggle />
 
             {/* User Menu */}
             {isAuthenticated && currentUser ? (
@@ -476,6 +480,12 @@ export function Header() {
               ))}
 
               <Separator className="my-3" />
+
+              {/* Theme Toggle (mobile) */}
+              <div className="flex items-center justify-between px-3 py-2">
+                <span className="text-sm text-muted-foreground">Theme</span>
+                <ThemeToggle />
+              </div>
 
               {/* Auth buttons (mobile) */}
               {isAuthenticated && currentUser ? (

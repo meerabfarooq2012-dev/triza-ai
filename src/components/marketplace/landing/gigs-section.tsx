@@ -150,11 +150,11 @@ export function GigsSection() {
               >
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4">
-                    <div className={`rounded-xl p-3 ${item.bgLight} text-gray-700 group-hover:scale-110 transition-transform`}>
+                    <div className={`rounded-xl p-3 ${item.bgLight} text-gray-700 dark:text-gray-300 group-hover:scale-110 transition-transform`}>
                       {item.icon}
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900 group-hover:text-emerald-600 transition-colors">
+                      <h3 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-emerald-600 transition-colors">
                         {item.title}
                       </h3>
                       <p className="text-sm text-muted-foreground mt-1">
@@ -180,11 +180,11 @@ export function GigsSection() {
               transition={{ duration: 0.4, delay: i * 0.1 }}
               className="flex items-start gap-3"
             >
-              <div className="rounded-lg bg-emerald-50 p-2 flex-shrink-0">
+              <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/30 p-2 flex-shrink-0">
                 {benefit.icon}
               </div>
               <div>
-                <p className="font-medium text-sm text-gray-900">{benefit.title}</p>
+                <p className="font-medium text-sm text-gray-900 dark:text-gray-100">{benefit.title}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{benefit.desc}</p>
               </div>
             </motion.div>

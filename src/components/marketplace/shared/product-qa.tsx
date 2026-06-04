@@ -212,9 +212,9 @@ export function ProductQA({ productId, gigId, shopOwnerId }: ProductQAProps) {
 
       {/* Ask a Question — prominent input at top */}
       {currentUser ? (
-        <Card className="border-0 shadow-sm bg-emerald-50/50">
+        <Card className="border-0 shadow-sm bg-emerald-50/50 dark:bg-emerald-950/30">
           <CardContent className="p-4 space-y-3">
-            <div className="flex items-center gap-2 text-sm font-medium text-emerald-700">
+            <div className="flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">
               <MessageCircleQuestion size={16} />
               Have a question about {itemLabel}?
             </div>
@@ -223,7 +223,7 @@ export function ProductQA({ productId, gigId, shopOwnerId }: ProductQAProps) {
               value={questionText}
               onChange={(e) => setQuestionText(e.target.value)}
               rows={2}
-              className="resize-none bg-white"
+              className="resize-none bg-background"
             />
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">
@@ -246,7 +246,7 @@ export function ProductQA({ productId, gigId, shopOwnerId }: ProductQAProps) {
           </CardContent>
         </Card>
       ) : (
-        <Card className="border-0 shadow-sm bg-gray-50">
+        <Card className="border-0 shadow-sm bg-muted/50">
           <CardContent className="p-4 text-center text-sm text-muted-foreground">
             <MessageSquare size={20} className="mx-auto mb-2 text-muted-foreground/50" />
             <p>Log in to ask a question or post an answer.</p>
@@ -283,8 +283,8 @@ export function ProductQA({ productId, gigId, shopOwnerId }: ProductQAProps) {
                     <div className="flex-shrink-0 mt-0.5">
                       <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
                         question.isAnswered
-                          ? 'bg-emerald-100 text-emerald-600'
-                          : 'bg-amber-100 text-amber-600'
+                          ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900 dark:text-emerald-400'
+                          : 'bg-amber-100 text-amber-600 dark:bg-amber-900 dark:text-amber-400'
                       }`}>
                         <HelpCircle size={14} />
                       </div>
@@ -300,11 +300,11 @@ export function ProductQA({ productId, gigId, shopOwnerId }: ProductQAProps) {
                           {formatDate(question.createdAt)}
                         </span>
                         {question.isAnswered ? (
-                          <Badge className="text-[10px] px-1.5 py-0 bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
+                          <Badge className="text-[10px] px-1.5 py-0 bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900 dark:text-emerald-400">
                             Answered
                           </Badge>
                         ) : (
-                          <Badge className="text-[10px] px-1.5 py-0 bg-amber-100 text-amber-700 hover:bg-amber-100">
+                          <Badge className="text-[10px] px-1.5 py-0 bg-amber-100 text-amber-700 hover:bg-amber-100 dark:bg-amber-900 dark:text-amber-400">
                             Pending
                           </Badge>
                         )}

@@ -398,7 +398,7 @@ export default function GigDetail() {
           {/* Rating */}
           <div className="flex items-center gap-1.5">
             <RatingStars rating={gig.averageRating} size="sm" />
-            <span className="text-sm font-semibold text-amber-600">
+            <span className="text-sm font-semibold text-amber-600 dark:text-amber-400">
               {(gig.averageRating ?? 0).toFixed(1)}
             </span>
             <span className="text-sm text-muted-foreground">
