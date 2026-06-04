@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef, Component, useSyncExternalStore, Suspense } from 'react'
+import { useState, useCallback, useEffect, useRef, Component, Suspense, useSyncExternalStore } from 'react'
 import dynamic from 'next/dynamic'
 import { useSearchParams } from 'next/navigation'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
@@ -12,17 +12,29 @@ import { useRealtimeNotifications } from '@/hooks/use-realtime-notifications'
 // ChunkLoadError and automatically reloads the page ONCE to fetch fresh chunks.
 if (typeof window !== 'undefined') {
   let chunkReloadAttempted = false
+
+  function handleChunkError() {
+    if (chunkReloadAttempted) return
+    chunkReloadAttempted = true
+    console.warn('[Marketo] ChunkLoadError detected — reloading with cache busting')
+    // Add a cache-busting param and force reload
+    const url = new URL(window.location.href)
+    url.searchParams.set('_r', Date.now().toString())
+    window.location.replace(url.toString())
+  }
+
+  // Catch synchronous ChunkLoadError
   const originalOnError = window.onerror
-  // eslint-disable-next-line prefer-rest-params
   window.onerror = function (message, source, lineno, colno, error) {
     if (
-      !chunkReloadAttempted &&
       typeof message === 'string' &&
-      (message.includes('ChunkLoadError') || message.includes('Loading chunk'))
+      (message.includes('ChunkLoadError') || message.includes('Loading chunk') || message.includes('Failed to load chunk'))
     ) {
-      chunkReloadAttempted = true
-      console.warn('[Marketo] ChunkLoadError detected — reloading page to fetch fresh chunks')
-      window.location.reload()
+      handleChunkError()
+      return true
+    }
+    if (error && error.name === 'ChunkLoadError') {
+      handleChunkError()
       return true
     }
     if (originalOnError) return originalOnError.call(this, message, source, lineno, colno, error)
@@ -34,16 +46,14 @@ if (typeof window !== 'undefined') {
   window.onunhandledrejection = function (event: PromiseRejectionEvent) {
     const reason = event.reason
     if (
-      !chunkReloadAttempted &&
       reason &&
-      ((reason.name === 'ChunkLoadError') ||
+      (reason.name === 'ChunkLoadError' ||
        (typeof reason.message === 'string' &&
-        (reason.message.includes('ChunkLoadError') || reason.message.includes('Loading chunk'))))
+        (reason.message.includes('ChunkLoadError') || reason.message.includes('Loading chunk') || reason.message.includes('Failed to load chunk'))))
     ) {
-      chunkReloadAttempted = true
-      console.warn('[Marketo] ChunkLoadError in promise — reloading page to fetch fresh chunks')
       event.preventDefault()
-      window.location.reload()
+      handleChunkError()
+      return
     }
     if (originalOnUnhandledRejection) return originalOnUnhandledRejection.call(this, event)
   }
@@ -71,149 +81,179 @@ function ViewLoader() {
   )
 }
 
+// ── Dynamic import helper with retry for ChunkLoadError ─────────────────────
+// Wraps dynamic imports to retry once if a chunk fails to load
+function withChunkRetry<T extends React.ComponentType<unknown>>(
+  importFn: () => Promise<{ default: T } | { [key: string]: T }>,
+  extractNamed?: string
+): () => Promise<{ default: T }> {
+  return () => {
+    return importFn().catch((err) => {
+      if (err && (err.name === 'ChunkLoadError' || (err.message && (
+        err.message.includes('ChunkLoadError') ||
+        err.message.includes('Loading chunk') ||
+        err.message.includes('Failed to load chunk')
+      )))) {
+        console.warn('[Marketo] Chunk load failed, retrying with cache busting...')
+        // Force a fresh request by adding a cache-busting query param
+        const url = new URL(window.location.href)
+        url.searchParams.set('_r', Date.now().toString())
+        window.location.replace(url.toString())
+        return new Promise<{ default: T }>(() => {}) // Never resolves, page will reload
+      }
+      throw err
+    }).then((module) => {
+      if (extractNamed && module && extractNamed in module) {
+        return { default: (module as Record<string, T>)[extractNamed] }
+      }
+      return module as { default: T }
+    })
+  }
+}
+
 // Dynamic imports with ssr: false to avoid hydration issues
 const Header = dynamic(
-  () => import('@/components/marketplace/layout/header').then(m => ({ default: m.Header })),
+  withChunkRetry(() => import('@/components/marketplace/layout/header'), 'Header'),
   { ssr: false, loading: () => <div className="h-16 border-b" /> }
 )
 
 const Footer = dynamic(
-  () => import('@/components/marketplace/layout/footer').then(m => ({ default: m.Footer })),
+  withChunkRetry(() => import('@/components/marketplace/layout/footer'), 'Footer'),
   { ssr: false, loading: () => <div className="h-16" /> }
 )
 
 const CartDrawer = dynamic(
-  () => import('@/components/marketplace/shared/cart-drawer').then(m => ({ default: m.CartDrawer })),
+  withChunkRetry(() => import('@/components/marketplace/shared/cart-drawer'), 'CartDrawer'),
   { ssr: false }
 )
 
 const LandingPage = dynamic(
-  () => import('@/components/marketplace/landing/landing-page').then(m => ({ default: m.LandingPage })),
+  withChunkRetry(() => import('@/components/marketplace/landing/landing-page'), 'LandingPage'),
   { ssr: false, loading: () => <PageLoader /> }
 )
 
 const AuthModal = dynamic(
-  () => import('@/components/marketplace/auth/auth-modal').then(m => ({ default: m.AuthModal })),
+  withChunkRetry(() => import('@/components/marketplace/auth/auth-modal'), 'AuthModal'),
   { ssr: false, loading: () => <PageLoader /> }
 )
 
 const BuyerDashboard = dynamic(
-  () => import('@/components/marketplace/buyer/buyer-dashboard').then(m => ({ default: m.BuyerDashboard })),
+  withChunkRetry(() => import('@/components/marketplace/buyer/buyer-dashboard'), 'BuyerDashboard'),
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
 const SellerDashboard = dynamic(
-  () => import('@/components/marketplace/seller/seller-dashboard').then(m => ({ default: m.SellerDashboard })),
+  withChunkRetry(() => import('@/components/marketplace/seller/seller-dashboard'), 'SellerDashboard'),
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
 const ShopView = dynamic(
-  () => import('@/components/marketplace/shop/shop-view'),
+  withChunkRetry(() => import('@/components/marketplace/shop/shop-view')),
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
 const ProductDetail = dynamic(
-  () => import('@/components/marketplace/shop/product-detail'),
+  withChunkRetry(() => import('@/components/marketplace/shop/product-detail')),
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
 const GigDetail = dynamic(
-  () => import('@/components/marketplace/gig/gig-detail'),
+  withChunkRetry(() => import('@/components/marketplace/gig/gig-detail')),
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
 const GigsBrowse = dynamic(
-  () => import('@/components/marketplace/gig/gigs-browse').then(m => ({ default: m.GigsBrowse })),
+  withChunkRetry(() => import('@/components/marketplace/gig/gigs-browse'), 'GigsBrowse'),
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
 const SearchPage = dynamic(
-  () => import('@/components/marketplace/search/search-page'),
+  withChunkRetry(() => import('@/components/marketplace/search/search-page')),
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
 const NotificationsPage = dynamic(
-  () => import('@/components/marketplace/notifications/notifications-page'),
+  withChunkRetry(() => import('@/components/marketplace/notifications/notifications-page')),
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
 const AdminPanel = dynamic(
-  () => import('@/components/marketplace/admin/admin-panel'),
+  withChunkRetry(() => import('@/components/marketplace/admin/admin-panel')),
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
 const PrivacyPolicy = dynamic(
-  () => import('@/components/marketplace/landing/privacy-policy').then(m => ({ default: m.PrivacyPolicy })),
+  withChunkRetry(() => import('@/components/marketplace/landing/privacy-policy'), 'PrivacyPolicy'),
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
 const TermsOfService = dynamic(
-  () => import('@/components/marketplace/landing/terms-of-service').then(m => ({ default: m.TermsOfService })),
+  withChunkRetry(() => import('@/components/marketplace/landing/terms-of-service'), 'TermsOfService'),
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
 const MessagesPage = dynamic(
-  () => import('@/components/marketplace/messages/messages-page').then(m => ({ default: m.MessagesPage })),
+  withChunkRetry(() => import('@/components/marketplace/messages/messages-page'), 'MessagesPage'),
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
 const OrderTrackingPage = dynamic(
-  () => import('@/components/marketplace/orders/order-tracking-page'),
+  withChunkRetry(() => import('@/components/marketplace/orders/order-tracking-page')),
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
 const ShippingSettings = dynamic(
-  () => import('@/components/marketplace/shipping/shipping-settings').then(m => ({ default: m.ShippingSettings })),
+  withChunkRetry(() => import('@/components/marketplace/shipping/shipping-settings'), 'ShippingSettings'),
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
 const AddressBook = dynamic(
-  () => import('@/components/marketplace/shipping/address-book').then(m => ({ default: m.AddressBook })),
+  withChunkRetry(() => import('@/components/marketplace/shipping/address-book'), 'AddressBook'),
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
 const FeedbackWidget = dynamic(
-  () => import('@/components/marketplace/shared/feedback-widget').then(m => ({ default: m.FeedbackWidget })),
+  withChunkRetry(() => import('@/components/marketplace/shared/feedback-widget'), 'FeedbackWidget'),
   { ssr: false }
 )
 
 const ReturnsPage = dynamic(
-  () => import('@/components/marketplace/returns/returns-page').then(m => ({ default: m.ReturnsPage })),
+  withChunkRetry(() => import('@/components/marketplace/returns/returns-page'), 'ReturnsPage'),
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
 const ReturnDetailPage = dynamic(
-  () => import('@/components/marketplace/returns/return-detail-page').then(m => ({ default: m.ReturnDetailPage })),
+  withChunkRetry(() => import('@/components/marketplace/returns/return-detail-page'), 'ReturnDetailPage'),
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
 const ReturnPolicyPage = dynamic(
-  () => import('@/components/marketplace/returns/return-policy-page').then(m => ({ default: m.ReturnPolicyPage })),
+  withChunkRetry(() => import('@/components/marketplace/returns/return-policy-page'), 'ReturnPolicyPage'),
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
 const ActivityFeedPage = dynamic(
-  () => import('@/components/marketplace/social/activity-feed-page').then(m => ({ default: m.ActivityFeedPage })),
+  withChunkRetry(() => import('@/components/marketplace/social/activity-feed-page'), 'ActivityFeedPage'),
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
 const DisputeCenterPage = dynamic(
-  () => import('@/components/marketplace/disputes/dispute-center-page').then(m => ({ default: m.DisputeCenterPage })),
+  withChunkRetry(() => import('@/components/marketplace/disputes/dispute-center-page'), 'DisputeCenterPage'),
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
 const DisputeDetailPage = dynamic(
-  () => import('@/components/marketplace/disputes/dispute-detail-page').then(m => ({ default: m.DisputeDetailPage })),
+  withChunkRetry(() => import('@/components/marketplace/disputes/dispute-detail-page'), 'DisputeDetailPage'),
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
 const VerificationPage = dynamic(
-  () => import('@/components/marketplace/verification/verification-page').then(m => ({ default: m.VerificationPage })),
+  withChunkRetry(() => import('@/components/marketplace/verification/verification-page'), 'VerificationPage'),
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
 const PublicWishlist = dynamic(
-  () => import('@/components/marketplace/shared/public-wishlist').then(m => ({ default: m.PublicWishlist })),
+  withChunkRetry(() => import('@/components/marketplace/shared/public-wishlist'), 'PublicWishlist'),
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
@@ -233,17 +273,46 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('[Marketo] Rendering error caught:', error, errorInfo)
+    // Auto-reload on ChunkLoadError
+    if (error.name === 'ChunkLoadError' || (error.message && (
+      error.message.includes('ChunkLoadError') ||
+      error.message.includes('Loading chunk') ||
+      error.message.includes('Failed to load chunk')
+    ))) {
+      const url = new URL(window.location.href)
+      url.searchParams.set('_r', Date.now().toString())
+      window.location.replace(url.toString())
+    }
   }
 
   render() {
     if (this.state.hasError) {
       if (this.props.fallback) return this.props.fallback
+
+      const isChunkError = this.state.error?.name === 'ChunkLoadError' ||
+        (this.state.error?.message && (
+          this.state.error.message.includes('ChunkLoadError') ||
+          this.state.error.message.includes('Loading chunk') ||
+          this.state.error.message.includes('Failed to load chunk')
+        ))
+
       return (
         <div className="flex items-center justify-center min-h-[300px] p-8">
           <div className="text-center max-w-md">
-            <h2 className="text-lg font-semibold text-red-600 mb-2">Something went wrong</h2>
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-950/50">
+              {isChunkError ? (
+                <svg className="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+              ) : (
+                <svg className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+              )}
+            </div>
+            <h2 className="text-lg font-semibold mb-2">
+              {isChunkError ? 'App Update Available' : 'Something went wrong'}
+            </h2>
             <p className="text-sm text-muted-foreground mb-2">
-              {this.state.error?.message || 'An unexpected error occurred while rendering this section.'}
+              {isChunkError
+                ? 'A new version of Marketo is available. Please refresh to get the latest version.'
+                : this.state.error?.message || 'An unexpected error occurred while rendering this section.'}
             </p>
             <details className="text-left mb-4">
               <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">Show details</summary>
@@ -252,27 +321,41 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
               </pre>
             </details>
             <div className="flex items-center justify-center gap-3">
-              <button
-                onClick={() => this.setState({ hasError: false, error: null })}
-                className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm"
-              >
-                Try Again
-              </button>
-              <button
-                onClick={() => {
-                  try {
-                    localStorage.removeItem('marketo-storage')
-                    // Clear any other zustand persisted stores
-                    Object.keys(localStorage).forEach(key => {
-                      if (key.startsWith('marketo')) localStorage.removeItem(key)
-                    })
-                  } catch {}
-                  window.location.reload()
-                }}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 text-sm"
-              >
-                Reset App
-              </button>
+              {isChunkError ? (
+                <button
+                  onClick={() => {
+                    const url = new URL(window.location.href)
+                    url.searchParams.set('_r', Date.now().toString())
+                    window.location.replace(url.toString())
+                  }}
+                  className="px-5 py-2.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm font-medium shadow-lg"
+                >
+                  Refresh Now
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={() => this.setState({ hasError: false, error: null })}
+                    className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm"
+                  >
+                    Try Again
+                  </button>
+                  <button
+                    onClick={() => {
+                      try {
+                        localStorage.removeItem('marketo-storage')
+                        Object.keys(localStorage).forEach(key => {
+                          if (key.startsWith('marketo')) localStorage.removeItem(key)
+                        })
+                      } catch {}
+                      window.location.reload()
+                    }}
+                    className="px-4 py-2 bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 text-sm"
+                  >
+                    Reset App
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -283,7 +366,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 }
 
 // Custom hook for safe hydration check using useSyncExternalStore
-// This avoids React 19 lint issues with setState-in-effect and ref-during-render
+// This avoids React 19 lint issues with setState-in-effect
 function useHydrated(): boolean {
   return useSyncExternalStore(
     () => () => {},   // subscribe (no-op)

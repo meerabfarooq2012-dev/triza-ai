@@ -136,7 +136,7 @@ export function AboutSection() {
           </span>
           <h2 className="text-3xl sm:text-4xl font-bold mb-6 text-gray-900 dark:text-gray-100">
             About{' '}
-            <span className="gold-gradient-text bg-clip-text text-transparent">
+            <span className="gold-gradient-text">
               Marketo
             </span>
           </h2>
@@ -283,7 +283,7 @@ export function AboutSection() {
               className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-6"
             >
               Built for People Who{' '}
-              <span className="gold-shimmer-text bg-clip-text text-transparent">
+              <span className="gold-shimmer-text">
                 Create
               </span>
             </motion.h3>
