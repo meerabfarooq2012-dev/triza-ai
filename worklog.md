@@ -615,3 +615,28 @@ Stage Summary:
 - All emerald colors preserved (success/money indicators)
 - All functionality preserved — only colors changed
 - Zero new lint errors
+
+---
+Task ID: 11
+Agent: Main Agent
+Task: Complete Obsidian & Gold luxury theme redesign and deploy
+
+Work Log:
+- Designed new CSS color system in globals.css with obsidian/gold oklch values for both light and dark modes
+- Added custom CSS utility classes: gold-gradient, gold-gradient-text, gold-shimmer, gold-border-glow, gold-divider
+- Redesigned hero section: removed floating icons, dot patterns, gradient orbs — minimalist luxury
+- Updated header: logo uses gold-gradient-text, cart badge uses gold-gradient, avatars use amber gradient
+- Updated footer: gold logo, gold social hover states, gold-divider separator
+- Replaced ALL hardcoded violet/pink/purple/rose colors across 55+ component files with amber/gold equivalents
+- Preserved all emerald-* colors for success/money indicators
+- Lint passes with 0 errors (2 pre-existing warnings)
+- Browser verified: light mode (warm ivory + gold), dark mode (obsidian + luminous gold)
+- Zero console errors on both local and Vercel
+- Deployed to Vercel at https://marketo-alpha.vercel.app
+
+Stage Summary:
+- Complete theme overhaul from Violet/Pink to Obsidian & Gold
+- 59 files changed, 816 insertions, 375 deletions
+- Luxury minimalist design: clean hero, gold accents, warm typography
+- Both light (ivory + gold) and dark (obsidian + luminous gold) modes work beautifully
+- Theme toggle works perfectly with the new color system
