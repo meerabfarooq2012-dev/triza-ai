@@ -640,3 +640,77 @@ Stage Summary:
 - Luxury minimalist design: clean hero, gold accents, warm typography
 - Both light (ivory + gold) and dark (obsidian + luminous gold) modes work beautifully
 - Theme toggle works perfectly with the new color system
+
+---
+Task ID: 2
+Agent: Auth UX Agent
+Task: Improve Auth Modal Sign-In/Sign-Up UX
+
+Work Log:
+- Added AlertCircle, Check, X icon imports from lucide-react
+- Added useRef and useCallback imports from React
+- Created shakeVariants animation for error box (framer-motion)
+- Added errorKey state to re-trigger shake animation on repeated errors
+- Added errorRef for auto-scrolling to error message via scrollIntoView
+- Enhanced error display: AlertCircle icon, font-medium text, larger padding, shadow, flex layout with icon
+- Fixed dark mode error styling: border-red-600, bg-red-950/50, text-red-300 (brighter than before)
+- Added touchedFields state for tracking which fields have been interacted with
+- Added markTouched callback for onBlur events on all form inputs
+- Added getInputValidationClass helper for red/green border on touched+empty vs touched+filled
+- Added getInlineHint helper for animated inline validation text below empty touched fields
+- Added inline validation hints on: login email, login password, register name, email, password, confirm password
+- Added password requirement indicator: shows green check "Minimum 6 characters" or red X with remaining count
+- Added password match/mismatch indicator: green check "Passwords match" or red X "Passwords don't match"
+- Added termsError and termsPulse state for checkbox validation
+- Added pulsing animation on checkbox when form submitted without checking terms (framer-motion scale animation)
+- Added red border on checkbox when termsError is true
+- Added red asterisk (*) after terms label text to indicate required
+- Added "Please accept the terms to continue" error text below checkbox with AlertCircle icon
+- Added red background highlight on terms area when termsError is true
+- Added prominent loading overlay with backdrop-blur and spinner text ("Signing in..." / "Creating account...")
+- Added dark mode styling to Google sign-in buttons (dark borders/text/hover)
+- Reset touchedFields when switching tabs
+- All existing functionality preserved (login, register, Google auth)
+- Lint passes with 0 errors (2 pre-existing warnings)
+
+Stage Summary:
+- Auth modal UX significantly improved with 5 major enhancements
+- Error messages now shake, show icon, auto-scroll, and are more visible in dark mode
+- Real-time inline validation on all form fields with visual border colors and hint text
+- Password requirements and match/mismatch shown in real-time as user types
+- Terms checkbox pulses when not checked on submit, shows red border and required indicator
+- Loading overlay with backdrop blur prevents interaction during auth requests
+
+---
+Task ID: 1
+Agent: Main Agent
+Task: Fix and Enhance "Our Motive" Section on Landing Page
+
+Work Log:
+- Changed section background from `bg-muted/30` to `bg-gray-100 dark:bg-slate-900/50` (light grey as requested)
+- Added gradient mesh background behind section (amber-tinted blurred circles)
+- Added decorative dot patterns in top-right and bottom-left corners (light grey)
+- Added animated horizontal decorative lines at top and bottom of section
+- Added light grey stripe separator with Sparkles icon between "About" and "Our Motive" sections
+- Enhanced platform highlight cards: white/dark card backgrounds with `backdrop-blur-sm`, light grey borders, hover lift animation (`whileHover: y -4, scale 1.02`)
+- Added mouse-follow glow effect inside the Our Motive card (radial gradient that follows cursor)
+- Added GoldParticles component: 12 floating/pulsing gold particles with randomized size, position, opacity, and timing
+- Added parallax scroll effect using `useScroll` + `useTransform` on both the highlights grid and the motive card
+- Replaced `gold-gradient-text` with `gold-shimmer-text` on the word "Create" — new CSS animation that continuously rotates a shimmer gradient across the text
+- Added animated gradient border on the Our Motive card using `conic-gradient` with `--border-angle` CSS property
+- Converted feature pills into proper cards with: icon in a rounded container, title, short description, hover effects (scale, gold glow shadow, amber accent border)
+- Added corner sparkle icon (Zap) on feature cards that appears on hover
+- Added subtle top border glow line on feature cards on hover
+- Added pulsing dot decoration at the bottom of the motive card
+- Changed badge icon from Sparkles to Star for the "Our Motive" badge
+- Added explicit text colors to headings (text-gray-900 dark:text-gray-100) for better visibility in both modes
+- Added gold-shimmer-text CSS class to globals.css with @property --shimmer-angle for rotating shimmer animation
+- Added @property --border-angle for animated conic-gradient borders
+- Ran lint — 0 errors (2 pre-existing warnings)
+
+Stage Summary:
+- About section fully enhanced with light grey backgrounds, decorative elements, and premium animations
+- "Our Motive" card now has floating gold particles, mouse-follow glow, parallax scrolling, shimmer text, and animated gradient border
+- Feature items upgraded from pills to proper cards with icons, descriptions, and hover effects
+- All text clearly visible in both light and dark modes
+- Lint passes with 0 errors

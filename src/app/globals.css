@@ -180,6 +180,56 @@
   background-clip: text;
 }
 
+/* Gold shimmer text animation — continuously sweeping highlight */
+@property --shimmer-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.gold-shimmer-text {
+  background: linear-gradient(
+    var(--shimmer-angle),
+    oklch(0.55 0.12 75) 0%,
+    oklch(0.72 0.14 80) 20%,
+    oklch(0.92 0.08 90) 40%,
+    oklch(0.72 0.14 80) 60%,
+    oklch(0.55 0.12 75) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer-rotate 4s linear infinite;
+}
+
+.dark .gold-shimmer-text {
+  background: linear-gradient(
+    var(--shimmer-angle),
+    oklch(0.68 0.14 75) 0%,
+    oklch(0.82 0.14 85) 20%,
+    oklch(0.95 0.06 90) 40%,
+    oklch(0.82 0.14 85) 60%,
+    oklch(0.68 0.14 75) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer-rotate 4s linear infinite;
+}
+
+@keyframes shimmer-rotate {
+  to {
+    --shimmer-angle: 360deg;
+  }
+}
+
+/* Animated gradient border angle for conic-gradient borders */
+@property --border-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
 /* Subtle gold shimmer effect for hover states */
 .gold-shimmer {
   position: relative;

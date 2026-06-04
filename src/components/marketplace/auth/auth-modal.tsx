@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Mail,
@@ -14,6 +14,9 @@ import {
   Loader2,
   ArrowRight,
   Quote,
+  AlertCircle,
+  Check,
+  X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,10 +30,28 @@ import type { UserRole, User as UserType } from '@/types'
 
 type AuthTab = 'login' | 'register'
 
+// Shaking animation variants for error box
+const shakeVariants = {
+  initial: { opacity: 0, y: -10, x: 0 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    x: 0,
+    transition: {
+      duration: 0.3,
+    },
+  },
+  shake: {
+    x: [0, -8, 8, -6, 6, -3, 3, 0],
+    transition: { duration: 0.5 },
+  },
+}
+
 export function AuthModal() {
   const [tab, setTab] = useState<AuthTab>('login')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [errorKey, setErrorKey] = useState(0) // Used to re-trigger shake animation
 
   // Login fields
   const [loginEmail, setLoginEmail] = useState('')
@@ -47,7 +68,33 @@ export function AuthModal() {
   const [showRegPassword, setShowRegPassword] = useState(false)
   const [showRegConfirmPassword, setShowRegConfirmPassword] = useState(false)
 
+  // Touched state for inline validation
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({})
+  const [termsError, setTermsError] = useState(false)
+  const [termsPulse, setTermsPulse] = useState(false)
+
+  // Ref for auto-scrolling to error
+  const errorRef = useRef<HTMLDivElement>(null)
+
   const { login, setCurrentView } = useMarketplaceStore()
+
+  // Mark a field as touched
+  const markTouched = useCallback((field: string) => {
+    setTouchedFields((prev) => ({ ...prev, [field]: true }))
+  }, [])
+
+  // Show error with shake animation
+  const showError = useCallback((message: string) => {
+    setError(message)
+    setErrorKey((prev) => prev + 1)
+  }, [])
+
+  // Auto-scroll to error when it appears
+  useEffect(() => {
+    if (error && errorRef.current) {
+      errorRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    }
+  }, [error, errorKey])
 
   // Motivational quotes rotation
   const motivationalQuotes = [
@@ -69,11 +116,18 @@ export function AuthModal() {
     return () => clearInterval(interval)
   }, [motivationalQuotes.length])
 
+  // Password validation helpers
+  const hasMinLength = regPassword.length >= 6
+  const passwordsMatch = regPassword.length > 0 && regConfirmPassword.length > 0 && regPassword === regConfirmPassword
+  const passwordsMismatch = regPassword.length > 0 && regConfirmPassword.length > 0 && regPassword !== regConfirmPassword
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setTouchedFields({ loginEmail: true, loginPassword: true })
+
     if (!loginEmail || !loginPassword) {
-      setError('Please fill in all fields')
+      showError('Please fill in all fields')
       return
     }
     setIsLoading(true)
@@ -84,11 +138,11 @@ export function AuthModal() {
         login(user)
         navigateAfterAuth(user)
       } else {
-        setError(res.error || 'Login failed')
+        showError(res.error || 'Login failed')
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Login failed'
-      setError(message)
+      showError(message)
     } finally {
       setIsLoading(false)
     }
@@ -97,22 +151,33 @@ export function AuthModal() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setTouchedFields({
+      regName: true,
+      regEmail: true,
+      regPassword: true,
+      regConfirmPassword: true,
+    })
+
     if (!regName || !regEmail || !regPassword || !regConfirmPassword) {
-      setError('Please fill in all fields')
-      return
-    }
-    if (regPassword !== regConfirmPassword) {
-      setError('Passwords do not match')
+      showError('Please fill in all fields')
       return
     }
     if (regPassword.length < 6) {
-      setError('Password must be at least 6 characters')
+      showError('Password must be at least 6 characters')
+      return
+    }
+    if (regPassword !== regConfirmPassword) {
+      showError('Passwords do not match')
       return
     }
     if (!regTerms) {
-      setError('You must agree to the terms and conditions')
+      setTermsError(true)
+      setTermsPulse(true)
+      setTimeout(() => setTermsPulse(false), 2000)
+      showError('You must agree to the terms and conditions')
       return
     }
+    setTermsError(false)
     setIsLoading(true)
     try {
       const res = await api.auth.register({
@@ -126,11 +191,11 @@ export function AuthModal() {
         login(user)
         navigateAfterAuth(user)
       } else {
-        setError(res.error || 'Registration failed')
+        showError(res.error || 'Registration failed')
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Registration failed'
-      setError(message)
+      showError(message)
     } finally {
       setIsLoading(false)
     }
@@ -150,7 +215,7 @@ export function AuthModal() {
   const handleGoogleLogin = async () => {
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
     if (!clientId) {
-      setError('Google Sign-In is not configured. Please add NEXT_PUBLIC_GOOGLE_CLIENT_ID to your environment variables.')
+      showError('Google Sign-In is not configured. Please add NEXT_PUBLIC_GOOGLE_CLIENT_ID to your environment variables.')
       return
     }
 
@@ -179,7 +244,7 @@ export function AuthModal() {
         scope: 'email profile',
         callback: (tokenResponse: { access_token: string; error?: string }) => {
           if (tokenResponse.error) {
-            setError('Google sign-in failed: ' + tokenResponse.error)
+            showError('Google sign-in failed: ' + tokenResponse.error)
             setIsLoading(false)
             return
           }
@@ -198,10 +263,10 @@ export function AuthModal() {
                 login(data.data)
                 navigateAfterAuth(data.data)
               } else {
-                setError(data.error || 'Google sign-in failed')
+                showError(data.error || 'Google sign-in failed')
               }
             })
-            .catch(() => setError('Google sign-in failed'))
+            .catch(() => showError('Google sign-in failed'))
             .finally(() => setIsLoading(false))
         },
       })
@@ -209,7 +274,7 @@ export function AuthModal() {
       tokenClient.requestAccessToken()
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Google sign-in failed'
-      setError(message)
+      showError(message)
       setIsLoading(false)
     }
   }
@@ -237,6 +302,29 @@ export function AuthModal() {
       desc: USER_ROLE_DESCRIPTIONS.both,
     },
   ]
+
+  // Helper to get inline validation class for input
+  const getInputValidationClass = (fieldValue: string, fieldName: string) => {
+    if (!touchedFields[fieldName]) return ''
+    return fieldValue.trim() === ''
+      ? 'border-red-400 dark:border-red-500 focus-visible:ring-red-500/30'
+      : 'border-green-400 dark:border-green-500 focus-visible:ring-green-500/30'
+  }
+
+  // Helper for inline hint text
+  const getInlineHint = (fieldValue: string, fieldName: string, hintText: string) => {
+    if (!touchedFields[fieldName] || fieldValue.trim() !== '') return null
+    return (
+      <motion.p
+        initial={{ opacity: 0, y: -4 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-xs text-red-500 dark:text-red-400 mt-1 flex items-center gap-1"
+      >
+        <AlertCircle className="h-3 w-3 shrink-0" />
+        {hintText}
+      </motion.p>
+    )
+  }
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
@@ -311,7 +399,26 @@ export function AuthModal() {
 
       {/* Right - Auth Form */}
       <div className="flex-1 flex items-center justify-center p-6 sm:p-8 lg:p-12 bg-background">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md relative">
+          {/* Loading overlay */}
+          <AnimatePresence>
+            {isLoading && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-sm rounded-xl"
+              >
+                <div className="flex flex-col items-center gap-3">
+                  <Loader2 className="h-8 w-8 animate-spin text-amber-600" />
+                  <p className="text-sm text-muted-foreground font-medium">
+                    {tab === 'login' ? 'Signing in...' : 'Creating account...'}
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Mobile branding */}
           <div className="lg:hidden text-center mb-8">
             <div className="flex items-center justify-center gap-2 mb-2">
@@ -326,7 +433,7 @@ export function AuthModal() {
           {/* Tab Switcher */}
           <div className="flex rounded-xl bg-muted p-1 mb-8">
             <button
-              onClick={() => { setTab('login'); setError('') }}
+              onClick={() => { setTab('login'); setError(''); setTouchedFields({}) }}
               className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${
                 tab === 'login'
                   ? 'bg-background shadow-sm text-foreground'
@@ -336,7 +443,7 @@ export function AuthModal() {
               Sign In
             </button>
             <button
-              onClick={() => { setTab('register'); setError('') }}
+              onClick={() => { setTab('register'); setError(''); setTouchedFields({}) }}
               className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${
                 tab === 'register'
                   ? 'bg-background shadow-sm text-foreground'
@@ -347,16 +454,24 @@ export function AuthModal() {
             </button>
           </div>
 
-          {/* Error Display */}
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-6 rounded-lg border border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/30 p-3 text-sm text-red-600 dark:text-red-400"
-            >
-              {error}
-            </motion.div>
-          )}
+          {/* Error Display - Enhanced with shake animation, alert icon, larger text */}
+          <AnimatePresence>
+            {error && (
+              <motion.div
+                key={errorKey}
+                variants={shakeVariants}
+                initial="initial"
+                animate={['animate', 'shake']}
+                ref={errorRef}
+                className="mb-6 rounded-lg border border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-950/50 p-4 flex items-start gap-3 shadow-sm"
+              >
+                <AlertCircle className="h-5 w-5 text-red-500 dark:text-red-400 shrink-0 mt-0.5" />
+                <p className="text-sm font-medium text-red-700 dark:text-red-300 leading-relaxed">
+                  {error}
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <AnimatePresence mode="wait">
             {tab === 'login' ? (
@@ -375,7 +490,7 @@ export function AuthModal() {
                       type="button"
                       onClick={handleGoogleLogin}
                       disabled={isLoading}
-                      className="w-full flex items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md disabled:opacity-50"
+                      className="w-full flex items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
                     >
                       <svg className="h-5 w-5" viewBox="0 0 24 24">
                         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
@@ -387,7 +502,7 @@ export function AuthModal() {
                     </button>
                     <div className="relative my-5">
                       <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t border-gray-200" />
+                        <span className="w-full border-t border-gray-200 dark:border-gray-700" />
                       </div>
                       <div className="relative flex justify-center text-xs uppercase">
                         <span className="bg-background px-2 text-muted-foreground">or continue with email</span>
@@ -406,10 +521,12 @@ export function AuthModal() {
                       placeholder="you@example.com"
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
-                      className="pl-10"
+                      onBlur={() => markTouched('loginEmail')}
+                      className={`pl-10 ${getInputValidationClass(loginEmail, 'loginEmail')}`}
                       disabled={isLoading}
                     />
                   </div>
+                  {getInlineHint(loginEmail, 'loginEmail', 'Email is required')}
                 </div>
 
                 <div className="space-y-2">
@@ -430,7 +547,8 @@ export function AuthModal() {
                       placeholder="Enter your password"
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
-                      className="pl-10 pr-10"
+                      onBlur={() => markTouched('loginPassword')}
+                      className={`pl-10 pr-10 ${getInputValidationClass(loginPassword, 'loginPassword')}`}
                       disabled={isLoading}
                     />
                     <button
@@ -441,6 +559,7 @@ export function AuthModal() {
                       {showLoginPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
+                  {getInlineHint(loginPassword, 'loginPassword', 'Password is required')}
                 </div>
 
                 <Button
@@ -461,7 +580,7 @@ export function AuthModal() {
                   Don&apos;t have an account?{' '}
                   <button
                     type="button"
-                    onClick={() => { setTab('register'); setError('') }}
+                    onClick={() => { setTab('register'); setError(''); setTouchedFields({}) }}
                     className="text-amber-600 hover:text-amber-700 dark:text-amber-400 font-medium"
                   >
                     Sign Up
@@ -484,7 +603,7 @@ export function AuthModal() {
                       type="button"
                       onClick={handleGoogleLogin}
                       disabled={isLoading}
-                      className="w-full flex items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md disabled:opacity-50"
+                      className="w-full flex items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
                     >
                       <svg className="h-5 w-5" viewBox="0 0 24 24">
                         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
@@ -517,7 +636,7 @@ export function AuthModal() {
                     </div>
                     <div className="relative my-5">
                       <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t border-gray-200" />
+                        <span className="w-full border-t border-gray-200 dark:border-gray-700" />
                       </div>
                       <div className="relative flex justify-center text-xs uppercase">
                         <span className="bg-background px-2 text-muted-foreground">or sign up with email</span>
@@ -536,10 +655,12 @@ export function AuthModal() {
                       placeholder="John Doe"
                       value={regName}
                       onChange={(e) => setRegName(e.target.value)}
-                      className="pl-10"
+                      onBlur={() => markTouched('regName')}
+                      className={`pl-10 ${getInputValidationClass(regName, 'regName')}`}
                       disabled={isLoading}
                     />
                   </div>
+                  {getInlineHint(regName, 'regName', 'Full name is required')}
                 </div>
 
                 <div className="space-y-2">
@@ -552,10 +673,12 @@ export function AuthModal() {
                       placeholder="you@example.com"
                       value={regEmail}
                       onChange={(e) => setRegEmail(e.target.value)}
-                      className="pl-10"
+                      onBlur={() => markTouched('regEmail')}
+                      className={`pl-10 ${getInputValidationClass(regEmail, 'regEmail')}`}
                       disabled={isLoading}
                     />
                   </div>
+                  {getInlineHint(regEmail, 'regEmail', 'Email is required')}
                 </div>
 
                 <div className="space-y-2">
@@ -568,7 +691,8 @@ export function AuthModal() {
                       placeholder="Min 6 characters"
                       value={regPassword}
                       onChange={(e) => setRegPassword(e.target.value)}
-                      className="pl-10 pr-10"
+                      onBlur={() => markTouched('regPassword')}
+                      className={`pl-10 pr-10 ${getInputValidationClass(regPassword, 'regPassword')}`}
                       disabled={isLoading}
                     />
                     <button
@@ -579,6 +703,29 @@ export function AuthModal() {
                       {showRegPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
+                  {getInlineHint(regPassword, 'regPassword', 'Password is required')}
+                  {/* Password requirement indicator */}
+                  {regPassword.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="flex items-center gap-1.5 mt-1"
+                    >
+                      {hasMinLength ? (
+                        <>
+                          <Check className="h-3.5 w-3.5 text-green-500 dark:text-green-400" />
+                          <span className="text-xs text-green-600 dark:text-green-400">Minimum 6 characters</span>
+                        </>
+                      ) : (
+                        <>
+                          <X className="h-3.5 w-3.5 text-red-500 dark:text-red-400" />
+                          <span className="text-xs text-red-500 dark:text-red-400">
+                            {6 - regPassword.length} more character{6 - regPassword.length !== 1 ? 's' : ''} needed
+                          </span>
+                        </>
+                      )}
+                    </motion.div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -591,7 +738,12 @@ export function AuthModal() {
                       placeholder="Confirm your password"
                       value={regConfirmPassword}
                       onChange={(e) => setRegConfirmPassword(e.target.value)}
-                      className="pl-10 pr-10"
+                      onBlur={() => markTouched('regConfirmPassword')}
+                      className={`pl-10 pr-10 ${
+                        getInputValidationClass(regConfirmPassword, 'regConfirmPassword') ||
+                        (passwordsMismatch ? 'border-red-400 dark:border-red-500 focus-visible:ring-red-500/30' : '') ||
+                        (passwordsMatch ? 'border-green-400 dark:border-green-500 focus-visible:ring-green-500/30' : '')
+                      }`}
                       disabled={isLoading}
                     />
                     <button
@@ -602,6 +754,27 @@ export function AuthModal() {
                       {showRegConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
+                  {getInlineHint(regConfirmPassword, 'regConfirmPassword', 'Please confirm your password')}
+                  {/* Password match/mismatch indicator */}
+                  {regConfirmPassword.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="flex items-center gap-1.5 mt-1"
+                    >
+                      {passwordsMatch ? (
+                        <>
+                          <Check className="h-3.5 w-3.5 text-green-500 dark:text-green-400" />
+                          <span className="text-xs text-green-600 dark:text-green-400">Passwords match</span>
+                        </>
+                      ) : passwordsMismatch ? (
+                        <>
+                          <X className="h-3.5 w-3.5 text-red-500 dark:text-red-400" />
+                          <span className="text-xs text-red-500 dark:text-red-400">Passwords don&apos;t match</span>
+                        </>
+                      ) : null}
+                    </motion.div>
+                  )}
                 </div>
 
                 {/* Role Selection */}
@@ -634,21 +807,58 @@ export function AuthModal() {
                   </div>
                 </div>
 
-                {/* Terms */}
-                <div className="flex items-start gap-3">
-                  <Checkbox
-                    id="terms"
-                    checked={regTerms}
-                    onCheckedChange={(checked) => setRegTerms(checked === true)}
-                    disabled={isLoading}
-                    className="mt-0.5"
-                  />
-                  <Label htmlFor="terms" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
-                    I agree to the{' '}
-                    <span className="text-amber-600 dark:text-amber-400 font-medium">Terms of Service</span>{' '}
-                    and{' '}
-                    <span className="text-amber-600 dark:text-amber-400 font-medium">Privacy Policy</span>
-                  </Label>
+                {/* Terms - Enhanced with validation, pulsing animation, required hint */}
+                <div className="space-y-1">
+                  <div className={`flex items-start gap-3 rounded-lg p-3 -m-3 transition-colors ${
+                    termsError
+                      ? 'bg-red-50 dark:bg-red-950/30'
+                      : ''
+                  }`}>
+                    <motion.div
+                      animate={termsPulse ? {
+                        scale: [1, 1.2, 1, 1.2, 1],
+                      } : { scale: 1 }}
+                      transition={{ duration: 0.8 }}
+                      className="mt-0.5"
+                    >
+                      <Checkbox
+                        id="terms"
+                        checked={regTerms}
+                        onCheckedChange={(checked) => {
+                          setRegTerms(checked === true)
+                          if (checked) {
+                            setTermsError(false)
+                          }
+                        }}
+                        disabled={isLoading}
+                        className={`${
+                          termsError
+                            ? 'border-red-400 dark:border-red-500 data-[state=unchecked]:border-red-400 dark:data-[state=unchecked]:border-red-500'
+                            : ''
+                        }`}
+                      />
+                    </motion.div>
+                    <Label
+                      htmlFor="terms"
+                      className="text-xs text-muted-foreground leading-relaxed cursor-pointer select-none"
+                    >
+                      I agree to the{' '}
+                      <span className="text-amber-600 dark:text-amber-400 font-medium">Terms of Service</span>{' '}
+                      and{' '}
+                      <span className="text-amber-600 dark:text-amber-400 font-medium">Privacy Policy</span>
+                      <span className="text-red-500 dark:text-red-400 ml-0.5" aria-hidden="true">*</span>
+                    </Label>
+                  </div>
+                  {termsError && (
+                    <motion.p
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-xs text-red-500 dark:text-red-400 flex items-center gap-1 pl-0"
+                    >
+                      <AlertCircle className="h-3 w-3 shrink-0" />
+                      Please accept the terms to continue
+                    </motion.p>
+                  )}
                 </div>
 
                 <Button
@@ -669,7 +879,7 @@ export function AuthModal() {
                   Already have an account?{' '}
                   <button
                     type="button"
-                    onClick={() => { setTab('login'); setError('') }}
+                    onClick={() => { setTab('login'); setError(''); setTouchedFields({}) }}
                     className="text-amber-600 hover:text-amber-700 dark:text-amber-400 font-medium"
                   >
                     Sign In
