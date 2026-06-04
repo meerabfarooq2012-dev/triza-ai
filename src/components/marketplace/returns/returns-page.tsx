@@ -80,10 +80,10 @@ const STATUS_CONFIG: Record<ReturnStatus, {
   },
   processing: {
     label: 'Processing',
-    color: 'text-purple-700',
-    bgColor: 'bg-purple-50',
-    borderColor: 'border-purple-200',
-    leftBorder: 'border-l-purple-400',
+    color: 'text-amber-700',
+    bgColor: 'bg-amber-50',
+    borderColor: 'border-amber-200',
+    leftBorder: 'border-l-amber-400',
   },
   completed: {
     label: 'Completed',

@@ -77,7 +77,7 @@ const PAYMENT_STATUS_CONFIG: Record<string, { label: string; color: string }> = 
 const ESCROW_STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   held: { label: 'Held', color: 'bg-amber-100 text-amber-800' },
   released: { label: 'Released', color: 'bg-emerald-100 text-emerald-800' },
-  refunded: { label: 'Refunded', color: 'bg-rose-100 text-rose-800' },
+  refunded: { label: 'Refunded', color: 'bg-amber-100 text-amber-800' },
 }
 
 const WITHDRAWAL_STATUS_CONFIG: Record<string, { label: string; color: string }> = {
@@ -350,9 +350,9 @@ export function AdminTransactions() {
       label: 'Pending Withdrawals',
       value: `$${totalPendingWithdrawals.toFixed(2)}`,
       icon: ArrowDownCircle,
-      bgColor: 'bg-violet-50',
-      textColor: 'text-violet-600',
-      gradient: 'from-violet-500 to-purple-600',
+      bgColor: 'bg-amber-50',
+      textColor: 'text-amber-600',
+      gradient: 'from-amber-500 to-amber-600',
     },
     {
       label: 'Total Payments',
@@ -619,7 +619,7 @@ export function AdminTransactions() {
                                             <Button
                                               size="sm"
                                               variant="outline"
-                                              className="h-8 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200"
+                                              className="h-8 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200"
                                               onClick={(e) => {
                                                 e.stopPropagation()
                                                 openRefundDialog(payment.id)
@@ -924,7 +924,7 @@ export function AdminTransactions() {
       <Dialog open={refundDialogOpen} onOpenChange={setRefundDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-rose-600">
+            <DialogTitle className="flex items-center gap-2 text-amber-600">
               <RefreshCw className="h-5 w-5" />
               Refund Payment
             </DialogTitle>
@@ -933,9 +933,9 @@ export function AdminTransactions() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            <div className="rounded-lg bg-rose-50 border border-rose-200 p-3">
-              <p className="text-sm font-medium text-rose-800">Payment ID</p>
-              <p className="text-xs text-rose-600 font-mono">
+            <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
+              <p className="text-sm font-medium text-amber-800">Payment ID</p>
+              <p className="text-xs text-amber-600 font-mono">
                 {refundPaymentId || ''}
               </p>
             </div>

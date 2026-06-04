@@ -126,7 +126,7 @@ export function FlashDealsSection() {
     <section className="py-12 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Section Header with gradient background */}
-        <div className="relative rounded-xl p-6 mb-8 overflow-hidden bg-gradient-to-r from-orange-500 via-red-500 to-rose-500">
+        <div className="relative rounded-xl p-6 mb-8 overflow-hidden bg-gradient-to-r from-orange-500 via-red-500 to-amber-500">
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxjaXJjbGUgY3g9IjIwIiBjeT0iMjAiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4xKSIvPjwvZz48L3N2Zz4=')] opacity-50" />
           <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>

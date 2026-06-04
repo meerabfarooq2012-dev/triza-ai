@@ -100,9 +100,9 @@ const STATUS_CONFIG: Record<ReturnStatus, {
   },
   processing: {
     label: 'Processing',
-    color: 'text-purple-700',
-    bgColor: 'bg-purple-50',
-    borderColor: 'border-purple-200',
+    color: 'text-amber-700',
+    bgColor: 'bg-amber-50',
+    borderColor: 'border-amber-200',
     icon: Loader2,
   },
   completed: {
@@ -906,7 +906,7 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
 
                 {isSeller && returnData.status === 'approved' && (
                   <Button
-                    className="w-full bg-purple-600 hover:bg-purple-700"
+                    className="w-full bg-amber-600 hover:bg-amber-700"
                     onClick={handleMarkProcessing}
                     disabled={actionLoading}
                   >

@@ -1265,7 +1265,7 @@ export function ShippingSettings({ shopId: propShopId, userId }: ShippingSetting
                           {rate.method === 'overnight' && (
                             <Clock
                               className={`h-6 w-6 ${
-                                rate.isActive ? 'text-rose-600' : 'text-muted-foreground'
+                                rate.isActive ? 'text-amber-600' : 'text-muted-foreground'
                               }`}
                             />
                           )}

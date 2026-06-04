@@ -119,17 +119,17 @@ export function BuyerOverview() {
       label: 'Total Spent',
       value: `$${(stats?.totalSpent || 0).toFixed(2)}`,
       icon: DollarSign,
-      color: 'from-violet-500 to-purple-600',
-      bgColor: 'bg-violet-50',
-      textColor: 'text-violet-600',
+      color: 'from-amber-500 to-amber-600',
+      bgColor: 'bg-amber-50',
+      textColor: 'text-amber-600',
     },
     {
       label: 'Favorites',
       value: stats?.favoriteCount || 0,
       icon: Heart,
-      color: 'from-rose-500 to-pink-600',
-      bgColor: 'bg-rose-50',
-      textColor: 'text-rose-600',
+      color: 'from-amber-500 to-amber-600',
+      bgColor: 'bg-amber-50',
+      textColor: 'text-amber-600',
     },
   ]
 

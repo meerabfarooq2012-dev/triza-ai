@@ -82,7 +82,7 @@ const STATUS_CONFIG: Record<DisputeStatus, {
 }> = {
   open: { label: 'Open', color: 'text-amber-700', bgColor: 'bg-amber-50', borderColor: 'border-amber-200', icon: AlertTriangle },
   under_review: { label: 'Under Review', color: 'text-sky-700', bgColor: 'bg-sky-50', borderColor: 'border-sky-200', icon: Clock },
-  investigating: { label: 'Investigating', color: 'text-purple-700', bgColor: 'bg-purple-50', borderColor: 'border-purple-200', icon: Eye },
+  investigating: { label: 'Investigating', color: 'text-amber-700', bgColor: 'bg-amber-50', borderColor: 'border-amber-200', icon: Eye },
   awaiting_response: { label: 'Awaiting Response', color: 'text-orange-700', bgColor: 'bg-orange-50', borderColor: 'border-orange-200', icon: MessageSquare },
   escalated: { label: 'Escalated', color: 'text-red-700', bgColor: 'bg-red-50', borderColor: 'border-red-200', icon: AlertTriangle },
   resolved: { label: 'Resolved', color: 'text-emerald-700', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', icon: CheckCircle2 },
@@ -97,10 +97,10 @@ const PRIORITY_CONFIG: Record<DisputePriority, { label: string; color: string; b
 }
 
 const CATEGORY_CONFIG: Record<DisputeCategory, { label: string; color: string }> = {
-  product_issue: { label: 'Product Issue', color: 'bg-rose-100 text-rose-700 border-rose-200' },
+  product_issue: { label: 'Product Issue', color: 'bg-amber-100 text-amber-700 border-amber-200' },
   payment_issue: { label: 'Payment Issue', color: 'bg-amber-100 text-amber-700 border-amber-200' },
   shipping_issue: { label: 'Shipping Issue', color: 'bg-sky-100 text-sky-700 border-sky-200' },
-  communication_issue: { label: 'Communication Issue', color: 'bg-purple-100 text-purple-700 border-purple-200' },
+  communication_issue: { label: 'Communication Issue', color: 'bg-amber-100 text-amber-700 border-amber-200' },
   other: { label: 'Other', color: 'bg-gray-100 text-gray-700 border-gray-200' },
 }
 
@@ -797,7 +797,7 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
                           ? 'bg-emerald-100 text-emerald-700'
                           : msg.senderRole === 'seller'
                             ? 'bg-sky-100 text-sky-700'
-                            : 'bg-violet-100 text-violet-700'
+                            : 'bg-amber-100 text-amber-700'
 
                         // Only show internal notes to admins
                         if (isInternal && !isAdmin) return null
@@ -812,7 +812,7 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
                               <AvatarFallback className={`text-xs ${
                                 msg.senderRole === 'buyer' ? 'bg-emerald-100 text-emerald-700' :
                                 msg.senderRole === 'seller' ? 'bg-sky-100 text-sky-700' :
-                                'bg-violet-100 text-violet-700'
+                                'bg-amber-100 text-amber-700'
                               }`}>
                                 {(msg.sender?.name || msg.senderRole.charAt(0).toUpperCase()).charAt(0).toUpperCase()}
                               </AvatarFallback>
@@ -1142,9 +1142,9 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
                     )}
 
                     {dispute.assignedAdminId === userId && (
-                      <div className="rounded-lg bg-violet-50 border border-violet-200 p-3 flex items-start gap-2">
-                        <Shield className="h-4 w-4 text-violet-600 mt-0.5 shrink-0" />
-                        <p className="text-xs text-violet-700">You are assigned to this dispute.</p>
+                      <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 flex items-start gap-2">
+                        <Shield className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                        <p className="text-xs text-amber-700">You are assigned to this dispute.</p>
                       </div>
                     )}
 

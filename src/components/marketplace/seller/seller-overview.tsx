@@ -258,9 +258,9 @@ export function SellerOverview() {
       label: 'Revenue',
       value: `$${(stats?.totalRevenue || 0).toFixed(2)}`,
       icon: DollarSign,
-      bgColor: 'bg-violet-50',
-      textColor: 'text-violet-600',
-      gradient: 'from-violet-500 to-purple-600',
+      bgColor: 'bg-amber-50',
+      textColor: 'text-amber-600',
+      gradient: 'from-amber-500 to-amber-600',
     },
   ]
 
@@ -335,7 +335,7 @@ export function SellerOverview() {
           <Card className="border-0 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-violet-600" />
+                <BarChart3 className="h-5 w-5 text-amber-600" />
                 Revenue Overview
               </CardTitle>
               <div className="flex items-center gap-1.5 text-sm">
@@ -372,7 +372,7 @@ export function SellerOverview() {
                   <div key={item.day} className="flex-1 flex flex-col items-center gap-1">
                     <div className="w-full relative" style={{ height: '100px' }}>
                       <div
-                        className="absolute bottom-0 w-full rounded-t-md bg-gradient-to-t from-violet-500 to-purple-400 transition-all duration-500"
+                        className="absolute bottom-0 w-full rounded-t-md bg-gradient-to-t from-amber-600 to-amber-400 transition-all duration-500"
                         style={{
                           height: `${Math.max((item.revenue / maxRevenue) * 100, 2)}%`,
                         }}

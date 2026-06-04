@@ -11,14 +11,14 @@ const sections = [
     title: 'Information We Collect',
     content:
       'We may collect basic information such as your name, email address, contact details, and profile information when you sign up as a buyer, seller, or freelancer. We also collect data related to your activity on the platform, such as orders, listings, and transactions.',
-    gradient: 'from-violet-500 to-purple-600',
+    gradient: 'from-amber-500 to-amber-600',
   },
   {
     icon: <FileText className="h-5 w-5" />,
     title: 'How We Use Your Information',
     content:
       'Your information is used to create and manage your account, enable buying, selling, and freelance services, process orders and payments securely, improve platform performance and user experience, and provide customer support and resolve disputes.',
-    gradient: 'from-rose-500 to-pink-600',
+    gradient: 'from-amber-500 to-amber-600',
   },
   {
     icon: <Lock className="h-5 w-5" />,
@@ -46,7 +46,7 @@ const sections = [
     title: 'Changes to Policy',
     content:
       'Marketo may update this Privacy Policy from time to time. Any changes will be posted on this page.',
-    gradient: 'from-fuchsia-500 to-purple-600',
+    gradient: 'from-amber-500 to-amber-600',
   },
 ]
 
@@ -56,10 +56,10 @@ export function PrivacyPolicy() {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-violet-50 via-white to-rose-50 dark:from-violet-950/30 dark:via-background dark:to-rose-950/20 py-16 sm:py-20">
+      <section className="relative overflow-hidden bg-gradient-to-br from-amber-50 via-white to-amber-100/30 dark:from-amber-950/30 dark:via-background dark:to-amber-950/20 py-16 sm:py-20">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiM2ZDYxZjEiIGZpbGwtb3BhY2l0eT0iMC4wNCI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMS41Ii8+PC9nPjwvZz48L3N2Zz4=')] dark:opacity-50" />
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-400/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-rose-400/10 rounded-full blur-3xl" />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-amber-400/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-amber-400/10 rounded-full blur-3xl" />
 
         <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
@@ -77,14 +77,14 @@ export function PrivacyPolicy() {
               Back to Home
             </Button>
 
-            <div className="inline-flex items-center gap-2 rounded-full bg-violet-100 dark:bg-violet-950/50 px-4 py-1.5 mb-6 text-sm text-violet-700 dark:text-violet-300 font-medium">
+            <div className="inline-flex items-center gap-2 rounded-full bg-amber-100 dark:bg-amber-950/50 px-4 py-1.5 mb-6 text-sm text-amber-700 dark:text-amber-300 font-medium">
               <Shield className="h-3.5 w-3.5" />
               Legal
             </div>
 
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
               Privacy{' '}
-              <span className="bg-gradient-to-r from-violet-600 via-purple-600 to-rose-500 bg-clip-text text-transparent">
+              <span className="gold-gradient-text bg-clip-text text-transparent">
                 Policy
               </span>
             </h1>
@@ -106,14 +106,14 @@ export function PrivacyPolicy() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-50px' }}
                 transition={{ duration: 0.5, delay: i * 0.05 }}
-                className="group rounded-2xl border border-border/50 bg-background p-6 sm:p-8 hover:border-violet-200 dark:hover:border-violet-800 transition-all duration-300 hover:shadow-lg hover:shadow-violet-500/5"
+                className="group rounded-2xl border border-border/50 bg-background p-6 sm:p-8 hover:border-amber-200 dark:hover:border-amber-800 transition-all duration-300 hover:shadow-lg hover:shadow-amber-500/5"
               >
                 <div className="flex items-start gap-4">
                   <div className={`inline-flex shrink-0 rounded-xl bg-gradient-to-r ${section.gradient} p-3 text-white shadow-lg`}>
                     {section.icon}
                   </div>
                   <div>
-                    <h2 className="text-xl font-semibold mb-3 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
+                    <h2 className="text-xl font-semibold mb-3 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
                       {section.title}
                     </h2>
                     <p className="text-muted-foreground leading-relaxed">
@@ -131,7 +131,7 @@ export function PrivacyPolicy() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="mt-12 rounded-2xl bg-gradient-to-br from-violet-600 via-purple-600 to-rose-500 p-8 sm:p-10 text-center"
+            className="mt-12 rounded-2xl gold-gradient p-8 sm:p-10 text-center"
           >
             <p className="text-lg text-white/90 font-medium">
               By using Marketo, you agree to this Privacy Policy.

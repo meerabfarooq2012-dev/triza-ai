@@ -62,10 +62,10 @@ const STATUS_CONFIG: Record<DisputeStatus, {
   },
   investigating: {
     label: 'Investigating',
-    color: 'text-purple-700',
-    bgColor: 'bg-purple-50',
-    borderColor: 'border-purple-200',
-    leftBorder: 'border-l-purple-400',
+    color: 'text-amber-700',
+    bgColor: 'bg-amber-50',
+    borderColor: 'border-amber-200',
+    leftBorder: 'border-l-amber-400',
   },
   awaiting_response: {
     label: 'Awaiting Response',
@@ -105,10 +105,10 @@ const PRIORITY_CONFIG: Record<DisputePriority, { label: string; color: string; b
 }
 
 const CATEGORY_CONFIG: Record<DisputeCategory, { label: string; color: string }> = {
-  product_issue: { label: 'Product Issue', color: 'bg-rose-100 text-rose-700 border-rose-200' },
+  product_issue: { label: 'Product Issue', color: 'bg-amber-100 text-amber-700 border-amber-200' },
   payment_issue: { label: 'Payment Issue', color: 'bg-amber-100 text-amber-700 border-amber-200' },
   shipping_issue: { label: 'Shipping Issue', color: 'bg-sky-100 text-sky-700 border-sky-200' },
-  communication_issue: { label: 'Communication Issue', color: 'bg-purple-100 text-purple-700 border-purple-200' },
+  communication_issue: { label: 'Communication Issue', color: 'bg-amber-100 text-amber-700 border-amber-200' },
   other: { label: 'Other', color: 'bg-gray-100 text-gray-700 border-gray-200' },
 }
 
@@ -126,7 +126,7 @@ const REASON_COLORS: Record<string, string> = {
   item_not_received: 'bg-red-100 text-red-700 border-red-200',
   item_not_as_described: 'bg-amber-100 text-amber-700 border-amber-200',
   damaged_item: 'bg-orange-100 text-orange-700 border-orange-200',
-  defective_item: 'bg-purple-100 text-purple-700 border-purple-200',
+  defective_item: 'bg-amber-100 text-amber-700 border-amber-200',
   wrong_item_received: 'bg-sky-100 text-sky-700 border-sky-200',
   unauthorized_charge: 'bg-red-100 text-red-700 border-red-200',
   other: 'bg-gray-100 text-gray-700 border-gray-200',
@@ -262,9 +262,9 @@ export function DisputeCenterPage({ userId, isSeller }: DisputeCenterPageProps) 
       label: 'Total Disputes',
       count: disputes.length,
       icon: FileText,
-      color: 'text-violet-600',
-      bgColor: 'bg-violet-50',
-      borderColor: 'border-violet-200',
+      color: 'text-amber-600',
+      bgColor: 'bg-amber-50',
+      borderColor: 'border-amber-200',
     },
     {
       label: 'Open',

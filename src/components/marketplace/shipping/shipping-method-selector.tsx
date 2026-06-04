@@ -39,7 +39,7 @@ interface ShippingMethodSelectorProps {
 const METHOD_CONFIG: Record<string, { icon: React.ElementType; color: string; bgColor: string; label: string }> = {
   standard: { icon: Truck, color: 'text-emerald-600', bgColor: 'bg-emerald-50', label: 'Standard' },
   express: { icon: Zap, color: 'text-amber-600', bgColor: 'bg-amber-50', label: 'Express' },
-  overnight: { icon: Clock, color: 'text-rose-600', bgColor: 'bg-rose-50', label: 'Overnight' },
+  overnight: { icon: Clock, color: 'text-amber-600', bgColor: 'bg-amber-50', label: 'Overnight' },
   pickup: { icon: Package, color: 'text-teal-600', bgColor: 'bg-teal-50', label: 'Pickup' },
 }
 

@@ -54,7 +54,7 @@ export function FeaturedProductsSection() {
           </div>
           <Button
             variant="ghost"
-            className="hidden sm:flex items-center gap-1 text-violet-600 dark:text-violet-400 hover:text-violet-700"
+            className="hidden sm:flex items-center gap-1 text-amber-600 dark:text-amber-400 hover:text-amber-700"
             onClick={() => setCurrentView('search')}
           >
             View All <ArrowRight className="h-4 w-4" />
@@ -98,7 +98,7 @@ export function FeaturedProductsSection() {
                   className="min-w-[260px] sm:min-w-[280px] snap-start"
                 >
                   <Card
-                    className="group cursor-pointer overflow-hidden border-border/50 hover:border-violet-200 dark:hover:border-violet-800 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+                    className="group cursor-pointer overflow-hidden border-border/50 hover:border-amber-200 dark:hover:border-amber-800 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
                     onClick={() => handleProductClick(product.id)}
                   >
                     <div className="relative h-48 bg-muted overflow-hidden">
@@ -109,8 +109,8 @@ export function FeaturedProductsSection() {
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                       ) : (
-                        <div className="flex items-center justify-center h-full bg-gradient-to-br from-violet-100 to-rose-100 dark:from-violet-950 dark:to-rose-950">
-                          <span className="text-4xl font-bold text-violet-300 dark:text-violet-700">
+                        <div className="flex items-center justify-center h-full bg-gradient-to-br from-amber-100 to-amber-100 dark:from-amber-950 dark:to-amber-950">
+                          <span className="text-4xl font-bold text-amber-300 dark:text-amber-700">
                             {product.name.charAt(0)}
                           </span>
                         </div>
@@ -122,14 +122,14 @@ export function FeaturedProductsSection() {
                       )}
                     </div>
                     <CardContent className="p-4">
-                      <h3 className="font-semibold text-sm line-clamp-1 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
+                      <h3 className="font-semibold text-sm line-clamp-1 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
                         {product.name}
                       </h3>
                       <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
                         {product.shortDesc || product.shop?.name || 'Unknown Shop'}
                       </p>
                       <div className="flex items-center justify-between mt-3">
-                        <span className="text-lg font-bold bg-gradient-to-r from-violet-600 to-rose-500 bg-clip-text text-transparent">
+                        <span className="text-lg font-bold gold-gradient-text bg-clip-text text-transparent">
                           ${(product.price ?? 0).toFixed(2)}
                         </span>
                         {product.averageRating > 0 && (
@@ -154,7 +154,7 @@ export function FeaturedProductsSection() {
         <div className="sm:hidden mt-6 text-center">
           <Button
             variant="outline"
-            className="text-violet-600 dark:text-violet-400"
+            className="text-amber-600 dark:text-amber-400"
             onClick={() => setCurrentView('search')}
           >
             View All Products <ArrowRight className="ml-2 h-4 w-4" />

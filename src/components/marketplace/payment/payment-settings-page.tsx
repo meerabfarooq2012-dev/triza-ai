@@ -79,7 +79,7 @@ interface MethodConfig {
 const ALL_METHODS: MethodConfig[] = [
   { id: 'easypaisa', name: 'Easypaisa', icon: Wallet, color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-300', description: 'Mobile wallet payment', buyerAvailable: true, sellerAvailable: true },
   { id: 'jazzcash', name: 'JazzCash', icon: Wallet, color: 'text-red-600', bgColor: 'bg-red-50', borderColor: 'border-red-300', description: 'Mobile wallet payment', buyerAvailable: true, sellerAvailable: true },
-  { id: 'card', name: 'Debit/Credit Card', icon: CreditCard, color: 'text-violet-600', bgColor: 'bg-violet-50', borderColor: 'border-violet-300', description: 'Visa, Mastercard, UnionPay', buyerAvailable: true, sellerAvailable: false },
+  { id: 'card', name: 'Debit/Credit Card', icon: CreditCard, color: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-300', description: 'Visa, Mastercard, UnionPay', buyerAvailable: true, sellerAvailable: false },
   { id: 'payoneer', name: 'Payoneer', icon: Globe, color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-300', description: 'Global payment platform', buyerAvailable: true, sellerAvailable: true },
   { id: 'wise', name: 'Wise', icon: Mail, color: 'text-teal-600', bgColor: 'bg-teal-50', borderColor: 'border-teal-300', description: 'International transfer', buyerAvailable: true, sellerAvailable: true },
   { id: 'bank_transfer', name: 'Bank Transfer', icon: Building2, color: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-300', description: 'Direct bank transfer', buyerAvailable: false, sellerAvailable: true },

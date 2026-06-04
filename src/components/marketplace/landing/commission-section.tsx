@@ -35,7 +35,7 @@ export function CommissionSection() {
               </span>
               <br />
               We Only Take{' '}
-              <span className="bg-gradient-to-r from-violet-500 to-purple-500 bg-clip-text text-transparent">
+              <span className="gold-gradient-text bg-clip-text text-transparent">
                 10%
               </span>
             </h2>
@@ -62,7 +62,7 @@ export function CommissionSection() {
             viewport={{ once: true, margin: '-100px' }}
             transition={{ duration: 0.7, delay: 0.2 }}
           >
-            <div className="bg-white dark:bg-card rounded-3xl p-8 shadow-2xl shadow-violet-500/5 border border-border/50">
+            <div className="bg-white dark:bg-card rounded-3xl p-8 shadow-2xl shadow-amber-500/5 border border-border/50">
               {/* Commission breakdown header */}
               <div className="text-center mb-8">
                 <h3 className="text-xl font-bold mb-2">Commission Comparison</h3>
@@ -150,8 +150,8 @@ export function CommissionSection() {
             </div>
           </div>
           <div className="flex items-center gap-3 p-4 rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-sm border border-border/30">
-            <div className="flex-shrink-0 h-10 w-10 rounded-xl bg-violet-100 dark:bg-violet-950/50 flex items-center justify-center">
-              <TrendingUp className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+            <div className="flex-shrink-0 h-10 w-10 rounded-xl bg-amber-100 dark:bg-amber-950/50 flex items-center justify-center">
+              <TrendingUp className="h-5 w-5 text-amber-600 dark:text-amber-400" />
             </div>
             <div>
               <p className="font-semibold text-sm">Escrow Protection</p>
@@ -159,8 +159,8 @@ export function CommissionSection() {
             </div>
           </div>
           <div className="flex items-center gap-3 p-4 rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-sm border border-border/30">
-            <div className="flex-shrink-0 h-10 w-10 rounded-xl bg-violet-100 dark:bg-violet-950/50 flex items-center justify-center">
-              <TrendingUp className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+            <div className="flex-shrink-0 h-10 w-10 rounded-xl bg-amber-100 dark:bg-amber-950/50 flex items-center justify-center">
+              <TrendingUp className="h-5 w-5 text-amber-600 dark:text-amber-400" />
             </div>
             <div>
               <p className="font-semibold text-sm">Fast Withdrawals</p>

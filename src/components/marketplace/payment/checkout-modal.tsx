@@ -79,9 +79,9 @@ const PAYMENT_METHODS: {
     name: 'Debit / Credit Card',
     region: 'International',
     flag: '💳',
-    color: 'text-violet-700',
-    bgColor: 'bg-violet-50',
-    borderColor: 'border-violet-200 data-[state=checked]:border-violet-500',
+    color: 'text-amber-700',
+    bgColor: 'bg-amber-50',
+    borderColor: 'border-amber-200 data-[state=checked]:border-amber-500',
     description: 'Visa, Mastercard, UnionPay',
   },
   {
@@ -948,14 +948,14 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                           <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${
                             pm.method === 'easypaisa' ? 'bg-emerald-50' :
                             pm.method === 'jazzcash' ? 'bg-red-50' :
-                            pm.method === 'card' ? 'bg-violet-50' :
+                            pm.method === 'card' ? 'bg-amber-50' :
                             pm.method === 'payoneer' ? 'bg-blue-50' :
                             'bg-teal-50'
                           }`}>
                             {pm.method === 'easypaisa' || pm.method === 'jazzcash' ? (
                               <Wallet className={`h-4 w-4 ${pm.method === 'easypaisa' ? 'text-emerald-600' : 'text-red-600'}`} />
                             ) : pm.method === 'card' ? (
-                              <CreditCard className="h-4 w-4 text-violet-600" />
+                              <CreditCard className="h-4 w-4 text-amber-600" />
                             ) : (
                               <Globe className="h-4 w-4 text-blue-600" />
                             )}
@@ -1009,7 +1009,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
               {/* Current method indicator */}
               <div className="flex items-center gap-2 rounded-lg bg-muted/50 p-2.5">
                 {paymentMethod === 'card' ? (
-                  <CreditCard className="h-4 w-4 text-violet-600" />
+                  <CreditCard className="h-4 w-4 text-amber-600" />
                 ) : paymentMethod === 'easypaisa' ? (
                   <Wallet className="h-4 w-4 text-emerald-600" />
                 ) : paymentMethod === 'jazzcash' ? (
@@ -1112,9 +1112,9 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                           </Select>
                         </div>
                       </div>
-                      <div className="flex items-start gap-2 rounded-lg bg-violet-50 border border-violet-200 p-2.5">
-                        <ShieldCheck className="h-3.5 w-3.5 text-violet-600 mt-0.5 flex-shrink-0" />
-                        <p className="text-[11px] text-violet-700">
+                      <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 p-2.5">
+                        <ShieldCheck className="h-3.5 w-3.5 text-amber-600 mt-0.5 flex-shrink-0" />
+                        <p className="text-[11px] text-amber-700">
                           Only the last 4 digits of your card are stored. Full card numbers are never saved on our servers.
                         </p>
                       </div>

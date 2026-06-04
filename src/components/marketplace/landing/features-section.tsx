@@ -16,7 +16,7 @@ const features = [
     icon: <Store className="h-6 w-6" />,
     title: 'Create Your Shop',
     description: 'Set up a customizable storefront in minutes. Add your branding, products, and start selling right away.',
-    gradient: 'from-violet-500 to-purple-600',
+    gradient: 'from-amber-600 to-amber-500',
   },
   {
     icon: <ShieldCheck className="h-6 w-6" />,
@@ -28,7 +28,7 @@ const features = [
     icon: <Package className="h-6 w-6" />,
     title: 'Sell Anything',
     description: 'Digital downloads, physical products, or freelance services — sell whatever you create.',
-    gradient: 'from-rose-500 to-pink-600',
+    gradient: 'from-amber-500 to-amber-600',
   },
   {
     icon: <Palette className="h-6 w-6" />,
@@ -46,7 +46,7 @@ const features = [
     icon: <BarChart3 className="h-6 w-6" />,
     title: 'Seller Wallet',
     description: 'Track earnings, manage withdrawals via local & international methods, and view detailed transaction history.',
-    gradient: 'from-fuchsia-500 to-purple-600',
+    gradient: 'from-amber-500 to-amber-600',
   },
 ]
 
@@ -93,12 +93,12 @@ export function FeaturesSection() {
         >
           {features.map((feature) => (
             <motion.div key={feature.title} variants={cardVariants}>
-              <Card className="group h-full border-border/50 hover:border-violet-200 dark:hover:border-violet-800 transition-all duration-300 hover:shadow-xl hover:shadow-violet-500/5 hover:-translate-y-1">
+              <Card className="group h-full border-border/50 hover:border-amber-200 dark:hover:border-amber-800 transition-all duration-300 hover:shadow-xl hover:shadow-amber-500/5 hover:-translate-y-1">
                 <CardContent className="p-6">
                   <div className={`inline-flex rounded-xl bg-gradient-to-r ${feature.gradient} p-3 text-white mb-4 shadow-lg`}>
                     {feature.icon}
                   </div>
-                  <h3 className="text-lg font-semibold mb-2 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
+                  <h3 className="text-lg font-semibold mb-2 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
                     {feature.title}
                   </h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">

@@ -55,7 +55,7 @@ const PAYMENT_STATUS_BADGE: Record<string, { label: string; color: string }> = {
 const ESCROW_STATUS_BADGE: Record<string, { label: string; color: string }> = {
   held: { label: 'Held in Escrow', color: 'bg-amber-100 text-amber-800 border-amber-200' },
   released: { label: 'Released', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-  refunded: { label: 'Refunded', color: 'bg-rose-100 text-rose-800 border-rose-200' },
+  refunded: { label: 'Refunded', color: 'bg-amber-100 text-amber-800 border-amber-200' },
 }
 
 const ORDER_FILTERS: { value: string; label: string }[] = [

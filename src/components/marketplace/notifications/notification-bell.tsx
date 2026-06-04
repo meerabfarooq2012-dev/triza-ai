@@ -34,11 +34,11 @@ import type { Notification, NotificationCategory, ViewMode } from '@/types'
 function NotificationCategoryIcon({ category }: { category: string }) {
   const props = { size: 16 }
   switch (category) {
-    case 'order': return <ShoppingCart {...props} className="text-purple-500" />
+    case 'order': return <ShoppingCart {...props} className="text-amber-500" />
     case 'payment': return <CreditCard {...props} className="text-emerald-500" />
     case 'message': return <MessageSquare {...props} className="text-cyan-500" />
     case 'review': return <Star {...props} className="text-amber-500" />
-    case 'shop': return <Store {...props} className="text-pink-500" />
+    case 'shop': return <Store {...props} className="text-amber-500" />
     case 'promotion': return <Tag {...props} className="text-orange-500" />
     case 'system': return <Settings {...props} className="text-gray-500" />
     default: return <Bell {...props} className="text-gray-500" />
@@ -159,7 +159,7 @@ export function NotificationBell() {
         >
           <Bell className={cn("h-[18px] w-[18px]", unreadNotifications > 0 && "animate-bounce")} style={{ animationDuration: '1s', animationIterationCount: '3' }} />
           {unreadNotifications > 0 && (
-            <Badge className="absolute -top-1 -right-1 h-5 min-w-[20px] p-0 flex items-center justify-center text-[10px] font-bold bg-gradient-to-r from-red-500 to-pink-500 text-white border-0 shadow-sm">
+            <Badge className="absolute -top-1 -right-1 h-5 min-w-[20px] p-0 flex items-center justify-center text-[10px] font-bold bg-gradient-to-r from-red-500 to-amber-500 text-white border-0 shadow-sm">
               {unreadNotifications > 99 ? '99+' : unreadNotifications}
             </Badge>
           )}

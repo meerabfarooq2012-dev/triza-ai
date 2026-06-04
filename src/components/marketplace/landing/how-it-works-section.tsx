@@ -45,7 +45,7 @@ export function HowItWorksSection() {
 
         <div className="relative max-w-4xl mx-auto">
           {/* Connecting line */}
-          <div className="hidden md:block absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-violet-200 via-rose-200 to-amber-200 dark:from-violet-800 dark:via-rose-800 dark:to-amber-800 -translate-y-1/2 z-0" />
+          <div className="hidden md:block absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-200 via-amber-200 to-amber-200 dark:from-amber-800 dark:via-amber-800 dark:to-amber-800 -translate-y-1/2 z-0" />
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-6 relative z-10">
             {steps.map((step, i) => (
@@ -59,10 +59,10 @@ export function HowItWorksSection() {
               >
                 {/* Number circle */}
                 <div className="relative mb-6">
-                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-rose-500 text-white shadow-xl shadow-violet-500/25">
+                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-amber-600 to-amber-500 text-white shadow-xl shadow-amber-500/25">
                     {step.icon}
                   </div>
-                  <div className="absolute -top-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full bg-background border-2 border-violet-500 text-xs font-bold text-violet-600 dark:text-violet-400">
+                  <div className="absolute -top-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full bg-background border-2 border-amber-500 text-xs font-bold text-amber-600 dark:text-amber-400">
                     {step.number}
                   </div>
                 </div>

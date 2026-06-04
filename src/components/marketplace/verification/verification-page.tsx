@@ -149,7 +149,7 @@ const STATUS_LABELS: Record<string, string> = {
 const STATUS_ICONS: Record<string, React.ReactNode> = {
   none: <AlertCircle className="h-5 w-5 text-gray-400" />,
   pending: <Clock className="h-5 w-5 text-amber-500" />,
-  under_review: <ShieldQuestion className="h-5 w-5 text-violet-500" />,
+  under_review: <ShieldQuestion className="h-5 w-5 text-amber-500" />,
   verified: <CheckCircle className="h-5 w-5 text-emerald-500" />,
   rejected: <XCircle className="h-5 w-5 text-red-500" />,
 }
@@ -699,7 +699,7 @@ export function VerificationPage() {
                       : doc.status === 'rejected'
                         ? 'text-red-600 bg-red-50 border-red-200'
                         : doc.status === 'under_review'
-                          ? 'text-violet-600 bg-violet-50 border-violet-200'
+                          ? 'text-amber-600 bg-amber-50 border-amber-200'
                           : 'text-amber-600 bg-amber-50 border-amber-200'
 
                     return (

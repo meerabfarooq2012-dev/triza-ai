@@ -138,11 +138,11 @@ export const NOTIFICATION_TYPE_COLORS: Record<NotificationType, string> = {
   success: 'text-green-600',
   warning: 'text-yellow-600',
   error: 'text-red-600',
-  order: 'text-purple-600',
+  order: 'text-amber-600',
   message: 'text-cyan-600',
   payment: 'text-emerald-600',
   review: 'text-amber-600',
-  shop: 'text-pink-600',
+  shop: 'text-amber-600',
   promotion: 'text-orange-600',
   system: 'text-gray-600',
 }
@@ -160,11 +160,11 @@ export const NOTIFICATION_CATEGORY_LABELS: Record<string, string> = {
 }
 
 export const NOTIFICATION_CATEGORY_COLORS: Record<string, string> = {
-  order: 'bg-purple-100 text-purple-700 border-purple-200',
+  order: 'bg-amber-100 text-amber-700 border-amber-200',
   payment: 'bg-emerald-100 text-emerald-700 border-emerald-200',
   message: 'bg-cyan-100 text-cyan-700 border-cyan-200',
   review: 'bg-amber-100 text-amber-700 border-amber-200',
-  shop: 'bg-pink-100 text-pink-700 border-pink-200',
+  shop: 'bg-amber-100 text-amber-700 border-amber-200',
   promotion: 'bg-orange-100 text-orange-700 border-orange-200',
   system: 'bg-gray-100 text-gray-700 border-gray-200',
 }

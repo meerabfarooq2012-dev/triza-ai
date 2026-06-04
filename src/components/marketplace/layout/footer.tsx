@@ -48,7 +48,7 @@ export function Footer() {
               onClick={() => handleNavClick('landing')}
               className="inline-block mb-3"
             >
-              <span className="text-xl font-extrabold bg-gradient-to-r from-violet-600 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+              <span className="text-xl font-extrabold gold-gradient-text">
                 {PLATFORM_NAME}
               </span>
             </button>
@@ -108,7 +108,7 @@ export function Footer() {
                 <a
                   key={link.label}
                   href={link.href}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-muted/50 text-muted-foreground hover:bg-amber-500/10 hover:text-amber-500 dark:hover:text-amber-400 transition-colors"
                   aria-label={link.label}
                 >
                   <link.icon className="h-4 w-4" />
@@ -118,7 +118,7 @@ export function Footer() {
           </div>
         </div>
 
-        <Separator className="my-8" />
+        <Separator className="my-8 gold-divider" />
 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
           <p>&copy; {new Date().getFullYear()} {PLATFORM_NAME}. All rights reserved.</p>

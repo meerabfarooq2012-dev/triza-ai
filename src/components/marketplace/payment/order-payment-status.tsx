@@ -98,7 +98,7 @@ const ESCROW_STATUS_CONFIG: Record<
   },
   refunded: {
     label: 'Refunded',
-    color: 'bg-rose-100 text-rose-800',
+    color: 'bg-amber-100 text-amber-800',
     icon: <CreditCard className="h-4 w-4" />,
     description: 'Payment has been refunded to the buyer',
   },

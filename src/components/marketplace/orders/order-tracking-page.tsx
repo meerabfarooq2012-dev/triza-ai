@@ -77,7 +77,7 @@ const STATUS_ICON_MAP: Record<string, React.ElementType> = {
 const STATUS_HISTORY_COLORS: Record<string, string> = {
   pending: 'text-yellow-600 bg-yellow-100 dark:bg-yellow-950/50',
   processing: 'text-blue-600 bg-blue-100 dark:bg-blue-950/50',
-  shipped: 'text-purple-600 bg-purple-100 dark:bg-purple-950/50',
+  shipped: 'text-amber-600 bg-amber-100 dark:bg-amber-950/50',
   delivered: 'text-emerald-600 bg-emerald-100 dark:bg-emerald-950/50',
   cancelled: 'text-red-600 bg-red-100 dark:bg-red-950/50',
   refunded: 'text-gray-600 bg-gray-100 dark:bg-gray-950/50',
@@ -101,7 +101,7 @@ const PAYMENT_STATUS_BADGE: Record<string, { label: string; color: string }> = {
 const ESCROW_STATUS_BADGE: Record<string, { label: string; color: string }> = {
   held: { label: 'Held in Escrow', color: 'bg-amber-100 text-amber-800 border-amber-200' },
   released: { label: 'Released to Seller', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-  refunded: { label: 'Refunded', color: 'bg-rose-100 text-rose-800 border-rose-200' },
+  refunded: { label: 'Refunded', color: 'bg-amber-100 text-amber-800 border-amber-200' },
 }
 
 export default function OrderTrackingPage() {

@@ -47,7 +47,7 @@ const STATUS_STEPS: { key: ShipmentStatus; label: string; icon: React.ElementTyp
   { key: 'pending', label: 'Pending', icon: Clock, color: 'text-slate-500' },
   { key: 'picked_up', label: 'Picked Up', icon: Package, color: 'text-amber-500' },
   { key: 'in_transit', label: 'In Transit', icon: Truck, color: 'text-blue-500' },
-  { key: 'out_for_delivery', label: 'Out for Delivery', icon: ArrowRightCircle, color: 'text-purple-500' },
+  { key: 'out_for_delivery', label: 'Out for Delivery', icon: ArrowRightCircle, color: 'text-amber-500' },
   { key: 'delivered', label: 'Delivered', icon: CheckCircle2, color: 'text-emerald-600' },
 ]
 

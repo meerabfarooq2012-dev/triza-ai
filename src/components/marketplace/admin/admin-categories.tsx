@@ -117,7 +117,7 @@ function CategoryTypeBadge({ slug }: { slug: string }) {
   const type = getCategoryType(slug)
   switch (type) {
     case 'digital':
-      return <Badge variant="outline" className="text-xs gap-1 bg-purple-50 text-purple-700 border-purple-200"><Download size={12} /> Digital</Badge>
+      return <Badge variant="outline" className="text-xs gap-1 bg-amber-50 text-amber-700 border-amber-200"><Download size={12} /> Digital</Badge>
     case 'physical':
       return <Badge variant="outline" className="text-xs gap-1 bg-orange-50 text-orange-700 border-orange-200"><Package size={12} /> Physical</Badge>
     case 'gig':

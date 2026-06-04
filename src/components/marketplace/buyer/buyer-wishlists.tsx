@@ -431,7 +431,7 @@ export function BuyerWishlists() {
                       </div>
                       <CardContent className="p-4 space-y-2">
                         <h3
-                          className="line-clamp-1 cursor-pointer text-sm font-semibold text-gray-900 hover:text-violet-600 transition-colors"
+                          className="line-clamp-1 cursor-pointer text-sm font-semibold text-gray-900 hover:text-amber-600 transition-colors"
                           onClick={() => setCurrentView('product-detail', { productId: product.id })}
                         >
                           {product.name}
@@ -440,7 +440,7 @@ export function BuyerWishlists() {
                           <p className="text-xs text-gray-500 truncate">by {product.shop.name}</p>
                         )}
                         <div className="flex items-center justify-between pt-1">
-                          <span className="text-lg font-bold bg-gradient-to-r from-violet-600 to-rose-500 bg-clip-text text-transparent">
+                          <span className="text-lg font-bold gold-gradient-text bg-clip-text text-transparent">
                             ${(product.price ?? 0).toFixed(2)}
                           </span>
                           <Button
@@ -449,7 +449,7 @@ export function BuyerWishlists() {
                             className={cn(
                               'h-8 gap-1.5 text-xs transition-all',
                               inStock
-                                ? 'hover:bg-gradient-to-r hover:from-violet-600 hover:to-rose-500 hover:text-white hover:border-transparent'
+                                ? 'hover:gold-gradient hover:text-white hover:border-transparent'
                                 : 'opacity-50 cursor-not-allowed'
                             )}
                             onClick={() => handleAddToCart(item)}
@@ -515,7 +515,7 @@ export function BuyerWishlists() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 p-2.5 shadow-lg shadow-violet-200">
+          <div className="rounded-xl from-amber-600 to-amber-500 p-2.5 shadow-lg shadow-amber-200">
             <ListChecks className="h-5 w-5 text-white" />
           </div>
           <div>
@@ -524,12 +524,12 @@ export function BuyerWishlists() {
               {wishlists.length} list{wishlists.length !== 1 ? 's' : ''}
             </p>
           </div>
-          <Badge className="bg-gradient-to-r from-violet-600 to-purple-500 text-white border-0 ml-1">
+          <Badge className="gold-gradient text-white border-0 ml-1">
             {wishlists.length}
           </Badge>
         </div>
         <Button
-          className="bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 text-white shadow-lg shadow-violet-200"
+          className="gold-gradient hover:opacity-90 text-white shadow-lg shadow-amber-200"
           onClick={() => setCreateOpen(true)}
         >
           <Plus className="mr-2 h-4 w-4" />
@@ -542,17 +542,17 @@ export function BuyerWishlists() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-violet-200 bg-gradient-to-b from-violet-50/50 to-transparent py-20"
+          className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-amber-200 bg-gradient-to-b from-amber-50/50 to-transparent py-20"
         >
-          <div className="rounded-full bg-violet-100 p-4 mb-4">
-            <ListChecks className="h-10 w-10 text-violet-400" />
+          <div className="rounded-full bg-amber-100 p-4 mb-4">
+            <ListChecks className="h-10 w-10 text-amber-400" />
           </div>
           <h3 className="text-xl font-bold text-gray-900">No wishlists yet</h3>
           <p className="mt-2 max-w-sm text-center text-sm text-gray-500">
             Create wishlists to organize products you love. Share them with friends or keep them private.
           </p>
           <Button
-            className="mt-6 bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 text-white shadow-lg shadow-violet-200"
+            className="mt-6 gold-gradient hover:opacity-90 text-white shadow-lg shadow-amber-200"
             onClick={() => setCreateOpen(true)}
           >
             <Plus className="mr-2 h-4 w-4" />
@@ -602,7 +602,7 @@ export function BuyerWishlists() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-gray-400 hover:text-violet-600"
+                          className="h-8 w-8 text-gray-400 hover:text-amber-600"
                           onClick={() => handleShare(wishlist)}
                           title={wishlist.isPublic ? 'Copy share link' : 'Make public to share'}
                         >

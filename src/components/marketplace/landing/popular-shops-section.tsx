@@ -53,7 +53,7 @@ export function PopularShopsSection() {
           </div>
           <Button
             variant="ghost"
-            className="hidden sm:flex items-center gap-1 text-violet-600 dark:text-violet-400 hover:text-violet-700"
+            className="hidden sm:flex items-center gap-1 text-amber-600 dark:text-amber-400 hover:text-amber-700"
             onClick={() => setCurrentView('search')}
           >
             View All <ArrowRight className="h-4 w-4" />
@@ -86,11 +86,11 @@ export function PopularShopsSection() {
                 transition={{ delay: i * 0.1, duration: 0.4 }}
               >
                 <Card
-                  className="group cursor-pointer overflow-hidden border-border/50 hover:border-violet-200 dark:hover:border-violet-800 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+                  className="group cursor-pointer overflow-hidden border-border/50 hover:border-amber-200 dark:hover:border-amber-800 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
                   onClick={() => handleShopClick(shop.slug)}
                 >
                   {/* Banner */}
-                  <div className="relative h-32 bg-gradient-to-br from-violet-400 to-rose-400 overflow-hidden">
+                  <div className="relative h-32 bg-gradient-to-br from-amber-500 to-amber-400 overflow-hidden">
                     {shop.banner ? (
                       <img
                         src={shop.banner}
@@ -112,11 +112,11 @@ export function PopularShopsSection() {
                         {shop.logo ? (
                           <img src={shop.logo} alt={shop.name} className="w-full h-full object-cover" />
                         ) : (
-                          <span className="text-lg font-bold text-violet-500">{shop.name.charAt(0)}</span>
+                          <span className="text-lg font-bold text-amber-500">{shop.name.charAt(0)}</span>
                         )}
                       </div>
                       <div className="min-w-0">
-                        <h3 className="font-semibold text-sm truncate group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors flex items-center gap-1">
+                        <h3 className="font-semibold text-sm truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors flex items-center gap-1">
                           {shop.name}
                           <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                         </h3>
@@ -150,7 +150,7 @@ export function PopularShopsSection() {
         <div className="sm:hidden mt-6 text-center">
           <Button
             variant="outline"
-            className="text-violet-600 dark:text-violet-400"
+            className="text-amber-600 dark:text-amber-400"
             onClick={() => setCurrentView('search')}
           >
             View All Shops <ArrowRight className="ml-2 h-4 w-4" />

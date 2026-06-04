@@ -83,10 +83,10 @@ const TRANSACTION_TYPE_CONFIG: Record<
   credit: { label: 'Credit', color: 'bg-emerald-100 text-emerald-800', icon: <ArrowUpRight className="h-3 w-3" />, category: 'credits' },
   debit: { label: 'Debit', color: 'bg-red-100 text-red-800', icon: <ArrowDownRight className="h-3 w-3" />, category: 'credits' },
   commission: { label: 'Commission', color: 'bg-amber-100 text-amber-800', icon: <DollarSign className="h-3 w-3" />, category: 'commissions' },
-  withdrawal: { label: 'Withdrawal', color: 'bg-violet-100 text-violet-800', icon: <ArrowDownCircle className="h-3 w-3" />, category: 'withdrawals' },
+  withdrawal: { label: 'Withdrawal', color: 'bg-amber-100 text-amber-800', icon: <ArrowDownCircle className="h-3 w-3" />, category: 'withdrawals' },
   escrow_hold: { label: 'Escrow Hold', color: 'bg-blue-100 text-blue-800', icon: <Clock className="h-3 w-3" />, category: 'escrow' },
   escrow_release: { label: 'Escrow Release', color: 'bg-emerald-100 text-emerald-700', icon: <CheckCircle2 className="h-3 w-3" />, category: 'escrow' },
-  refund: { label: 'Refund', color: 'bg-rose-100 text-rose-800', icon: <RefreshCw className="h-3 w-3" />, category: 'escrow' },
+  refund: { label: 'Refund', color: 'bg-amber-100 text-amber-800', icon: <RefreshCw className="h-3 w-3" />, category: 'escrow' },
 }
 
 const WITHDRAWAL_STATUS_CONFIG: Record<
@@ -439,9 +439,9 @@ export function SellerWallet() {
       label: 'Lifetime Earnings',
       value: `$${(wallet?.totalEarnings || 0).toFixed(2)}`,
       icon: TrendingUp,
-      bgColor: 'bg-violet-50',
-      textColor: 'text-violet-600',
-      gradient: 'from-violet-500 to-purple-600',
+      bgColor: 'bg-amber-50',
+      textColor: 'text-amber-600',
+      gradient: 'from-amber-500 to-amber-600',
     },
     {
       label: 'Total Withdrawn',
@@ -656,7 +656,7 @@ export function SellerWallet() {
           <Card className="border-0 shadow-sm">
             <CardHeader className="pb-4">
               <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <Send className="h-5 w-5 text-violet-600" />
+                <Send className="h-5 w-5 text-amber-600" />
                 Request Withdrawal
               </CardTitle>
             </CardHeader>

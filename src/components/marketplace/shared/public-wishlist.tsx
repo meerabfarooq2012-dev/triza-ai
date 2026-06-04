@@ -158,7 +158,7 @@ export function PublicWishlist({ slug }: PublicWishlistProps) {
         className="space-y-4"
       >
         <div className="flex items-start gap-4">
-          <div className="rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 p-3 shadow-lg shadow-violet-200">
+          <div className="rounded-xl bg-gradient-to-br from-amber-600 to-amber-500 p-3 shadow-lg shadow-amber-200">
             <ListChecks className="h-6 w-6 text-white" />
           </div>
           <div className="flex-1 min-w-0">
@@ -245,14 +245,14 @@ export function PublicWishlist({ slug }: PublicWishlistProps) {
                     </div>
                     <CardContent className="p-4 space-y-2">
                       <h3
-                        className="line-clamp-1 cursor-pointer text-sm font-semibold text-gray-900 hover:text-violet-600 transition-colors"
+                        className="line-clamp-1 cursor-pointer text-sm font-semibold text-gray-900 hover:text-amber-600 transition-colors"
                         onClick={() => setCurrentView('product-detail', { productId: product.id })}
                       >
                         {product.name}
                       </h3>
                       {product.shop && (
                         <p
-                          className="text-xs text-gray-500 truncate cursor-pointer hover:text-violet-500 transition-colors"
+                          className="text-xs text-gray-500 truncate cursor-pointer hover:text-amber-500 transition-colors"
                           onClick={() => {
                             if (product.shop?.slug) {
                               setCurrentView('shop-view', { shopSlug: product.shop.slug })
@@ -263,14 +263,14 @@ export function PublicWishlist({ slug }: PublicWishlistProps) {
                         </p>
                       )}
                       <div className="flex items-center justify-between pt-1">
-                        <span className="text-lg font-bold bg-gradient-to-r from-violet-600 to-rose-500 bg-clip-text text-transparent">
+                        <span className="text-lg font-bold gold-gradient-text bg-clip-text text-transparent">
                           ${(product.price ?? 0).toFixed(2)}
                         </span>
                         {inStock && currentUser && (
                           <Button
                             size="sm"
                             variant="outline"
-                            className="h-8 gap-1.5 text-xs transition-all hover:bg-gradient-to-r hover:from-violet-600 hover:to-rose-500 hover:text-white hover:border-transparent"
+                            className="h-8 gap-1.5 text-xs transition-all hover:bg-gradient-to-r hover:from-amber-600 hover:to-amber-500 hover:text-white hover:border-transparent"
                             onClick={() => handleAddToCart(item)}
                           >
                             <ShoppingCart className="h-3 w-3" />

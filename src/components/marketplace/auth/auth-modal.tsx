@@ -241,7 +241,7 @@ export function AuthModal() {
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
       {/* Left - Branding / Illustration */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-violet-600 via-purple-600 to-rose-500">
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-amber-600 via-amber-600 to-amber-500">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-60" />
         <div className="relative z-10 flex flex-col items-center justify-center w-full px-12 text-white">
           <motion.div
@@ -315,7 +315,7 @@ export function AuthModal() {
           {/* Mobile branding */}
           <div className="lg:hidden text-center mb-8">
             <div className="flex items-center justify-center gap-2 mb-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-rose-500">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-600 to-amber-500">
                 <Store className="h-5 w-5 text-white" />
               </div>
               <span className="text-2xl font-bold">{PLATFORM_NAME}</span>
@@ -417,7 +417,7 @@ export function AuthModal() {
                     <Label htmlFor="login-password">Password</Label>
                     <button
                       type="button"
-                      className="text-xs text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300 font-medium"
+                      className="text-xs text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 font-medium"
                     >
                       Forgot Password?
                     </button>
@@ -445,7 +445,7 @@ export function AuthModal() {
 
                 <Button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-violet-600 to-rose-500 hover:from-violet-700 hover:to-rose-600 text-white shadow-lg"
+                  className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white shadow-lg"
                   disabled={isLoading}
                   size="lg"
                 >
@@ -462,7 +462,7 @@ export function AuthModal() {
                   <button
                     type="button"
                     onClick={() => { setTab('register'); setError('') }}
-                    className="text-violet-600 hover:text-violet-700 dark:text-violet-400 font-medium"
+                    className="text-amber-600 hover:text-amber-700 dark:text-amber-400 font-medium"
                   >
                     Sign Up
                   </button>
@@ -505,7 +505,7 @@ export function AuthModal() {
                             onClick={() => setRegRole(opt.value)}
                             className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg border px-2 py-1.5 text-xs font-medium transition-all ${
                               regRole === opt.value
-                                ? 'border-violet-500 bg-violet-50 text-violet-700 dark:bg-violet-950/30 dark:text-violet-400 ring-1 ring-violet-500/20'
+                                ? 'border-amber-500 bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 ring-1 ring-amber-500/20'
                                 : 'border-gray-200 text-gray-600 hover:border-gray-300 dark:border-gray-700 dark:text-gray-400'
                             }`}
                           >
@@ -613,15 +613,15 @@ export function AuthModal() {
                         key={opt.value}
                         className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
                           regRole === opt.value
-                            ? 'border-violet-500 bg-violet-50 dark:bg-violet-950/30 ring-2 ring-violet-500/20'
-                            : 'border-border hover:border-violet-300'
+                            ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/30 ring-2 ring-amber-500/20'
+                            : 'border-border hover:border-amber-300'
                         }`}
                         onClick={() => setRegRole(opt.value)}
                       >
                         <CardContent className="flex flex-col items-center gap-2 p-4 text-center">
                           <div className={`rounded-xl p-2 ${
                             regRole === opt.value
-                              ? 'bg-violet-100 text-violet-600 dark:bg-violet-900/50 dark:text-violet-400'
+                              ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/50 dark:text-amber-400'
                               : 'bg-muted text-muted-foreground'
                           }`}>
                             {opt.icon}
@@ -645,15 +645,15 @@ export function AuthModal() {
                   />
                   <Label htmlFor="terms" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
                     I agree to the{' '}
-                    <span className="text-violet-600 dark:text-violet-400 font-medium">Terms of Service</span>{' '}
+                    <span className="text-amber-600 dark:text-amber-400 font-medium">Terms of Service</span>{' '}
                     and{' '}
-                    <span className="text-violet-600 dark:text-violet-400 font-medium">Privacy Policy</span>
+                    <span className="text-amber-600 dark:text-amber-400 font-medium">Privacy Policy</span>
                   </Label>
                 </div>
 
                 <Button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-violet-600 to-rose-500 hover:from-violet-700 hover:to-rose-600 text-white shadow-lg"
+                  className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white shadow-lg"
                   disabled={isLoading}
                   size="lg"
                 >
@@ -670,7 +670,7 @@ export function AuthModal() {
                   <button
                     type="button"
                     onClick={() => { setTab('login'); setError('') }}
-                    className="text-violet-600 hover:text-violet-700 dark:text-violet-400 font-medium"
+                    className="text-amber-600 hover:text-amber-700 dark:text-amber-400 font-medium"
                   >
                     Sign In
                   </button>

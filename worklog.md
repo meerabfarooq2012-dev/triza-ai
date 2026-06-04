@@ -352,3 +352,266 @@ Stage Summary:
 - Used simpler `useState`/`useEffect` pattern instead of `useSyncExternalStore` for Turbopack compatibility
 - All 3 theme modes (Light, Dark, System) work correctly
 - Theme preference persists across page reloads via next-themes localStorage
+
+---
+Task ID: 3-c
+Agent: Footer Theme Agent
+Task: Update marketplace footer for luxury "Obsidian & Gold" theme — replace all violet/purple/pink/rose colors with gold/amber equivalents
+
+Work Log:
+- Replaced `bg-gradient-to-r from-violet-600 via-purple-500 to-pink-500 bg-clip-text text-transparent` on logo with `gold-gradient-text` CSS class (already defined in globals.css)
+- Enhanced social link hover states: replaced `hover:bg-muted hover:text-foreground` with `hover:bg-amber-500/10 hover:text-amber-500 dark:hover:text-amber-400` for subtle gold highlight on hover
+- Added `gold-divider` CSS class to the Separator component for a luxury gradient divider effect
+- Verified no remaining violet/purple/pink/rose colors in the file
+- Ran lint — 0 errors, 2 pre-existing warnings (unchanged)
+
+Stage Summary:
+- Footer fully converted from violet/pink/purple to Obsidian & Gold theme
+- Logo uses gold-gradient-text (warm gold gradient with dark mode variant)
+- Social links glow gold on hover (amber-500 light, amber-400 dark)
+- Separator replaced with gold-divider (gradient fade-in/out luxury line)
+- All functionality preserved — only colors changed
+
+---
+Task ID: 3-a
+Agent: Hero Redesign Agent
+Task: Redesign marketplace hero section with "Obsidian & Gold" luxury theme
+
+Work Log:
+- Read current hero-section.tsx — had floating icons, dot patterns, gradient orbs, violet/rose/purple colors
+- Verified gold-gradient and gold-gradient-text CSS classes exist in globals.css
+- Completely rewrote hero-section.tsx with luxury minimalist design:
+  1. Removed floatingItems array and all floating icon rendering
+  2. Removed dot pattern background div
+  3. Removed gradient orb divs
+  4. Replaced background gradient: from-violet-50 via-white to-rose-50 → from-amber-50/50 via-background to-amber-100/30 (with dark mode)
+  5. Badge: violet → amber theme with subtle border and animated pulse dot
+  6. Heading "Sell Your Way": uses gold-gradient-text CSS class
+  7. Added animated gold accent line under heading (motion.div with scaleX animation)
+  8. Primary CTA: uses gold-gradient CSS class with shadow-amber-500/25
+  9. Browse Products button: amber hover states
+  10. Browse Gigs button: kept emerald as-is per spec
+  11. Removed unused imports: Star, Package, Zap
+- Ran lint — 0 errors, 2 pre-existing warnings
+
+Stage Summary:
+- Hero section fully redesigned with luxury Obsidian & Gold theme
+- All violet/purple/pink/rose colors replaced with amber/gold equivalents
+- Floating icons, dot patterns, and gradient orbs removed for clean minimalist look
+- Animated gold accent line adds subtle movement without busy visual noise
+- Custom CSS classes (gold-gradient, gold-gradient-text) properly utilized
+
+---
+Task ID: 3-b
+Agent: Header Theme Agent
+Task: Update marketplace header for luxury "Obsidian & Gold" theme — replace all violet/purple/pink/rose colors with gold/amber equivalents
+
+Work Log:
+- Replaced logo text gradient (line 145): `bg-gradient-to-r from-violet-600 via-purple-500 to-pink-500 bg-clip-text text-transparent` → `gold-gradient-text bg-clip-text text-transparent`
+- Replaced cart badge gradient (line 207): `bg-gradient-to-r from-violet-600 to-pink-500` → `gold-gradient`
+- Replaced avatar fallback gradient (line 247): `bg-gradient-to-br from-violet-500 to-pink-500` → `bg-gradient-to-br from-amber-600 to-amber-400`
+- Replaced desktop Sign Up button gradient (line 401): `bg-gradient-to-r from-violet-600 to-pink-500 hover:from-violet-700 hover:to-pink-600` → `gold-gradient hover:opacity-90`
+- Replaced mobile menu logo text gradient (line 461): same as desktop logo → `gold-gradient-text bg-clip-text text-transparent`
+- Replaced mobile avatar fallback gradient (line 499): same as desktop avatar → `bg-gradient-to-br from-amber-600 to-amber-400`
+- Replaced mobile Sign Up button gradient (line 700): same as desktop button → `gold-gradient hover:opacity-90`
+- Verified no remaining violet/purple/pink/rose colors with grep (0 matches)
+- Verified all emerald-* colors preserved (3 occurrences for message badges)
+- Ran lint — 0 errors, 2 pre-existing warnings (unchanged)
+
+Stage Summary:
+- Header fully converted from violet/pink/purple to Obsidian & Gold theme
+- Logo uses gold-gradient-text CSS class (warm gold gradient with dark mode variant)
+- Cart badge uses gold-gradient CSS class for consistent luxury feel
+- Avatar fallbacks use amber gradient (from-amber-600 to-amber-400)
+- Sign Up buttons use gold-gradient with hover:opacity-90 for subtle interaction
+- All emerald colors preserved (success/money indicators)
+- All functionality preserved — only colors changed
+
+---
+Task ID: 4-c
+Agent: Theme Update Agent
+Task: Update seller/admin/shop components for "Obsidian & Gold" luxury theme — replace all violet/purple/pink/rose colors with amber/gold equivalents
+
+Work Log:
+- seller-analytics.tsx: Changed STATUS_COLORS shipped #8b5cf6 → #d97706, TYPE_COLORS freelance #8b5cf6 → #d97706, stat card bgColor/textColor/gradient violet→amber, MessageSquare icon text-violet-600 → text-amber-600
+- seller-overview.tsx: Changed Revenue stat card bgColor/textColor/gradient violet→amber, BarChart3 icon text-violet-600 → text-amber-600, revenue bar chart gradient from-violet-500 to-purple-400 → from-amber-600 to-amber-400
+- seller-coupons.tsx: Changed getTypeBadgeClass 'fixed' type violet→amber, Total Savings stat icon bg-violet-50 → bg-amber-50 and text-violet-600 → text-amber-600, coupon type selector border-violet-400 bg-violet-50 text-violet-700 → amber equivalents
+- admin-dashboard.tsx: Changed Active Withdrawals accentColor bg-violet-50 text-violet-600 → bg-amber-50 text-amber-600
+- admin-transactions.tsx: Changed ESCROW_STATUS_CONFIG refunded bg-rose-100 text-rose-800 → bg-amber-100 text-amber-800, Pending Withdrawals stat card violet→amber, Refund button text-rose-600 → text-amber-600, Refund dialog title text-rose-600 → text-amber-600, refund dialog info box bg-rose-50/border-rose-200 → amber equivalents
+- admin-categories.tsx: Changed CategoryTypeBadge digital type bg-purple-50 text-purple-700 border-purple-200 → bg-amber-50 text-amber-700 border-amber-200
+- shop-view.tsx: No changes needed — uses dynamic shopColors (no hardcoded violet/purple/pink/rose Tailwind classes)
+- product-detail.tsx: No changes needed — no violet/purple/pink/rose Tailwind classes present
+- Verified all 8 files with grep — 0 remaining violet/purple/pink/rose matches in modified files
+- Lint passes with 0 errors (2 pre-existing warnings)
+
+Stage Summary:
+- 6 files updated with color replacements, 2 files had no changes needed
+- All violet → amber, purple → amber, rose → amber replacements applied
+- All emerald colors preserved as required
+- All functionality preserved — only colors changed
+
+---
+Task ID: 4-a
+Agent: Landing Theme Agent
+Task: Update ALL 12 landing page components for "Obsidian & Gold" luxury theme — replace violet/purple/pink/rose/fuchsia colors with amber/gold equivalents
+
+Work Log:
+- Updated about-section.tsx:
+  - Badge: bg-violet-100/dark:bg-violet-950/50 → bg-amber-100/dark:bg-amber-950/50, text-violet-700/dark:text-violet-300 → text-amber-700/dark:text-amber-300
+  - Heading "Marketo": bg-gradient-to-r from-violet-600 via-purple-600 to-rose-500 → gold-gradient-text
+  - Buyers & Sellers gradient: from-violet-500 to-purple-600 → from-amber-600 to-amber-500
+  - Freelancer Friendly gradient: from-rose-500 to-pink-600 → from-amber-500 to-amber-600
+  - Card hover: hover:border-violet-200/dark:hover:border-violet-800 → hover:border-amber-200/dark:hover:border-amber-800, shadow-violet-500/5 → shadow-amber-500/5
+  - Motive banner: bg-gradient-to-br from-violet-600 via-purple-600 to-rose-500 → gold-gradient
+- Updated browse-by-type-section.tsx:
+  - Physical Products card: from-violet-50/to-purple-50 → from-amber-50/to-amber-50, text-violet-600/dark:text-violet-400 → text-amber-600/dark:text-amber-400, hover:border-violet-300 → hover:border-amber-300, bg-violet-600/hover:bg-violet-700 → bg-amber-600/hover:bg-amber-700
+- Updated categories-section.tsx:
+  - categoryGradients: replaced violet/purple, rose/pink, fuchsia/purple entries with amber variants
+  - iconColors: replaced violet, rose, fuchsia entries with amber variants
+  - All helper functions (getHoverColor, getActiveHoverTextColor, getExpandedBorderColor, getChevronColor, getBadgeColor, getPillColor): violet → amber for 'physical' tab
+- Updated commission-section.tsx:
+  - "10%" text gradient: from-violet-500 to-purple-500 → gold-gradient-text
+  - Comparison card shadow: shadow-violet-500/5 → shadow-amber-500/5
+  - Escrow Protection badge: bg-violet-100/dark:bg-violet-950/50, text-violet-600/dark:text-violet-400 → amber equivalents
+  - Fast Withdrawals badge: same violet → amber replacement
+- Updated cta-section.tsx:
+  - Background gradient: bg-gradient-to-br from-violet-600 via-purple-600 to-rose-500 → gold-gradient
+  - "Create Your Shop" button: text-violet-700 → text-amber-700
+- Updated featured-products-section.tsx:
+  - "View All" button: text-violet-600/dark:text-violet-400/hover:text-violet-700 → amber equivalents
+  - Card hover border: violet → amber
+  - Placeholder gradient: from-violet-100/to-rose-100 → from-amber-100/to-amber-100
+  - Placeholder text: text-violet-300/dark:text-violet-700 → text-amber-300/dark:text-amber-700
+  - Product name hover: group-hover:text-violet-600/dark:group-hover:text-violet-400 → amber
+  - Price gradient: from-violet-600 to-rose-500 → gold-gradient-text
+  - Mobile "View All" button: violet → amber
+- Updated features-section.tsx:
+  - "Create Your Shop" gradient: from-violet-500 to-purple-600 → from-amber-600 to-amber-500
+  - "Sell Anything" gradient: from-rose-500 to-pink-600 → from-amber-500 to-amber-600
+  - "Seller Wallet" gradient: from-fuchsia-500 to-purple-600 → from-amber-500 to-amber-600
+  - Card hover: violet borders/shadows → amber equivalents
+  - Title hover: violet → amber
+- Updated flash-deals-section.tsx:
+  - Banner gradient: to-rose-500 → to-amber-500 (keeping orange/red for urgency)
+- Updated gigs-section.tsx:
+  - Graphic Design: from-violet-500/to-purple-600/bg-violet-50 → from-amber-600/to-amber-500/bg-amber-50
+  - Video Editing: from-rose-500/to-pink-600/bg-rose-50 → from-amber-500/to-amber-600/bg-amber-50
+  - Digital Marketing: from-fuchsia-500/to-purple-600/bg-fuchsia-50 → from-amber-500/to-amber-600/bg-amber-50
+  - AI & Machine Learning: from-purple-500/to-violet-600/bg-purple-50 → from-amber-500/to-amber-600/bg-amber-50
+- Updated how-it-works-section.tsx:
+  - Connecting line: from-violet-200/via-rose-200/dark:from-violet-800/dark:via-rose-800 → amber equivalents
+  - Number circle gradient: from-violet-600/to-rose-500 → from-amber-600/to-amber-500, shadow-violet-500/25 → shadow-amber-500/25
+  - Step number badge: border-violet-500/text-violet-600/dark:text-violet-400 → amber equivalents
+- Updated popular-shops-section.tsx:
+  - "View All" buttons: violet text → amber
+  - Card hover border: violet → amber
+  - Banner gradient: from-violet-400/to-rose-400 → from-amber-500/to-amber-400
+  - Logo fallback text: text-violet-500 → text-amber-500
+  - Shop name hover: violet → amber
+- Updated testimonials-section.tsx:
+  - Icon background gradient: from-violet-500/to-purple-600 → from-amber-600/to-amber-500
+  - CTA button: from-violet-600/to-purple-600/hover:from-violet-700/hover:to-purple-700 → from-amber-600/to-amber-500/hover:from-amber-700/hover:to-amber-600, shadow-violet-500/25 → shadow-amber-500/25
+- Verified zero remaining violet/purple/pink/rose/fuchsia colors across all 12 files via grep
+- All emerald-* colors preserved (success/money indicators in commission-section, gigs-section, flash-deals-section)
+- Ran lint — 0 errors, 2 pre-existing warnings (unchanged)
+
+Stage Summary:
+- All 12 landing page components converted from violet/pink/purple/rose/fuchsia to Obsidian & Gold theme
+- gold-gradient and gold-gradient-text CSS classes used for prominent gradient areas (about section motive banner, CTA section background, about/featured product headings, commission "10%" text)
+- All hover states, shadows, borders, and badge colors consistently use amber/gold palette
+- Emerald colors preserved for money/success indicators
+- All functionality preserved — only colors changed
+
+---
+Task ID: 4-b
+Agent: Theme Update Agent
+Task: Update 8 marketplace components for "Obsidian & Gold" luxury theme — replace all violet/purple/pink/rose colors with gold/amber equivalents
+
+Work Log:
+- Updated auth-modal.tsx:
+  - Left branding panel: `bg-gradient-to-br from-violet-600 via-purple-600 to-rose-500` → `bg-gradient-to-br from-amber-600 via-amber-600 to-amber-500`
+  - Mobile branding icon: `from-violet-600 to-rose-500` → `from-amber-600 to-amber-500`
+  - Forgot Password link: `text-violet-*` → `text-amber-*`
+  - Login button: `from-violet-600 to-rose-500 hover:from-violet-700 hover:to-rose-600` → `from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600`
+  - Sign Up / Sign In links: `text-violet-*` → `text-amber-*`
+  - Role selector compact pills: `border-violet-500 bg-violet-50 text-violet-700` → `border-amber-500 bg-amber-50 text-amber-700`
+  - Role selection cards: `border-violet-500 bg-violet-50 ring-violet-500/20` → `border-amber-500 bg-amber-50 ring-amber-500/20`
+  - Role icon background: `bg-violet-100 text-violet-600` → `bg-amber-100 text-amber-600`
+  - Terms/Privacy links: `text-violet-600 dark:text-violet-400` → `text-amber-600 dark:text-amber-400`
+  - Register button: same gradient replacement as login button
+- Updated product-card.tsx:
+  - Digital type badge: `bg-violet-100 text-violet-700 hover:bg-violet-100` → `bg-amber-100 text-amber-700 hover:bg-amber-100`
+  - Kept emerald colors for freelance badge and variant badge as-is
+- Updated public-wishlist.tsx:
+  - Header icon gradient: `from-violet-500 to-purple-600 shadow-violet-200` → `from-amber-600 to-amber-500 shadow-amber-200`
+  - Product name hover: `hover:text-violet-600` → `hover:text-amber-600`
+  - Shop name hover: `hover:text-violet-500` → `hover:text-amber-500`
+  - Price text: `bg-gradient-to-r from-violet-600 to-rose-500 bg-clip-text text-transparent` → `gold-gradient-text bg-clip-text text-transparent`
+  - Add to Cart button hover: `hover:from-violet-600 hover:to-rose-500` → `hover:from-amber-600 hover:to-amber-500`
+- Updated page.tsx:
+  - PageLoader spinner: `border-violet-200 border-t-violet-600` → `border-amber-200 border-t-amber-600`
+  - ViewLoader spinner: same replacement
+  - Error boundary Try Again button: `bg-violet-600 hover:bg-violet-700` → `bg-amber-600 hover:bg-amber-700`
+- Updated error.tsx:
+  - Try again button: `bg-violet-600 hover:bg-violet-700` → `bg-amber-600 hover:bg-amber-700`
+- Updated global-error.tsx:
+  - Try again button: `bg-violet-600 hover:bg-violet-700` → `bg-amber-600 hover:bg-amber-700`
+- Updated constants.ts:
+  - NOTIFICATION_TYPE_COLORS: `text-purple-600` → `text-amber-600`, `text-pink-600` → `text-amber-600`
+  - NOTIFICATION_CATEGORY_COLORS: `bg-purple-100 text-purple-700 border-purple-200` → `bg-amber-100 text-amber-700 border-amber-200`, `bg-pink-100 text-pink-700 border-pink-200` → `bg-amber-100 text-amber-700 border-amber-200`
+- Updated shop-page-client.tsx:
+  - Loading spinner: `border-violet-200 border-t-violet-600` → `border-amber-200 border-t-amber-600`
+- Verified with grep: 0 remaining violet/purple/pink/rose references across all 8 files
+- Ran lint — 0 errors, 2 pre-existing warnings (unchanged)
+
+Stage Summary:
+- All 8 files updated with Obsidian & Gold luxury theme colors
+- 14+ individual color replacements across the codebase
+- All emerald-* colors preserved as-is per spec
+- All functionality preserved — only colors changed
+- Lint passes with 0 new errors
+Task ID: 4-d
+Agent: Obsidian & Gold Theme Agent
+Task: Update 26 marketplace components for "Obsidian & Gold" luxury theme — replace all violet/purple/pink/rose colors with amber/gold equivalents
+
+Work Log:
+- gig/gig-detail.tsx — No violet/purple/pink/rose colors found (already uses emerald/amber). No changes needed.
+- gig/gigs-browse.tsx — Replaced 3 category gradient colors (violet→amber, rose→amber, fuchsia→amber) and 8 icon color map entries (violet→amber, pink→amber, rose→amber, purple→amber)
+- buyer/buyer-overview.tsx — Replaced stat card colors: Total Spent (violet→amber), Favorites (rose→amber), including bg/text/gradient
+- buyer/buyer-favorites.tsx — Replaced 12+ color references: digital type badge (violet→amber), empty state (rose→amber), heart icon containers (rose→amber), gradient badges/buttons (from-violet-to-rose → gold-gradient), price text (gold-gradient-text), hover states (violet→amber)
+- buyer/buyer-payments.tsx — Replaced escrow refunded status (rose→amber), dot color (rose→amber)
+- buyer/buyer-wishlists.tsx — Replaced 10+ color references: header icon (violet→amber), badges (violet-purple → gold-gradient), empty state (violet→amber), item prices (gold-gradient-text), hover states (violet→amber)
+- buyer/buyer-orders.tsx — Replaced escrow refunded badge (rose→amber)
+- payment/payment-info-form.tsx — Replaced card method color/bgColor (violet→amber)
+- payment/seller-wallet.tsx — Replaced withdrawal type badge (violet→amber), refund type badge (rose→amber), Lifetime Earnings stat card (violet→amber), Send icon color (violet→amber)
+- payment/checkout-modal.tsx — Replaced card method colors (violet→amber), escrow info box (violet→amber), ShieldCheck icon (violet→amber)
+- payment/payment-settings-page.tsx — Replaced card method color/bgColor/borderColor (violet→amber)
+- payment/order-payment-status.tsx — Replaced refunded status badge (rose→amber)
+- orders/order-tracking-page.tsx — Replaced shipped status (purple→amber), refunded escrow badge (rose→amber)
+- notifications/notifications-page.tsx — Replaced order icon (purple→amber), shop icon (pink→amber)
+- notifications/notification-bell.tsx — Replaced order icon (purple→amber), shop icon (pink→amber), badge gradient (pink→amber)
+- shipping/shipping-method-selector.tsx — Replaced overnight shipping (rose→amber)
+- shipping/shipping-settings.tsx — Replaced active rate color (rose→amber)
+- shipping/shipment-tracker.tsx — Replaced out_for_delivery step (purple→amber)
+- social/activity-feed-page.tsx — Replaced sale_milestone (purple→amber), promotion (rose→amber), border-left colors
+- verification/verification-page.tsx — Replaced under_review status (violet→amber), active state (violet→amber)
+- returns/return-detail-page.tsx — Replaced status colors (purple→amber), submit button (purple→amber)
+- returns/returns-page.tsx — Replaced status colors (purple→amber), left border (purple→amber)
+- disputes/dispute-detail-page.tsx — Replaced investigating status (purple→amber), product_issue (rose→amber), communication_issue (purple→amber), admin badges (violet→amber), escrow notice (violet→amber)
+- disputes/dispute-center-page.tsx — Replaced investigating status (purple→amber), product/communication/defective badges (rose/purple→amber), resolved status (violet→amber)
+- landing/terms-of-service.tsx — Replaced all section gradients (violet/purple/rose/fuchsia/indigo→amber), background (violet-rose→amber), decorative orbs, badges, heading gradient (→gold-gradient-text), CTA section (→gold-gradient)
+- landing/privacy-policy.tsx — Same comprehensive replacement as terms-of-service.tsx
+
+- All emerald-* colors preserved as required
+- All gold-gradient and gold-gradient-text CSS classes used where appropriate (matching the existing globals.css definitions)
+- Lint passes with 0 errors (2 pre-existing warnings)
+
+Stage Summary:
+- All 26 files processed (1 required no changes: gig-detail.tsx)
+- 25 files updated with amber/gold color replacements
+- Total color changes: ~90+ individual color class replacements
+- All violet→amber, purple→amber, pink→amber, rose→amber conversions applied
+- All gradient patterns converted to gold-gradient or gold-gradient-text where appropriate
+- All emerald colors preserved (success/money indicators)
+- All functionality preserved — only colors changed
+- Zero new lint errors

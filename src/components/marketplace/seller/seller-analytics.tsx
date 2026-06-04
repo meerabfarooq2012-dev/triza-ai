@@ -301,7 +301,7 @@ function formatDate(iso: string): string {
 const STATUS_COLORS: Record<string, string> = {
   pending: '#f59e0b',
   processing: '#3b82f6',
-  shipped: '#8b5cf6',
+  shipped: '#d97706',
   delivered: '#10b981',
   cancelled: '#ef4444',
   refunded: '#6b7280',
@@ -310,7 +310,7 @@ const STATUS_COLORS: Record<string, string> = {
 const TYPE_COLORS: Record<string, string> = {
   digital: '#10b981',
   physical: '#3b82f6',
-  freelance: '#8b5cf6',
+  freelance: '#d97706',
 }
 
 // ─── Chart Error Boundary ──────────────────────────────────────────────────
@@ -543,9 +543,9 @@ export function SellerAnalytics() {
       label: 'Average Rating',
       value: summary.averageRating > 0 ? summary.averageRating.toFixed(1) : 'N/A',
       icon: Star,
-      bgColor: 'bg-violet-50 dark:bg-violet-950/50',
-      textColor: 'text-violet-600 dark:text-violet-400',
-      gradient: 'from-violet-500 to-purple-600',
+      bgColor: 'bg-amber-50 dark:bg-amber-950/50',
+      textColor: 'text-amber-600 dark:text-amber-400',
+      gradient: 'from-amber-500 to-amber-600',
       change: null,
       changeLabel: '',
     },
@@ -1000,7 +1000,7 @@ export function SellerAnalytics() {
           <Card className="h-full border-0 shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-                <MessageSquare className="h-5 w-5 text-violet-600" />
+                <MessageSquare className="h-5 w-5 text-amber-600" />
                 Recent Reviews
               </CardTitle>
             </CardHeader>

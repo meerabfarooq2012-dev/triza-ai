@@ -142,7 +142,7 @@ export function Header() {
               onClick={() => handleNavClick('landing')}
               className="flex items-center gap-1 flex-shrink-0"
             >
-              <span className="text-xl font-extrabold bg-gradient-to-r from-violet-600 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+              <span className="text-xl font-extrabold gold-gradient-text bg-clip-text text-transparent">
                 {PLATFORM_NAME}
               </span>
             </button>
@@ -204,7 +204,7 @@ export function Header() {
             >
               <ShoppingCart className="h-4.5 w-4.5" />
               {cart.length > 0 && (
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] font-bold bg-gradient-to-r from-violet-600 to-pink-500 text-white border-0">
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] font-bold gold-gradient text-white border-0">
                   {cart.length > 99 ? '99+' : cart.length}
                 </Badge>
               )}
@@ -244,7 +244,7 @@ export function Header() {
                       {currentUser?.avatar ? (
                         <AvatarImage src={currentUser?.avatar} alt={currentUser?.name} />
                       ) : null}
-                      <AvatarFallback className="text-xs font-semibold bg-gradient-to-br from-violet-500 to-pink-500 text-white">
+                      <AvatarFallback className="text-xs font-semibold bg-gradient-to-br from-amber-600 to-amber-400 text-white">
                         {getInitials(currentUser?.name)}
                       </AvatarFallback>
                     </Avatar>
@@ -398,7 +398,7 @@ export function Header() {
                 <Button
                   size="sm"
                   onClick={() => handleNavClick('auth', { mode: 'register' })}
-                  className="bg-gradient-to-r from-violet-600 to-pink-500 hover:from-violet-700 hover:to-pink-600 text-white border-0"
+                  className="gold-gradient hover:opacity-90 text-white border-0"
                 >
                   Sign up
                 </Button>
@@ -458,7 +458,7 @@ export function Header() {
         <SheetContent side="left" className="w-72 p-0">
           <SheetHeader className="p-4 pb-2 border-b">
             <SheetTitle>
-              <span className="text-lg font-extrabold bg-gradient-to-r from-violet-600 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+              <span className="text-lg font-extrabold gold-gradient-text bg-clip-text text-transparent">
                 {PLATFORM_NAME}
               </span>
             </SheetTitle>
@@ -496,7 +496,7 @@ export function Header() {
                       {currentUser?.avatar ? (
                         <AvatarImage src={currentUser?.avatar} alt={currentUser?.name} />
                       ) : null}
-                      <AvatarFallback className="text-xs font-semibold bg-gradient-to-br from-violet-500 to-pink-500 text-white">
+                      <AvatarFallback className="text-xs font-semibold bg-gradient-to-br from-amber-600 to-amber-400 text-white">
                         {getInitials(currentUser?.name)}
                       </AvatarFallback>
                     </Avatar>
@@ -697,7 +697,7 @@ export function Header() {
                     Log in
                   </Button>
                   <Button
-                    className="w-full bg-gradient-to-r from-violet-600 to-pink-500 hover:from-violet-700 hover:to-pink-600 text-white border-0"
+                    className="w-full gold-gradient hover:opacity-90 text-white border-0"
                     onClick={() => handleNavClick('auth', { mode: 'register' })}
                   >
                     Sign up

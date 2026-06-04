@@ -53,9 +53,9 @@ const ACTIVITY_COLORS: Record<string, string> = {
   new_product: 'text-emerald-600 bg-emerald-50',
   new_review: 'text-amber-600 bg-amber-50',
   shop_update: 'text-blue-600 bg-blue-50',
-  sale_milestone: 'text-purple-600 bg-purple-50',
+  sale_milestone: 'text-amber-600 bg-amber-50',
   restock: 'text-teal-600 bg-teal-50',
-  promotion: 'text-rose-600 bg-rose-50',
+  promotion: 'text-amber-600 bg-amber-50',
   story: 'text-indigo-600 bg-indigo-50',
 }
 
@@ -63,9 +63,9 @@ const ACTIVITY_BORDER: Record<string, string> = {
   new_product: 'border-l-emerald-500',
   new_review: 'border-l-amber-500',
   shop_update: 'border-l-blue-500',
-  sale_milestone: 'border-l-purple-500',
+  sale_milestone: 'border-l-amber-500',
   restock: 'border-l-teal-500',
-  promotion: 'border-l-rose-500',
+  promotion: 'border-l-amber-500',
   story: 'border-l-indigo-500',
 }
 

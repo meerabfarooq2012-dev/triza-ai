@@ -102,8 +102,8 @@ const ESCROW_STATUS_CONFIG: Record<
   },
   refunded: {
     label: 'Refunded',
-    color: 'bg-rose-100 text-rose-800 border-rose-200',
-    dotColor: 'bg-rose-500',
+    color: 'bg-amber-100 text-amber-800 border-amber-200',
+    dotColor: 'bg-amber-500',
     icon: <RotateCcw className="h-3.5 w-3.5" />,
   },
 }

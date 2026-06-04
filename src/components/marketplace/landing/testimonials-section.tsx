@@ -34,7 +34,7 @@ export function TestimonialsSection() {
             transition={{ duration: 0.5 }}
             className="space-y-6"
           >
-            <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-r from-violet-500 to-purple-600 flex items-center justify-center">
+            <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-r from-amber-600 to-amber-500 flex items-center justify-center">
               <Users className="h-8 w-8 text-white" />
             </div>
             <h3 className="text-xl font-semibold">Start Selling Today</h3>
@@ -43,7 +43,7 @@ export function TestimonialsSection() {
             </p>
             <Button
               size="lg"
-              className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white shadow-xl shadow-violet-500/25 px-8"
+              className="bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white shadow-xl shadow-amber-500/25 px-8"
               onClick={() => setCurrentView('auth')}
             >
               Get Started Free

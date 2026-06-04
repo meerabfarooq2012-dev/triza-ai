@@ -315,7 +315,7 @@ export default function AdminDashboard() {
               value={paymentStats?.activeWithdrawals ?? 0}
               icon={<Banknote size={22} />}
               subtitle={`$${(paymentStats?.activeWithdrawalsAmount ?? 0).toFixed(2)} total`}
-              accentColor="bg-violet-50 text-violet-600"
+              accentColor="bg-amber-50 text-amber-600"
             />
           </motion.div>
           <motion.div

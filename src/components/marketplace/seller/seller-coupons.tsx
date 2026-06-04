@@ -139,7 +139,7 @@ function getTypeBadgeClass(type: CouponType) {
     case 'percentage':
       return 'bg-emerald-50 text-emerald-700 border-emerald-200'
     case 'fixed':
-      return 'bg-violet-50 text-violet-700 border-violet-200'
+      return 'bg-amber-50 text-amber-700 border-amber-200'
     case 'free_shipping':
       return 'bg-sky-50 text-sky-700 border-sky-200'
     default:
@@ -449,8 +449,8 @@ export function SellerCoupons() {
           <Card className="border-0 shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-50">
-                  <TrendingDown className="h-4 w-4 text-violet-600" />
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50">
+                  <TrendingDown className="h-4 w-4 text-amber-600" />
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Total Savings</p>
@@ -699,7 +699,7 @@ export function SellerCoupons() {
                           ? t === 'percentage'
                             ? 'border-emerald-400 bg-emerald-50 text-emerald-700'
                             : t === 'fixed'
-                              ? 'border-violet-400 bg-violet-50 text-violet-700'
+                              ? 'border-amber-400 bg-amber-50 text-amber-700'
                               : 'border-sky-400 bg-sky-50 text-sky-700'
                           : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
                       }`}

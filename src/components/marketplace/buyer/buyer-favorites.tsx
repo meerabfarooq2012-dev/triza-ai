@@ -72,7 +72,7 @@ function MiniStarRating({ rating }: { rating: number }) {
 }
 
 const typeColorMap: Record<ProductType, string> = {
-  digital: 'bg-violet-100 text-violet-700',
+  digital: 'bg-amber-100 text-amber-700',
   physical: 'bg-orange-100 text-orange-700',
   freelance: 'bg-emerald-100 text-emerald-700',
 }
@@ -231,10 +231,10 @@ export function BuyerFavorites() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-rose-200 bg-gradient-to-b from-rose-50/50 to-transparent py-20"
+        className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-amber-200 bg-gradient-to-b from-amber-50/50 to-transparent py-20"
       >
-        <div className="rounded-full bg-rose-100 p-4 mb-4">
-          <Heart className="h-10 w-10 text-rose-400" />
+        <div className="rounded-full bg-amber-100 p-4 mb-4">
+          <Heart className="h-10 w-10 text-amber-400" />
         </div>
         <h3 className="text-xl font-bold text-gray-900">Your wishlist is empty</h3>
         <p className="mt-2 max-w-sm text-center text-sm text-gray-500">
@@ -242,7 +242,7 @@ export function BuyerFavorites() {
           appear here so you can find them easily later.
         </p>
         <Button
-          className="mt-6 bg-gradient-to-r from-violet-600 to-rose-500 hover:from-violet-700 hover:to-rose-600 text-white shadow-lg shadow-violet-200"
+          className="mt-6 gold-gradient hover:opacity-90 text-white shadow-lg shadow-amber-200"
           onClick={() => setCurrentView('search')}
         >
           <ShoppingCartIcon className="mr-2 h-4 w-4" />
@@ -259,7 +259,7 @@ export function BuyerFavorites() {
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 p-2.5 shadow-lg shadow-rose-200">
+            <div className="rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 p-2.5 shadow-lg shadow-amber-200">
               <Heart className="h-5 w-5 text-white fill-white" />
             </div>
             <div>
@@ -268,7 +268,7 @@ export function BuyerFavorites() {
                 {favorites.length} item{favorites.length !== 1 ? 's' : ''}
               </p>
             </div>
-            <Badge className="bg-gradient-to-r from-violet-600 to-rose-500 text-white border-0 ml-1">
+            <Badge className="gold-gradient text-white border-0 ml-1">
               {favorites.length}
             </Badge>
           </div>
@@ -298,7 +298,7 @@ export function BuyerFavorites() {
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 p-2.5 shadow-lg shadow-rose-200">
+            <div className="rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 p-2.5 shadow-lg shadow-amber-200">
               <Heart className="h-5 w-5 text-white fill-white" />
             </div>
             <div>
@@ -307,7 +307,7 @@ export function BuyerFavorites() {
                 {favorites.length} item{favorites.length !== 1 ? 's' : ''}
               </p>
             </div>
-            <Badge className="bg-gradient-to-r from-violet-600 to-rose-500 text-white border-0 ml-1">
+            <Badge className="gold-gradient text-white border-0 ml-1">
               {favorites.length}
             </Badge>
           </div>
@@ -315,7 +315,7 @@ export function BuyerFavorites() {
           {favorites.length > 0 && (
             <Button
               onClick={handleAddAllToCart}
-              className="bg-gradient-to-r from-violet-600 to-rose-500 hover:from-violet-700 hover:to-rose-600 text-white shadow-lg shadow-violet-200"
+              className="gold-gradient hover:opacity-90 text-white shadow-lg shadow-amber-200"
             >
               <ShoppingCart className="mr-2 h-4 w-4" />
               Add All to Cart
@@ -342,7 +342,7 @@ export function BuyerFavorites() {
                 className={cn(
                   'rounded-full px-3 py-1.5 text-xs font-medium transition-all',
                   filterType === key
-                    ? 'bg-gradient-to-r from-violet-600 to-rose-500 text-white shadow-sm'
+                    ? 'gold-gradient text-white shadow-sm'
                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 )}
               >
@@ -463,7 +463,7 @@ export function BuyerFavorites() {
                     <CardContent className="p-4 space-y-2">
                       {/* Product name */}
                       <h3
-                        className="line-clamp-1 cursor-pointer text-sm font-semibold text-gray-900 hover:text-violet-600 transition-colors"
+                        className="line-clamp-1 cursor-pointer text-sm font-semibold text-gray-900 hover:text-amber-600 transition-colors"
                         onClick={() =>
                           setCurrentView('product-detail', {
                             productId: product.id,
@@ -487,7 +487,7 @@ export function BuyerFavorites() {
                       {/* Price + Stock + Cart */}
                       <div className="flex items-center justify-between pt-1">
                         <div className="flex items-baseline gap-1.5">
-                          <span className="text-lg font-bold bg-gradient-to-r from-violet-600 to-rose-500 bg-clip-text text-transparent">
+                          <span className="text-lg font-bold gold-gradient-text bg-clip-text text-transparent">
                             ${(product.price ?? 0).toFixed(2)}
                           </span>
                           {product.comparePrice &&
@@ -525,7 +525,7 @@ export function BuyerFavorites() {
                           className={cn(
                             'h-8 gap-1.5 text-xs transition-all',
                             inStock
-                              ? 'hover:bg-gradient-to-r hover:from-violet-600 hover:to-rose-500 hover:text-white hover:border-transparent'
+                              ? 'hover:gold-gradient hover:text-white hover:border-transparent'
                               : 'opacity-50 cursor-not-allowed'
                           )}
                           onClick={() => handleAddToCart(fav)}

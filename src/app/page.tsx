@@ -53,7 +53,7 @@ function PageLoader() {
   return (
     <div className="flex items-center justify-center min-h-screen">
       <div className="flex flex-col items-center gap-3">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-violet-200 border-t-violet-600" />
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-200 border-t-amber-600" />
         <p className="text-sm text-muted-foreground font-medium">Loading Marketo...</p>
       </div>
     </div>
@@ -64,7 +64,7 @@ function ViewLoader() {
   return (
     <div className="flex items-center justify-center min-h-[300px]">
       <div className="flex flex-col items-center gap-3">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-violet-200 border-t-violet-600" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-200 border-t-amber-600" />
         <p className="text-sm text-muted-foreground">Loading view...</p>
       </div>
     </div>
@@ -254,7 +254,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
             <div className="flex items-center justify-center gap-3">
               <button
                 onClick={() => this.setState({ hasError: false, error: null })}
-                className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 text-sm"
+                className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm"
               >
                 Try Again
               </button>

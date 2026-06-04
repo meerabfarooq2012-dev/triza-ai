@@ -15,13 +15,13 @@ export function AboutSection() {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <span className="inline-flex items-center gap-2 rounded-full bg-violet-100 dark:bg-violet-950/50 px-4 py-1.5 mb-6 text-sm text-violet-700 dark:text-violet-300 font-medium">
+          <span className="inline-flex items-center gap-2 rounded-full bg-amber-100 dark:bg-amber-950/50 px-4 py-1.5 mb-6 text-sm text-amber-700 dark:text-amber-300 font-medium">
             <Heart className="h-3.5 w-3.5" />
             About Us
           </span>
           <h2 className="text-3xl sm:text-4xl font-bold mb-6">
             About{' '}
-            <span className="bg-gradient-to-r from-violet-600 via-purple-600 to-rose-500 bg-clip-text text-transparent">
+            <span className="gold-gradient-text bg-clip-text text-transparent">
               Marketo
             </span>
           </h2>
@@ -43,13 +43,13 @@ export function AboutSection() {
               icon: <Users className="h-6 w-6" />,
               title: 'Buyers & Sellers',
               description: 'Join as a buyer, seller, or both — the choice is yours.',
-              gradient: 'from-violet-500 to-purple-600',
+              gradient: 'from-amber-600 to-amber-500',
             },
             {
               icon: <Briefcase className="h-6 w-6" />,
               title: 'Freelancer Friendly',
               description: 'Offer services, find clients, and earn independently.',
-              gradient: 'from-rose-500 to-pink-600',
+              gradient: 'from-amber-500 to-amber-600',
             },
             {
               icon: <ShoppingBag className="h-6 w-6" />,
@@ -64,7 +64,7 @@ export function AboutSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.15 * i }}
-              className="text-center p-6 rounded-2xl bg-background border border-border/50 hover:border-violet-200 dark:hover:border-violet-800 transition-all duration-300 hover:shadow-lg hover:shadow-violet-500/5"
+              className="text-center p-6 rounded-2xl bg-background border border-border/50 hover:border-amber-200 dark:hover:border-amber-800 transition-all duration-300 hover:shadow-lg hover:shadow-amber-500/5"
             >
               <div className={`inline-flex rounded-xl bg-gradient-to-r ${item.gradient} p-3 text-white mb-4 shadow-lg`}>
                 {item.icon}
@@ -83,7 +83,7 @@ export function AboutSection() {
           transition={{ duration: 0.6 }}
           className="relative rounded-3xl overflow-hidden"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-violet-600 via-purple-600 to-rose-500" />
+          <div className="absolute inset-0 gold-gradient" />
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMS41Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-50" />
 
           <div className="relative z-10 p-8 sm:p-12 lg:p-16 text-center">

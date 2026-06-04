@@ -69,7 +69,7 @@ interface MethodConfig {
 const BUYER_METHODS: MethodConfig[] = [
   { id: 'easypaisa', name: 'Easypaisa', icon: Wallet, color: 'text-emerald-600', bgColor: 'bg-emerald-50', description: 'Mobile wallet payment' },
   { id: 'jazzcash', name: 'JazzCash', icon: Wallet, color: 'text-red-600', bgColor: 'bg-red-50', description: 'Mobile wallet payment' },
-  { id: 'card', name: 'Debit/Credit Card', icon: CreditCard, color: 'text-violet-600', bgColor: 'bg-violet-50', description: 'Visa, Mastercard, UnionPay' },
+  { id: 'card', name: 'Debit/Credit Card', icon: CreditCard, color: 'text-amber-600', bgColor: 'bg-amber-50', description: 'Visa, Mastercard, UnionPay' },
   { id: 'payoneer', name: 'Payoneer', icon: Globe, color: 'text-blue-600', bgColor: 'bg-blue-50', description: 'Global payment platform' },
   { id: 'wise', name: 'Wise', icon: Mail, color: 'text-teal-600', bgColor: 'bg-teal-50', description: 'International transfer' },
 ]
