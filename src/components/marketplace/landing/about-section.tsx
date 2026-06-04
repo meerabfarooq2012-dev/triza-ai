@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Heart, Target, Users, Briefcase, ShoppingBag, Globe } from 'lucide-react'
+import { Heart, Target, Users, Briefcase, ShoppingBag, Globe, Sparkles, TrendingUp, Shield } from 'lucide-react'
 
 export function AboutSection() {
   return (
@@ -75,7 +75,7 @@ export function AboutSection() {
           ))}
         </motion.div>
 
-        {/* Our Motive */}
+        {/* Our Motive — Premium Dark Card with Light Grey Text */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -83,36 +83,92 @@ export function AboutSection() {
           transition={{ duration: 0.6 }}
           className="relative rounded-3xl overflow-hidden"
         >
-          <div className="absolute inset-0 gold-gradient" />
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMS41Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-50" />
+          {/* Deep dark background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950" />
+
+          {/* Subtle grid pattern overlay */}
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMSIvPjwvZz48L2c+PC9zdmc+')] opacity-60" />
+
+          {/* Gold accent lines — top and bottom */}
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/60 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/40 to-transparent" />
+
+          {/* Left gold glow */}
+          <div className="absolute -left-20 top-1/2 -translate-y-1/2 w-60 h-60 bg-amber-500/10 rounded-full blur-3xl" />
+          {/* Right gold glow */}
+          <div className="absolute -right-20 top-1/2 -translate-y-1/2 w-60 h-60 bg-amber-500/10 rounded-full blur-3xl" />
 
           <div className="relative z-10 p-8 sm:p-12 lg:p-16 text-center">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/20 backdrop-blur-sm px-4 py-1.5 mb-6 text-sm text-white font-medium">
-              <Target className="h-3.5 w-3.5" />
-              Our Motive
-            </div>
-            <h3 className="text-2xl sm:text-3xl font-bold text-white mb-6">
-              Built for People Who Create
-            </h3>
-            <p className="text-lg text-white/90 max-w-3xl mx-auto leading-relaxed">
+            {/* Badge */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 backdrop-blur-sm px-4 py-1.5 mb-6"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+              <span className="text-sm text-amber-300 font-medium">Our Motive</span>
+            </motion.div>
+
+            {/* Heading — bright white for maximum contrast */}
+            <motion.h3
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-6"
+            >
+              Built for People Who{' '}
+              <span className="gold-gradient-text bg-clip-text text-transparent">
+                Create
+              </span>
+            </motion.h3>
+
+            {/* Description — light grey for readability on dark */}
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="text-lg text-gray-300 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed"
+            >
               Our motive is to build a simple and powerful marketplace where people can buy, sell, and work online easily. Marketo also supports freelancers by giving them a platform to offer services, find clients, and earn independently. It is designed to help individuals and small businesses grow and succeed in one trusted digital space.
-            </p>
-            <div className="flex items-center justify-center gap-6 mt-8">
-              <div className="flex items-center gap-2 text-white/80">
-                <Globe className="h-5 w-5" />
-                <span className="text-sm font-medium">One Platform</span>
-              </div>
-              <div className="w-1 h-1 rounded-full bg-white/40" />
-              <div className="flex items-center gap-2 text-white/80">
-                <Heart className="h-5 w-5" />
-                <span className="text-sm font-medium">Trusted Space</span>
-              </div>
-              <div className="w-1 h-1 rounded-full bg-white/40" />
-              <div className="flex items-center gap-2 text-white/80">
-                <Target className="h-5 w-5" />
-                <span className="text-sm font-medium">Growth Focused</span>
-              </div>
+            </motion.p>
+
+            {/* Divider */}
+            <div className="my-8 max-w-xs mx-auto">
+              <div className="gold-divider" />
             </div>
+
+            {/* Feature pills with icons and effects */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.5 }}
+              className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6"
+            >
+              {[
+                { icon: Globe, label: 'One Platform' },
+                { icon: Shield, label: 'Trusted Space' },
+                { icon: TrendingUp, label: 'Growth Focused' },
+              ].map((item, i) => (
+                <motion.div
+                  key={item.label}
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: 0.6 + i * 0.1 }}
+                  className="group flex items-center gap-2.5 px-5 py-2.5 rounded-full border border-gray-700 dark:border-gray-700 bg-gray-800/50 dark:bg-gray-800/60 backdrop-blur-sm hover:border-amber-500/40 hover:bg-amber-500/10 transition-all duration-300"
+                >
+                  <item.icon className="h-4 w-4 text-gray-400 group-hover:text-amber-400 transition-colors duration-300" />
+                  <span className="text-sm font-medium text-gray-300 group-hover:text-amber-300 transition-colors duration-300">
+                    {item.label}
+                  </span>
+                </motion.div>
+              ))}
+            </motion.div>
           </div>
         </motion.div>
       </div>
