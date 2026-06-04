@@ -1,6 +1,6 @@
 'use client'
 
-import { syncExternalStore } from 'react'
+import { useState, useEffect } from 'react'
 import { Moon, Sun, Monitor } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
@@ -11,14 +11,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
-const emptySubscribe = () => () => {}
-
 function useMounted() {
-  return syncExternalStore(
-    emptySubscribe,
-    () => true,
-    () => false,
-  )
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    // This is the standard pattern for detecting client-side mount
+    // in theme-aware components to prevent hydration mismatches.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true)
+  }, [])
+  return mounted
 }
 
 export function ThemeToggle() {

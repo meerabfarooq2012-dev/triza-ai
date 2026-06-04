@@ -330,3 +330,25 @@ Stage Summary:
 - 5 critical security bugs fixed across 5 files
 - Files modified: sandbox/route.ts, returns/[id]/route.ts, admin/transactions/route.ts, products/route.ts, search/route.ts
 - No new lint errors introduced
+
+---
+Task ID: 10
+Agent: Main Agent
+Task: Fix theme toggle syncExternalStore error
+
+Work Log:
+- Identified root cause: theme-toggle.tsx imported `syncExternalStore` from `react` (wrong — should be `useSyncExternalStore`)
+- First fix attempt: changed to `useSyncExternalStore`, but Turbopack module resolution still failed at runtime
+- Final fix: replaced `useSyncExternalStore`-based `useMounted()` with standard `useState`/`useEffect` pattern (compatible with Turbopack)
+- Added eslint-disable comment for `react-hooks/set-state-in-effect` (standard pattern for hydration detection)
+- Verified with agent-browser: Light/Dark/System toggle works correctly
+- Verified `dark` class is properly applied/removed on `<html>` element
+- Verified theme persists in `localStorage` under `theme` key
+- Verified zero console errors after fix
+- Lint passes with 0 errors (2 pre-existing warnings)
+
+Stage Summary:
+- Theme toggle fixed — was broken due to incorrect React API import (`syncExternalStore` instead of `useSyncExternalStore`)
+- Used simpler `useState`/`useEffect` pattern instead of `useSyncExternalStore` for Turbopack compatibility
+- All 3 theme modes (Light, Dark, System) work correctly
+- Theme preference persists across page reloads via next-themes localStorage
