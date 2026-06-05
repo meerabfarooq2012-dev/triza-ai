@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Star,
@@ -18,6 +18,8 @@ import {
   Send,
   AlertCircle,
   Pencil,
+  Upload,
+  Cloud,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -641,11 +643,60 @@ function WriteReviewForm({
   const [newImageUrl, setNewImageUrl] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const handleAddImage = () => {
     if (!newImageUrl.trim() || imageUrls.length >= 5) return
     setImageUrls([...imageUrls, newImageUrl.trim()])
     setNewImageUrl('')
+  }
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files) return
+    const remaining = 5 - imageUrls.length
+    if (remaining <= 0) {
+      toast.error('Maximum 5 photos allowed')
+      return
+    }
+
+    const filesToUpload = Array.from(files).slice(0, remaining)
+    setUploadingPhoto(true)
+
+    for (const file of filesToUpload) {
+      // Validate client-side
+      if (!file.type.match(/^image\/(jpeg|png|webp|gif)$/)) {
+        toast.error(`${file.name}: Invalid file type. Allowed: JPG, PNG, WebP, GIF`)
+        continue
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`${file.name}: File too large (max 5MB)`)
+        continue
+      }
+
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('folder', 'reviews')
+
+        const res = await fetch('/api/upload', { method: 'POST', body: formData })
+        const data = await res.json()
+
+        if (data.success && data.url) {
+          setImageUrls((prev) => [...prev, data.url])
+          toast.success(`${file.name} uploaded ✓`)
+        } else {
+          toast.error(data.error || `Failed to upload ${file.name}`)
+        }
+      } catch {
+        toast.error(`Failed to upload ${file.name}`)
+      }
+    }
+
+    setUploadingPhoto(false)
+    // Reset the file input
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   const handleRemoveImage = (index: number) => {
@@ -753,11 +804,42 @@ function WriteReviewForm({
                   </p>
                 </div>
 
-                {/* Photo URL inputs */}
+                {/* Photo inputs */}
                 <div>
                   <label className="text-sm font-medium mb-1.5 block">
                     Photos (optional, max 5)
                   </label>
+                  {/* File upload button */}
+                  <div className="flex items-center gap-2 mb-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingPhoto || imageUrls.length >= 5}
+                    >
+                      {uploadingPhoto ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        <Upload size={14} />
+                      )}
+                      {uploadingPhoto ? 'Uploading...' : 'Upload Photo'}
+                    </Button>
+                    <span className="text-xs text-muted-foreground">
+                      or paste a URL below
+                    </span>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      multiple
+                      className="hidden"
+                      onChange={handleFileUpload}
+                      disabled={uploadingPhoto}
+                    />
+                  </div>
+                  {/* URL input */}
                   <div className="flex gap-2">
                     <Input
                       placeholder="Enter image URL"
@@ -786,6 +868,11 @@ function WriteReviewForm({
                             alt={`Upload ${idx + 1}`}
                             className="w-16 h-16 object-cover rounded-lg border border-border"
                           />
+                          {url.startsWith('http') && (
+                            <span className="absolute bottom-0.5 left-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 text-white">
+                              <Cloud className="h-2 w-2" />
+                            </span>
+                          )}
                           <button
                             onClick={() => handleRemoveImage(idx)}
                             className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
@@ -870,11 +957,58 @@ function EditReviewForm({
   const [newImageUrl, setNewImageUrl] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const handleAddImage = () => {
     if (!newImageUrl.trim() || imageUrls.length >= 5) return
     setImageUrls([...imageUrls, newImageUrl.trim()])
     setNewImageUrl('')
+  }
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files) return
+    const remaining = 5 - imageUrls.length
+    if (remaining <= 0) {
+      toast.error('Maximum 5 photos allowed')
+      return
+    }
+
+    const filesToUpload = Array.from(files).slice(0, remaining)
+    setUploadingPhoto(true)
+
+    for (const file of filesToUpload) {
+      if (!file.type.match(/^image\/(jpeg|png|webp|gif)$/)) {
+        toast.error(`${file.name}: Invalid file type. Allowed: JPG, PNG, WebP, GIF`)
+        continue
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`${file.name}: File too large (max 5MB)`)
+        continue
+      }
+
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('folder', 'reviews')
+
+        const res = await fetch('/api/upload', { method: 'POST', body: formData })
+        const data = await res.json()
+
+        if (data.success && data.url) {
+          setImageUrls((prev) => [...prev, data.url])
+          toast.success(`${file.name} uploaded ✓`)
+        } else {
+          toast.error(data.error || `Failed to upload ${file.name}`)
+        }
+      } catch {
+        toast.error(`Failed to upload ${file.name}`)
+      }
+    }
+
+    setUploadingPhoto(false)
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   const handleRemoveImage = (index: number) => {
@@ -963,11 +1097,42 @@ function EditReviewForm({
           </p>
         </div>
 
-        {/* Photo URL inputs */}
+        {/* Photo inputs */}
         <div>
           <label className="text-sm font-medium mb-1.5 block">
             Photos (optional, max 5)
           </label>
+          {/* File upload button */}
+          <div className="flex items-center gap-2 mb-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingPhoto || imageUrls.length >= 5}
+            >
+              {uploadingPhoto ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Upload size={14} />
+              )}
+              {uploadingPhoto ? 'Uploading...' : 'Upload Photo'}
+            </Button>
+            <span className="text-xs text-muted-foreground">
+              or paste a URL below
+            </span>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              multiple
+              className="hidden"
+              onChange={handleFileUpload}
+              disabled={uploadingPhoto}
+            />
+          </div>
+          {/* URL input */}
           <div className="flex gap-2">
             <Input
               placeholder="Enter image URL"
@@ -996,6 +1161,11 @@ function EditReviewForm({
                     alt={`Upload ${idx + 1}`}
                     className="w-16 h-16 object-cover rounded-lg border border-border"
                   />
+                  {url.startsWith('http') && (
+                    <span className="absolute bottom-0.5 left-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 text-white">
+                      <Cloud className="h-2 w-2" />
+                    </span>
+                  )}
                   <button
                     onClick={() => handleRemoveImage(idx)}
                     className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"

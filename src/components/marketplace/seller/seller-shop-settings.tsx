@@ -259,7 +259,7 @@ export function SellerShopSettings() {
       // Try cloud upload first
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('folder', type === 'logo' ? 'logos' : 'banners')
+      formData.append('folder', 'shops')
 
       const res = await fetch('/api/upload', { method: 'POST', body: formData })
       const data = await res.json()

@@ -279,6 +279,10 @@ export function Header() {
 
                   {/* Dashboard links */}
                   <DropdownMenuGroup>
+                    <DropdownMenuItem onClick={() => handleNavClick('settings')}>
+                      <User className="mr-2 h-4 w-4" />
+                      Profile
+                    </DropdownMenuItem>
                     {activeRole === 'buyer' || currentUser?.role === 'buyer' || currentUser?.role === 'both' ? (
                       <DropdownMenuItem onClick={() => handleNavClick('buyer-dashboard')}>
                         <LayoutDashboard className="mr-2 h-4 w-4" />
@@ -524,6 +528,14 @@ export function Header() {
                   )}
 
                   {/* Dashboard links */}
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start gap-3"
+                    onClick={() => handleNavClick('settings')}
+                  >
+                    <User className="h-4.5 w-4.5" />
+                    Profile
+                  </Button>
                   {(activeRole === 'buyer' || currentUser?.role === 'buyer' || currentUser?.role === 'both') && (
                     <Button
                       variant="ghost"

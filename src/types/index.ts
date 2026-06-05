@@ -65,6 +65,7 @@ export interface User {
   phone: string | null
   location: string | null
   isVerified: boolean
+  emailVerified?: boolean
   isAdmin: boolean
   isActive: boolean
   createdAt: string

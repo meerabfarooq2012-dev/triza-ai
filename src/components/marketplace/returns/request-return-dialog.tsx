@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   RotateCcw,
   Loader2,
@@ -8,6 +8,7 @@ import {
   X,
   Package,
   AlertCircle,
+  Cloud,
 } from 'lucide-react'
 import {
   Dialog,
@@ -83,6 +84,8 @@ export function RequestReturnDialog({
   const [description, setDescription] = useState('')
   const [images, setImages] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
+  const [uploadingEvidence, setUploadingEvidence] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   // Auto-select type based on order status
   useEffect(() => {
@@ -105,14 +108,54 @@ export function RequestReturnDialog({
   }, [open])
 
   const handleImageAdd = () => {
-    if (images.length >= 5) {
+    // Open file picker instead of using placeholder
+    fileInputRef.current?.click()
+  }
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files) return
+    const remaining = 5 - images.length
+    if (remaining <= 0) {
       toast.error('Maximum 5 images allowed')
       return
     }
-    // Simulate image upload with placeholder
-    const placeholderUrl = `/api/placeholder/return-evidence-${Date.now()}.jpg`
-    setImages((prev) => [...prev, placeholderUrl])
-    toast.success('Image added')
+
+    const filesToUpload = Array.from(files).slice(0, remaining)
+    setUploadingEvidence(true)
+
+    for (const file of filesToUpload) {
+      // Validate client-side
+      if (!file.type.match(/^image\/(jpeg|png|webp|gif)$/)) {
+        toast.error(`${file.name}: Invalid file type. Allowed: JPG, PNG, WebP, GIF`)
+        continue
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`${file.name}: File too large (max 5MB)`)
+        continue
+      }
+
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('folder', 'evidence')
+
+        const res = await fetch('/api/upload', { method: 'POST', body: formData })
+        const data = await res.json()
+
+        if (data.success && data.url) {
+          setImages((prev) => [...prev, data.url])
+          toast.success(`${file.name} uploaded ✓`)
+        } else {
+          toast.error(data.error || `Failed to upload ${file.name}`)
+        }
+      } catch {
+        toast.error(`Failed to upload ${file.name}`)
+      }
+    }
+
+    setUploadingEvidence(false)
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   const handleImageRemove = (index: number) => {
@@ -283,9 +326,16 @@ export function RequestReturnDialog({
                 key={idx}
                 className="relative h-16 w-16 rounded-lg border bg-muted overflow-hidden group"
               >
-                <div className="flex h-full w-full items-center justify-center">
-                  <Package className="h-5 w-5 text-muted-foreground" />
-                </div>
+                <img
+                  src={img}
+                  alt={`Evidence ${idx + 1}`}
+                  className="h-full w-full object-cover"
+                />
+                {img.startsWith('http') && (
+                  <span className="absolute bottom-0.5 left-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 text-white">
+                    <Cloud className="h-2 w-2" />
+                  </span>
+                )}
                 <button
                   type="button"
                   onClick={() => handleImageRemove(idx)}
@@ -295,7 +345,12 @@ export function RequestReturnDialog({
                 </button>
               </div>
             ))}
-            {images.length < 5 && (
+            {uploadingEvidence && (
+              <div className="flex h-16 w-16 items-center justify-center rounded-lg border-2 border-dashed border-emerald-300 bg-emerald-50/50">
+                <Loader2 className="h-5 w-5 animate-spin text-emerald-500" />
+              </div>
+            )}
+            {images.length < 5 && !uploadingEvidence && (
               <button
                 type="button"
                 onClick={handleImageAdd}
@@ -305,8 +360,17 @@ export function RequestReturnDialog({
               </button>
             )}
           </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            multiple
+            className="hidden"
+            onChange={handleFileUpload}
+            disabled={uploadingEvidence}
+          />
           <p className="text-[11px] text-muted-foreground">
-            Add up to 5 images as evidence ({images.length}/5)
+            Upload up to 5 images as evidence ({images.length}/5) — JPG, PNG, WebP, GIF, max 5MB each
           </p>
         </div>
 

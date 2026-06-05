@@ -1,9 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import bcrypt from 'bcryptjs';
+import { rateLimit, getRateLimitKey, authRateLimit } from '@/lib/rate-limit';
+import { signToken } from '@/lib/auth-middleware';
+
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const rateLimitKey = getRateLimitKey(request);
+    const rateLimitResult = rateLimit({
+      ...authRateLimit,
+      key: `login:${rateLimitKey}`,
+    });
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { success: false, error: 'Too many login attempts. Please try again later.' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000)),
+          },
+        }
+      );
+    }
+
     const body = await request.json();
     const { email, password } = body;
 
@@ -33,19 +57,82 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if user is locked out
+    if (user.lockoutUntil && new Date() < user.lockoutUntil) {
+      const retryAfterSeconds = Math.ceil(
+        (user.lockoutUntil.getTime() - Date.now()) / 1000
+      );
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Account is temporarily locked. Try again in ${Math.ceil(retryAfterSeconds / 60)} minutes.`,
+        },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(retryAfterSeconds) },
+        }
+      );
+    }
+
     const isValid = await bcrypt.compare(password, user.password);
     if (!isValid) {
+      // Increment login attempts
+      const newAttempts = user.loginAttempts + 1;
+      const shouldLockout = newAttempts >= MAX_LOGIN_ATTEMPTS;
+
+      await db.user.update({
+        where: { id: user.id },
+        data: {
+          loginAttempts: newAttempts,
+          lockoutUntil: shouldLockout
+            ? new Date(Date.now() + LOCKOUT_DURATION_MS)
+            : null,
+        },
+      });
+
+      if (shouldLockout) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Account locked due to too many failed attempts. Try again in ${LOCKOUT_DURATION_MS / 60000} minutes.`,
+          },
+          { status: 429 }
+        );
+      }
+
+      const remainingAttempts = MAX_LOGIN_ATTEMPTS - newAttempts;
       return NextResponse.json(
-        { success: false, error: 'Invalid email or password' },
+        {
+          success: false,
+          error: `Invalid email or password. ${remainingAttempts} attempt(s) remaining.`,
+        },
         { status: 401 }
       );
     }
+
+    // Reset login attempts and update last login on success
+    await db.user.update({
+      where: { id: user.id },
+      data: {
+        loginAttempts: 0,
+        lockoutUntil: null,
+        lastLoginAt: new Date(),
+      },
+    });
+
+    // Generate JWT token
+    const token = signToken({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    });
 
     const { password: _, ...userWithoutPassword } = user;
 
     return NextResponse.json({
       success: true,
       data: userWithoutPassword,
+      token,
     });
   } catch (error) {
     console.error('Login error:', error);

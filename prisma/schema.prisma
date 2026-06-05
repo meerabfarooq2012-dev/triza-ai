@@ -22,6 +22,13 @@ model User {
   verifiedAt      DateTime?
   isAdmin       Boolean   @default(false)
   isActive      Boolean   @default(true)
+  resetToken       String?
+  resetTokenExpiry DateTime?
+  emailVerifyToken String?
+  emailVerified    Boolean   @default(false)
+  loginAttempts    Int       @default(0)
+  lockoutUntil     DateTime?
+  lastLoginAt      DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

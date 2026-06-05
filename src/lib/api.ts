@@ -37,6 +37,7 @@ import type {
   SellerDashboardStats,
   BuyerDashboardStats,
 } from '@/types'
+import { useMarketplaceStore } from '@/store/use-marketplace-store'
 
 // =============================================================================
 // Marketo Marketplace - API Client
@@ -60,12 +61,24 @@ async function request<T>(
 ): Promise<T> {
   const url = `/api${endpoint}`
 
+  // Get the auth token from the store and add as Authorization header
+  const authToken = useMarketplaceStore.getState().authToken
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string>),
+  }
+  if (authToken) {
+    headers['Authorization'] = `Bearer ${authToken}`
+  }
+
   const config: RequestInit = {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
+    headers,
     ...options,
+  }
+
+  // Ensure headers from config take precedence
+  if (options.headers) {
+    config.headers = headers
   }
 
   try {
@@ -97,7 +110,7 @@ async function request<T>(
 
 const authApi = {
   login: (email: string, password: string) =>
-    request<ApiResponse<{ user: User }>>('/auth/login', {
+    request<ApiResponse<{ user: User; token: string }>>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     }),
@@ -112,6 +125,30 @@ const authApi = {
 
   logout: () =>
     request<ApiResponse>('/auth/logout', { method: 'POST' }),
+
+  forgotPassword: (email: string) =>
+    request<ApiResponse>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+
+  resetPassword: (token: string, password: string) =>
+    request<ApiResponse>('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, password }),
+    }),
+
+  changePassword: (userId: string, currentPassword: string, newPassword: string) =>
+    request<ApiResponse>('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ userId, currentPassword, newPassword }),
+    }),
+
+  verifyEmail: (token: string) =>
+    request<ApiResponse>('/auth/verify-email', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    }),
 }
 
 // ----- Shops API -----
@@ -574,6 +611,48 @@ const uploadApi = {
   },
 }
 
+// ----- Users API -----
+
+const usersApi = {
+  getProfile: (userId: string) =>
+    request<ApiResponse<User>>(`/users/${userId}`),
+
+  updateProfile: (userId: string, data: { name?: string; bio?: string; phone?: string; location?: string }) =>
+    request<ApiResponse<User>>(`/users/${userId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+
+  uploadAvatar: async (userId: string, file: File): Promise<ApiResponse<{ url: string }>> => {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const authToken = useMarketplaceStore.getState().authToken
+    const headers: Record<string, string> = {}
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`
+    }
+
+    const response = await fetch(`/api/users/${userId}/avatar`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new ApiError(
+        data.error || 'Avatar upload failed',
+        response.status,
+        data
+      )
+    }
+
+    return data
+  },
+}
+
 // =============================================================================
 // Exported API object
 // =============================================================================
@@ -593,6 +672,7 @@ export const api = {
   dashboard: dashboardApi,
   admin: adminApi,
   upload: uploadApi,
+  users: usersApi,
 }
 
 export { ApiError }

@@ -257,6 +257,11 @@ const PublicWishlist = dynamic(
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
+const UserProfile = dynamic(
+  withChunkRetry(() => import('@/components/marketplace/profile/user-profile'), 'UserProfile'),
+  { ssr: false, loading: () => <ViewLoader /> }
+)
+
 // Error boundary component to catch rendering errors in child components
 type ErrorBoundaryProps = { children: React.ReactNode; fallback?: React.ReactNode }
 type ErrorBoundaryState = { hasError: boolean; error: Error | null }
@@ -508,6 +513,9 @@ function MarketplaceApp() {
           return <VerificationPage />
         case 'wishlist-view':
           return <PublicWishlist slug={viewParams.slug || ''} />
+        case 'settings':
+          if (!isAuthenticated) return <AuthModal />
+          return <UserProfile />
         case 'admin':
           if (!isAuthenticated || !currentUser?.isAdmin) {
             return (

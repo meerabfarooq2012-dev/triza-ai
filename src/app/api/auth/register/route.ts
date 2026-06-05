@@ -4,6 +4,9 @@ import bcrypt from 'bcryptjs';
 import { sendEmailAsync } from '@/lib/email';
 import { welcomeEmail } from '@/lib/email-templates';
 import { notifyWelcome } from '@/lib/notifications';
+import { rateLimit, getRateLimitKey, authRateLimit } from '@/lib/rate-limit';
+import { signToken } from '@/lib/auth-middleware';
+import { randomBytes } from 'crypto';
 
 function slugify(text: string): string {
   return text
@@ -14,6 +17,25 @@ function slugify(text: string): string {
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const rateLimitKey = getRateLimitKey(request);
+    const rateLimitResult = rateLimit({
+      ...authRateLimit,
+      key: `register:${rateLimitKey}`,
+    });
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { success: false, error: 'Too many registration attempts. Please try again later.' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000)),
+          },
+        }
+      );
+    }
+
     const body = await request.json();
     const { email, password, name, role = 'buyer' } = body;
 
@@ -47,6 +69,7 @@ export async function POST(request: NextRequest) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
+    const emailVerifyToken = randomBytes(32).toString('hex');
 
     const user = await db.user.create({
       data: {
@@ -54,6 +77,8 @@ export async function POST(request: NextRequest) {
         password: hashedPassword,
         name,
         role,
+        emailVerified: false,
+        emailVerifyToken,
       },
     });
 
@@ -84,6 +109,13 @@ export async function POST(request: NextRequest) {
 
     const { password: _, ...userWithoutPassword } = fullUser!;
 
+    // Generate JWT token
+    const token = signToken({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    });
+
     // Send welcome email (non-blocking)
     sendEmailAsync({
       to: email,
@@ -95,7 +127,7 @@ export async function POST(request: NextRequest) {
     notifyWelcome(user.id, name).catch(() => {});
 
     return NextResponse.json(
-      { success: true, data: userWithoutPassword },
+      { success: true, data: userWithoutPassword, token },
       { status: 201 }
     );
   } catch (error) {

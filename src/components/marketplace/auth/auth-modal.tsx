@@ -13,10 +13,12 @@ import {
   Sparkles,
   Loader2,
   ArrowRight,
+  ArrowLeft,
   Quote,
   AlertCircle,
   Check,
   X,
+  MailCheck,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -28,7 +30,7 @@ import { api } from '@/lib/api'
 import { PLATFORM_NAME, PLATFORM_TAGLINE, USER_ROLE_LABELS, USER_ROLE_DESCRIPTIONS } from '@/lib/constants'
 import type { UserRole, User as UserType } from '@/types'
 
-type AuthTab = 'login' | 'register'
+type AuthTab = 'login' | 'register' | 'forgotPassword'
 
 // Shaking animation variants for error box
 const shakeVariants = {
@@ -68,6 +70,10 @@ export function AuthModal() {
   const [showRegPassword, setShowRegPassword] = useState(false)
   const [showRegConfirmPassword, setShowRegConfirmPassword] = useState(false)
 
+  // Forgot password fields
+  const [forgotEmail, setForgotEmail] = useState('')
+  const [forgotSuccess, setForgotSuccess] = useState(false)
+
   // Touched state for inline validation
   const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({})
   const [termsError, setTermsError] = useState(false)
@@ -76,7 +82,7 @@ export function AuthModal() {
   // Ref for auto-scrolling to error
   const errorRef = useRef<HTMLDivElement>(null)
 
-  const { login, setCurrentView } = useMarketplaceStore()
+  const { login, setAuthToken, setCurrentView } = useMarketplaceStore()
 
   // Mark a field as touched
   const markTouched = useCallback((field: string) => {
@@ -135,6 +141,10 @@ export function AuthModal() {
       const res = await api.auth.login(loginEmail, loginPassword)
       if (res.success && res.data) {
         const user = res.data.user || res.data
+        const token = res.data.token
+        if (token) {
+          setAuthToken(token)
+        }
         login(user)
         navigateAfterAuth(user)
       } else {
@@ -209,6 +219,31 @@ export function AuthModal() {
       setCurrentView('seller-dashboard')
     } else {
       setCurrentView('buyer-dashboard')
+    }
+  }
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setTouchedFields({ forgotEmail: true })
+
+    if (!forgotEmail) {
+      showError('Please enter your email address')
+      return
+    }
+    setIsLoading(true)
+    try {
+      const res = await api.auth.forgotPassword(forgotEmail)
+      if (res.success) {
+        setForgotSuccess(true)
+      } else {
+        showError(res.error || 'Failed to send reset link')
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to send reset link'
+      showError(message)
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -433,7 +468,7 @@ export function AuthModal() {
           {/* Tab Switcher */}
           <div className="flex rounded-xl bg-muted p-1 mb-8">
             <button
-              onClick={() => { setTab('login'); setError(''); setTouchedFields({}) }}
+              onClick={() => { setTab('login'); setError(''); setTouchedFields({}); setForgotSuccess(false) }}
               className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${
                 tab === 'login'
                   ? 'bg-background shadow-sm text-foreground'
@@ -443,7 +478,7 @@ export function AuthModal() {
               Sign In
             </button>
             <button
-              onClick={() => { setTab('register'); setError(''); setTouchedFields({}) }}
+              onClick={() => { setTab('register'); setError(''); setTouchedFields({}); setForgotSuccess(false) }}
               className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${
                 tab === 'register'
                   ? 'bg-background shadow-sm text-foreground'
@@ -534,6 +569,7 @@ export function AuthModal() {
                     <Label htmlFor="login-password">Password</Label>
                     <button
                       type="button"
+                      onClick={() => { setTab('forgotPassword'); setError(''); setTouchedFields({}); setForgotSuccess(false) }}
                       className="text-xs text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 font-medium"
                     >
                       Forgot Password?
@@ -580,13 +616,103 @@ export function AuthModal() {
                   Don&apos;t have an account?{' '}
                   <button
                     type="button"
-                    onClick={() => { setTab('register'); setError(''); setTouchedFields({}) }}
+                    onClick={() => { setTab('register'); setError(''); setTouchedFields({}); setForgotSuccess(false) }}
                     className="text-amber-600 hover:text-amber-700 dark:text-amber-400 font-medium"
                   >
                     Sign Up
                   </button>
                 </p>
               </motion.form>
+            ) : tab === 'forgotPassword' ? (
+              <motion.div
+                key="forgotPassword"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-5"
+              >
+                <div>
+                  <h2 className="text-xl font-semibold">Reset your password</h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Enter your email and we&apos;ll send you a reset link.
+                  </p>
+                </div>
+
+                {forgotSuccess ? (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="rounded-lg border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/30 p-6 text-center space-y-4"
+                  >
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/50">
+                      <MailCheck className="h-6 w-6 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-green-800 dark:text-green-300">
+                        If an account with that email exists, we&apos;ve sent a reset link.
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Check your inbox and spam folder.
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={() => { setTab('login'); setError(''); setTouchedFields({}); setForgotSuccess(false) }}
+                      className="bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white shadow-lg"
+                      size="lg"
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Back to Sign In
+                    </Button>
+                  </motion.div>
+                ) : (
+                  <form onSubmit={handleForgotPassword} className="space-y-5">
+                    <div className="space-y-2">
+                      <Label htmlFor="forgot-email">Email</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="forgot-email"
+                          type="email"
+                          placeholder="you@example.com"
+                          value={forgotEmail}
+                          onChange={(e) => setForgotEmail(e.target.value)}
+                          onBlur={() => markTouched('forgotEmail')}
+                          className={`pl-10 ${getInputValidationClass(forgotEmail, 'forgotEmail')}`}
+                          disabled={isLoading}
+                        />
+                      </div>
+                      {getInlineHint(forgotEmail, 'forgotEmail', 'Email is required')}
+                    </div>
+
+                    <Button
+                      type="submit"
+                      className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white shadow-lg"
+                      disabled={isLoading}
+                      size="lg"
+                    >
+                      {isLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <Mail className="h-4 w-4 mr-2" />
+                      )}
+                      Send Reset Link
+                    </Button>
+
+                    <p className="text-center text-sm text-muted-foreground">
+                      <button
+                        type="button"
+                        onClick={() => { setTab('login'); setError(''); setTouchedFields({}); setForgotSuccess(false) }}
+                        className="text-amber-600 hover:text-amber-700 dark:text-amber-400 font-medium inline-flex items-center gap-1"
+                      >
+                        <ArrowLeft className="h-3 w-3" />
+                        Back to Sign In
+                      </button>
+                    </p>
+                  </form>
+                )}
+              </motion.div>
             ) : (
               <motion.form
                 key="register"
@@ -879,7 +1005,7 @@ export function AuthModal() {
                   Already have an account?{' '}
                   <button
                     type="button"
-                    onClick={() => { setTab('login'); setError(''); setTouchedFields({}) }}
+                    onClick={() => { setTab('login'); setError(''); setTouchedFields({}); setForgotSuccess(false) }}
                     className="text-amber-600 hover:text-amber-700 dark:text-amber-400 font-medium"
                   >
                     Sign In

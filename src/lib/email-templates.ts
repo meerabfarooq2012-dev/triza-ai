@@ -715,3 +715,118 @@ export function withdrawalNotificationEmail(data: WithdrawalNotificationData): s
 
   return wrapEmail(content);
 }
+
+// =============================================================================
+// 7. PASSWORD RESET EMAIL
+// =============================================================================
+
+export function passwordResetEmail(name: string, resetUrl: string): string {
+  const content = `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${CARD_BG};border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+
+      <!-- Header -->
+      <tr>
+        <td style="background:linear-gradient(135deg,#dc2626 0%,#b91c1c 100%);padding:32px;text-align:center;">
+          <h1 style="margin:0 0 8px 0;font-size:24px;font-weight:700;color:#ffffff;">
+            🔐 Reset Your Password
+          </h1>
+          <p style="margin:0;font-size:15px;color:rgba(255,255,255,0.95);">
+            We received a request to reset your password
+          </p>
+        </td>
+      </tr>
+
+      <!-- Body -->
+      <tr>
+        <td style="padding:32px;">
+          <p style="margin:0 0 20px 0;font-size:16px;color:${TEXT};">
+            Hi <strong>${name}</strong>,
+          </p>
+
+          <p style="margin:0 0 20px 0;font-size:15px;color:${TEXT};line-height:1.7;">
+            We received a request to reset the password for your Marketo account. Click the button below to choose a new password:
+          </p>
+
+          ${ctaButton('Reset Password', resetUrl)}
+
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#fef2f2;border-radius:8px;margin-bottom:20px;">
+            <tr>
+              <td style="padding:16px;text-align:center;">
+                <p style="margin:0 0 8px 0;font-size:14px;color:#991b1b;font-weight:500;">
+                  ⏱️ This link expires in 1 hour
+                </p>
+                <p style="margin:0;font-size:13px;color:#991b1b;">
+                  If you didn't request a password reset, you can safely ignore this email.
+                </p>
+              </td>
+            </tr>
+          </table>
+
+          <p style="margin:20px 0 0 0;font-size:13px;color:${TEXT_MUTED};text-align:center;line-height:1.5;">
+            If the button above doesn't work, copy and paste the following URL into your browser:<br/>
+            <a href="${resetUrl}" style="color:${PRIMARY};word-break:break-all;">${resetUrl}</a>
+          </p>
+        </td>
+      </tr>
+    </table>`;
+
+  return wrapEmail(content);
+}
+
+// =============================================================================
+// 8. EMAIL VERIFICATION EMAIL
+// =============================================================================
+
+export function emailVerificationEmail(name: string, verifyUrl: string): string {
+  const content = `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${CARD_BG};border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+
+      <!-- Header -->
+      <tr>
+        <td style="background:linear-gradient(135deg,${PRIMARY} 0%,${PRIMARY_DARK} 100%);padding:32px;text-align:center;">
+          <h1 style="margin:0 0 8px 0;font-size:24px;font-weight:700;color:#ffffff;">
+            ✉️ Verify Your Email
+          </h1>
+          <p style="margin:0;font-size:15px;color:rgba(255,255,255,0.95);">
+            Confirm your email address to get started
+          </p>
+        </td>
+      </tr>
+
+      <!-- Body -->
+      <tr>
+        <td style="padding:32px;">
+          <p style="margin:0 0 20px 0;font-size:16px;color:${TEXT};">
+            Hi <strong>${name}</strong>,
+          </p>
+
+          <p style="margin:0 0 20px 0;font-size:15px;color:${TEXT};line-height:1.7;">
+            Welcome to Marketo! Please verify your email address by clicking the button below. This helps us confirm your identity and keep your account secure.
+          </p>
+
+          ${ctaButton('Verify Email', verifyUrl)}
+
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${PRIMARY_LIGHT};border-radius:8px;margin-bottom:20px;">
+            <tr>
+              <td style="padding:16px;text-align:center;">
+                <p style="margin:0;font-size:14px;color:${PRIMARY_DARK};">
+                  🛡️ Verifying your email unlocks full access to all Marketo features including buying, selling, and secure transactions.
+                </p>
+              </td>
+            </tr>
+          </table>
+
+          <p style="margin:20px 0 0 0;font-size:13px;color:${TEXT_MUTED};text-align:center;line-height:1.5;">
+            If the button above doesn't work, copy and paste the following URL into your browser:<br/>
+            <a href="${verifyUrl}" style="color:${PRIMARY};word-break:break-all;">${verifyUrl}</a>
+          </p>
+
+          <p style="margin:16px 0 0 0;font-size:13px;color:${TEXT_MUTED};text-align:center;line-height:1.5;">
+            If you didn't create an account on Marketo, you can safely ignore this email.
+          </p>
+        </td>
+      </tr>
+    </table>`;
+
+  return wrapEmail(content);
+}

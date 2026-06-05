@@ -127,6 +127,8 @@ function ImageUploader({ images, onImagesChange, maxImages = 5, label = 'Images'
 }) {
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [urlInput, setUrlInput] = useState('')
 
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -139,17 +141,26 @@ function ImageUploader({ images, onImagesChange, maxImages = 5, label = 'Images'
 
   const processFiles = async (filesToProcess: File[]) => {
     const remaining = maxImages - images.length
-    if (remaining <= 0) return
+    if (remaining <= 0) {
+      toast.error(`Maximum ${maxImages} images allowed`)
+      return
+    }
     const files = filesToProcess.slice(0, remaining)
 
     setUploading(true)
+    setUploadProgress(0)
     const newImages: string[] = []
+    const totalFiles = files.length
 
-    for (const file of files) {
-      if (file.size > 5 * 1024 * 1024) continue // Skip > 5MB
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`${file.name} is too large (max 5MB). Skipping.`)
+        continue
+      }
 
       try {
-        // Try cloud upload first
+        // Try cloud upload first via /api/upload
         const formData = new FormData()
         formData.append('file', file)
         formData.append('folder', folder)
@@ -160,6 +171,7 @@ function ImageUploader({ images, onImagesChange, maxImages = 5, label = 'Images'
         if (data.success && data.url) {
           // Cloud upload succeeded - use the cloud URL
           newImages.push(data.url)
+          toast.success(`${file.name} uploaded to cloud ✓`)
         } else {
           // Cloud upload not available - fall back to base64
           const base64 = await fileToBase64(file)
@@ -170,12 +182,16 @@ function ImageUploader({ images, onImagesChange, maxImages = 5, label = 'Images'
         const base64 = await fileToBase64(file)
         newImages.push(base64)
       }
+
+      // Update progress
+      setUploadProgress(Math.round(((i + 1) / totalFiles) * 100))
     }
 
     if (newImages.length > 0) {
       onImagesChange([...images, ...newImages])
     }
     setUploading(false)
+    setUploadProgress(0)
   }
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -183,6 +199,16 @@ function ImageUploader({ images, onImagesChange, maxImages = 5, label = 'Images'
     if (!files) return
     await processFiles(Array.from(files))
     e.target.value = '' // Reset input
+  }
+
+  const handleAddUrl = () => {
+    if (!urlInput.trim()) return
+    if (images.length >= maxImages) {
+      toast.error(`Maximum ${maxImages} images allowed`)
+      return
+    }
+    onImagesChange([...images, urlInput.trim()])
+    setUrlInput('')
   }
 
   const removeImage = (index: number) => {
@@ -221,7 +247,13 @@ function ImageUploader({ images, onImagesChange, maxImages = 5, label = 'Images'
         {uploading ? (
           <div className="flex flex-col items-center gap-2">
             <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
-            <p className="text-sm font-medium text-emerald-600">Uploading...</p>
+            <p className="text-sm font-medium text-emerald-600">Uploading... {uploadProgress}%</p>
+            <div className="w-32 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-emerald-500 rounded-full transition-all duration-300"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
           </div>
         ) : (
           <>
@@ -245,6 +277,30 @@ function ImageUploader({ images, onImagesChange, maxImages = 5, label = 'Images'
         onChange={handleFileSelect}
         disabled={uploading}
       />
+
+      {/* Or paste a URL */}
+      <div className="flex items-center gap-2">
+        <div className="text-xs text-gray-400">or paste URL:</div>
+        <Input
+          placeholder="https://example.com/image.jpg"
+          value={urlInput}
+          onChange={(e) => setUrlInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleAddUrl()}
+          disabled={uploading || images.length >= maxImages}
+          className="h-8 text-xs flex-1"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-8 text-xs gap-1"
+          onClick={handleAddUrl}
+          disabled={!urlInput.trim() || uploading || images.length >= maxImages}
+        >
+          <Plus className="h-3 w-3" />
+          Add
+        </Button>
+      </div>
 
       {/* Preview thumbnails */}
       {images.length > 0 && (
