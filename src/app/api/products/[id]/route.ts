@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { withCsrf } from '@/lib/with-csrf';
+import { createAuditLog } from '@/lib/audit-log';
 
 export async function GET(
   request: NextRequest,
@@ -205,6 +206,17 @@ export const DELETE = withCsrf(async (
     await db.product.update({
       where: { id },
       data: { isActive: false },
+    });
+
+    // Audit log
+    await createAuditLog({
+      userId: userId || undefined,
+      action: 'product.delete',
+      entityType: 'product',
+      entityId: id,
+      details: { productName: product.name, shopId: product.shopId },
+      ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+      userAgent: request.headers.get('user-agent') || undefined,
     });
 
     return NextResponse.json({

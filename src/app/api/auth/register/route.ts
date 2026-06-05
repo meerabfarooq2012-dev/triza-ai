@@ -38,11 +38,18 @@ export const POST = withCsrf(async (request: NextRequest) => {
     }
 
     const body = await request.json();
-    const { email, password, name, role = 'buyer' } = body;
+    const { email, password, name, role = 'buyer', termsAccepted } = body;
 
     if (!email || !password || !name) {
       return NextResponse.json(
         { success: false, error: 'Email, password, and name are required' },
+        { status: 400 }
+      );
+    }
+
+    if (!termsAccepted) {
+      return NextResponse.json(
+        { success: false, error: 'You must agree to the Terms of Service and Privacy Policy' },
         { status: 400 }
       );
     }
@@ -80,6 +87,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
         role,
         emailVerified: false,
         emailVerifyToken,
+        termsAcceptedAt: new Date(),
       },
     });
 

@@ -13,6 +13,8 @@ import {
   CreditCard,
   FolderTree,
   ShieldCheck,
+  ShieldAlert,
+  ScrollText,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -26,8 +28,10 @@ import AdminSettings from './admin-settings'
 import { AdminTransactions } from './admin-transactions'
 import AdminCategories from './admin-categories'
 import AdminVerifications from './admin-verifications'
+import { AdminReports } from './admin-reports'
+import { AdminAuditLog } from './admin-audit-log'
 
-type AdminTab = 'dashboard' | 'users' | 'products' | 'orders' | 'transactions' | 'disputes' | 'categories' | 'verifications' | 'settings'
+type AdminTab = 'dashboard' | 'users' | 'products' | 'orders' | 'transactions' | 'disputes' | 'categories' | 'verifications' | 'reports' | 'audit-log' | 'settings'
 
 const tabs: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
@@ -38,6 +42,8 @@ const tabs: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
   { id: 'disputes', label: 'Disputes', icon: <AlertTriangle size={18} /> },
   { id: 'categories', label: 'Categories', icon: <FolderTree size={18} /> },
   { id: 'verifications', label: 'Verifications', icon: <ShieldCheck size={18} /> },
+  { id: 'reports', label: 'Reports', icon: <ShieldAlert size={18} /> },
+  { id: 'audit-log', label: 'Audit Log', icon: <ScrollText size={18} /> },
   { id: 'settings', label: 'Settings', icon: <Settings size={18} /> },
 ]
 
@@ -91,6 +97,10 @@ export default function AdminPanel() {
         return <AdminCategories />
       case 'verifications':
         return <AdminVerifications />
+      case 'reports':
+        return <AdminReports />
+      case 'audit-log':
+        return <AdminAuditLog />
       case 'settings':
         return <AdminSettings />
       default:

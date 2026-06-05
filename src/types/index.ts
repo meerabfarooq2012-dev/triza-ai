@@ -68,6 +68,7 @@ export interface User {
   location: string | null
   isVerified: boolean
   emailVerified?: boolean
+  twoFactorEnabled?: boolean
   isAdmin: boolean
   isActive: boolean
   deletedAt?: string | null
@@ -513,6 +514,7 @@ export interface RegisterInput {
   email: string
   password: string
   role: UserRole
+  termsAccepted?: boolean
 }
 
 export interface CreateShopInput {

@@ -122,6 +122,26 @@ export const POST = withCsrf(async (request: NextRequest) => {
       },
     });
 
+    // Check if 2FA is enabled for this user
+    if (user.twoFactorEnabled) {
+      // Return a temporary token that indicates 2FA is required
+      const tempToken = signToken({
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+        twoFactorPending: true,
+      });
+      // Override the JWT expiry to 5 minutes for temp tokens
+      // We'll use a special response format
+      return NextResponse.json({
+        success: true,
+        requiresTwoFactor: true,
+        tempToken,
+        userId: user.id,
+        email: user.email,
+      });
+    }
+
     // Generate JWT token
     const token = signToken({
       userId: user.id,

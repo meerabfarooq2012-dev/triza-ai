@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { createAuditLog } from '@/lib/audit-log';
 
 export async function GET(request: NextRequest) {
   try {
@@ -168,6 +169,24 @@ export async function PUT(request: NextRequest) {
         data: { isApproved: true },
       });
     }
+
+    // Audit log
+    const actionMap: Record<string, string> = {
+      verify: 'user.verify',
+      deactivate: 'user.ban',
+      activate: 'user.unban',
+      makeAdmin: 'user.role_change',
+      updateRole: 'user.role_change',
+    };
+    await createAuditLog({
+      userId,
+      action: actionMap[action] || `user.${action}`,
+      entityType: 'user',
+      entityId: targetUserId,
+      details: { action, value, targetEmail: targetUser.email, targetName: targetUser.name },
+      ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+      userAgent: request.headers.get('user-agent') || undefined,
+    });
 
     return NextResponse.json({ success: true, data: updatedUser });
   } catch (error) {

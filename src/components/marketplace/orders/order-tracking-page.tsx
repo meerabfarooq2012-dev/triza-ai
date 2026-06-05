@@ -54,6 +54,7 @@ import {
 import type { Order, OrderStatus, OrderStatusLog, Payment, EscrowStatus } from '@/types'
 import { ShipmentTracker } from '@/components/marketplace/shipping/shipment-tracker'
 import { toast } from 'sonner'
+import { api } from '@/lib/api'
 
 // ----- Digital Downloads Sub-Component -----
 interface DigitalDownloadInfo {
@@ -364,6 +365,7 @@ export default function OrderTrackingPage() {
   const [statusToUpdate, setStatusToUpdate] = useState<string | null>(null)
   const [updatingStatus, setUpdatingStatus] = useState(false)
   const [confirmingDelivery, setConfirmingDelivery] = useState(false)
+  const [downloadingInvoice, setDownloadingInvoice] = useState(false)
 
   const isSeller = activeRole === 'seller'
   const isBuyer = activeRole === 'buyer'
@@ -477,6 +479,29 @@ export default function OrderTrackingPage() {
     (order.status === 'delivered' || order.status === 'shipped') &&
     isBuyer
 
+  // Download invoice handler
+  const handleDownloadInvoice = async () => {
+    if (!order) return
+    setDownloadingInvoice(true)
+    try {
+      const blob = await api.invoice.download(order.id)
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `Invoice-${order.id.slice(-8)}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      toast.success('Invoice downloaded successfully')
+    } catch (err) {
+      console.error('Failed to download invoice:', err)
+      toast.error('Failed to download invoice')
+    } finally {
+      setDownloadingInvoice(false)
+    }
+  }
+
   // Get available next statuses for seller
   const getNextStatuses = (currentStatus: OrderStatus): { value: OrderStatus; label: string }[] => {
     switch (currentStatus) {
@@ -582,6 +607,18 @@ export default function OrderTrackingPage() {
           <span className={`h-2 w-2 rounded-full ${ORDER_STATUS_DOT_COLORS[order.status]}`} />
           {ORDER_STATUS_LABELS[order.status]}
         </Badge>
+        <Button
+          onClick={handleDownloadInvoice}
+          disabled={downloadingInvoice}
+          className="gap-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white hover:from-amber-600 hover:to-amber-700 flex-shrink-0"
+        >
+          {downloadingInvoice ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <FileText className="h-4 w-4" />
+          )}
+          Download Invoice
+        </Button>
       </div>
 
       {/* ---- Status Timeline ---- */}

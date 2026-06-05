@@ -201,6 +201,7 @@ export function AuthModal() {
         email: regEmail,
         password: regPassword,
         role: regRole,
+        termsAccepted: true,
       })
       if (res.success && res.data) {
         const user = res.data.user || res.data

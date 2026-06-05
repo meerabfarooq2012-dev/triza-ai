@@ -12,3 +12,8 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+Disallow: /api/
+Disallow: /admin
+
+Sitemap: https://marketo-alpha.vercel.app/sitemap.xml

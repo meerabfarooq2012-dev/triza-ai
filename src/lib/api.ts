@@ -874,6 +874,134 @@ const usersApi = {
   },
 }
 
+// ----- Reports API -----
+
+const reportsApi = {
+  reportProduct: (productId: string, data: { reason: string; description?: string }) =>
+    request<ApiResponse<Record<string, unknown>>>(`/products/${productId}/report`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  getReports: (params?: { status?: string; page?: number; limit?: number }) => {
+    const searchParams = new URLSearchParams()
+    if (params?.status) searchParams.set('status', params.status)
+    if (params?.page) searchParams.set('page', String(params.page))
+    if (params?.limit) searchParams.set('limit', String(params.limit))
+    const qs = searchParams.toString()
+    return request<ApiResponse<Record<string, unknown>[]>>(`/admin/reports${qs ? `?${qs}` : ''}`)
+  },
+
+  updateReport: (reportId: string, data: { status: string; adminNote?: string; deactivateProduct?: boolean }) =>
+    request<ApiResponse<Record<string, unknown>>>(`/admin/reports/${reportId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+}
+
+// ----- Audit Log API -----
+
+const auditLogApi = {
+  getLogs: (params?: { action?: string; entityType?: string; userId?: string; startDate?: string; endDate?: string; page?: number; limit?: number }) => {
+    const searchParams = new URLSearchParams()
+    if (params?.action) searchParams.set('action', params.action)
+    if (params?.entityType) searchParams.set('entityType', params.entityType)
+    if (params?.userId) searchParams.set('userId', params.userId)
+    if (params?.startDate) searchParams.set('startDate', params.startDate)
+    if (params?.endDate) searchParams.set('endDate', params.endDate)
+    if (params?.page) searchParams.set('page', String(params.page))
+    if (params?.limit) searchParams.set('limit', String(params.limit))
+    const qs = searchParams.toString()
+    return request<ApiResponse<Record<string, unknown>[]>>(`/admin/audit-log${qs ? `?${qs}` : ''}`)
+  },
+}
+
+// ----- Tax API -----
+
+const taxApi = {
+  calculate: (data: { items: { price: number; quantity: number }[]; shippingCost?: number }) =>
+    request<ApiResponse<{ subtotal: number; taxRate: number; taxAmount: number; shippingCost: number; total: number; taxLabel: string; taxInclusive: boolean; taxEnabled: boolean }>>('/tax/calculate', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  getConfig: () =>
+    request<ApiResponse<{ taxEnabled: boolean; taxRate: number; taxInclusive: boolean; taxLabel: string }>>('/tax/calculate'),
+}
+
+// ----- 2FA API -----
+
+const twoFactorApi = {
+  setup: () =>
+    request<ApiResponse<{ secret: string; qrCodeUrl: string; backupCodes: string[]; manualEntryKey: string }>>('/auth/2fa/setup', {
+      method: 'POST',
+    }),
+
+  verify: (data: { userId: string; code: string; setupMode?: boolean }) =>
+    request<ApiResponse<{ token: string; user: User; usedBackupCode?: boolean }>>('/auth/2fa/verify', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  disable: (password: string) =>
+    request<ApiResponse>('/auth/2fa/disable', {
+      method: 'POST',
+      body: JSON.stringify({ password }),
+    }),
+
+  regenerateBackupCodes: (code: string) =>
+    request<ApiResponse<{ backupCodes: string[] }>>('/auth/2fa/backup-codes', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    }),
+}
+
+// ----- Cart API -----
+
+const cartApi = {
+  get: () =>
+    request<ApiResponse<{ items: unknown[]; updatedAt?: string }>>('/cart'),
+
+  sync: (items: { productId: string; quantity: number; variantId?: string; addedAt?: string }[]) =>
+    request<ApiResponse<{ items: unknown[] }>>('/cart/sync', {
+      method: 'POST',
+      body: JSON.stringify({ items }),
+    }),
+
+  clear: () =>
+    request<ApiResponse>('/cart', {
+      method: 'DELETE',
+    }),
+}
+
+// ----- Invoice API -----
+
+const invoiceApi = {
+  download: async (orderId: string): Promise<Blob> => {
+    const authToken = useMarketplaceStore.getState().authToken
+    const headers: Record<string, string> = {}
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`
+    }
+
+    const response = await fetch(`/api/orders/${orderId}/invoice`, {
+      method: 'GET',
+      headers,
+    })
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({ error: 'Download failed' }))
+      throw new ApiError(
+        data.error || `Download failed with status ${response.status}`,
+        response.status,
+        data
+      )
+    }
+
+    return response.blob()
+  },
+}
+
 // =============================================================================
 // Exported API object
 // =============================================================================
@@ -894,6 +1022,12 @@ export const api = {
   admin: adminApi,
   upload: uploadApi,
   users: usersApi,
+  reports: reportsApi,
+  auditLog: auditLogApi,
+  tax: taxApi,
+  twoFactor: twoFactorApi,
+  cart: cartApi,
+  invoice: invoiceApi,
 }
 
 export { ApiError }

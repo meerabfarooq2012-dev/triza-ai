@@ -11,6 +11,7 @@ import {
   CheckCircle,
   Loader2,
   AlertCircle,
+  Receipt,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -38,6 +39,10 @@ interface PlatformSettingsData {
   supportEmail: string | null
   supportPhone: string | null
   socialLinks: string | null
+  taxEnabled: boolean
+  taxRate: number
+  taxInclusive: boolean
+  taxLabel: string
   createdAt: string
   updatedAt: string
 }
@@ -57,6 +62,12 @@ export default function AdminSettings() {
   const [maintenanceMode, setMaintenanceMode] = useState(false)
   const [allowRegistration, setAllowRegistration] = useState(true)
   const [allowSellerRegistration, setAllowSellerRegistration] = useState(true)
+
+  // Tax settings state
+  const [taxEnabled, setTaxEnabled] = useState(false)
+  const [taxRate, setTaxRate] = useState('0')
+  const [taxInclusive, setTaxInclusive] = useState(false)
+  const [taxLabel, setTaxLabel] = useState('Tax')
 
   // Load settings from the database via API on mount
   const fetchSettings = useCallback(async () => {
@@ -78,6 +89,10 @@ export default function AdminSettings() {
       setMaintenanceMode(s.maintenanceMode ?? false)
       setAllowRegistration(s.allowRegistration ?? true)
       setAllowSellerRegistration(s.allowSellerRegistration ?? true)
+      setTaxEnabled(s.taxEnabled ?? false)
+      setTaxRate(String(s.taxRate ?? 0))
+      setTaxInclusive(s.taxInclusive ?? false)
+      setTaxLabel(s.taxLabel ?? 'Tax')
     } catch (err) {
       console.error('Failed to load admin settings:', err)
       setError('Failed to load settings. Please try again.')
@@ -104,6 +119,10 @@ export default function AdminSettings() {
           maintenanceMode,
           allowRegistration,
           allowSellerRegistration,
+          taxEnabled,
+          taxRate: parseFloat(taxRate) || 0,
+          taxInclusive,
+          taxLabel: taxLabel || 'Tax',
         }),
       })
 
@@ -260,6 +279,105 @@ export default function AdminSettings() {
                   Warning: A fee above 20% may discourage sellers
                 </p>
               )}
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Tax Configuration */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2, delay: 0.15 }}
+      >
+        <Card className="border-0 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Receipt size={18} className="text-primary" />
+              Tax Configuration
+            </CardTitle>
+            <CardDescription>
+              Configure tax settings for your marketplace
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Tax Enabled</Label>
+                <p className="text-xs text-muted-foreground">
+                  Enable tax calculation on orders
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {taxEnabled && (
+                  <Badge className="text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                    Active
+                  </Badge>
+                )}
+                <Switch
+                  checked={taxEnabled}
+                  onCheckedChange={setTaxEnabled}
+                />
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-2">
+              <Label htmlFor="tax-rate">Tax Rate (%)</Label>
+              <div className="flex items-center gap-3">
+                <Input
+                  id="tax-rate"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={taxRate}
+                  onChange={(e) => setTaxRate(e.target.value)}
+                  className="w-24"
+                  disabled={!taxEnabled}
+                />
+                <span className="text-sm text-muted-foreground">
+                  Percentage applied to order subtotal
+                </span>
+              </div>
+              {Number(taxRate) > 30 && taxEnabled && (
+                <p className="text-xs text-yellow-600">
+                  Warning: A tax rate above 30% is unusually high
+                </p>
+              )}
+            </div>
+
+            <Separator />
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Tax Inclusive</Label>
+                <p className="text-xs text-muted-foreground">
+                  If enabled, tax is included in product prices. If disabled, tax is added at checkout.
+                </p>
+              </div>
+              <Switch
+                checked={taxInclusive}
+                onCheckedChange={setTaxInclusive}
+                disabled={!taxEnabled}
+              />
+            </div>
+
+            <Separator />
+
+            <div className="space-y-2">
+              <Label htmlFor="tax-label">Tax Label</Label>
+              <Input
+                id="tax-label"
+                value={taxLabel}
+                onChange={(e) => setTaxLabel(e.target.value)}
+                placeholder="e.g., Tax, VAT, GST"
+                className="w-40"
+                disabled={!taxEnabled}
+              />
+              <p className="text-xs text-muted-foreground">
+                Display label shown to customers (e.g., &quot;Tax&quot;, &quot;VAT&quot;, &quot;GST&quot;)
+              </p>
             </div>
           </CardContent>
         </Card>

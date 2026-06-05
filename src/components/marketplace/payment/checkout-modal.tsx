@@ -126,6 +126,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   })
   const [shippingMethod, setShippingMethod] = useState<string>('standard')
   const [shippingCost, setShippingCost] = useState<number>(0)
+  const [taxInfo, setTaxInfo] = useState<{ taxRate: number; taxAmount: number; taxLabel: string; taxInclusive: boolean }>({ taxRate: 0, taxAmount: 0, taxLabel: 'Tax', taxInclusive: false })
   const [orderId, setOrderId] = useState<string>('')
   const [paymentId, setPaymentId] = useState<string>('')
   const [createdOrderIds, setCreatedOrderIds] = useState<string[]>([])
@@ -237,6 +238,36 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   const effectiveCartTotal = Math.max(0, (cartTotal ?? 0) - couponDiscount)
   const platformFee = effectiveCartTotal * (PLATFORM_FEE_PERCENT / 100)
   const sellerPayout = effectiveCartTotal - platformFee
+
+  // Fetch tax calculation when cart changes
+  useEffect(() => {
+    if (!open || (cartTotal ?? 0) <= 0) return
+    const fetchTax = async () => {
+      try {
+        const res = await fetch('/api/tax/calculate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: cart.map(item => ({ productId: item.productId, quantity: item.quantity, price: item.price })),
+            shippingCountry: shippingInfo.country || undefined,
+            shippingCost: hasPhysicalItems ? shippingCost : 0,
+          }),
+        })
+        const data = await res.json()
+        if (data.subtotal !== undefined) {
+          setTaxInfo({
+            taxRate: data.taxRate ?? 0,
+            taxAmount: data.taxAmount ?? 0,
+            taxLabel: data.taxLabel ?? 'Tax',
+            taxInclusive: data.taxInclusive ?? false,
+          })
+        }
+      } catch {
+        // Tax calculation is non-critical
+      }
+    }
+    fetchTax()
+  }, [open, cartTotal, shippingInfo.country, shippingCost, hasPhysicalItems, cart])
 
   // Apply coupon handler
   const handleApplyCoupon = async () => {
@@ -821,10 +852,18 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                   <span>Seller Receives (90%)</span>
                   <span>${(sellerPayout ?? 0).toFixed(2)}</span>
                 </div>
+                {taxInfo.taxRate > 0 && taxInfo.taxAmount > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      {taxInfo.taxLabel} ({taxInfo.taxRate}%{taxInfo.taxInclusive ? ' incl.' : ''})
+                    </span>
+                    <span>${taxInfo.taxAmount.toFixed(2)}</span>
+                  </div>
+                )}
                 <Separator />
                 <div className="flex justify-between font-bold text-lg">
                   <span>Total</span>
-                  <span>${effectiveCartTotal.toFixed(2)}</span>
+                  <span>${(effectiveCartTotal + (taxInfo.taxInclusive ? 0 : taxInfo.taxAmount)).toFixed(2)}</span>
                 </div>
               </div>
 

@@ -22,6 +22,7 @@ import {
   Globe,
   MessageSquare,
   Share2,
+  Flag,
   Layers,
   ListChecks,
   Check,
@@ -65,6 +66,7 @@ import {
 import { countryCodeData } from '@/lib/country-codes'
 import { VariantSelector } from '@/components/marketplace/shared/variant-selector'
 import { ProductRecommendations } from '@/components/marketplace/shared/product-recommendations'
+import { ReportProductDialog } from '@/components/marketplace/shared/report-product-dialog'
 import type { Product, CartItem, ProductVariantOption, ProductVariant, FlashSale, Wishlist } from '@/types'
 
 function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
@@ -100,6 +102,7 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1)
   const [isFavorited, setIsFavorited] = useState(false)
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
+  const [reportDialogOpen, setReportDialogOpen] = useState(false)
 
   // Wishlist state
   const [wishlists, setWishlists] = useState<Wishlist[]>([])
@@ -479,9 +482,22 @@ export default function ProductDetail() {
           </Badge>
 
           {/* Name */}
-          <h1 className="text-2xl md:text-3xl font-bold leading-tight">
-            {product.name}
-          </h1>
+          <div className="flex items-start gap-3">
+            <h1 className="text-2xl md:text-3xl font-bold leading-tight flex-1">
+              {product.name}
+            </h1>
+            {currentUser && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-slate-400 hover:text-amber-600 shrink-0 gap-1.5 mt-1"
+                onClick={() => setReportDialogOpen(true)}
+              >
+                <Flag size={14} />
+                <span className="text-xs">Report</span>
+              </Button>
+            )}
+          </div>
 
           {/* Rating */}
           <div className="flex items-center gap-2">
@@ -948,6 +964,14 @@ export default function ProductDetail() {
           shopOwnerId={product.shop?.userId}
         />
       </section>
+
+      {/* Report Product Dialog */}
+      <ReportProductDialog
+        open={reportDialogOpen}
+        onOpenChange={setReportDialogOpen}
+        productId={product.id}
+        productName={product.name}
+      />
 
       {/* Product Recommendations — You Might Also Like */}
       <ProductRecommendations

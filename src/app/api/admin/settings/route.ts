@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { rateLimit, apiRateLimit, getRateLimitKey } from '@/lib/rate-limit'
+import { createAuditLog } from '@/lib/audit-log'
 
 // GET /api/admin/settings — Get platform settings
 export async function GET(request: NextRequest) {
@@ -59,6 +60,10 @@ export async function PATCH(request: NextRequest) {
       'supportEmail',
       'supportPhone',
       'socialLinks',
+      'taxEnabled',
+      'taxRate',
+      'taxInclusive',
+      'taxLabel',
     ] as const
 
     const data: Record<string, unknown> = {}
@@ -80,6 +85,16 @@ export async function PATCH(request: NextRequest) {
       where: { id: 'default' },
       update: data,
       create: { id: 'default', ...data },
+    })
+
+    // Audit log
+    await createAuditLog({
+      action: 'settings.update',
+      entityType: 'settings',
+      entityId: 'default',
+      details: { updatedFields: Object.keys(data), values: data },
+      ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+      userAgent: request.headers.get('user-agent') || undefined,
     })
 
     return NextResponse.json({ settings })

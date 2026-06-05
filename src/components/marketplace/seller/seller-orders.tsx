@@ -10,6 +10,8 @@ import {
   Eye,
   User,
   Clock,
+  FileText,
+  Loader2,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -29,6 +31,8 @@ import {
 } from '@/components/ui/dialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { api } from '@/lib/api'
+import { toast } from 'sonner'
 import {
   ORDER_STATUS_LABELS,
   ORDER_STATUS_COLORS,
@@ -63,6 +67,7 @@ export function SellerOrders() {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [downloadingInvoiceId, setDownloadingInvoiceId] = useState<string | null>(null)
 
   const fetchOrders = useCallback(async () => {
     if (!currentUser) {
@@ -118,6 +123,33 @@ export function SellerOrders() {
     } catch (error) {
       console.error('Failed to update order status:', error)
     }
+  }
+
+  // Download invoice handler
+  const handleDownloadInvoice = async (orderId: string) => {
+    setDownloadingInvoiceId(orderId)
+    try {
+      const blob = await api.invoice.download(orderId)
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `Invoice-${orderId.slice(-8)}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      toast.success('Invoice downloaded successfully')
+    } catch (err) {
+      console.error('Failed to download invoice:', err)
+      toast.error('Failed to download invoice')
+    } finally {
+      setDownloadingInvoiceId(null)
+    }
+  }
+
+  // Check if invoice is available for an order
+  const canDownloadInvoice = (order: Order) => {
+    return order.paymentStatus === 'paid' || order.paymentStatus === 'completed' || order.status === 'delivered'
   }
 
   return (
@@ -307,6 +339,22 @@ export function SellerOrders() {
                           <Eye className="h-3.5 w-3.5" />
                           Manage
                         </Button>
+                        {canDownloadInvoice(order) && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDownloadInvoice(order.id)}
+                            disabled={downloadingInvoiceId === order.id}
+                            className="gap-1.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white hover:from-amber-600 hover:to-amber-700 border-0"
+                          >
+                            {downloadingInvoiceId === order.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <FileText className="h-3.5 w-3.5" />
+                            )}
+                            Invoice
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </CardContent>
