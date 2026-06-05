@@ -451,6 +451,8 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
           shippingCost: hasPhysicalItems ? shippingCost : undefined,
           couponCode: appliedCoupon?.coupon.code || undefined,
           discountAmount: appliedCoupon?.discountAmount || undefined,
+          taxRate: taxInfo.taxRate || undefined,
+          taxAmount: taxInfo.taxAmount || undefined,
         }),
       })
 

@@ -25,11 +25,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { api } from '@/lib/api'
 import { PLATFORM_NAME, PLATFORM_TAGLINE, USER_ROLE_LABELS, USER_ROLE_DESCRIPTIONS } from '@/lib/constants'
 import type { UserRole, User as UserType } from '@/types'
 import { EmailVerificationDialog } from '@/components/marketplace/auth/email-verification-dialog'
+import { TwoFactorVerify } from '@/components/marketplace/auth/two-factor-verify'
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 type AuthTab = 'login' | 'register' | 'forgotPassword'
 
@@ -90,6 +93,12 @@ export function AuthModal() {
   const [verificationUserId, setVerificationUserId] = useState<string | undefined>()
   const [verificationEmail, setVerificationEmail] = useState<string | undefined>()
 
+  // 2FA pending state
+  const [twoFactorPending, setTwoFactorPending] = useState<{ tempToken: string; userId: string; email: string } | null>(null)
+
+  // Privacy/Terms dialog state
+  const [showPolicy, setShowPolicy] = useState<'privacy' | 'terms' | null>(null)
+
   // Mark a field as touched
   const markTouched = useCallback((field: string) => {
     setTouchedFields((prev) => ({ ...prev, [field]: true }))
@@ -145,6 +154,17 @@ export function AuthModal() {
     setIsLoading(true)
     try {
       const res = await api.auth.login(loginEmail, loginPassword)
+      // Check if 2FA is required
+      const responseData = res.data as Record<string, unknown> | undefined
+      if (res.success && responseData?.requiresTwoFactor) {
+        setTwoFactorPending({
+          tempToken: responseData.tempToken as string,
+          userId: responseData.userId as string,
+          email: responseData.email as string,
+        })
+        setIsLoading(false)
+        return
+      }
       if (res.success && res.data) {
         const user = res.data.user || res.data
         const token = res.data.token
@@ -987,9 +1007,21 @@ export function AuthModal() {
                       className="text-xs text-muted-foreground leading-relaxed cursor-pointer select-none"
                     >
                       I agree to the{' '}
-                      <span className="text-amber-600 dark:text-amber-400 font-medium">Terms of Service</span>{' '}
+                      <button
+                        type="button"
+                        onClick={() => setShowPolicy('terms')}
+                        className="text-amber-600 dark:text-amber-400 font-medium hover:underline"
+                      >
+                        Terms of Service
+                      </button>{' '}
                       and{' '}
-                      <span className="text-amber-600 dark:text-amber-400 font-medium">Privacy Policy</span>
+                      <button
+                        type="button"
+                        onClick={() => setShowPolicy('privacy')}
+                        className="text-amber-600 dark:text-amber-400 font-medium hover:underline"
+                      >
+                        Privacy Policy
+                      </button>
                       <span className="text-red-500 dark:text-red-400 ml-0.5" aria-hidden="true">*</span>
                     </Label>
                   </div>
@@ -1054,6 +1086,104 @@ export function AuthModal() {
       userId={verificationUserId}
       userEmail={verificationEmail}
     />
+
+    {/* 2FA Verification Dialog */}
+    <TwoFactorVerify
+      open={!!twoFactorPending}
+      onOpenChange={(open) => { if (!open) setTwoFactorPending(null) }}
+      userId={twoFactorPending?.userId || ''}
+      email={twoFactorPending?.email || ''}
+      tempToken={twoFactorPending?.tempToken || ''}
+    />
+
+    {/* Privacy Policy / Terms of Service Dialog */}
+    <Dialog open={!!showPolicy} onOpenChange={(open) => { if (!open) setShowPolicy(null) }}>
+      <DialogContent className="max-w-3xl max-h-[85vh] p-0">
+        <DialogHeader className="p-6 pb-4 border-b">
+          <DialogTitle className="text-xl">
+            {showPolicy === 'privacy' ? 'Privacy Policy' : 'Terms of Service'}
+          </DialogTitle>
+        </DialogHeader>
+        <ScrollArea className="max-h-[70vh]">
+          <div className="p-6 space-y-6">
+            {showPolicy === 'privacy' ? (
+              <>
+                <p className="text-muted-foreground leading-relaxed">
+                  At Marketo, we respect your privacy and are committed to protecting your personal information. This Privacy Policy explains how we collect, use, and safeguard your data when you use our platform.
+                </p>
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-semibold text-sm mb-1">Information We Collect</h3>
+                    <p className="text-sm text-muted-foreground">We may collect basic information such as your name, email address, contact details, and profile information when you sign up as a buyer, seller, or freelancer. We also collect data related to your activity on the platform, such as orders, listings, and transactions.</p>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-sm mb-1">How We Use Your Information</h3>
+                    <p className="text-sm text-muted-foreground">Your information is used to create and manage your account, enable buying, selling, and freelance services, process orders and payments securely, improve platform performance and user experience, and provide customer support and resolve disputes.</p>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-sm mb-1">Data Protection</h3>
+                    <p className="text-sm text-muted-foreground">We use secure systems, encryption, and protected databases to keep your data safe. Only authorized systems and administrators have access to necessary information.</p>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-sm mb-1">Sharing of Information</h3>
+                    <p className="text-sm text-muted-foreground">We do not sell your personal data. Information may only be shared when required to complete transactions, comply with legal obligations, or protect platform safety.</p>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-sm mb-1">Your Rights</h3>
+                    <p className="text-sm text-muted-foreground">You can update or delete your account information at any time through your profile settings.</p>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-sm mb-1">Changes to Policy</h3>
+                    <p className="text-sm text-muted-foreground">Marketo may update this Privacy Policy from time to time. Any changes will be posted on this page.</p>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-muted-foreground leading-relaxed">
+                  Welcome to Marketo. By using our platform, you agree to follow these Terms of Service. Please read them carefully before using the website.
+                </p>
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-semibold text-sm mb-1">1. Use of Platform</h3>
+                    <p className="text-sm text-muted-foreground">Marketo is a marketplace where users can join as buyers, sellers, freelancers, or both. You agree to use the platform only for legal and appropriate purposes.</p>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-sm mb-1">2. Accounts</h3>
+                    <p className="text-sm text-muted-foreground">You are responsible for maintaining the security of your account. Any activity under your account is your responsibility. Providing false information or misusing the platform may result in account suspension.</p>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-sm mb-1">3. Buying and Selling</h3>
+                    <p className="text-sm text-muted-foreground">Sellers are responsible for the accuracy of their listings, products, and services. Buyers agree to pay for orders they place. Marketo is not responsible for disputes between users but may help in resolving them.</p>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-sm mb-1">4. Payments</h3>
+                    <p className="text-sm text-muted-foreground">All payments must be made through the platform&apos;s approved payment methods. Unauthorized transactions or fraud are strictly prohibited.</p>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-sm mb-1">5. Prohibited Activities</h3>
+                    <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                      <li>Upload illegal or harmful content</li>
+                      <li>Attempt to hack or damage the system</li>
+                      <li>Mislead or scam other users</li>
+                      <li>Use the platform for unauthorized purposes</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-sm mb-1">6. Termination</h3>
+                    <p className="text-sm text-muted-foreground">Marketo reserves the right to suspend or terminate accounts that violate these terms without prior notice.</p>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-sm mb-1">7. Changes to Terms</h3>
+                    <p className="text-sm text-muted-foreground">We may update these Terms of Service at any time. Continued use of the platform means you accept the updated terms.</p>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
     </>
   )
 }

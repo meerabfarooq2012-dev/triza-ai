@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { createAuditLog } from '@/lib/audit-log';
 
 export async function GET(request: NextRequest) {
   try {
@@ -159,6 +160,18 @@ export async function PUT(request: NextRequest) {
         data: { status: 'refunded', paymentStatus: 'refunded' },
       });
     }
+
+    // Audit log
+    const auditAction = status === 'resolved' ? 'dispute.resolve' : status === 'escalated' ? 'dispute.escalate' : 'dispute.assign';
+    await createAuditLog({
+      userId,
+      action: auditAction,
+      entityType: 'dispute',
+      entityId: disputeId,
+      details: { previousStatus: dispute.status, newStatus: status, resolution: resolution || null, orderId: dispute.orderId },
+      ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+      userAgent: request.headers.get('user-agent') || undefined,
+    });
 
     return NextResponse.json({ success: true, data: updatedDispute });
   } catch (error) {

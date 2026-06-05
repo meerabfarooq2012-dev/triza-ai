@@ -4,10 +4,10 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   ScrollText,
   Loader2,
-  User,
-  Clock,
   Filter,
   RefreshCw,
+  Download,
+  Calendar,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useMarketplaceStore } from '@/store/use-marketplace-store';
+import { toast } from 'sonner';
 
 interface AuditLogEntry {
   id: string;
@@ -46,12 +47,18 @@ const ACTION_LABELS: Record<string, string> = {
   'user.ban': 'Banned user',
   'user.unban': 'Unbanned user',
   'user.role_change': 'Changed user role',
+  'user.verify': 'Verified user',
   'product.delete': 'Deleted product',
   'product.approve': 'Approved product',
   'product.reject': 'Rejected product',
   'dispute.resolve': 'Resolved dispute',
+  'dispute.escalate': 'Escalated dispute',
+  'dispute.assign': 'Assigned dispute',
   'settings.update': 'Updated settings',
   'report.update': 'Updated report',
+  'report.review': 'Reviewed report',
+  'shop.approve': 'Approved shop verification',
+  'shop.reject': 'Rejected shop verification',
 };
 
 const ENTITY_ICONS: Record<string, string> = {
@@ -62,19 +69,18 @@ const ENTITY_ICONS: Record<string, string> = {
   shop: '🏪',
   report: '🚨',
   settings: '⚙️',
+  verification: '✅',
 };
 
 function formatAction(action: string, details: Record<string, unknown>): string {
   const label = ACTION_LABELS[action];
   if (label) {
-    // Try to add context from details
     const targetEmail = details.targetEmail as string | undefined;
     const targetName = details.targetName as string | undefined;
     if (targetEmail) return `${label} ${targetEmail}`;
     if (targetName) return `${label} ${targetName}`;
     return label;
   }
-  // Fallback: format action string
   return action
     .split('.')
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
@@ -102,7 +108,10 @@ export function AdminAuditLog() {
   const [totalPages, setTotalPages] = useState(1);
   const [actionFilter, setActionFilter] = useState('');
   const [entityTypeFilter, setEntityTypeFilter] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchLogs = useCallback(async () => {
@@ -110,6 +119,8 @@ export function AdminAuditLog() {
       const params: Record<string, string> = { page: String(page), limit: '30' };
       if (actionFilter) params.action = actionFilter;
       if (entityTypeFilter) params.entityType = entityTypeFilter;
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
 
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -119,7 +130,7 @@ export function AdminAuditLog() {
       const res = await fetch(`/api/admin/audit-log?${new URLSearchParams(params)}`, { headers });
       const data = await res.json();
       if (data.success) {
-        setLogs(data.logs || []);
+        setLogs(data.data || data.logs || []);
         setTotalPages(data.pagination?.totalPages || 1);
       }
     } catch (error) {
@@ -127,7 +138,7 @@ export function AdminAuditLog() {
     } finally {
       setLoading(false);
     }
-  }, [page, actionFilter, entityTypeFilter, authToken]);
+  }, [page, actionFilter, entityTypeFilter, startDate, endDate, authToken]);
 
   useEffect(() => {
     setLoading(true);
@@ -144,11 +155,55 @@ export function AdminAuditLog() {
     };
   }, [fetchLogs]);
 
+  // CSV Export handler
+  const handleExportCSV = async () => {
+    setExporting(true);
+    try {
+      const params: Record<string, string> = { format: 'csv', limit: '10000' };
+      if (actionFilter) params.action = actionFilter;
+      if (entityTypeFilter) params.entityType = entityTypeFilter;
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
+
+      const headers: Record<string, string> = {};
+      if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+
+      const res = await fetch(`/api/admin/audit-log?${new URLSearchParams(params)}`, { headers });
+      if (!res.ok) {
+        throw new Error('Export failed');
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `audit-log-export-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success('Audit log exported successfully');
+    } catch (err) {
+      console.error('Failed to export audit log:', err);
+      toast.error('Failed to export audit log');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const clearFilters = () => {
+    setActionFilter('');
+    setEntityTypeFilter('');
+    setStartDate('');
+    setEndDate('');
+    setPage(1);
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
             <ScrollText className="h-6 w-6 text-amber-600" />
             Audit Log
           </h1>
@@ -156,16 +211,32 @@ export function AdminAuditLog() {
             Track all admin actions and system events
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => { setLoading(true); fetchLogs(); }}
-          disabled={loading}
-          className="gap-1.5"
-        >
-          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportCSV}
+            disabled={exporting}
+            className="gap-1.5 border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-400 dark:hover:bg-amber-950/30"
+          >
+            {exporting ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Download size={14} />
+            )}
+            Export CSV
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => { setLoading(true); fetchLogs(); }}
+            disabled={loading}
+            className="gap-1.5"
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -173,9 +244,9 @@ export function AdminAuditLog() {
         <CardContent className="p-4">
           <div className="flex items-center gap-2 mb-3">
             <Filter size={14} className="text-slate-400" />
-            <span className="text-sm font-medium text-slate-700">Filters</span>
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Filters</span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             <div>
               <Label className="text-xs text-slate-500">Action</Label>
               <Input
@@ -203,14 +274,38 @@ export function AdminAuditLog() {
                   <SelectItem value="shop">Shop</SelectItem>
                   <SelectItem value="report">Report</SelectItem>
                   <SelectItem value="settings">Settings</SelectItem>
+                  <SelectItem value="verification">Verification</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div>
+              <Label className="text-xs text-slate-500 flex items-center gap-1">
+                <Calendar size={10} /> From Date
+              </Label>
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => { setStartDate(e.target.value); setPage(1); }}
+                className="mt-1 text-sm"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-slate-500 flex items-center gap-1">
+                <Calendar size={10} /> To Date
+              </Label>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => { setEndDate(e.target.value); setPage(1); }}
+                className="mt-1 text-sm"
+              />
             </div>
             <div className="flex items-end">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => { setActionFilter(''); setEntityTypeFilter(''); setPage(1); }}
+                onClick={clearFilters}
+                className="w-full"
               >
                 Clear Filters
               </Button>
@@ -232,9 +327,9 @@ export function AdminAuditLog() {
           </CardContent>
         </Card>
       ) : (
-        <div className="relative space-y-0">
+        <div className="relative space-y-0 max-h-[600px] overflow-y-auto pr-1 scrollbar-thin">
           {/* Timeline line */}
-          <div className="absolute left-5 top-0 bottom-0 w-px bg-slate-200" />
+          <div className="absolute left-5 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700" />
 
           {logs.map((log) => {
             const isExpanded = expandedId === log.id;
@@ -259,10 +354,10 @@ export function AdminAuditLog() {
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-medium text-slate-900">
+                          <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
                             {log.user?.name || 'System'}
                           </span>
-                          <span className="text-sm text-slate-600">
+                          <span className="text-sm text-slate-600 dark:text-slate-400">
                             {formatAction(log.action, log.details)}
                           </span>
                         </div>
@@ -289,29 +384,29 @@ export function AdminAuditLog() {
                         <div className="grid grid-cols-2 gap-2 text-xs">
                           <div>
                             <span className="text-slate-500">Action:</span>{' '}
-                            <span className="font-mono text-slate-700">{log.action}</span>
+                            <span className="font-mono text-slate-700 dark:text-slate-300">{log.action}</span>
                           </div>
                           {log.entityId && (
                             <div>
                               <span className="text-slate-500">Entity ID:</span>{' '}
-                              <span className="font-mono text-slate-700 truncate">{log.entityId}</span>
+                              <span className="font-mono text-slate-700 dark:text-slate-300 truncate">{log.entityId}</span>
                             </div>
                           )}
                           {log.ipAddress && (
                             <div>
                               <span className="text-slate-500">IP:</span>{' '}
-                              <span className="font-mono text-slate-700">{log.ipAddress}</span>
+                              <span className="font-mono text-slate-700 dark:text-slate-300">{log.ipAddress}</span>
                             </div>
                           )}
                           <div>
                             <span className="text-slate-500">Time:</span>{' '}
-                            <span>{new Date(log.createdAt).toLocaleString()}</span>
+                            <span className="text-slate-700 dark:text-slate-300">{new Date(log.createdAt).toLocaleString()}</span>
                           </div>
                         </div>
                         {Object.keys(log.details).length > 0 && (
                           <div>
                             <span className="text-xs text-slate-500">Details:</span>
-                            <pre className="text-xs bg-slate-50 rounded p-2 mt-1 overflow-x-auto whitespace-pre-wrap border">
+                            <pre className="text-xs bg-slate-50 dark:bg-slate-800 rounded p-2 mt-1 overflow-x-auto whitespace-pre-wrap border">
                               {JSON.stringify(log.details, null, 2)}
                             </pre>
                           </div>

@@ -1463,3 +1463,259 @@ Stage Summary:
   5. Secure Downloads → API responds correctly ✓
 - Schema sync endpoint: POST /api/admin/sync-schema (key: marketo-sync-schema-2024)
 - Build: clean, 0 errors, 3 warnings
+
+---
+
+## Task 2b — Invoice/PDF Generation, Admin Audit Log Enhancement, Sitemap Enhancement (Agent: main)
+
+### Summary
+Implemented three features: (1) Verified invoice/PDF generation API and download button already exist and are complete, (2) Added createAuditLog calls to admin mutation routes that were missing them (verification review, admin disputes), added date range filters and CSV export to the audit log UI, (3) Enhanced sitemap with static pages and improved lastModified dates.
+
+### Changes Made
+
+#### Feature 1: Invoice/PDF Generation — Already Complete
+- `/api/orders/[id]/invoice/route.ts` — Already exists with full PDF generation using pdfkit, auth checks, rate limiting
+- `src/lib/invoice-pdf.ts` — Already generates professional PDF with Marketo branding, Obsidian & Gold theme (#1e293b / #d97706), invoice number, date, buyer/seller details, line items table, subtotal/shipping/tax/fees/total, payment method, footer
+- `src/components/marketplace/orders/order-tracking-page.tsx` — Already has "Download Invoice" button with FileText icon, handleDownloadInvoice function, api.invoice.download() call
+- `src/lib/api.ts` — Already has invoiceApi.download() method with Bearer token auth
+
+#### Feature 2: Admin Audit Log Enhancement
+
+##### 2a. Added createAuditLog to verification/review route (`src/app/api/verification/review/route.ts`)
+- Added `import { createAuditLog } from '@/lib/audit-log'`
+- On approved: creates audit log with action `shop.approve`, entityType `verification`
+- On rejected: creates audit log with action `shop.reject`, entityType `verification`
+- On under_review: creates audit log with action `report.review`, entityType `verification`
+- All entries include: userId, entityId, details (status, shopId, trustScore/rejectionReason), ipAddress, userAgent
+
+##### 2b. Added createAuditLog to admin/disputes route (`src/app/api/admin/disputes/route.ts`)
+- Added `import { createAuditLog } from '@/lib/audit-log'`
+- After updating dispute: creates audit log with appropriate action:
+  - `dispute.resolve` for resolved status
+  - `dispute.escalate` for escalated status
+  - `dispute.assign` for other status changes
+- Details include: previousStatus, newStatus, resolution, orderId
+
+##### 2c. Date Range Filter + CSV Export
+
+**Admin Audit Log UI (`src/components/marketplace/admin/admin-audit-log.tsx`):**
+- Added date range filters (From Date / To Date) with `type="date"` inputs and Calendar icons
+- Added `startDate` and `endDate` state variables
+- Updated `fetchLogs` to pass `startDate`/`endDate` params to API
+- Added `verification` entity type option in entity type dropdown
+- Added "Export CSV" button with Download icon, loading state, and amber theme styling
+- Added `handleExportCSV` function that fetches with `format=csv` param and downloads the blob as a CSV file
+- Added toast notifications for export success/failure via sonner
+- Updated ACTION_LABELS to include new actions (shop.approve, shop.reject, dispute.escalate, dispute.assign, report.review, user.verify)
+- Updated ENTITY_ICONS to include verification (✅)
+- Changed filter grid to 5 columns on lg for the new date inputs
+- Added `max-h-[600px] overflow-y-auto` on timeline for long lists
+- Added dark mode support to various text colors
+- Removed unused `User` and `Clock` icon imports
+
+**Audit Log API (`src/app/api/admin/audit-log/route.ts`):**
+- Added CSV export support: when `format=csv` query param is present, returns CSV instead of JSON
+- CSV includes headers: Timestamp, Action, User, User Email, Entity Type, Entity ID, IP Address, Details
+- Proper CSV escaping for commas, quotes, and newlines
+- Returns with `Content-Type: text/csv` and `Content-Disposition` header for download
+- CSV export uses limit of 10000 entries (vs 50 default for JSON)
+
+#### Feature 3: Sitemap Enhancement
+
+**`src/app/sitemap.ts`:**
+- Added 5 static pages to sitemap:
+  - `?view=privacy-policy` — changeFrequency: monthly, priority: 0.3
+  - `?view=terms` — changeFrequency: monthly, priority: 0.3
+  - `?view=about` — changeFrequency: monthly, priority: 0.4
+  - `?view=contact` — changeFrequency: monthly, priority: 0.4
+  - `?view=sell` (Sell on Marketo landing) — changeFrequency: monthly, priority: 0.6
+- Products already use `updatedAt` for lastModified (verified)
+- Shops already use `updatedAt` for lastModified (verified)
+- Category pages now use `cat.updatedAt` instead of `new Date()` when available
+- All changeFrequency and priority values already properly set
+
+**`public/robots.txt`:**
+- Already references the sitemap: `Sitemap: https://marketo-alpha.vercel.app/sitemap.xml` (verified, no change needed)
+
+### Lint Results
+- 0 errors, 3 pre-existing warnings (unrelated to this task — unused eslint-disable directives in two-factor and seller-reviews components)
+
+---
+
+## Task 2a — 2FA Login Flow + Privacy Policy Links + Tax Persistence (Agent: main)
+
+### Summary
+Implemented 3 features: (1) Wired 2FA verification into the login flow and added TwoFactorProfile to user settings, (2) Made Terms of Service and Privacy Policy text clickable with inline dialog preview in the signup form, and (3) Fixed tax data persistence in order creation and display in order tracking.
+
+### Changes Made
+
+#### Feature 1: Wire 2FA into Login Flow + Profile Settings
+
+**1. Auth Modal (`src/components/marketplace/auth/auth-modal.tsx`)**
+- Imported `TwoFactorVerify` component and `Dialog`, `DialogContent`, `DialogHeader`, `DialogTitle`, `ScrollArea` from shadcn/ui
+- Added `twoFactorPending` state: `{ tempToken: string; userId: string; email: string } | null`
+- Updated `handleLogin()`: After the login API call, checks if `res.data.requiresTwoFactor === true`; if yes, sets `twoFactorPending` state and returns early instead of completing login
+- Added `TwoFactorVerify` dialog in the JSX return that opens when `twoFactorPending` is set, passing `tempToken`, `userId`, and `email` from the pending state
+- When the 2FA dialog is closed without verifying, `twoFactorPending` is reset to null
+
+**2. User Profile (`src/components/marketplace/profile/user-profile.tsx`)**
+- Imported `TwoFactorProfile` component
+- Added `TwoFactorProfile` section in the left column below Active Sessions, with `userId={currentUser.id}` and `twoFactorEnabled={currentUser.twoFactorEnabled ?? false}` props
+
+#### Feature 2: Privacy Policy on Signup — Clickable Links + termsAcceptedAt
+
+**1. Auth Modal (`src/components/marketplace/auth/auth-modal.tsx`)**
+- Added `showPolicy` state: `'privacy' | 'terms' | null`
+- Replaced static `<span>` elements for "Terms of Service" and "Privacy Policy" with `<button>` elements that call `setShowPolicy('terms')` and `setShowPolicy('privacy')` respectively
+- Added `hover:underline` class for visual feedback on the clickable text
+- Added Dialog component that opens when `showPolicy` is set, showing inline Privacy Policy or Terms of Service content in a scrollable area (not the full page components to avoid navigation conflicts)
+- Privacy Policy content includes: Information We Collect, How We Use Your Information, Data Protection, Sharing of Information, Your Rights, Changes to Policy
+- Terms of Service content includes: Use of Platform, Accounts, Buying and Selling, Payments, Prohibited Activities, Termination, Changes to Terms
+
+**2. Register API (`src/app/api/auth/register/route.ts`)**
+- Already had `termsAcceptedAt: new Date()` in the user create data — confirmed working, no change needed
+
+#### Feature 3: Tax Calculation — Fix Order Persistence
+
+**1. Checkout Modal (`src/components/marketplace/payment/checkout-modal.tsx`)**
+- Added `taxRate` and `taxAmount` from `taxInfo` state to the order creation request body, passing them as `taxRate: taxInfo.taxRate || undefined` and `taxAmount: taxInfo.taxAmount || undefined`
+
+**2. Order Creation API (`src/app/api/orders/route.ts`)**
+- Added `taxRate` and `taxAmount` to the destructured request body
+- Added `taxRate: typeof taxRate === 'number' ? taxRate : 0` and `taxAmount: typeof taxAmount === 'number' ? taxAmount : 0` to the `db.order.create()` data
+
+**3. Order Type (`src/types/index.ts`)**
+- Added `taxRate: number` and `taxAmount: number` fields to the `Order` interface
+
+**4. Order Tracking Page (`src/components/marketplace/orders/order-tracking-page.tsx`)**
+- Added tax display row: Shows "Tax (X%)" with amount when `order.taxAmount > 0`
+- Added shipping display row: Shows "Shipping" with amount when `order.shippingCost > 0`
+- Updated total calculation to include `order.taxAmount` and `order.shippingCost` in the grand total
+
+### Lint Results
+- 0 errors, 3 pre-existing warnings (unused eslint-disable directives in two-factor-setup, two-factor-verify, and seller-reviews components — unrelated to this task)
+
+---
+
+## Task 2c — GDPR Bulk Data Export, Product Report Review Actions, Abandoned Cart Recovery (Agent: main)
+
+### Summary
+Implemented three features: (1) GDPR Bulk Data Export for admins, (2) Product Report review actions with confirm dialog and seller notifications, (3) Abandoned Cart Recovery with new cart CRUD APIs, schema changes, and recovery endpoints.
+
+### Changes Made
+
+#### Feature 1: GDPR Bulk Data Export
+
+##### 1. Data Export API (`src/app/api/admin/data-export/route.ts`) — NEW
+- **GET /api/admin/data-export** — Admin-only bulk data export
+- Supports `type` query param: `users`, `orders`, `products`, `shops`, `transactions`
+- Supports `format` query param: `json` (default), `csv`
+- Supports `page` and `limit` query params for pagination (max 500 per page)
+- Each export type uses a field selection map that excludes sensitive fields (passwords, etc.)
+- Rate limited: 10 requests per minute
+- Creates audit log entry for every export (`admin.data_export` action)
+- CSV format: Returns `text/csv` with Content-Disposition header for download
+- JSON format: Returns paginated JSON data with metadata
+
+##### 2. Admin Data Export Component (`src/components/marketplace/admin/admin-data-export.tsx`) — NEW
+- `'use client'` component with gold accent theme
+- Dropdown to select export type (Users/Orders/Products/Shops/Transactions) with descriptions
+- Dropdown to select format (JSON/CSV) with descriptions
+- Data Sensitivity Warning card with amber styling listing GDPR compliance notes
+- Export button triggers download (CSV as file, JSON as file)
+- Last export summary card showing type, format, and timestamp
+- Audit logging notice badge
+
+##### 3. Admin Panel Updates (`src/components/marketplace/admin/admin-panel.tsx`) — MODIFIED
+- Added `Download` icon import from lucide-react
+- Added `AdminDataExport` component import
+- Added `'data-export'` to `AdminTab` type
+- Added "Data Export" tab with Download icon to sidebar tabs
+- Added `case 'data-export'` in renderTabContent switch
+
+##### 4. Audit Log Labels (`src/lib/audit-log.ts`) — MODIFIED
+- Added `admin.data_export`, `admin.abandoned_carts_view`, `cart.reminder_sent` labels
+
+##### 5. API Client Updates (`src/lib/api.ts`) — MODIFIED
+- Added `dataExport(type, format)` method to `adminApi` — downloads blob from data-export endpoint
+- Added `getAbandonedCarts(params)` method to `adminApi` — calls `GET /admin/abandoned-carts`
+
+#### Feature 2: Product Reporting — Admin Review Actions
+
+##### 1. Reports API (`src/app/api/admin/reports/[id]/route.ts`) — MODIFIED
+- When `status === 'action_taken'`: now also creates a notification for the seller
+- Finds seller through product → shop → user chain
+- Notification includes product name, report reason, and optional admin note
+- Notification uses `type: 'warning'`, `category: 'shop'`, `priority: 'high'`
+- Error handling: notification failure doesn't break the main operation
+
+##### 2. Admin Reports Component (`src/components/marketplace/admin/admin-reports.tsx`) — MODIFIED
+- Added confirm dialog for "Take Action" button using shadcn/ui Dialog
+- Dialog shows: product name, consequences list (deactivate, notify seller, audit log, mark report)
+- Cancel and "Confirm — Take Action" buttons with red styling
+- "Review" button renamed to "Under Review" for clarity
+- Added "Deactivated" badge on product cards where product is already inactive
+- Updated success toast message to mention "product deactivated and seller notified"
+- Removed unused Search and Filter icon imports
+- Added AlertTriangle and Dialog component imports
+
+#### Feature 3: Abandoned Cart Recovery
+
+##### 1. Prisma Schema Changes (all 3 schema files)
+- Added `abandonedAt DateTime?` to Cart model — set when cart is considered abandoned (24h+ without activity)
+- Added `lastReminderSentAt DateTime?` to Cart model — tracks last reminder sent timestamp
+- Added `@@index([abandonedAt])` for efficient abandoned cart queries
+- Ran `bun run db:push` to sync the database
+
+##### 2. Cart GET API (`src/app/api/cart/route.ts`) — REWRITTEN
+- **GET /api/cart** — Returns enriched cart with product info
+- Parses cart items JSON, fetches product details and variant details
+- Returns: enriched items (with name, price, image, stock, shop info), abandonedAt, lastReminderSentAt
+- Variant resolution: checks variant price/stock if variantId is present
+- **DELETE /api/cart** — Clear entire cart (unchanged)
+
+##### 3. Cart Items API (`src/app/api/cart/items/route.ts`) — NEW
+- **POST /api/cart/items** — Add item to cart
+- Accepts: `{ productId, quantity, variantId }`
+- Validates product exists and is active, checks stock
+- Validates variant if provided
+- Upserts cart; sets `abandonedAt: null` when items are added (resets abandonment)
+- If item already exists (same product + variant), increments quantity
+
+##### 4. Cart Item by ID API (`src/app/api/cart/items/[id]/route.ts`) — NEW
+- **PUT /api/cart/items/[id]** — Update quantity (id = productId)
+- Accepts: `{ quantity, variantId }` in body
+- Setting quantity to 0 removes the item
+- Sets `abandonedAt: null` on update
+- **DELETE /api/cart/items/[id]** — Remove item from cart
+- Supports `variantId` query param to identify specific variant
+- Sets `abandonedAt: null` on modification
+
+##### 5. Abandoned Carts API (`src/app/api/admin/abandoned-carts/route.ts`) — NEW
+- **GET /api/admin/abandoned-carts** — Admin view of abandoned carts
+- Auto-marks eligible carts as abandoned (24h+ without activity, has items)
+- Returns enriched carts with user info, product details, subtotal
+- Supports pagination (page/limit)
+- Creates audit log entry (`admin.abandoned_carts_view`)
+
+##### 6. Cart Reminder API (`src/app/api/cart/send-reminder/route.ts`) — NEW
+- **POST /api/cart/send-reminder** — Send recovery reminders
+- Accepts: `{ cartId }` for specific cart or `{ sendAll: true }` for all eligible
+- Rate limited: 10 per minute
+- Won't send more than one reminder per 24 hours per cart
+- Creates in-app notification for the user with cart recovery message
+- Updates `lastReminderSentAt` on the cart
+- Batch limit: 50 carts per request
+- Creates audit log entry (`cart.reminder_sent`)
+
+##### 7. API Client Updates (`src/lib/api.ts`) — MODIFIED
+- Expanded `cartApi` with new methods:
+  - `addItem(data)` — POST `/cart/items`
+  - `updateItem(productId, data)` — PUT `/cart/items/${productId}`
+  - `removeItem(productId, variantId?)` — DELETE `/cart/items/${productId}`
+  - `sendReminder(data)` — POST `/cart/send-reminder`
+- Updated `cart.get()` return type to include `abandonedAt` and `lastReminderSentAt`
+
+### Lint Results
+- 0 errors, 3 pre-existing warnings (unrelated to this task)
+- All new and modified files pass ESLint cleanly

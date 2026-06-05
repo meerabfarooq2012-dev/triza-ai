@@ -223,6 +223,8 @@ export const POST = withCsrf(async (request: NextRequest) => {
       shippingPhone,
       shippingMethod,
       shippingCost,
+      taxRate,
+      taxAmount,
       notes,
     } = body;
 
@@ -350,6 +352,8 @@ export const POST = withCsrf(async (request: NextRequest) => {
           shippingPhone,
           shippingMethod,
           shippingCost: perShopShippingCost,
+          taxRate: typeof taxRate === 'number' ? taxRate : 0,
+          taxAmount: typeof taxAmount === 'number' ? taxAmount : 0,
           notes,
           items: {
             create: orderItemsData,

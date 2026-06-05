@@ -916,10 +916,24 @@ export default function OrderTrackingPage() {
                   <span className="text-muted-foreground">Platform Fee</span>
                   <span>${(order.platformFee ?? 0).toFixed(2)}</span>
                 </div>
+                {(order.taxAmount ?? 0) > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      Tax ({order.taxRate}%)
+                    </span>
+                    <span>${(order.taxAmount ?? 0).toFixed(2)}</span>
+                  </div>
+                )}
+                {(order.shippingCost ?? 0) > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Shipping</span>
+                    <span>${(order.shippingCost ?? 0).toFixed(2)}</span>
+                  </div>
+                )}
                 <Separator />
                 <div className="flex justify-between font-bold">
                   <span>Total</span>
-                  <span className="text-lg">${((order.totalAmount ?? 0) + (order.platformFee ?? 0)).toFixed(2)}</span>
+                  <span className="text-lg">${((order.totalAmount ?? 0) + (order.platformFee ?? 0) + (order.taxAmount ?? 0) + (order.shippingCost ?? 0)).toFixed(2)}</span>
                 </div>
               </div>
             </CardContent>

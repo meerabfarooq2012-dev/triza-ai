@@ -9,22 +9,22 @@ import {
   ChevronDown,
   ChevronUp,
   Loader2,
-  Search,
-  Filter,
+  AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 
@@ -87,6 +87,13 @@ export function AdminReports() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  // Confirm dialog state for "Take Action"
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    reportId: string | null;
+    productName: string;
+  }>({ open: false, reportId: null, productName: '' });
+
   const fetchReports = useCallback(async () => {
     setLoading(true);
     try {
@@ -118,7 +125,7 @@ export function AdminReports() {
         adminNote: adminNote[reportId] || undefined,
       });
       if (result.success) {
-        toast.success(`Report ${newStatus === 'action_taken' ? 'resolved with action taken' : newStatus === 'dismissed' ? 'dismissed' : 'updated'}`);
+        toast.success(`Report ${newStatus === 'action_taken' ? 'resolved with action taken — product deactivated and seller notified' : newStatus === 'dismissed' ? 'dismissed' : 'updated'}`);
         fetchReports();
         setExpandedId(null);
         setAdminNote((prev) => {
@@ -134,6 +141,17 @@ export function AdminReports() {
     } finally {
       setActioning(null);
     }
+  };
+
+  const handleTakeActionClick = (reportId: string, productName: string) => {
+    setConfirmDialog({ open: true, reportId, productName });
+  };
+
+  const handleConfirmAction = () => {
+    if (confirmDialog.reportId) {
+      handleUpdateStatus(confirmDialog.reportId, 'action_taken');
+    }
+    setConfirmDialog({ open: false, reportId: null, productName: '' });
   };
 
   const formatRelativeTime = (dateStr: string) => {
@@ -236,6 +254,11 @@ export function AdminReports() {
                         <Badge className={`${config.bgColor} ${config.color} text-[10px] px-1.5 py-0`}>
                           {config.label}
                         </Badge>
+                        {!report.product?.isActive && report.status !== 'action_taken' && (
+                          <Badge className="bg-red-100 text-red-700 text-[10px] px-1.5 py-0">
+                            Deactivated
+                          </Badge>
+                        )}
                       </div>
                       <div className="flex items-center gap-3 text-xs text-slate-500">
                         <span className="font-medium text-amber-600">
@@ -319,12 +342,12 @@ export function AdminReports() {
                               disabled={actioning === report.id}
                             >
                               {actioning === report.id ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Eye className="mr-1 h-3 w-3" />}
-                              Review
+                              Under Review
                             </Button>
                             <Button
                               size="sm"
                               className="bg-red-600 hover:bg-red-700 text-white"
-                              onClick={() => handleUpdateStatus(report.id, 'action_taken')}
+                              onClick={() => handleTakeActionClick(report.id, report.product?.name || 'Unknown Product')}
                               disabled={actioning === report.id}
                             >
                               {actioning === report.id ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Ban className="mr-1 h-3 w-3" />}
@@ -376,6 +399,52 @@ export function AdminReports() {
           )}
         </div>
       )}
+
+      {/* Confirm Action Dialog */}
+      <Dialog open={confirmDialog.open} onOpenChange={(open) => setConfirmDialog((prev) => ({ ...prev, open }))}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-700">
+              <AlertTriangle className="h-5 w-5" />
+              Confirm Action Against Product
+            </DialogTitle>
+            <DialogDescription className="text-left pt-2">
+              You are about to take action on the report for <strong>&quot;{confirmDialog.productName}&quot;</strong>.
+              This will deactivate the product and notify the seller.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 space-y-1">
+              <p className="text-sm font-medium text-red-800">This action will:</p>
+              <ul className="text-sm text-red-700 list-disc list-inside space-y-0.5">
+                <li>Deactivate the product (set isActive to false)</li>
+                <li>Send a notification to the seller</li>
+                <li>Log this action in the audit trail</li>
+                <li>Mark the report as &quot;Action Taken&quot;</li>
+              </ul>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              The seller can be notified about the action and may appeal the decision.
+            </p>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setConfirmDialog({ open: false, reportId: null, productName: '' })}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={handleConfirmAction}
+              disabled={actioning !== null}
+            >
+              {actioning ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Ban className="mr-1 h-4 w-4" />}
+              Confirm — Take Action
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

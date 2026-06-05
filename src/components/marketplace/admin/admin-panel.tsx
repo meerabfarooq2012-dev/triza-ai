@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   ShieldAlert,
   ScrollText,
+  Download,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -30,8 +31,9 @@ import AdminCategories from './admin-categories'
 import AdminVerifications from './admin-verifications'
 import { AdminReports } from './admin-reports'
 import { AdminAuditLog } from './admin-audit-log'
+import { AdminDataExport } from './admin-data-export'
 
-type AdminTab = 'dashboard' | 'users' | 'products' | 'orders' | 'transactions' | 'disputes' | 'categories' | 'verifications' | 'reports' | 'audit-log' | 'settings'
+type AdminTab = 'dashboard' | 'users' | 'products' | 'orders' | 'transactions' | 'disputes' | 'categories' | 'verifications' | 'reports' | 'audit-log' | 'data-export' | 'settings'
 
 const tabs: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
@@ -44,6 +46,7 @@ const tabs: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
   { id: 'verifications', label: 'Verifications', icon: <ShieldCheck size={18} /> },
   { id: 'reports', label: 'Reports', icon: <ShieldAlert size={18} /> },
   { id: 'audit-log', label: 'Audit Log', icon: <ScrollText size={18} /> },
+  { id: 'data-export', label: 'Data Export', icon: <Download size={18} /> },
   { id: 'settings', label: 'Settings', icon: <Settings size={18} /> },
 ]
 
@@ -101,6 +104,8 @@ export default function AdminPanel() {
         return <AdminReports />
       case 'audit-log':
         return <AdminAuditLog />
+      case 'data-export':
+        return <AdminDataExport />
       case 'settings':
         return <AdminSettings />
       default:

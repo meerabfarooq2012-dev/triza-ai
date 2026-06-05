@@ -679,6 +679,38 @@ const adminApi = {
       method: 'PATCH',
       body: JSON.stringify(data),
     }),
+
+  getAbandonedCarts: (params?: { page?: number; limit?: number }) => {
+    const searchParams = new URLSearchParams()
+    if (params?.page) searchParams.set('page', String(params.page))
+    if (params?.limit) searchParams.set('limit', String(params.limit))
+    const qs = searchParams.toString()
+    return request<ApiResponse<Record<string, unknown>[]>>(`/admin/abandoned-carts${qs ? `?${qs}` : ''}`)
+  },
+
+  dataExport: async (type: string, format: string): Promise<Blob> => {
+    const authToken = useMarketplaceStore.getState().authToken
+    const headers: Record<string, string> = {}
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`
+    }
+
+    const response = await fetch(`/api/admin/data-export?type=${type}&format=${format}&limit=500`, {
+      method: 'GET',
+      headers,
+    })
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({ error: 'Export failed' }))
+      throw new ApiError(
+        data.error || `Export failed with status ${response.status}`,
+        response.status,
+        data
+      )
+    }
+
+    return response.blob()
+  },
 }
 
 // ----- Gigs API -----
@@ -960,7 +992,7 @@ const twoFactorApi = {
 
 const cartApi = {
   get: () =>
-    request<ApiResponse<{ items: unknown[]; updatedAt?: string }>>('/cart'),
+    request<ApiResponse<{ items: unknown[]; abandonedAt?: string | null; lastReminderSentAt?: string | null; updatedAt?: string }>>('/cart'),
 
   sync: (items: { productId: string; quantity: number; variantId?: string; addedAt?: string }[]) =>
     request<ApiResponse<{ items: unknown[] }>>('/cart/sync', {
@@ -968,9 +1000,34 @@ const cartApi = {
       body: JSON.stringify({ items }),
     }),
 
+  addItem: (data: { productId: string; quantity: number; variantId?: string | null }) =>
+    request<ApiResponse<{ items: unknown[]; itemCount: number }>>('/cart/items', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateItem: (productId: string, data: { quantity: number; variantId?: string | null }) =>
+    request<ApiResponse<{ items: unknown[]; itemCount: number }>>(`/cart/items/${productId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  removeItem: (productId: string, variantId?: string | null) => {
+    const params = variantId ? `?variantId=${variantId}` : ''
+    return request<ApiResponse<{ items: unknown[]; itemCount: number }>>(`/cart/items/${productId}${params}`, {
+      method: 'DELETE',
+    })
+  },
+
   clear: () =>
     request<ApiResponse>('/cart', {
       method: 'DELETE',
+    }),
+
+  sendReminder: (data: { cartId?: string; sendAll?: boolean }) =>
+    request<ApiResponse<{ sentCount: number; totalTargeted: number }>>('/cart/send-reminder', {
+      method: 'POST',
+      body: JSON.stringify(data),
     }),
 }
 

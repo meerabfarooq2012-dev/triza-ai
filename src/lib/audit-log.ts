@@ -55,4 +55,7 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   'category.create': 'Created category',
   'category.update': 'Updated category',
   'category.delete': 'Deleted category',
+  'admin.data_export': 'Exported platform data',
+  'admin.abandoned_carts_view': 'Viewed abandoned carts',
+  'cart.reminder_sent': 'Sent cart reminder',
 };

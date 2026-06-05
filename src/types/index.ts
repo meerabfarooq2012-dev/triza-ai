@@ -182,6 +182,8 @@ export interface Order {
   totalAmount: number
   shippingCost: number
   platformFee: number
+  taxRate: number
+  taxAmount: number
   paymentMethod: string
   paymentStatus: PaymentStatus
   shippingName: string | null

@@ -105,12 +105,36 @@ async function handler(request: NextRequest, context: { params: Promise<{ id: st
       },
     });
 
-    // If action_taken, optionally deactivate the product
+    // If action_taken, optionally deactivate the product and notify the seller
     if (status === 'action_taken') {
       await db.product.update({
         where: { id: report.productId },
         data: { isActive: false },
       });
+
+      // Find the seller through product -> shop -> user and create a notification
+      try {
+        const productWithShop = await db.product.findUnique({
+          where: { id: report.productId },
+          select: { shop: { select: { userId: true, name: true } } },
+        });
+        if (productWithShop?.shop?.userId) {
+          await db.notification.create({
+            data: {
+              userId: productWithShop.shop.userId,
+              title: 'Product Action Taken',
+              message: `Your product "${report.product?.name || 'Unknown'}" has been deactivated by admin due to a report review. Reason: ${report.reason}.${adminNote ? ` Admin note: ${adminNote}` : ''}`,
+              type: 'warning',
+              category: 'shop',
+              priority: 'high',
+              link: '/seller-dashboard?tab=products',
+            },
+          });
+        }
+      } catch (notifError) {
+        console.error('Failed to create seller notification:', notifError);
+        // Don't fail the main operation if notification fails
+      }
     }
 
     // Create audit log

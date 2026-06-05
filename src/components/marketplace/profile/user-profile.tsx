@@ -32,6 +32,7 @@ import { api } from '@/lib/api'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { USER_ROLE_LABELS } from '@/lib/constants'
 import { ChangePasswordForm } from '@/components/marketplace/auth/change-password-form'
+import { TwoFactorProfile } from '@/components/marketplace/auth/two-factor-profile'
 import { SessionManager } from '@/components/marketplace/settings/session-manager'
 import { DeleteAccountDialog } from '@/components/marketplace/auth/delete-account-dialog'
 import { DataExportButton } from '@/components/marketplace/settings/data-export-button'
@@ -484,6 +485,18 @@ export function UserProfile() {
               transition={{ duration: 0.3, delay: 0.25 }}
             >
               <SessionManager />
+            </motion.div>
+
+            {/* Two-Factor Authentication */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.3 }}
+            >
+              <TwoFactorProfile
+                userId={currentUser.id}
+                twoFactorEnabled={currentUser.twoFactorEnabled ?? false}
+              />
             </motion.div>
           </div>
 

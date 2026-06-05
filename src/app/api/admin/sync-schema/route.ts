@@ -391,6 +391,56 @@ const MIGRATIONS: { name: string; sql: string }[] = [
     name: 'NotificationPreference.userId unique',
     sql: `CREATE UNIQUE INDEX IF NOT EXISTS "NotificationPreference_userId_key" ON "NotificationPreference"("userId")`
   },
+
+  // Cart table - add abandoned cart fields
+  {
+    name: 'Cart.abandonedAt',
+    sql: `ALTER TABLE "Cart" ADD COLUMN IF NOT EXISTS "abandonedAt" TIMESTAMP(3)`
+  },
+  {
+    name: 'Cart.lastReminderSentAt',
+    sql: `ALTER TABLE "Cart" ADD COLUMN IF NOT EXISTS "lastReminderSentAt" TIMESTAMP(3)`
+  },
+  {
+    name: 'Cart.abandonedAt index',
+    sql: `CREATE INDEX IF NOT EXISTS "Cart_abandonedAt_idx" ON "Cart"("abandonedAt")`
+  },
+
+  // CartItem table (if not already created)
+  {
+    name: 'CartItem table',
+    sql: `CREATE TABLE IF NOT EXISTS "CartItem" (
+      "id" TEXT NOT NULL,
+      "cartId" TEXT NOT NULL,
+      "productId" TEXT NOT NULL,
+      "quantity" INTEGER NOT NULL DEFAULT 1,
+      "variantId" TEXT,
+      "variantLabel" TEXT,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL,
+      CONSTRAINT "CartItem_pkey" PRIMARY KEY ("id")
+    )`
+  },
+  {
+    name: 'CartItem.cartId index',
+    sql: `CREATE INDEX IF NOT EXISTS "CartItem_cartId_idx" ON "CartItem"("cartId")`
+  },
+  {
+    name: 'CartItem.cartId FK',
+    sql: `DO $$ BEGIN
+      IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'CartItem_cartId_fkey') THEN
+        ALTER TABLE "CartItem" ADD CONSTRAINT "CartItem_cartId_fkey" FOREIGN KEY ("cartId") REFERENCES "Cart"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+      END IF;
+    END $$`
+  },
+  {
+    name: 'CartItem.productId FK',
+    sql: `DO $$ BEGIN
+      IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'CartItem_productId_fkey') THEN
+        ALTER TABLE "CartItem" ADD CONSTRAINT "CartItem_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+      END IF;
+    END $$`
+  },
 ]
 
 export async function POST(request: NextRequest) {

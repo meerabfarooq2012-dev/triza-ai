@@ -1,5 +1,6 @@
 import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
+import { createAuditLog } from '@/lib/audit-log'
 
 // Helper: calculate trust tier based on trust score
 function calculateTier(trustScore: number): string {
@@ -201,6 +202,17 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // Audit log
+      await createAuditLog({
+        userId: reviewedBy,
+        action: 'shop.approve',
+        entityType: 'verification',
+        entityId: verificationId,
+        details: { status: 'approved', shopId: verification.shopId, trustScore: newTrustScore, trustLevel: newTrustLevel },
+        ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+        userAgent: request.headers.get('user-agent') || undefined,
+      })
+
       return NextResponse.json({
         success: true,
         data: {
@@ -229,6 +241,17 @@ export async function POST(request: NextRequest) {
         },
       })
 
+      // Audit log
+      await createAuditLog({
+        userId: reviewedBy,
+        action: 'shop.reject',
+        entityType: 'verification',
+        entityId: verificationId,
+        details: { status: 'rejected', shopId: verification.shopId, rejectionReason: rejectionReason || null },
+        ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+        userAgent: request.headers.get('user-agent') || undefined,
+      })
+
       return NextResponse.json({
         success: true,
         data: updatedVerification,
@@ -242,6 +265,17 @@ export async function POST(request: NextRequest) {
           reviewedBy,
           reviewedAt: now,
         },
+      })
+
+      // Audit log
+      await createAuditLog({
+        userId: reviewedBy,
+        action: 'report.review',
+        entityType: 'verification',
+        entityId: verificationId,
+        details: { status: 'under_review', shopId: verification.shopId },
+        ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+        userAgent: request.headers.get('user-agent') || undefined,
       })
 
       return NextResponse.json({
