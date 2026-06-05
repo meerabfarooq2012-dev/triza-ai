@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { withCsrf } from '@/lib/with-csrf';
+import { cache } from '@/lib/cache';
 
 function slugify(text: string): string {
   return text
@@ -17,6 +18,26 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '12', 10);
     const skip = (page - 1) * limit;
+
+    // Build cache key
+    const cacheKey = `shops:${search}:${category}:${page}:${limit}`;
+
+    // Check cache first (2 minute TTL for shops)
+    const cachedData = cache.get<{ shops: unknown[]; total: number }>(cacheKey);
+    if (cachedData) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          shops: cachedData.shops,
+          pagination: {
+            page,
+            limit,
+            total: cachedData.total,
+            totalPages: Math.ceil(cachedData.total / limit),
+          },
+        },
+      });
+    }
 
     const where: Record<string, unknown> = {
       isActive: true,
@@ -59,6 +80,9 @@ export async function GET(request: NextRequest) {
       productCount: shop._count.products,
       _count: undefined,
     }));
+
+    // Cache for 2 minutes
+    cache.set(cacheKey, { shops: parsedShops, total }, 120_000);
 
     return NextResponse.json({
       success: true,
@@ -144,6 +168,9 @@ export const POST = withCsrf(async (request: NextRequest) => {
         address,
       },
     });
+
+    // Invalidate shop cache on create
+    cache.deleteByPrefix('shops:');
 
     return NextResponse.json({ success: true, data: shop }, { status: 201 });
   } catch (error) {

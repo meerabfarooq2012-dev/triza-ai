@@ -16,6 +16,7 @@ import {
   ShieldAlert,
   ScrollText,
   Download,
+  RotateCcw,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -26,6 +27,7 @@ import AdminProducts from './admin-products'
 import AdminOrders from './admin-orders'
 import AdminDisputes from './admin-disputes'
 import AdminSettings from './admin-settings'
+import AdminReturns from './admin-returns'
 import { AdminTransactions } from './admin-transactions'
 import AdminCategories from './admin-categories'
 import AdminVerifications from './admin-verifications'
@@ -33,13 +35,14 @@ import { AdminReports } from './admin-reports'
 import { AdminAuditLog } from './admin-audit-log'
 import { AdminDataExport } from './admin-data-export'
 
-type AdminTab = 'dashboard' | 'users' | 'products' | 'orders' | 'transactions' | 'disputes' | 'categories' | 'verifications' | 'reports' | 'audit-log' | 'data-export' | 'settings'
+type AdminTab = 'dashboard' | 'users' | 'products' | 'orders' | 'transactions' | 'disputes' | 'categories' | 'verifications' | 'reports' | 'audit-log' | 'data-export' | 'settings' | 'returns'
 
 const tabs: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
   { id: 'users', label: 'Users', icon: <Users size={18} /> },
   { id: 'products', label: 'Products', icon: <Package size={18} /> },
   { id: 'orders', label: 'Orders', icon: <ShoppingCart size={18} /> },
+  { id: 'returns', label: 'Returns', icon: <RotateCcw size={18} /> },
   { id: 'transactions', label: 'Transactions', icon: <CreditCard size={18} /> },
   { id: 'disputes', label: 'Disputes', icon: <AlertTriangle size={18} /> },
   { id: 'categories', label: 'Categories', icon: <FolderTree size={18} /> },
@@ -92,6 +95,8 @@ export default function AdminPanel() {
         return <AdminProducts />
       case 'orders':
         return <AdminOrders />
+      case 'returns':
+        return <AdminReturns />
       case 'transactions':
         return <AdminTransactions />
       case 'disputes':

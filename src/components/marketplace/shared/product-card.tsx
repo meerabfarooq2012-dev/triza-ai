@@ -127,7 +127,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
               variant="ghost"
               size="icon"
               className={cn(
-                'h-8 w-8 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white',
+                'h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background',
                 isFavorited && 'text-red-500 hover:text-red-600'
               )}
               onClick={handleFavorite}
@@ -142,7 +142,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
               variant="ghost"
               size="icon"
               className={cn(
-                'h-8 w-8 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white',
+                'h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background',
                 inCompare && 'text-amber-600 bg-amber-50 hover:bg-amber-100'
               )}
               onClick={handleCompare}

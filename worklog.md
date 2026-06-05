@@ -1971,3 +1971,382 @@ Implemented two medium-priority features: (1) Replaced all `<img>` tags with Nex
 ### Lint Results
 - 0 errors, 3 pre-existing warnings (unrelated to this task)
 - All modified files pass ESLint cleanly
+
+---
+
+## Task 2 — Enhance Shipping Calculator in Checkout (Agent: main)
+
+### Summary
+Enhanced the shipping calculator to provide sensible default shipping rates when no shipping zones are configured for a shop, improved the checkout modal shipping step UI with method-specific icons and visual enhancements, and verified that order creation properly uses the shipping cost from the request.
+
+### Changes Made
+
+#### 1. Shipping Calculate API (`src/app/api/shipping/calculate/route.ts`) — UPDATED
+- **Default shipping rates fallback**: When `matchingZones.length === 0`, the API now returns sensible default rates instead of an empty array:
+  - **Standard Shipping**: $5.00, 5-7 business days
+  - **Express Shipping**: $12.00, 2-3 business days
+  - **Free Shipping**: $0.00 (if orderTotal >= $50), 5-7 business days
+- Default rates include a `zone` property with `name: "Default Zone"` and `countries: []` (worldwide)
+- Results are sorted: free shipping first, then by price ascending (same logic as configured zones)
+- Each rate includes `estimatedDelivery` with calculated min/max dates based on `minDays`/`maxDays`
+- IDs use prefix `default-` (e.g., `default-standard`, `default-express`, `default-free`) to distinguish from DB-backed rates
+
+#### 2. Checkout Modal (`src/components/marketplace/payment/checkout-modal.tsx`) — UPDATED
+- **Added icon imports**: `Zap`, `Gift`, `Clock` from lucide-react
+- **Improved shipping method selection UI**:
+  - Each shipping method now has a **method-specific icon**: Truck for standard, Zap for express, Gift for free shipping
+  - Icons have **color-coded backgrounds**: emerald for free, amber for express, muted for standard
+  - **Clock icon** next to estimated delivery date for better visual hierarchy
+  - **Method badges** are now color-coded: amber border for express, emerald border for free shipping
+  - Radio button aligned to top (`mt-1`) for better alignment with multi-line content
+- **Default zone notice**: When rates come from the "Default Zone" (seller hasn't configured shipping), an amber info banner is shown: "The seller hasn't configured custom shipping zones. Default rates are shown below."
+- **Empty state update**: When no shipping options are available at all, the message now uses amber styling (instead of emerald "Free shipping") with text: "No shipping options available for your destination. You can still proceed — shipping will be calculated later."
+
+#### 3. Order Creation Verification (`src/app/api/orders/route.ts`) — VERIFIED
+- Confirmed `shippingCost` is properly destructured from the request body
+- Shipping cost is distributed evenly across shop groups: `perShopShippingCost = shippingCost ? Math.round((shippingCost / shopGroups.size) * 100) / 100 : 0`
+- Each order stores its per-shop share of the shipping cost via `shippingCost: perShopShippingCost`
+- No changes needed — existing implementation is correct
+
+### Lint Results
+- 0 errors, 3 pre-existing warnings (unrelated to this task)
+- All modified files pass ESLint cleanly
+
+---
+
+## Task 4+6 — Stories Integration Enhancement + Wire Language Switcher
+
+**Date:** 2025-03-04
+**Agent:** main
+
+### Summary
+Enhanced the StoryBar integration by adding it to the Search page, making the "Create Story" button accessible to all users (with auth modal for guests), and adding file upload support to the CreateStoryDialog. Also wired the LanguageSwitcher into the header (both desktop and mobile views).
+
+### Changes Made
+
+#### Part A: Stories Integration Enhancement
+
+##### 1. Search Page — Added StoryBar (`src/components/marketplace/search/search-page.tsx`)
+- Imported `StoryBar` component
+- Added `<StoryBar />` near the top of the search page, above the search header, inside a border-b wrapper with spacing
+
+##### 2. StoryBar — "Create Story" Auth Flow (`src/components/marketplace/social/story-bar.tsx`)
+- Moved `userShop` and `isSeller` variables to the top of the component (removed duplicate declarations)
+- Added `handleCreateStoryClick()` function with three paths:
+  - **Not logged in** → navigates to auth modal with login mode (`setCurrentView('auth', { mode: 'login' })`)
+  - **Logged in but not a seller** → navigates to auth modal with register mode (`setCurrentView('auth', { mode: 'register' })`)
+  - **Logged in seller with shop** → opens the CreateStoryDialog
+- Changed the "Add Story" button to always be visible (not gated behind `isSeller && userShop`)
+  - Sellers with a shop see the amber "Add Story" style
+  - Other users see a muted "Create Story" style (slate border, slate text)
+- Updated the visibility condition: StoryBar now renders if there are stories OR the user is authenticated (not just for sellers)
+
+##### 3. CreateStoryDialog — File Upload via /api/upload (`src/components/marketplace/social/create-story-dialog.tsx`)
+- Added imports: `useRef`, `Cloud` from lucide-react, `Badge` from shadcn/ui, `useUpload` hook
+- Added `useUpload({ folder: 'stories' })` hook integration
+- Added `fileInputRef` for hidden file input
+- Added `handleFileUpload()` function that:
+  - Calls `upload(file)` from the useUpload hook
+  - On success, sets the `imageUrl` state with the returned URL
+  - Shows success toast
+  - Resets file input for re-selection
+- Replaced the URL-only image section with a combined approach:
+  - **Upload button**: Opens file picker, shows "Uploading..." spinner during upload
+  - **Cloud badge**: Shows "Uploaded" indicator when an image URL is set
+  - **URL fallback input**: Still accepts manual URL entry for direct links
+  - Helper text updated: "Upload an image or paste a URL directly. JPG, PNG, WebP, GIF — max 5MB."
+- Removed the "use a sample image" placeholder link
+
+#### Part B: Wire Language Switcher to Header
+
+##### 4. Header — Desktop Language Switcher (`src/components/marketplace/layout/header.tsx`)
+- Imported `LanguageSwitcher` from `@/components/marketplace/shared/language-switcher`
+- Added `<LanguageSwitcher variant="default" />` after the `<ThemeToggle />` in the desktop actions area
+- The default variant shows a Globe icon + native language label (e.g. "English"), with a dropdown showing all locales with flags, native labels, RTL badges, and check marks
+
+##### 5. Header — Mobile Language Switcher (`src/components/marketplace/layout/header.tsx`)
+- Added `<LanguageSwitcher variant="compact" />` in the mobile slide-out menu
+- Placed after the Theme Toggle row with a "Language" label
+- The compact variant shows flag + native label in a small button, with a dropdown for selection
+
+##### 6. RTL Provider — No Changes Needed
+- The existing `RTLProvider` already listens to `language` from the Zustand store
+- `useLanguage().setLocale()` already updates `document.documentElement.dir` and `document.documentElement.lang`
+- Language switcher uses `setLocale()` which triggers the RTL provider automatically
+
+### Lint Results
+- 0 new errors, 0 new warnings
+- Pre-existing warnings (3) in unrelated files remain unchanged
+
+---
+
+## Task 3 — Return Admin Escalation Feature (Agent: main)
+
+### Summary
+Added admin escalation capability for return disputes. Buyers can escalate returns when rejected or after 3 days of waiting, and admins can resolve escalations by approving (with refund) or rejecting. Created backend API actions, frontend escalation UI in the return detail page, and a dedicated admin returns management panel.
+
+### Changes Made
+
+#### 1. Return API Escalation Actions (`src/app/api/returns/[id]/route.ts`)
+- **Added `escalate` action** to the PUT handler:
+  - Body: `{ userId, action: 'escalate', adminNote? }`
+  - Only buyers can escalate their own returns
+  - Valid from statuses: `requested`, `rejected`
+  - Sets status to `under_review` and optionally stores `adminNote`
+  - Creates timeline entry: "Return escalated to admin for review"
+  - Sends notifications to both buyer and seller about the escalation
+- **Added `resolve_escalation` action** to the PUT handler:
+  - Body: `{ userId, action: 'resolve_escalation', resolution: 'approve' | 'reject', adminNote, refundAmount?, refundMethod? }`
+  - Only admins can resolve escalations
+  - Valid only from status: `under_review`
+  - If resolution is `approve`: sets status to `approved`, sets `refundAmount`/`refundMethod`, stores `adminNote`
+  - If resolution is `reject`: sets status to `rejected`, stores `adminNote`
+  - Creates timeline entry describing the resolution
+  - Sends notifications to both buyer and seller about the resolution
+- Added `resolution` to destructured body params
+- Added permission checks for `escalate` (buyer only) and `resolve_escalation` (admin only)
+- Added valid status transitions: `escalate: ['requested', 'rejected']`, `resolve_escalation: ['under_review']`
+- Added validation for `resolution` and `adminNote` when resolving
+
+#### 2. Return Detail Page Escalation UI (`src/components/marketplace/returns/return-detail-page.tsx`)
+- **Added icon imports**: `ShieldAlert`, `Shield`
+- **Added dialog states**: `escalateDialogOpen`, `resolveEscalationDialogOpen`
+- **Added form states**: `escalateNote`, `adminResolution`, `adminRefundAmount`, `adminRefundMethod`, `adminNote`
+- **Added `handleEscalate` handler**: Calls PUT `/api/returns/[id]` with `action: 'escalate'`, optional adminNote
+- **Added `handleResolveEscalation` handler**: Calls PUT with `action: 'resolve_escalation'`, resolution, adminNote, and optionally refundAmount/refundMethod
+- **Added `isEscalated` computed value**: Detects if a return in `under_review` status has an escalation timeline entry
+- **Added `canBuyerEscalate` computed value**: Buyers can escalate when status is `rejected` or when `requested` for more than 3 days
+- **Escalated Badge**: Orange badge with ShieldAlert icon shown in the status header when return is escalated
+- **"Escalate to Admin" button**: Orange button visible to buyers when they can escalate
+- **Admin Resolve Escalation section**: Shows when admin views an escalated return, includes:
+  - Orange info banner "Escalation Pending Review"
+  - "Resolve Escalation" button (sky blue)
+- **Escalate Dialog**: Orange-themed dialog with info banner and optional note textarea
+- **Resolve Escalation Dialog**: Sky-themed dialog with:
+  - Resolution choice (Approve/Reject)
+  - Refund amount and method inputs (when approving)
+  - Admin note textarea (required)
+  - Context-appropriate submit button (green "Approve & Refund" or red "Reject Return")
+- **Admin Note display card**: Shows admin note in the main content area when present (sky/blue left border with Shield icon)
+
+#### 3. Admin Returns Panel (`src/components/marketplace/admin/admin-returns.tsx`) — NEW
+- Full-featured returns management page for admins:
+  - **Status filter dropdown**: Defaults to "Escalated (Under Review)" to surface escalated returns first; also includes all statuses
+  - **Returns table**: Return ID, Buyer, Order, Reason, Status, Escalated badge, Date, Actions
+  - **Escalated rows highlighted** with orange background tint
+  - **Escalated badge**: Orange badge with ShieldAlert icon for escalated returns
+  - **"Resolve" button**: Inline button in the actions column for escalated returns
+  - **Return Detail Dialog**: Click eye icon to view return details including description, seller response, admin note, refund amount
+  - **Resolve Escalation Dialog**: Full resolution dialog with resolution choice, refund details, and admin note
+  - **Pagination**: Same pattern as admin orders
+  - **Empty state**: Contextual message for no escalated returns vs no returns at all
+
+#### 4. Admin Panel Updates (`src/components/marketplace/admin/admin-panel.tsx`)
+- Added `RotateCcw` icon import from lucide-react
+- Added `AdminReturns` component import
+- Added `'returns'` to `AdminTab` union type
+- Added `{ id: 'returns', label: 'Returns', icon: <RotateCcw /> }` to tabs array (placed after Orders)
+- Added `case 'returns': return <AdminReturns />` to `renderTabContent()`
+
+### Lint Results
+- 0 errors, 3 pre-existing warnings (unrelated to this task)
+- All new and modified files pass ESLint cleanly
+
+---
+
+## Task 7 + 8 — Location/Delivery Filters + Data Caching (Agent: main)
+
+### Summary
+Implemented Location and Delivery filters for the product search page, and created an in-memory caching utility with TTL support applied to high-traffic API routes.
+
+### Changes Made
+
+#### Part A: Location/Delivery Filters
+
+#### 1. Type Updates (`src/types/index.ts`)
+- Added `DeliveryFilterType` type: `'free_shipping' | 'digital_download' | 'express_delivery'`
+- Added `location?: string` field to `SearchFilters` interface — country name filter
+- Added `delivery?: DeliveryFilterType` field to `SearchFilters` interface — delivery type filter
+
+#### 2. Search Page UI (`src/components/marketplace/search/search-page.tsx`)
+- **Added new imports**: MapPin, Truck, Zap, Globe, Plane from lucide-react; DeliveryFilterType from types
+- **Added LOCATION_OPTIONS constant**: 12 countries (Pakistan, United States, United Kingdom, UAE, Saudi Arabia, Canada, Australia, Germany, Turkey, India, China) + "All Locations" default
+- **Added DELIVERY_OPTIONS constant**: 4 options (All, Free Shipping, Digital Download, Express Delivery) with icons and descriptions
+- **Location filter section** (products tab only):
+  - shadcn/ui Select dropdown with Globe icon
+  - "All Locations" as default
+  - "Clear location filter" button when active
+  - Helper text "Filter by shop's country"
+- **Delivery filter section** (products tab only):
+  - Button-based selection with icons (Truck, Download, Zap)
+  - Each option shows label + description text
+  - Visual feedback with primary styling when selected
+- **Updated ActiveFilterTags**: Shows location tag with 📍 icon, delivery tag with option label
+- **Updated QuickFilterChips**: Shows amber location chip and sky delivery chip when active, with X to remove
+- **Updated activeFilterCount**: Counts location and delivery as active filters
+- **Updated handleRemoveFilterTag**: Handles 'location' and 'delivery' keys
+- Both filters only visible on the products tab (not gigs)
+
+#### 3. API Client (`src/lib/api.ts`)
+- Added `location` and `delivery` params to `getProducts()` method
+- Sends `location` and `delivery` as query parameters in the URL
+
+#### 4. Products API (`src/app/api/products/route.ts`)
+- **Added `location` param**: Extracts from query string
+- **Added `delivery` param**: Extracts from query string
+- **Location filter logic**: Adds `shop: { address: { contains: location } }` condition to AND clause — filters products whose shop address contains the country name
+- **Delivery filter logic** (3 cases):
+  - `free_shipping`: Digital products OR physical products with shop shipping rates where price=0 or freeAbove is set
+  - `digital_download`: Only type='digital' products (instant delivery)
+  - `express_delivery`: Digital products OR physical products with shop shipping rates where maxDays <= 3
+- All delivery filters use Prisma relation traversal: `shop.shippingZones.some.rates.some`
+
+#### Part B: Data Caching Implementation
+
+#### 5. Cache Utility (`src/lib/cache.ts`) — NEW
+- `MemoryCache` class with generic typed Map storage
+- `get<T>(key)`: Returns cached data or null if expired/missing
+- `set<T>(key, data, ttl?)`: Stores data with TTL (default 1 minute)
+- `delete(key)`: Removes a single cache entry
+- `deleteByPrefix(prefix)`: Removes all entries with matching key prefix (for bulk invalidation)
+- `clear()`: Removes all entries
+- `getOrSet<T>(key, fetcher, ttl?)`: Cache-aside pattern — returns cached data or fetches, caches, and returns
+- `cleanup()`: Removes expired entries (auto-runs every 5 minutes via setInterval)
+- `size` getter for debugging
+- Exported as singleton `cache`
+
+#### 6. Categories API Caching (`src/app/api/categories/route.ts`)
+- Cache key: `categories:${type || 'all'}:${includeInactive}`
+- TTL: 5 minutes (300,000ms)
+- Checks cache before database query
+- Returns cached data directly if available
+- Caches result after database query
+
+#### 7. Shops API Caching (`src/app/api/shops/route.ts`)
+- Cache key: `shops:${search}:${category}:${page}:${limit}`
+- TTL: 2 minutes (120,000ms)
+- Checks cache before database query
+- Caches parsed shops result (with parsed customSections and productCount)
+- Invalidates all shop cache entries on POST (create shop) via `cache.deleteByPrefix('shops:')`
+
+#### 8. Products API Caching (`src/app/api/products/route.ts`)
+- Cache key: `products:${all search params concatenated}` — includes location and delivery
+- TTL: 1 minute (60,000ms)
+- Checks cache before database query
+- Caches products with variant prices and total count
+- Invalidates all product cache entries on POST (create product) via `cache.deleteByPrefix('products:')`
+
+### Lint Results
+- 0 errors, 3 pre-existing warnings (unrelated to this task)
+- All new and modified files pass ESLint cleanly
+
+---
+
+## Task 5 + 6 — Image Optimization & Dark Mode Consistency (Agent: main)
+
+### Summary
+Replaced HTML `<img>` tags with Next.js `<Image>` component across 4 key marketplace components for better optimization (lazy loading, responsive sizing, CLS prevention). Fixed hardcoded light-only colors in 4 components to ensure proper dark mode support.
+
+### Part A: Image Optimization — Replace `<img>` with Next.js `<Image>`
+
+#### 1. `src/components/marketplace/shop/shop-view.tsx` — 4 `<img>` → `<Image>` replacements
+- **ProductGridCard** product image: `<img>` → `<Image fill sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" unoptimized />`
+- **ProductListCard** product image: `<img>` → `<Image fill sizes="(max-width: 640px) 128px, 192px" unoptimized />`
+- **FeaturedProductCard** product image: `<img>` → `<Image fill sizes="(max-width: 768px) 100vw, 50vw" unoptimized />`
+- **Shop banner**: `<img>` → `<Image fill sizes="100vw" unoptimized />`
+- All use `fill` prop with relative parent containers, `className="object-cover"`, and `unoptimized` for external URLs
+
+#### 2. `src/components/marketplace/seller/seller-shop-settings.tsx` — 2 `<img>` → `<Image>` replacements
+- **Logo preview**: `<img>` → `<Image fill sizes="96px" unoptimized />` (parent made relative, height fixed at h-24 w-24)
+- **Banner preview**: `<img>` → `<Image fill sizes="(max-width: 768px) 100vw, 600px" unoptimized />` (parent made relative with h-40)
+
+#### 3. `src/components/marketplace/returns/return-detail-page.tsx` — 1 `<img>` → `<Image>` replacement
+- **Order item product thumbnail**: `<img>` → `<Image fill sizes="48px" unoptimized />` (parent made relative, h-12 w-12)
+- Added `import Image from 'next/image'` to the file
+
+#### 4. `src/components/marketplace/shared/product-card.tsx` — Already using `<Image>`
+- Confirmed already uses Next.js `<Image>` component with `fill` prop — no changes needed
+
+#### 5. `src/components/marketplace/shared/shop-card.tsx` — Already using `<Image>`
+- Confirmed already uses Next.js `<Image>` component with `fill` prop — no changes needed
+
+### Part B: Dark Mode Consistency — Fix Hardcoded Light-Only Styles
+
+#### 1. `src/components/marketplace/seller/seller-shop-settings.tsx` — Extensive fixes
+- `border-gray-100` → `border-border` (logo preview, banner preview, custom sections, social links)
+- `border-gray-200` → `border-border` (upload placeholder borders)
+- `text-gray-900` → `text-foreground` (layout labels, display labels, section titles, social link names)
+- `text-gray-500` → `text-muted-foreground` (section subtitles, social link URLs, preset names)
+- `text-gray-600` → `text-muted-foreground` (logo description text)
+- `text-gray-400` → `text-muted-foreground` (upload icons, upload text, phone hint, globe icon)
+- `text-gray-700` → `text-muted-foreground` (add section heading)
+- `bg-gray-50` → `bg-muted/50` (upload placeholders, add section area)
+- `bg-white` → `bg-card` (color theme preview buttons area)
+- `hover:border-gray-300` → `hover:border-muted-foreground/30` (color preset swatches)
+- `hover:border-gray-200` → `hover:border-muted-foreground/30` (layout/display style buttons)
+
+#### 2. `src/components/marketplace/returns/return-detail-page.tsx` — Timeline and status fixes
+- `bg-white` → `bg-background` (desktop timeline upcoming step circles, mobile timeline upcoming step circles)
+- `bg-white` → `bg-card` (order item product thumbnail container)
+- `text-gray-700` → `text-muted-foreground` (cancelled status text in timeline, cancelled status info text)
+- `text-gray-500` → `text-muted-foreground` (cancelled X icon in status info)
+- `bg-gray-50` → `bg-muted/50` (cancelled status info background)
+- `border-gray-200` → `border-border` (cancelled status info border)
+- Cancelled STATUS_CONFIG: `color: 'text-gray-700'` → `'text-muted-foreground'`, `bgColor: 'bg-gray-50'` → `'bg-muted/50'`, `borderColor: 'border-gray-200'` → `'border-border'`
+
+#### 3. `src/components/marketplace/shared/product-card.tsx` — Overlay button fixes
+- `bg-white/80 backdrop-blur-sm hover:bg-white` → `bg-background/80 backdrop-blur-sm hover:bg-background` (favorite button, compare button)
+
+#### 4. `src/components/marketplace/returns/returns-page.tsx` — Cancelled status config
+- Cancelled STATUS_CONFIG: `color: 'text-gray-700'` → `'text-muted-foreground'`, `bgColor: 'bg-gray-50'` → `'bg-muted/50'`, `borderColor: 'border-gray-200'` → `'border-border'`, `leftBorder: 'border-l-gray-400'` → `'border-l-muted-foreground/40'`
+
+### Intentionally Preserved Colors
+- `bg-emerald-50`, `bg-red-50`, `bg-amber-50`, `bg-sky-50` — semantic status colors
+- `bg-white/20` on color theme preview — overlay on custom primary color
+- Inline style `rgba(255,255,255,...)` on shop view sticky nav — shop's custom branding
+- `linear-gradient(135deg, white, ...)` in shop cards — intentional shop display style
+- `border-emerald-*`, `bg-emerald-*` in selected state indicators — semantic selection colors
+
+### Lint Results
+- 0 errors, 3 pre-existing warnings (unrelated to this task)
+- All modified files pass ESLint cleanly
+
+---
+Task ID: Final Batch - 11 Remaining Features
+Agent: Main (with subagents)
+
+Task: Build all 11 remaining features identified in the fresh audit (3 HIGH + 4 MEDIUM + 4 LOW)
+
+Work Log:
+- Started chat-service on port 3003 and notification-service on port 3004
+- Fixed notification push URL in /src/lib/notifications.ts to use Socket.io protocol
+- [Subagent 2] Enhanced shipping calculator with default fallback rates when no zones configured
+  - Standard: $5, Express: $12, Free: $0 (order >= $50)
+  - Updated checkout modal shipping step with method icons and default zone notice
+- [Subagent 3] Added return admin escalation feature
+  - Added escalate and resolve_escalation actions to returns API
+  - Added escalation UI (Escalate button, Escalated badge, Resolve dialog) to return detail page
+  - Added admin returns panel with escalation filtering
+- [Subagent 4] Enhanced stories integration + wired language switcher
+  - Added StoryBar to search page
+  - Fixed Create Story auth flow (opens auth modal for non-logged users)
+  - Added file upload to CreateStoryDialog via useUpload hook
+  - Added LanguageSwitcher to header (desktop after theme toggle, mobile menu)
+  - Language options: English, Urdu (RTL), Arabic (RTL)
+- [Subagent 5] Image optimization + dark mode consistency
+  - Replaced 7 <img> tags with Next.js <Image> across shop-view, seller-shop-settings, return-detail-page
+  - Fixed ~25+ hardcoded light-only styles across 4 components (seller-shop-settings, return-detail-page, product-card, returns-page)
+  - Changed bg-white → bg-background/bg-card, bg-gray-50 → bg-muted/50, text-gray-* → text-foreground/text-muted-foreground
+- [Subagent 6] Location/delivery filters + data caching
+  - Added Location filter (12 countries) and Delivery filter (Free Shipping, Digital Download, Express Delivery) to search page
+  - Updated products API to accept location and delivery query params
+  - Created /src/lib/cache.ts with MemoryCache class (TTL support, auto-cleanup, getOrSet pattern)
+  - Applied caching to categories (5min), shops (2min), products (1min) API routes
+
+Stage Summary:
+- All 11 features completed: 3 HIGH + 4 MEDIUM + 4 LOW
+- Chat service (3003) and notification service (3004) running alongside Next.js
+- Lint: 0 errors, 3 pre-existing warnings
+- Browser verified: Landing page, search page (with location/delivery filters), language switcher, dark mode toggle all working
+- Shipping calculator returns default rates when no zones configured (tested: Standard $5, Express $12, Free $0 for orders >= $50)
+- Products API supports location and delivery filters (tested: delivery=digital returns 1 product)

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { Prisma } from '@prisma/client';
 import { withCsrf } from '@/lib/with-csrf';
+import { cache } from '@/lib/cache';
 
 function slugify(text: string): string {
   return text
@@ -24,10 +25,33 @@ export async function GET(request: NextRequest) {
     const rating = searchParams.get('rating');
     const tags = searchParams.get('tags') || '';
     const inStock = searchParams.get('inStock');
+    const location = searchParams.get('location') || '';
+    const delivery = searchParams.get('delivery') || '';
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '12', 10);
     const sort = searchParams.get('sort') || searchParams.get('sortBy') || 'newest';
     const skip = (page - 1) * limit;
+
+    // Build cache key from all search params
+    const cacheKey = `products:${search}:${type}:${category}:${shopId}:${featured}:${showAll}:${minPrice}:${maxPrice}:${rating}:${tags}:${inStock}:${location}:${delivery}:${page}:${limit}:${sort}`;
+
+    // Use cache with 1 minute TTL
+    const cachedResult = cache.get<{ products: unknown[]; total: number }>(cacheKey);
+    if (cachedResult) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          items: cachedResult.products,
+          products: cachedResult.products,
+          pagination: {
+            page,
+            limit,
+            total: cachedResult.total,
+            totalPages: Math.ceil(cachedResult.total / limit),
+          },
+        },
+      });
+    }
 
     const where: Prisma.ProductWhereInput = {};
 
@@ -100,6 +124,76 @@ export async function GET(request: NextRequest) {
           { stock: -1 },           // Digital products (unlimited)
         ],
       });
+    }
+
+    // Location filter — filter by shop address containing the country name
+    if (location) {
+      andConditions.push({
+        shop: {
+          address: { contains: location },
+        },
+      });
+    }
+
+    // Delivery filter
+    if (delivery) {
+      switch (delivery) {
+        case 'free_shipping':
+          // Products with free shipping: type=physical and shop has shipping rates with price=0 or freeAbove
+          andConditions.push({
+            OR: [
+              { type: 'digital' },  // Digital always "free shipping"
+              {
+                type: 'physical',
+                shop: {
+                  shippingZones: {
+                    some: {
+                      isActive: true,
+                      rates: {
+                        some: {
+                          isActive: true,
+                          OR: [
+                            { price: 0 },
+                            { freeAbove: { not: null } },
+                          ],
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            ],
+          });
+          break;
+        case 'digital_download':
+          // Only digital products (instant delivery)
+          andConditions.push({ type: 'digital' });
+          break;
+        case 'express_delivery':
+          // Products with shipping that has maxDays <= 3
+          andConditions.push({
+            OR: [
+              { type: 'digital' },  // Digital is instant
+              {
+                type: 'physical',
+                shop: {
+                  shippingZones: {
+                    some: {
+                      isActive: true,
+                      rates: {
+                        some: {
+                          isActive: true,
+                          maxDays: { lte: 3 },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            ],
+          });
+          break;
+      }
     }
 
     // Apply all conditions as AND
@@ -178,6 +272,9 @@ export async function GET(request: NextRequest) {
         return p;
       })
     );
+
+    // Cache the result for 1 minute
+    cache.set(cacheKey, { products: productsWithVariantPrices, total }, 60_000);
 
     return NextResponse.json({
       success: true,
@@ -286,6 +383,9 @@ export const POST = withCsrf(async (request: NextRequest) => {
         category: { select: { id: true, name: true, slug: true } },
       },
     });
+
+    // Invalidate product cache on create
+    cache.deleteByPrefix('products:');
 
     return NextResponse.json(
       {

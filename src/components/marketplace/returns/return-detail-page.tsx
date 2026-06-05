@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
 import {
   ArrowLeft,
@@ -21,6 +22,8 @@ import {
   ChevronRight,
   Image as ImageIcon,
   X,
+  ShieldAlert,
+  Shield,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -114,9 +117,9 @@ const STATUS_CONFIG: Record<ReturnStatus, {
   },
   cancelled: {
     label: 'Cancelled',
-    color: 'text-gray-700',
-    bgColor: 'bg-gray-50',
-    borderColor: 'border-gray-200',
+    color: 'text-muted-foreground',
+    bgColor: 'bg-muted/50',
+    borderColor: 'border-border',
     icon: XCircle,
   },
 }
@@ -166,12 +169,19 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false)
   const [refundDialogOpen, setRefundDialogOpen] = useState(false)
   const [imageDialogOpen, setImageDialogOpen] = useState(false)
+  const [escalateDialogOpen, setEscalateDialogOpen] = useState(false)
+  const [resolveEscalationDialogOpen, setResolveEscalationDialogOpen] = useState(false)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
 
   // Form states
   const [refundAmount, setRefundAmount] = useState('')
   const [refundMethod, setRefundMethod] = useState<RefundMethod>('original')
   const [sellerResponse, setSellerResponse] = useState('')
+  const [escalateNote, setEscalateNote] = useState('')
+  const [adminResolution, setAdminResolution] = useState<'approve' | 'reject'>('approve')
+  const [adminRefundAmount, setAdminRefundAmount] = useState('')
+  const [adminRefundMethod, setAdminRefundMethod] = useState<RefundMethod>('original')
+  const [adminNote, setAdminNote] = useState('')
   const [actionLoading, setActionLoading] = useState(false)
 
   // Fetch return data
@@ -347,6 +357,100 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
     }
   }
 
+  // Handle escalate return (buyer)
+  const handleEscalate = async () => {
+    if (!currentUser?.id) {
+      toast.error('You must be logged in to perform this action')
+      return
+    }
+    setActionLoading(true)
+    try {
+      const res = await fetch(`/api/returns/${returnId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: currentUser.id,
+          action: 'escalate',
+          adminNote: escalateNote.trim() || undefined,
+        }),
+      })
+      const json = await res.json()
+      if (json.success) {
+        toast.success('Return escalated to admin for review')
+        setEscalateDialogOpen(false)
+        setEscalateNote('')
+        fetchReturn()
+      } else {
+        toast.error(json.error || 'Failed to escalate return')
+      }
+    } catch {
+      toast.error('Network error. Please try again.')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  // Handle resolve escalation (admin)
+  const handleResolveEscalation = async () => {
+    if (!currentUser?.id) {
+      toast.error('You must be logged in to perform this action')
+      return
+    }
+    if (!adminNote.trim()) {
+      toast.error('Please provide an admin note')
+      return
+    }
+    if (adminResolution === 'approve' && (!adminRefundAmount || parseFloat(adminRefundAmount) <= 0)) {
+      toast.error('Please enter a valid refund amount')
+      return
+    }
+    setActionLoading(true)
+    try {
+      const body: Record<string, unknown> = {
+        userId: currentUser.id,
+        action: 'resolve_escalation',
+        resolution: adminResolution,
+        adminNote: adminNote.trim(),
+      }
+      if (adminResolution === 'approve') {
+        body.refundAmount = parseFloat(adminRefundAmount)
+        body.refundMethod = adminRefundMethod
+      }
+      const res = await fetch(`/api/returns/${returnId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      const json = await res.json()
+      if (json.success) {
+        toast.success(`Escalation resolved: return ${adminResolution === 'approve' ? 'approved' : 'rejected'}`)
+        setResolveEscalationDialogOpen(false)
+        setAdminNote('')
+        setAdminRefundAmount('')
+        setAdminResolution('approve')
+        fetchReturn()
+      } else {
+        toast.error(json.error || 'Failed to resolve escalation')
+      }
+    } catch {
+      toast.error('Network error. Please try again.')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  // Check if return has been escalated (under_review due to buyer escalation)
+  const isEscalated = returnData?.status === 'under_review' &&
+    returnData?.timeline?.some((t: ReturnTimeline) =>
+      t.note?.includes('escalated to admin')
+    )
+
+  // Check if buyer can escalate (rejected or waiting >3 days)
+  const canBuyerEscalate = !isSeller && returnData &&
+    (returnData.status === 'rejected' ||
+      (returnData.status === 'requested' &&
+        (Date.now() - new Date(returnData.createdAt).getTime()) > 3 * 24 * 60 * 60 * 1000))
+
   // Format relative time
   const formatRelativeTime = (dateStr: string) => {
     const now = new Date()
@@ -460,9 +564,17 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
               </p>
             </div>
           </div>
-          <Badge className={`${statusCfg.bgColor} ${statusCfg.color} ${statusCfg.borderColor} border text-sm px-3 py-1`}>
-            {statusCfg.label}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge className={`${statusCfg.bgColor} ${statusCfg.color} ${statusCfg.borderColor} border text-sm px-3 py-1`}>
+              {statusCfg.label}
+            </Badge>
+            {isEscalated && (
+              <Badge className="bg-orange-50 text-orange-700 border-orange-200 border text-sm px-3 py-1 flex items-center gap-1.5">
+                <ShieldAlert className="h-3.5 w-3.5" />
+                Escalated
+              </Badge>
+            )}
+          </div>
         </div>
       </motion.div>
 
@@ -508,7 +620,7 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
                           ? 'bg-emerald-500 border-emerald-500 text-white'
                           : stepStatus === 'current'
                             ? 'bg-emerald-500 border-emerald-500 text-white ring-4 ring-emerald-100'
-                            : 'bg-white border-muted-foreground/30 text-muted-foreground'
+                            : 'bg-background border-muted-foreground/30 text-muted-foreground'
                       }`}
                     >
                       {stepStatus === 'completed' ? (
@@ -549,7 +661,7 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
                             ? 'bg-emerald-500 border-emerald-500 text-white'
                             : stepStatus === 'current'
                               ? 'bg-emerald-500 border-emerald-500 text-white'
-                              : 'bg-white border-muted-foreground/30 text-muted-foreground'
+                              : 'bg-background border-muted-foreground/30 text-muted-foreground'
                         }`}
                       >
                         {stepStatus === 'completed' || stepStatus === 'current' ? (
@@ -591,7 +703,7 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
                     </div>
                   </div>
                   <div>
-                    <p className={`text-sm font-medium ${returnData.status === 'rejected' ? 'text-red-700' : 'text-gray-700'}`}>
+                    <p className={`text-sm font-medium ${returnData.status === 'rejected' ? 'text-red-700' : 'text-muted-foreground'}`}>
                       {returnData.status === 'rejected' ? 'Rejected' : 'Cancelled'}
                     </p>
                     {(returnData.rejectedAt || returnData.completedAt) && (
@@ -696,6 +808,29 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
             </motion.div>
           )}
 
+          {/* Admin Note */}
+          {returnData.adminNote && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Card className="border-0 shadow-sm border-l-4 border-l-sky-400">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sky-50">
+                      <Shield className="h-4 w-4 text-sky-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-sky-700">Admin Note</p>
+                      <p className="text-sm text-muted-foreground mt-1">{returnData.adminNote}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
           {/* Order Summary */}
           {returnData.order && (
             <motion.div
@@ -724,12 +859,15 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
                           key={item.id}
                           className="flex items-center gap-3 rounded-lg bg-muted/50 p-3"
                         >
-                          <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-white border">
+                          <div className="h-12 w-12 flex-shrink-0 relative overflow-hidden rounded-lg bg-card border">
                             {productImages[0] ? (
-                              <img
+                              <Image
                                 src={productImages[0]}
                                 alt={item.product?.name || 'Product'}
-                                className="h-full w-full object-cover"
+                                fill
+                                className="object-cover"
+                                sizes="48px"
+                                unoptimized
                               />
                             ) : (
                               <div className="flex h-full w-full items-center justify-center">
@@ -873,6 +1011,18 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
                   </Button>
                 )}
 
+                {/* Buyer Escalate Action */}
+                {canBuyerEscalate && (
+                  <Button
+                    className="w-full bg-orange-600 hover:bg-orange-700"
+                    onClick={() => setEscalateDialogOpen(true)}
+                    disabled={actionLoading}
+                  >
+                    {actionLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <ShieldAlert className="h-4 w-4 mr-2" />}
+                    Escalate to Admin
+                  </Button>
+                )}
+
                 {/* Seller Actions */}
                 {isSeller && returnData.status === 'requested' && (
                   <>
@@ -955,13 +1105,38 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
 
                 {(returnData.status === 'rejected' || returnData.status === 'cancelled') && (
                   <div className={`rounded-lg border p-3 flex items-start gap-2 ${
-                    returnData.status === 'rejected' ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'
+                    returnData.status === 'rejected' ? 'bg-red-50 border-red-200' : 'bg-muted/50 border-border'
                   }`}>
-                    <XCircle className={`h-4 w-4 mt-0.5 shrink-0 ${returnData.status === 'rejected' ? 'text-red-600' : 'text-gray-500'}`} />
-                    <p className={`text-xs ${returnData.status === 'rejected' ? 'text-red-700' : 'text-gray-700'}`}>
+                    <XCircle className={`h-4 w-4 mt-0.5 shrink-0 ${returnData.status === 'rejected' ? 'text-red-600' : 'text-muted-foreground'}`} />
+                    <p className={`text-xs ${returnData.status === 'rejected' ? 'text-red-700' : 'text-muted-foreground'}`}>
                       This return was {returnData.status}.
                     </p>
                   </div>
+                )}
+
+                {/* Admin Actions - Resolve Escalation */}
+                {currentUser?.isAdmin && isEscalated && returnData.status === 'under_review' && (
+                  <>
+                    <Separator />
+                    <div className="rounded-lg bg-orange-50 border border-orange-200 p-3 flex items-start gap-2">
+                      <ShieldAlert className="h-4 w-4 text-orange-600 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs font-semibold text-orange-700">Escalation Pending Review</p>
+                        <p className="text-xs text-orange-600">This return has been escalated and needs admin resolution.</p>
+                      </div>
+                    </div>
+                    <Button
+                      className="w-full bg-sky-600 hover:bg-sky-700"
+                      onClick={() => {
+                        setAdminRefundAmount(returnData.order?.totalAmount?.toString() || '')
+                        setResolveEscalationDialogOpen(true)
+                      }}
+                      disabled={actionLoading}
+                    >
+                      <Shield className="h-4 w-4 mr-2" />
+                      Resolve Escalation
+                    </Button>
+                  </>
                 )}
               </CardContent>
             </Card>
@@ -1113,6 +1288,147 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
             >
               {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               Process Refund
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Escalate Dialog */}
+      <Dialog open={escalateDialogOpen} onOpenChange={setEscalateDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-orange-700">
+              <ShieldAlert className="h-5 w-5" />
+              Escalate to Admin
+            </DialogTitle>
+            <DialogDescription>
+              Request admin review for this return. Both you and the seller will be notified.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="rounded-lg bg-orange-50 border border-orange-200 p-3">
+              <p className="text-xs text-orange-700">
+                Escalating will put this return under admin review. An administrator will review the case and make a final decision.
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Note (optional)</Label>
+              <Textarea
+                value={escalateNote}
+                onChange={(e) => setEscalateNote(e.target.value)}
+                placeholder="Explain why you are escalating this return..."
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEscalateDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-orange-600 hover:bg-orange-700"
+              onClick={handleEscalate}
+              disabled={actionLoading}
+            >
+              {actionLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <ShieldAlert className="h-4 w-4 mr-2" />}
+              Escalate
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Resolve Escalation Dialog */}
+      <Dialog open={resolveEscalationDialogOpen} onOpenChange={setResolveEscalationDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-sky-700">
+              <Shield className="h-5 w-5" />
+              Resolve Escalation
+            </DialogTitle>
+            <DialogDescription>
+              Review this escalated return and make a final decision.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label>Resolution</Label>
+              <Select value={adminResolution} onValueChange={(v) => setAdminResolution(v as 'approve' | 'reject')}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="approve">Approve (Issue Refund)</SelectItem>
+                  <SelectItem value="reject">Reject (Deny Return)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {adminResolution === 'approve' && (
+              <>
+                <div className="space-y-1.5">
+                  <Label>Refund Amount ($)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    value={adminRefundAmount}
+                    onChange={(e) => setAdminRefundAmount(e.target.value)}
+                    placeholder="0.00"
+                  />
+                  {returnData.order && (
+                    <p className="text-[11px] text-muted-foreground">
+                      Order total: ${(returnData.order.totalAmount ?? 0).toFixed(2)}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label>Refund Method</Label>
+                  <Select value={adminRefundMethod} onValueChange={(v) => setAdminRefundMethod(v as RefundMethod)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="original">Original Payment Method</SelectItem>
+                      <SelectItem value="wallet">Wallet Credit</SelectItem>
+                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+
+            <div className="space-y-1.5">
+              <Label>Admin Note (required)</Label>
+              <Textarea
+                value={adminNote}
+                onChange={(e) => setAdminNote(e.target.value)}
+                placeholder="Explain your decision..."
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setResolveEscalationDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              className={adminResolution === 'approve' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'}
+              onClick={handleResolveEscalation}
+              disabled={actionLoading}
+            >
+              {actionLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : adminResolution === 'approve' ? (
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+              ) : (
+                <XCircle className="h-4 w-4 mr-2" />
+              )}
+              {adminResolution === 'approve' ? 'Approve & Refund' : 'Reject Return'}
             </Button>
           </DialogFooter>
         </DialogContent>

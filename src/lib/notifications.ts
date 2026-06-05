@@ -66,12 +66,20 @@ async function pushNotificationSocket(
   }
 ) {
   try {
-    await fetch('http://localhost:3004/socket.io/?EIO=4&transport=polling', {
+    // Use the notification service directly on port 3004 (internal)
+    // The service is a mini-service that runs alongside the Next.js app
+    await fetch(`http://localhost:3004/socket.io/?EIO=4&transport=polling`, {
       method: 'GET',
     }).catch(() => {})
-    // Direct socket.io emit via internal POST
-    // Note: This is a simplified approach - in production you'd use a proper
-    // inter-service communication method like Redis pub/sub
+
+    // Emit push-notification event to the notification service via Socket.io
+    // Since we can't directly emit from server-side, we use the internal HTTP endpoint
+    // The notification service will relay to connected clients
+    await fetch(`http://localhost:3004/socket.io/?EIO=4&transport=polling`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/octet-stream' },
+      body: `42["push-notification",${JSON.stringify({ userId, notification })}]`,
+    }).catch(() => {})
   } catch {
     // Socket push is non-critical
   }

@@ -325,6 +325,8 @@ const productsApi = {
       searchParams.set('rating', String(params.rating))
     if (params?.tags) searchParams.set('tags', params.tags)
     if (params?.inStock) searchParams.set('inStock', 'true')
+    if (params?.location) searchParams.set('location', params.location)
+    if (params?.delivery) searchParams.set('delivery', params.delivery)
     if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
     if (params?.page) searchParams.set('page', String(params.page))
     if (params?.limit) searchParams.set('limit', String(params.limit))

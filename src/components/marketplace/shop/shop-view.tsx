@@ -119,10 +119,13 @@ function ProductGridCard({
       >
         <div className="aspect-square relative overflow-hidden bg-muted">
           {firstImage ? (
-            <img
+            <Image
               src={firstImage}
               alt={product.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              fill
+              className="object-cover group-hover:scale-105 transition-transform duration-300"
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              unoptimized
             />
           ) : (
             <div
@@ -222,10 +225,13 @@ function ProductListCard({
         <div className="flex">
           <div className="w-32 h-32 sm:w-48 sm:h-48 flex-shrink-0 relative overflow-hidden bg-muted">
             {firstImage ? (
-              <img
+              <Image
                 src={firstImage}
                 alt={product.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                sizes="(max-width: 640px) 128px, 192px"
+                unoptimized
               />
             ) : (
               <div
@@ -319,10 +325,13 @@ function FeaturedProductCard({
         <div className="grid md:grid-cols-2 gap-0">
           <div className="aspect-video md:aspect-auto relative overflow-hidden bg-muted">
             {firstImage ? (
-              <img
+              <Image
                 src={firstImage}
                 alt={product.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-500"
+                sizes="(max-width: 768px) 100vw, 50vw"
+                unoptimized
               />
             ) : (
               <div
@@ -591,10 +600,13 @@ export default function ShopView() {
       {/* Banner */}
       <div className={`relative w-full h-48 sm:h-64 md:h-80 overflow-hidden ${bannerRadius}`}>
         {shop.banner ? (
-          <img
+          <Image
             src={shop.banner}
             alt={`${shop.name} banner`}
-            className="w-full h-full object-cover"
+            fill
+            className="object-cover"
+            sizes="100vw"
+            unoptimized
           />
         ) : (
           <div

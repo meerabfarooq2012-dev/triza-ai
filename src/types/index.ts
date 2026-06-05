@@ -664,6 +664,8 @@ export interface PaginatedResponse<T> {
   }
 }
 
+export type DeliveryFilterType = 'free_shipping' | 'digital_download' | 'express_delivery'
+
 export interface SearchFilters {
   query?: string
   category?: string
@@ -673,6 +675,8 @@ export interface SearchFilters {
   rating?: number
   tags?: string
   inStock?: boolean
+  location?: string
+  delivery?: DeliveryFilterType
   sortBy?: 'price_asc' | 'price_desc' | 'newest' | 'popular' | 'rating'
   page?: number
   limit?: number

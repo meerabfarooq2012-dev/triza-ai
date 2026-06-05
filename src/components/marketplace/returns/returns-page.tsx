@@ -94,10 +94,10 @@ const STATUS_CONFIG: Record<ReturnStatus, {
   },
   cancelled: {
     label: 'Cancelled',
-    color: 'text-gray-700',
-    bgColor: 'bg-gray-50',
-    borderColor: 'border-gray-200',
-    leftBorder: 'border-l-gray-400',
+    color: 'text-muted-foreground',
+    bgColor: 'bg-muted/50',
+    borderColor: 'border-border',
+    leftBorder: 'border-l-muted-foreground/40',
   },
 }
 

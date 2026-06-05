@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import {
   Image as ImageIcon,
@@ -10,11 +10,13 @@ import {
   Upload,
   X,
   Loader2,
+  Cloud,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
 import {
   Dialog,
   DialogContent,
@@ -29,6 +31,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { toast } from 'sonner'
+import { useUpload } from '@/hooks/use-upload'
 
 interface CreateStoryDialogProps {
   shopId: string
@@ -59,6 +62,8 @@ export function CreateStoryDialog({
   const [products, setProducts] = useState<Array<{ id: string; name: string; price: number; images: string }>>([])
   const [loading, setLoading] = useState(false)
   const [productsLoading, setProductsLoading] = useState(false)
+  const { upload, uploading } = useUpload({ folder: 'stories' })
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Fetch shop products when product_highlight is selected
   const fetchProducts = async () => {
@@ -85,6 +90,19 @@ export function CreateStoryDialog({
     if (type === 'product_highlight') {
       fetchProducts()
     }
+  }
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const url = await upload(file)
+    if (url) {
+      setImageUrl(url)
+      toast.success('Image uploaded successfully!')
+    }
+    // Reset file input so the same file can be re-selected
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   const handleSubmit = async () => {
@@ -205,8 +223,45 @@ export function CreateStoryDialog({
           {(storyType === 'image' || storyType === 'promotion') && (
             <div>
               <Label className="text-sm font-medium mb-1.5 block">
-                Image URL
+                Image
               </Label>
+              {/* File upload button */}
+              <div className="flex items-center gap-2 mb-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  disabled={uploading}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {uploading ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-3.5 w-3.5" />
+                      Upload Image
+                    </>
+                  )}
+                </Button>
+                {imageUrl && (
+                  <Badge variant="secondary" className="gap-1 text-xs">
+                    <Cloud className="h-3 w-3" />
+                    Uploaded
+                  </Badge>
+                )}
+              </div>
+              {/* URL fallback input */}
               <div className="relative">
                 <Input
                   value={imageUrl}
@@ -226,10 +281,7 @@ export function CreateStoryDialog({
                 )}
               </div>
               <p className="text-[10px] text-muted-foreground mt-1">
-                Paste a URL or <button className="text-emerald-600 underline" onClick={() => {
-                  // Generate a placeholder image URL for demo
-                  setImageUrl(`https://picsum.photos/seed/${Date.now()}/600/400`)
-                }}>use a sample image</button>
+                Upload an image or paste a URL directly. JPG, PNG, WebP, GIF — max 5MB.
               </p>
             </div>
           )}

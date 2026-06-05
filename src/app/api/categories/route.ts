@@ -1,12 +1,25 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { GIG_CATEGORIES, PHYSICAL_CATEGORIES, DIGITAL_CATEGORIES } from '@/lib/constants';
+import { cache } from '@/lib/cache';
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type'); // 'gigs', 'physical', 'digital', or undefined (all)
     const includeInactive = searchParams.get('includeInactive') === 'true';
+
+    // Build cache key
+    const cacheKey = `categories:${type || 'all'}:${includeInactive}`;
+
+    // Check cache first (5 minute TTL for categories)
+    const cachedData = cache.get<{ topLevel: unknown[] }>(cacheKey);
+    if (cachedData) {
+      return NextResponse.json({
+        success: true,
+        data: cachedData.topLevel,
+      });
+    }
 
     const gigCategorySlugs = GIG_CATEGORIES.map(c => c.slug);
     const physicalCategorySlugs = PHYSICAL_CATEGORIES.map(c => c.slug);
@@ -40,6 +53,9 @@ export async function GET(request: Request) {
     } else if (type === 'digital') {
       topLevel = topLevel.filter((c) => digitalCategorySlugs.includes(c.slug));
     }
+
+    // Cache for 5 minutes
+    cache.set(cacheKey, { topLevel }, 300_000);
 
     return NextResponse.json({
       success: true,

@@ -40,6 +40,25 @@ export function StoryBar() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const refreshTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
+  // Check if current user has a shop (for "Add Story" button)
+  const userShop = currentUser?.shop
+  const isSeller = currentUser?.role === 'seller' || currentUser?.role === 'both'
+
+  const handleCreateStoryClick = () => {
+    if (!isAuthenticated) {
+      // Not logged in — show auth modal
+      setCurrentView('auth', { mode: 'login' })
+      return
+    }
+    if (!isSeller || !userShop) {
+      // Logged in but not a seller — show auth modal with a nudge to become a seller
+      setCurrentView('auth', { mode: 'register' })
+      return
+    }
+    // Logged in seller with a shop — open create story dialog
+    setCreateDialogOpen(true)
+  }
+
   // Fetch stories
   const fetchStories = useCallback(async () => {
     try {
@@ -91,10 +110,6 @@ export function StoryBar() {
       .toUpperCase()
       .slice(0, 2)
 
-  // Check if current user has a shop (for "Add Story" button)
-  const userShop = currentUser?.shop
-  const isSeller = currentUser?.role === 'seller' || currentUser?.role === 'both'
-
   // Handle story created
   const handleStoryCreated = () => {
     fetchStories()
@@ -116,29 +131,35 @@ export function StoryBar() {
     )
   }
 
-  // Don't render if no stories and user is not a seller
-  if (groupedStories.length === 0 && !isSeller) {
+  // Don't render if no stories and no user interaction possible
+  if (groupedStories.length === 0 && !isAuthenticated) {
     return null
   }
 
   return (
     <div className="w-full">
       <div className="flex gap-3 sm:gap-4 overflow-x-auto py-3 px-1 scrollbar-hide">
-        {/* Add Story Button (for sellers) */}
-        {isSeller && userShop && (
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setCreateDialogOpen(true)}
-            className="flex flex-col items-center gap-1.5 shrink-0 group"
-          >
-            <div className="relative h-16 w-16 rounded-full border-2 border-dashed border-amber-400 bg-amber-50 dark:bg-amber-950/30 flex items-center justify-center group-hover:border-amber-500 group-hover:bg-amber-100 dark:group-hover:bg-amber-950/50 transition-colors">
-              <Plus className="h-6 w-6 text-amber-600" />
-            </div>
-            <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400 truncate max-w-[64px]">
-              Add Story
-            </span>
-          </motion.button>
-        )}
+        {/* Create Story Button — always visible */}
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={handleCreateStoryClick}
+          className="flex flex-col items-center gap-1.5 shrink-0 group"
+        >
+          <div className={`relative h-16 w-16 rounded-full border-2 border-dashed flex items-center justify-center transition-colors ${
+            isSeller && userShop
+              ? 'border-amber-400 bg-amber-50 dark:bg-amber-950/30 group-hover:border-amber-500 group-hover:bg-amber-100 dark:group-hover:bg-amber-950/50'
+              : 'border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/30 group-hover:border-slate-400 group-hover:bg-slate-100 dark:group-hover:bg-slate-900/50'
+          }`}>
+            <Plus className={`h-6 w-6 ${isSeller && userShop ? 'text-amber-600' : 'text-slate-500'}`} />
+          </div>
+          <span className={`text-[11px] font-medium truncate max-w-[64px] ${
+            isSeller && userShop
+              ? 'text-amber-700 dark:text-amber-400'
+              : 'text-slate-600 dark:text-slate-400'
+          }`}>
+            {isSeller && userShop ? 'Add Story' : 'Create Story'}
+          </span>
+        </motion.button>
 
         {/* Story avatars grouped by shop */}
         {groupedStories.map((group) => {

@@ -104,6 +104,7 @@ export async function PUT(
       refundMethod,
       sellerResponse,
       adminNote,
+      resolution,
     } = body;
 
     if (!userId || !action) {
@@ -113,7 +114,7 @@ export async function PUT(
       );
     }
 
-    const validActions = ['approve', 'reject', 'cancel', 'processing'];
+    const validActions = ['approve', 'reject', 'cancel', 'processing', 'escalate', 'resolve_escalation'];
     if (!validActions.includes(action)) {
       return NextResponse.json(
         { success: false, error: `Invalid action. Must be one of: ${validActions.join(', ')}` },
@@ -157,6 +158,20 @@ export async function PUT(
       );
     }
 
+    if (action === 'escalate' && !isBuyer) {
+      return NextResponse.json(
+        { success: false, error: 'Only the buyer can escalate a return request' },
+        { status: 403 }
+      );
+    }
+
+    if (action === 'resolve_escalation' && !isAdmin) {
+      return NextResponse.json(
+        { success: false, error: 'Only administrators can resolve escalated return requests' },
+        { status: 403 }
+      );
+    }
+
     // Validate status transitions
     const currentStatus = returnRequest.status;
     const validTransitions: Record<string, string[]> = {
@@ -164,6 +179,8 @@ export async function PUT(
       reject: ['requested', 'under_review'],
       cancel: ['requested', 'under_review', 'approved'],
       processing: ['approved'],
+      escalate: ['requested', 'rejected'],
+      resolve_escalation: ['under_review'],
     };
 
     if (!validTransitions[action].includes(currentStatus)) {
@@ -171,6 +188,22 @@ export async function PUT(
         { success: false, error: `Cannot ${action} a return request with status "${currentStatus}"` },
         { status: 400 }
       );
+    }
+
+    // Validate resolution for resolve_escalation
+    if (action === 'resolve_escalation') {
+      if (!resolution || !['approve', 'reject'].includes(resolution)) {
+        return NextResponse.json(
+          { success: false, error: 'resolution is required and must be "approve" or "reject" when resolving an escalation' },
+          { status: 400 }
+        );
+      }
+      if (!adminNote || !adminNote.trim()) {
+        return NextResponse.json(
+          { success: false, error: 'adminNote is required when resolving an escalation' },
+          { status: 400 }
+        );
+      }
     }
 
     // Build update data
@@ -216,6 +249,45 @@ export async function PUT(
       }
       case 'processing': {
         updateData.status = 'processing';
+        break;
+      }
+      case 'escalate': {
+        updateData.status = 'under_review';
+        if (adminNote) {
+          updateData.adminNote = adminNote;
+        }
+        break;
+      }
+      case 'resolve_escalation': {
+        if (resolution === 'approve') {
+          const resolveRefundAmount = refundAmount && refundAmount > 0 ? refundAmount : returnRequest.refundAmount;
+          if (!resolveRefundAmount || resolveRefundAmount <= 0) {
+            return NextResponse.json(
+              { success: false, error: 'refundAmount is required and must be positive when approving an escalation' },
+              { status: 400 }
+            );
+          }
+          const validRefundMethods = ['original', 'wallet', 'bank_transfer'];
+          const method = refundMethod || 'original';
+          if (!validRefundMethods.includes(method)) {
+            return NextResponse.json(
+              { success: false, error: `Invalid refundMethod. Must be one of: ${validRefundMethods.join(', ')}` },
+              { status: 400 }
+            );
+          }
+          updateData.status = 'approved';
+          updateData.refundAmount = resolveRefundAmount;
+          updateData.refundMethod = method;
+          updateData.adminNote = adminNote;
+          updateData.reviewedAt = now;
+          updateData.approvedAt = now;
+        } else {
+          // resolution === 'reject'
+          updateData.status = 'rejected';
+          updateData.adminNote = adminNote;
+          updateData.reviewedAt = now;
+          updateData.rejectedAt = now;
+        }
         break;
       }
     }
@@ -264,6 +336,8 @@ export async function PUT(
       reject: `Return request rejected by seller${sellerResponse ? `: ${sellerResponse}` : ''}`,
       cancel: 'Return request cancelled by buyer',
       processing: 'Return request is being processed',
+      escalate: `Return escalated to admin for review${adminNote ? `: ${adminNote}` : ''}`,
+      resolve_escalation: `Admin resolved escalation: ${resolution === 'approve' ? 'Approved' : 'Rejected'}${adminNote ? ` — ${adminNote}` : ''}`,
     };
 
     await db.returnTimeline.create({
@@ -316,6 +390,73 @@ export async function PUT(
         priority: 'normal',
         metadata: { returnId: id, orderId: returnRequest.orderId },
       }).catch(() => {});
+    } else if (action === 'escalate') {
+      // Notify both buyer and seller about the escalation
+      createNotification({
+        userId: buyerId,
+        title: 'Return Escalated to Admin 🛡️',
+        message: `Your return request for order #${orderIdShort} has been escalated to an administrator for review.`,
+        type: 'warning',
+        category: 'order',
+        link: `/returns/${id}`,
+        priority: 'high',
+        metadata: { returnId: id, orderId: returnRequest.orderId },
+      }).catch(() => {});
+      createNotification({
+        userId: sellerId,
+        title: 'Return Escalated to Admin 🛡️',
+        message: `The return request for order #${orderIdShort} has been escalated to an administrator for review.`,
+        type: 'warning',
+        category: 'order',
+        link: `/returns/${id}`,
+        priority: 'high',
+        metadata: { returnId: id, orderId: returnRequest.orderId },
+      }).catch(() => {});
+    } else if (action === 'resolve_escalation') {
+      // Notify both buyer and seller about the admin resolution
+      if (resolution === 'approve') {
+        createNotification({
+          userId: buyerId,
+          title: 'Escalated Return Approved by Admin ✅',
+          message: `An administrator has approved your escalated return request for order #${orderIdShort}. Refund amount: $${updateData.refundAmount}`,
+          type: 'success',
+          category: 'order',
+          link: `/returns/${id}`,
+          priority: 'high',
+          metadata: { returnId: id, orderId: returnRequest.orderId },
+        }).catch(() => {});
+        createNotification({
+          userId: sellerId,
+          title: 'Escalated Return Approved by Admin ✅',
+          message: `An administrator has approved the escalated return request for order #${orderIdShort}. Refund of $${updateData.refundAmount} will be processed.`,
+          type: 'warning',
+          category: 'order',
+          link: `/returns/${id}`,
+          priority: 'high',
+          metadata: { returnId: id, orderId: returnRequest.orderId },
+        }).catch(() => {});
+      } else {
+        createNotification({
+          userId: buyerId,
+          title: 'Escalated Return Rejected by Admin ❌',
+          message: `An administrator has rejected your escalated return request for order #${orderIdShort}.${adminNote ? ` Note: ${adminNote}` : ''}`,
+          type: 'error',
+          category: 'order',
+          link: `/returns/${id}`,
+          priority: 'high',
+          metadata: { returnId: id, orderId: returnRequest.orderId },
+        }).catch(() => {});
+        createNotification({
+          userId: sellerId,
+          title: 'Escalated Return Rejected by Admin ❌',
+          message: `An administrator has rejected the escalated return request for order #${orderIdShort}.`,
+          type: 'order',
+          category: 'order',
+          link: `/returns/${id}`,
+          priority: 'normal',
+          metadata: { returnId: id, orderId: returnRequest.orderId },
+        }).catch(() => {});
+      }
     }
 
     const parsed = {

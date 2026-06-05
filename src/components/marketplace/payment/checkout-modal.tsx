@@ -19,6 +19,9 @@ import {
   X,
   Tag,
   Store,
+  Zap,
+  Gift,
+  Clock,
 } from 'lucide-react'
 import {
   Dialog,
@@ -1543,57 +1546,101 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                     <span className="text-sm text-muted-foreground">Loading shipping options...</span>
                   </div>
                 ) : shippingRates.length === 0 ? (
-                  <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
-                    <p className="text-xs text-emerald-700 flex items-center gap-1">
-                      <Truck className="h-3.5 w-3.5" />
-                      Free shipping — The seller hasn&apos;t configured specific shipping zones for your destination. No additional shipping cost will be applied.
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                    <p className="text-xs text-amber-700 flex items-center gap-1">
+                      <Info className="h-3.5 w-3.5" />
+                      No shipping options available for your destination. You can still proceed — shipping will be calculated later.
                     </p>
                   </div>
                 ) : (
-                  <RadioGroup
-                    value={selectedRateId ?? undefined}
-                    onValueChange={(rateId) => {
-                      setSelectedRateId(rateId)
-                      const selected = shippingRates.find(r => r.id === rateId)
-                      if (selected) {
-                        setShippingCost(selected.price)
-                        setShippingMethod(selected.method)
-                        setEstimatedDelivery(selected.estimatedDate)
-                      }
-                    }}
-                    className="space-y-2"
-                  >
-                    {shippingRates.map((rate) => (
-                      <label
-                        key={rate.id}
-                        className={`flex items-center gap-3 rounded-lg border-2 p-3 cursor-pointer transition-all ${
-                          selectedRateId === rate.id
-                            ? 'border-emerald-400 bg-emerald-50/50'
-                            : 'border-transparent bg-card shadow-sm hover:border-muted-foreground/20'
-                        }`}
-                      >
-                        <RadioGroupItem value={rate.id} />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium">{rate.name}</span>
-                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize">
-                              {rate.method}
-                            </Badge>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            Est. delivery: {rate.estimatedDate}
-                          </p>
-                        </div>
-                        <div className="text-right shrink-0">
-                          {rate.price === 0 ? (
-                            <Badge className="bg-emerald-600 text-white text-[10px] px-1.5 py-0.5">FREE</Badge>
-                          ) : (
-                            <span className="text-sm font-bold">${rate.price.toFixed(2)}</span>
-                          )}
-                        </div>
-                      </label>
-                    ))}
-                  </RadioGroup>
+                  <>
+                    {/* Show notice when using default shipping rates */}
+                    {shippingRates.some(r => r.zoneId === 'default-zone' || r.zone?.name === 'Default Zone') && (
+                      <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 p-2.5">
+                        <Info className="h-3.5 w-3.5 text-amber-600 mt-0.5 shrink-0" />
+                        <p className="text-xs text-amber-700">
+                          The seller hasn&apos;t configured custom shipping zones. Default rates are shown below.
+                        </p>
+                      </div>
+                    )}
+                    <RadioGroup
+                      value={selectedRateId ?? undefined}
+                      onValueChange={(rateId) => {
+                        setSelectedRateId(rateId)
+                        const selected = shippingRates.find(r => r.id === rateId)
+                        if (selected) {
+                          setShippingCost(selected.price)
+                          setShippingMethod(selected.method)
+                          setEstimatedDelivery(selected.estimatedDate)
+                        }
+                      }}
+                      className="space-y-2"
+                    >
+                      {shippingRates.map((rate) => {
+                        const isSelected = selectedRateId === rate.id
+                        const isFree = rate.price === 0
+                        const isExpress = rate.method === 'express'
+                        // Pick icon based on method
+                        const MethodIcon = isFree ? Gift : isExpress ? Zap : Truck
+                        const iconColor = isFree
+                          ? 'text-emerald-600'
+                          : isExpress
+                            ? 'text-amber-600'
+                            : 'text-muted-foreground'
+                        const iconBg = isFree
+                          ? 'bg-emerald-50'
+                          : isExpress
+                            ? 'bg-amber-50'
+                            : 'bg-muted/50'
+
+                        return (
+                          <label
+                            key={rate.id}
+                            className={`flex items-start gap-3 rounded-lg border-2 p-3 cursor-pointer transition-all ${
+                              isSelected
+                                ? 'border-emerald-400 bg-emerald-50/50'
+                                : 'border-transparent bg-card shadow-sm hover:border-muted-foreground/20'
+                            }`}
+                          >
+                            <RadioGroupItem value={rate.id} className="mt-1" />
+                            <div className={`flex h-9 w-9 items-center justify-center rounded-lg shrink-0 ${iconBg}`}>
+                              <MethodIcon className={`h-4 w-4 ${iconColor}`} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium">{rate.name}</span>
+                                <Badge
+                                  variant="outline"
+                                  className={`text-[10px] px-1.5 py-0 capitalize ${
+                                    isExpress
+                                      ? 'border-amber-300 text-amber-700'
+                                      : isFree
+                                        ? 'border-emerald-300 text-emerald-700'
+                                        : ''
+                                  }`}
+                                >
+                                  {rate.method}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-1 mt-0.5">
+                                <Clock className="h-3 w-3 text-muted-foreground" />
+                                <p className="text-xs text-muted-foreground">
+                                  Est. delivery: {rate.estimatedDate}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0 mt-0.5">
+                              {isFree ? (
+                                <Badge className="bg-emerald-600 text-white text-[10px] px-2 py-0.5">FREE</Badge>
+                              ) : (
+                                <span className="text-sm font-bold">${rate.price.toFixed(2)}</span>
+                              )}
+                            </div>
+                          </label>
+                        )
+                      })}
+                    </RadioGroup>
+                  </>
                 )}
                 {estimatedDelivery && selectedRateId && (
                   <div className="flex items-center gap-2 rounded-lg bg-emerald-50 border border-emerald-200 p-2.5">

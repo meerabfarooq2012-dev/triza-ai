@@ -20,6 +20,11 @@ import {
   RotateCcw,
   CheckCircle2,
   ShoppingCart,
+  MapPin,
+  Truck,
+  Zap,
+  Globe,
+  Plane,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -46,7 +51,8 @@ import {
   DEFAULT_PAGE_SIZE,
   GIG_CATEGORIES,
 } from '@/lib/constants'
-import type { Product, Gig, GigPackage, Category, SearchFilters, ProductType, GigSearchParams } from '@/types'
+import type { Product, Gig, GigPackage, Category, SearchFilters, ProductType, GigSearchParams, DeliveryFilterType } from '@/types'
+import { StoryBar } from '@/components/marketplace/social/story-bar'
 
 // ----- Price preset ranges -----
 const PRICE_PRESETS = [
@@ -58,6 +64,30 @@ const PRICE_PRESETS = [
 ] as const
 
 const MAX_PRICE_SLIDER = 500
+
+// ----- Location Options -----
+const LOCATION_OPTIONS = [
+  { value: '', label: 'All Locations' },
+  { value: 'Pakistan', label: 'Pakistan' },
+  { value: 'United States', label: 'United States' },
+  { value: 'United Kingdom', label: 'United Kingdom' },
+  { value: 'United Arab Emirates', label: 'United Arab Emirates' },
+  { value: 'Saudi Arabia', label: 'Saudi Arabia' },
+  { value: 'Canada', label: 'Canada' },
+  { value: 'Australia', label: 'Australia' },
+  { value: 'Germany', label: 'Germany' },
+  { value: 'Turkey', label: 'Turkey' },
+  { value: 'India', label: 'India' },
+  { value: 'China', label: 'China' },
+] as const
+
+// ----- Delivery Options -----
+const DELIVERY_OPTIONS: { value: DeliveryFilterType | ''; label: string; icon: React.ReactNode; description: string }[] = [
+  { value: '', label: 'All', icon: <Truck size={14} />, description: 'Show all products' },
+  { value: 'free_shipping', label: 'Free Shipping', icon: <Truck size={14} />, description: 'Free shipping or shipping cost = 0' },
+  { value: 'digital_download', label: 'Digital Download', icon: <Download size={14} />, description: 'Instant digital delivery' },
+  { value: 'express_delivery', label: 'Express Delivery', icon: <Zap size={14} />, description: 'Delivery in 3 days or less' },
+]
 
 // ----- Helpers -----
 
@@ -699,6 +729,75 @@ function FilterSidebar({
         </FilterSection>
       )}
 
+      {/* Location */}
+      {activeTab === 'products' && (
+        <FilterSection title="Location" defaultOpen={false}>
+          <Select
+            value={filters.location || ''}
+            onValueChange={(val) => onFilterChange('location', val || undefined)}
+          >
+            <SelectTrigger className="w-full h-9 text-xs">
+              <div className="flex items-center gap-2">
+                <Globe size={14} className="text-muted-foreground flex-shrink-0" />
+                <SelectValue placeholder="All Locations" />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              {LOCATION_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value || '_all'} value={opt.value || '_all'}>
+                  <span className="flex items-center gap-2">
+                    {opt.label}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {filters.location && (
+            <button
+              onClick={() => onFilterChange('location', undefined)}
+              className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X size={12} />
+              Clear location filter
+            </button>
+          )}
+          <p className="text-xs text-muted-foreground mt-2">
+            Filter by shop&apos;s country
+          </p>
+        </FilterSection>
+      )}
+
+      {/* Delivery */}
+      {activeTab === 'products' && (
+        <FilterSection title="Delivery" defaultOpen={false}>
+          <div className="space-y-1.5">
+            {DELIVERY_OPTIONS.map((opt) => (
+              <button
+                key={opt.value || '_all'}
+                onClick={() => onFilterChange('delivery', opt.value || undefined)}
+                className={`flex items-start gap-2.5 w-full px-3 py-2 rounded-lg text-left text-sm transition-colors ${
+                  (filters.delivery || '') === opt.value
+                    ? 'bg-primary text-primary-foreground'
+                    : 'hover:bg-muted'
+                }`}
+              >
+                <span className="flex-shrink-0 mt-0.5">{opt.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-xs">{opt.label}</div>
+                  {opt.value && (
+                    <div className={`text-[10px] mt-0.5 ${
+                      (filters.delivery || '') === opt.value ? 'text-primary-foreground/80' : 'text-muted-foreground'
+                    }`}>
+                      {opt.description}
+                    </div>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+        </FilterSection>
+      )}
+
       {/* Sort */}
       <FilterSection title="Sort By" defaultOpen={false}>
         <Select
@@ -756,6 +855,13 @@ function ActiveFilterTags({
   }
   if (filters.inStock) {
     tags.push({ key: 'inStock', label: 'In Stock' })
+  }
+  if (filters.location) {
+    tags.push({ key: 'location', label: `📍 ${filters.location}` })
+  }
+  if (filters.delivery) {
+    const deliveryOpt = DELIVERY_OPTIONS.find((o) => o.value === filters.delivery)
+    tags.push({ key: 'delivery', label: deliveryOpt?.label ?? filters.delivery })
   }
   if (filters.sortBy && filters.sortBy !== 'newest') {
     const opt = SORT_OPTIONS.find((o) => o.value === filters.sortBy)
@@ -831,6 +937,32 @@ function QuickFilterChips({
         <CheckCircle2 size={14} />
         In Stock
       </button>
+      <div className="w-px h-5 bg-border mx-1 hidden sm:block" />
+      {/* Location quick filter */}
+      {filters.location && (
+        <button
+          onClick={() => onFilterChange('location', undefined)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800 transition-all duration-200"
+        >
+          <MapPin size={14} />
+          {filters.location}
+          <X size={12} className="ml-0.5" />
+        </button>
+      )}
+      {/* Delivery quick filter */}
+      {filters.delivery && (() => {
+        const deliveryOpt = DELIVERY_OPTIONS.find((o) => o.value === filters.delivery)
+        return (
+          <button
+            onClick={() => onFilterChange('delivery', undefined)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border bg-sky-100 text-sky-700 border-sky-300 dark:bg-sky-950 dark:text-sky-300 dark:border-sky-800 transition-all duration-200"
+          >
+            {deliveryOpt?.icon}
+            {deliveryOpt?.label}
+            <X size={12} className="ml-0.5" />
+          </button>
+        )
+      })()}
     </div>
   )
 }
@@ -977,6 +1109,8 @@ export default function SearchPage() {
     if (filters.maxPrice !== undefined) count++
     if (filters.rating !== undefined) count++
     if (filters.inStock) count++
+    if (filters.location !== undefined) count++
+    if (filters.delivery !== undefined) count++
     if (filters.sortBy && filters.sortBy !== 'newest') count++
     return count
   }, [filters])
@@ -996,6 +1130,10 @@ export default function SearchPage() {
       setFilters((prev) => ({ ...prev, sortBy: 'newest' }))
     } else if (key === 'inStock') {
       setFilters((prev) => ({ ...prev, inStock: undefined }))
+    } else if (key === 'location') {
+      setFilters((prev) => ({ ...prev, location: undefined }))
+    } else if (key === 'delivery') {
+      setFilters((prev) => ({ ...prev, delivery: undefined }))
     } else {
       setFilters((prev) => ({ ...prev, [key]: undefined }))
     }
@@ -1032,6 +1170,11 @@ export default function SearchPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">
+      {/* Stories Bar */}
+      <div className="mb-6 border-b pb-4">
+        <StoryBar />
+      </div>
+
       {/* Search header */}
       <div className="mb-6">
         {/* Tab switcher */}

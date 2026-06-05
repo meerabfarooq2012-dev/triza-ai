@@ -391,11 +391,14 @@ export function SellerShopSettings() {
                     <Loader2 className="h-6 w-6 animate-spin text-emerald-500" />
                   </div>
                 ) : logo ? (
-                  <div className="group relative h-24 w-24 overflow-hidden rounded-xl border-2 border-gray-100 shadow-sm">
-                    <img
+                  <div className="group relative h-24 w-24 overflow-hidden rounded-xl border-2 border-border shadow-sm">
+                    <Image
                       src={logo}
                       alt="Shop logo"
-                      className="h-full w-full object-cover"
+                      fill
+                      className="object-cover"
+                      sizes="96px"
+                      unoptimized
                     />
                     {logo.startsWith('http') && (
                       <span className="absolute bottom-1 left-1 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-white">
@@ -411,10 +414,10 @@ export function SellerShopSettings() {
                     </button>
                   </div>
                 ) : (
-                  <label className="flex h-24 w-24 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 transition-colors hover:border-emerald-300 hover:bg-emerald-50/50">
+                  <label className="flex h-24 w-24 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/50 transition-colors hover:border-emerald-300 hover:bg-emerald-50/50">
                     <div className="flex flex-col items-center gap-1">
-                      <ImagePlus className="h-6 w-6 text-gray-400" />
-                      <span className="text-[10px] text-gray-400">Upload</span>
+                      <ImagePlus className="h-6 w-6 text-muted-foreground" />
+                      <span className="text-[10px] text-muted-foreground">Upload</span>
                     </div>
                     <input
                       type="file"
@@ -427,10 +430,10 @@ export function SellerShopSettings() {
                 )}
               </div>
               <div className="flex-1">
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   Upload your shop logo. This appears in your shop header and search results.
                 </p>
-                <p className="mt-1 text-xs text-gray-400">
+                <p className="mt-1 text-xs text-muted-foreground">
                   Recommended: 200×200px, max 2MB, PNG or JPG
                 </p>
                 {logo && (
@@ -460,11 +463,14 @@ export function SellerShopSettings() {
                   </div>
                 </div>
               ) : banner ? (
-                <div className="group relative overflow-hidden rounded-xl border-2 border-gray-100 shadow-sm">
-                  <img
+                <div className="group relative h-40 overflow-hidden rounded-xl border-2 border-border shadow-sm">
+                  <Image
                     src={banner}
                     alt="Shop banner"
-                    className="h-40 w-full object-cover"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 600px"
+                    unoptimized
                   />
                   {banner.startsWith('http') && (
                     <span className="absolute bottom-2 left-2 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-white">
@@ -480,12 +486,12 @@ export function SellerShopSettings() {
                   </button>
                 </div>
               ) : (
-                <label className="flex h-32 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 transition-colors hover:border-emerald-300 hover:bg-emerald-50/50">
+                <label className="flex h-32 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/50 transition-colors hover:border-emerald-300 hover:bg-emerald-50/50">
                   <div className="flex flex-col items-center gap-2">
-                    <ImagePlus className="h-8 w-8 text-gray-400" />
+                    <ImagePlus className="h-8 w-8 text-muted-foreground" />
                     <div className="text-center">
-                      <p className="text-sm font-medium text-gray-500">Click to upload banner</p>
-                      <p className="text-xs text-gray-400">Recommended: 1200×300px, max 2MB</p>
+                      <p className="text-sm font-medium text-muted-foreground">Click to upload banner</p>
+                      <p className="text-xs text-muted-foreground">Recommended: 1200×300px, max 2MB</p>
                     </div>
                   </div>
                   <input
@@ -656,7 +662,7 @@ export function SellerShopSettings() {
                 className="flex-1"
               />
             </div>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-muted-foreground">
               Full number: {phoneCountryCode} {contactPhone}
             </p>
           </div>
@@ -700,7 +706,7 @@ export function SellerShopSettings() {
                   className={`flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all ${
                     primaryColor === preset.primary
                       ? 'border-emerald-600 scale-110 shadow-md'
-                      : 'border-transparent hover:border-gray-300'
+                      : 'border-transparent hover:border-muted-foreground/30'
                   }`}
                   style={{
                     background: `linear-gradient(135deg, ${preset.primary}, ${preset.secondary})`,
@@ -710,7 +716,7 @@ export function SellerShopSettings() {
                     <Check className="h-4 w-4 text-white" />
                   )}
                 </div>
-                <span className="text-[10px] text-gray-500 truncate max-w-[60px]">
+                <span className="text-[10px] text-muted-foreground truncate max-w-[60px]">
                   {preset.name}
                 </span>
               </button>
@@ -737,7 +743,7 @@ export function SellerShopSettings() {
                 </p>
               </div>
             </div>
-            <div className="flex gap-2 p-4 bg-white">
+            <div className="flex gap-2 p-4 bg-card">
               <div
                 className="rounded-lg px-3 py-1.5 text-xs font-medium text-white"
                 style={{ background: secondaryColor }}
@@ -823,12 +829,12 @@ export function SellerShopSettings() {
                 className={`flex w-full items-center gap-3 rounded-xl border-2 p-3 transition-all ${
                   layoutStyle === value
                     ? 'border-emerald-500 bg-emerald-50'
-                    : 'border-gray-100 hover:border-gray-200'
+                    : 'border-border hover:border-muted-foreground/30'
                 }`}
                 onClick={() => setLayoutStyle(value as LayoutStyle)}
               >
                 <div className="flex-1 text-left">
-                  <p className="text-sm font-medium text-gray-900">{label}</p>
+                  <p className="text-sm font-medium text-foreground">{label}</p>
                 </div>
                 {/* Mini preview */}
                 <div
@@ -872,12 +878,12 @@ export function SellerShopSettings() {
                 className={`flex w-full items-center gap-3 rounded-xl border-2 p-3 transition-all ${
                   displayStyle === value
                     ? 'border-emerald-500 bg-emerald-50'
-                    : 'border-gray-100 hover:border-gray-200'
+                    : 'border-border hover:border-muted-foreground/30'
                 }`}
                 onClick={() => setDisplayStyle(value as DisplayStyle)}
               >
                 <div className="flex-1 text-left">
-                  <p className="text-sm font-medium text-gray-900">{label}</p>
+                  <p className="text-sm font-medium text-foreground">{label}</p>
                 </div>
                 <div className="flex flex-col gap-0.5">
                   <div
@@ -920,7 +926,7 @@ export function SellerShopSettings() {
               {customSections.map((section) => (
                 <div
                   key={section.id}
-                  className="flex items-center gap-3 rounded-lg border border-gray-100 p-3"
+                  className="flex items-center gap-3 rounded-lg border border-border p-3"
                 >
                   <div className="flex flex-col gap-1">
                     <Button
@@ -941,10 +947,10 @@ export function SellerShopSettings() {
                     </Button>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-foreground">
                       {section.title}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-muted-foreground">
                       {CUSTOM_SECTION_TYPES.find((t) => t.value === section.type)?.label || section.type} • {section.content.slice(0, 50)}{section.content.length > 50 ? '...' : ''}
                     </p>
                   </div>
@@ -964,8 +970,8 @@ export function SellerShopSettings() {
           <Separator />
 
           {/* Add New Section */}
-          <div className="space-y-3 rounded-lg bg-gray-50 p-4">
-            <p className="text-sm font-medium text-gray-700">Add New Section</p>
+          <div className="space-y-3 rounded-lg bg-muted/50 p-4">
+            <p className="text-sm font-medium text-muted-foreground">Add New Section</p>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs">Title</Label>
@@ -1032,14 +1038,14 @@ export function SellerShopSettings() {
               {socialLinks.map((link) => (
                 <div
                   key={link.id}
-                  className="flex items-center gap-3 rounded-lg border border-gray-100 p-3"
+                  className="flex items-center gap-3 rounded-lg border border-border p-3"
                 >
-                  <Globe className="h-4 w-4 text-gray-400" />
+                  <Globe className="h-4 w-4 text-muted-foreground" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-foreground">
                       {SOCIAL_PLATFORM_LABELS[link.platform]}
                     </p>
-                    <p className="truncate text-xs text-gray-500">{link.url}</p>
+                    <p className="truncate text-xs text-muted-foreground">{link.url}</p>
                   </div>
                   <Button
                     variant="ghost"

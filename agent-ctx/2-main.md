@@ -1,21 +1,20 @@
-# Task 2 — Buyer Digital Download UI (Agent: main)
+# Task 2 — Enhance Shipping Calculator in Checkout
+
+## Agent: main
 
 ## Summary
-Built the Buyer Digital Download UI for the Marketo marketplace including:
-1. A comprehensive `BuyerDownloads` component with progress bars, status badges, expiry countdowns, and "Request New Link" functionality
-2. A download generation API endpoint (`/api/downloads/create`)
-3. An order-specific downloads API (`/api/downloads/order/[orderId]`)
-4. Updated the buyer dashboard to use the new `BuyerDownloads` component
-5. Enhanced the order tracking page's `DigitalDownloadsSection` with auto-creation of download links
-
-## Files Created
-- `src/components/marketplace/buyer/buyer-downloads.tsx` — BuyerDownloads component
-- `src/app/api/downloads/create/route.ts` — POST endpoint for generating download links
-- `src/app/api/downloads/order/[orderId]/route.ts` — GET endpoint for order-specific downloads
+Enhanced the shipping calculator to provide sensible default shipping rates when no shipping zones are configured for a shop, improved the checkout modal shipping step UI with method-specific icons and visual enhancements, and verified that order creation properly uses the shipping cost from the request.
 
 ## Files Modified
-- `src/components/marketplace/buyer/buyer-dashboard.tsx` — Changed MyDownloads → BuyerDownloads import
-- `src/components/marketplace/orders/order-tracking-page.tsx` — Enhanced DigitalDownloadsSection with userId prop, auto-create, progress bars, product images, Request New Link button
+1. `src/app/api/shipping/calculate/route.ts` — Added default shipping rates fallback when no zones match
+2. `src/components/marketplace/payment/checkout-modal.tsx` — Enhanced shipping step UI with icons, color-coded badges, default zone notice
 
-## Lint
-- 0 errors, 1 pre-existing warning (unrelated)
+## Key Decisions
+- Default rates use prefix `default-` for IDs to distinguish from DB-backed rates
+- Free shipping only offered when `orderTotal >= $50`
+- Default zone has `name: "Default Zone"` and `countries: []` (worldwide)
+- UI shows an amber notice banner when default rates are being used (so user knows seller hasn't configured custom zones)
+- Method-specific icons: Truck (standard), Zap (express), Gift (free) — makes options more visually distinct
+- Empty state changed from misleading "Free shipping" to amber "No shipping options available" notice
+
+## Lint: 0 errors, 3 pre-existing warnings (unrelated)

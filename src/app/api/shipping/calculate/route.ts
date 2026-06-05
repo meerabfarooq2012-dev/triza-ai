@@ -50,9 +50,95 @@ export async function POST(request: NextRequest) {
     });
 
     if (matchingZones.length === 0) {
+      // Return sensible default shipping rates so checkout still works
+      // even when sellers haven't configured shipping zones
+      const now = new Date();
+      const defaultZone = {
+        id: 'default-zone',
+        name: 'Default Zone',
+        shopId,
+        countries: [] as string[],
+        isActive: true,
+      };
+
+      const defaultRates = [
+        {
+          id: 'default-standard',
+          zoneId: 'default-zone',
+          name: 'Standard Shipping',
+          method: 'standard',
+          minDays: 5,
+          maxDays: 7,
+          price: 5.00,
+          freeAbove: null as number | null,
+          weightLimit: null as number | null,
+          isActive: true,
+          createdAt: now,
+          updatedAt: now,
+          zone: defaultZone,
+        },
+        {
+          id: 'default-express',
+          zoneId: 'default-zone',
+          name: 'Express Shipping',
+          method: 'express',
+          minDays: 2,
+          maxDays: 3,
+          price: 12.00,
+          freeAbove: null as number | null,
+          weightLimit: null as number | null,
+          isActive: true,
+          createdAt: now,
+          updatedAt: now,
+          zone: defaultZone,
+        },
+      ];
+
+      // Add free shipping option if order total >= $50
+      if (orderTotal >= 50) {
+        defaultRates.push({
+          id: 'default-free',
+          zoneId: 'default-zone',
+          name: 'Free Shipping',
+          method: 'standard',
+          minDays: 5,
+          maxDays: 7,
+          price: 0,
+          freeAbove: 50,
+          weightLimit: null as number | null,
+          isActive: true,
+          createdAt: now,
+          updatedAt: now,
+          zone: defaultZone,
+        });
+      }
+
+      const results = defaultRates.map((rate) => {
+        const estimatedMin = new Date(now);
+        estimatedMin.setDate(estimatedMin.getDate() + rate.minDays);
+        const estimatedMax = new Date(now);
+        estimatedMax.setDate(estimatedMax.getDate() + rate.maxDays);
+
+        return {
+          rate,
+          price: rate.price,
+          estimatedDelivery: {
+            min: estimatedMin.toISOString(),
+            max: estimatedMax.toISOString(),
+          },
+        };
+      });
+
+      // Sort: free shipping first, then by price ascending
+      results.sort((a, b) => {
+        if (a.price === 0 && b.price !== 0) return -1;
+        if (a.price !== 0 && b.price === 0) return 1;
+        return a.price - b.price;
+      });
+
       return NextResponse.json({
         success: true,
-        data: [],
+        data: results,
       });
     }
 
