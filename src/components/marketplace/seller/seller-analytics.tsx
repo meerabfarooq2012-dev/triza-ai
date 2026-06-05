@@ -96,6 +96,78 @@ const RechartsAreaChart = dynamic(
   },
 )
 
+// ─── Custom Tooltip for Orders Bar Chart ────────────────────────────────────
+
+function OrdersTooltip({ active, payload, label }: {
+  active?: boolean
+  payload?: Array<{ value: number; dataKey: string; color: string }>
+  label?: string
+}) {
+  if (!active || !payload || !payload.length) return null
+  return (
+    <div className="rounded-lg border bg-white px-4 py-3 shadow-lg">
+      <p className="mb-1 text-sm font-semibold text-gray-900">{label}</p>
+      <p className="text-xs" style={{ color: '#10b981' }}>
+        Orders: {payload[0].value}
+      </p>
+    </div>
+  )
+}
+
+const RechartsBarChart = dynamic(
+  () =>
+    import('recharts').then((m) => {
+      const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = m
+      return {
+        default: function Chart({
+          data,
+          xKey,
+        }: {
+          data: Array<{ month?: string; date?: string; revenue: number; orders: number }>
+          xKey: string
+        }) {
+          return (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data}>
+                <defs>
+                  <linearGradient id="ordersBarGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#10b981" stopOpacity={1} />
+                    <stop offset="100%" stopColor="#14b8a6" stopOpacity={0.8} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                <XAxis
+                  dataKey={xKey}
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 12, fill: '#9ca3af' }}
+                  dy={8}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 12, fill: '#9ca3af' }}
+                  width={60}
+                  allowDecimals={false}
+                />
+                <Tooltip content={<OrdersTooltip />} />
+                <Bar dataKey="orders" fill="url(#ordersBarGradient)" radius={[4, 4, 0, 0]} maxBarSize={40} />
+              </BarChart>
+            </ResponsiveContainer>
+          )
+        },
+      }
+    }),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[300px] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-600" />
+      </div>
+    ),
+  },
+)
+
 const RechartsPieChart = dynamic(
   () =>
     import('recharts').then((m) => {
@@ -361,8 +433,8 @@ function AnalyticsSkeleton() {
   return (
     <div className="space-y-6">
       {/* Stats skeleton */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[...Array(4)].map((_, i) => (
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        {[...Array(6)].map((_, i) => (
           <Card key={i} className="border-0 shadow-sm">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -376,11 +448,18 @@ function AnalyticsSkeleton() {
           </Card>
         ))}
       </div>
-      {/* Chart skeleton */}
+      {/* Revenue chart skeleton */}
       <Card className="border-0 shadow-sm">
         <CardContent className="p-6">
           <Skeleton className="mb-4 h-6 w-40" />
           <Skeleton className="h-[350px] w-full" />
+        </CardContent>
+      </Card>
+      {/* Orders bar chart skeleton */}
+      <Card className="border-0 shadow-sm">
+        <CardContent className="p-6">
+          <Skeleton className="mb-4 h-6 w-32" />
+          <Skeleton className="h-[300px] w-full" />
         </CardContent>
       </Card>
       {/* Two column skeleton */}
@@ -516,6 +595,15 @@ export function SellerAnalytics() {
 
   const { summary } = data
   const hasChartData = chartData.some((d) => d.revenue > 0)
+  const hasOrdersData = chartData.some((d) => d.orders > 0)
+
+  // ── Derived metrics ──
+  const conversionRate = summary.totalOrders > 0
+    ? (summary.completedOrders / summary.totalOrders * 100).toFixed(1)
+    : null
+  const avgOrderValue = summary.totalOrders > 0
+    ? formatCurrency(summary.totalRevenue / summary.totalOrders)
+    : 'N/A'
 
   // ── Stats Cards ──
   const statsCards = [
@@ -560,6 +648,26 @@ export function SellerAnalytics() {
       changeLabel: '',
       isWarning: true,
     },
+    {
+      label: 'Conversion Rate',
+      value: conversionRate !== null ? `${conversionRate}%` : 'N/A',
+      icon: TrendingUp,
+      bgColor: 'bg-teal-50 dark:bg-teal-950/50',
+      textColor: 'text-teal-600 dark:text-teal-400',
+      gradient: 'from-teal-500 to-emerald-600',
+      change: null,
+      changeLabel: '',
+    },
+    {
+      label: 'Avg Order Value',
+      value: avgOrderValue,
+      icon: DollarSign,
+      bgColor: 'bg-amber-50 dark:bg-amber-950/50',
+      textColor: 'text-amber-600 dark:text-amber-400',
+      gradient: 'from-amber-400 to-amber-600',
+      change: null,
+      changeLabel: '',
+    },
   ]
 
   return (
@@ -572,7 +680,7 @@ export function SellerAnalytics() {
       {/* ═══════════════════════════════════════════════════════════════════════
           1. Summary Stats Cards
       ═══════════════════════════════════════════════════════════════════════ */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {statsCards.map((stat) => (
           <motion.div key={stat.label} variants={itemVariants}>
             <Card
@@ -679,7 +787,50 @@ export function SellerAnalytics() {
       </motion.div>
 
       {/* ═══════════════════════════════════════════════════════════════════════
-          3. Two-Column: Order Status Breakdown + Revenue by Product Type
+          3. Daily Orders Bar Chart (dynamically loaded recharts)
+      ═══════════════════════════════════════════════════════════════════════ */}
+      <motion.div variants={itemVariants}>
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-lg font-semibold">Daily Orders</CardTitle>
+            <div className="flex items-center gap-1 rounded-lg bg-gray-100 p-1 dark:bg-gray-800">
+              {(['7D', '30D', '12M'] as const).map((period) => (
+                <Button
+                  key={period}
+                  variant={timePeriod === period ? 'default' : 'ghost'}
+                  size="sm"
+                  className={`h-7 px-3 text-xs font-medium ${
+                    timePeriod === period
+                      ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                  onClick={() => setTimePeriod(period)}
+                >
+                  {period}
+                </Button>
+              ))}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {hasOrdersData ? (
+              <ChartErrorBoundary fallbackTitle="Orders chart could not load">
+                <div className="h-[300px]">
+                  <RechartsBarChart data={chartData} xKey={chartXKey} />
+                </div>
+              </ChartErrorBoundary>
+            ) : (
+              <EmptyState
+                icon={ShoppingCart}
+                title="No order data yet"
+                description="Order counts will appear when customers place orders"
+              />
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* ═══════════════════════════════════════════════════════════════════════
+          4. Two-Column: Order Status Breakdown + Revenue by Product Type
       ═══════════════════════════════════════════════════════════════════════ */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Order Status Breakdown */}
@@ -845,7 +996,7 @@ export function SellerAnalytics() {
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════════════
-          4. Top Products Table
+          5. Top Products Table
       ═══════════════════════════════════════════════════════════════════════ */}
       <motion.div variants={itemVariants}>
         <Card className="border-0 shadow-sm">
@@ -932,7 +1083,7 @@ export function SellerAnalytics() {
       </motion.div>
 
       {/* ═══════════════════════════════════════════════════════════════════════
-          5. Two-Column: Top Customers + Recent Reviews
+          6. Two-Column: Top Customers + Recent Reviews
       ═══════════════════════════════════════════════════════════════════════ */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Top Customers */}

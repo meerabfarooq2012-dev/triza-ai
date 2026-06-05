@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { RecentlyViewedSection } from '@/components/marketplace/shared/recently-viewed-section'
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/lib/constants'
 import type { Order, BuyerDashboardStats } from '@/types'
 
@@ -163,6 +164,9 @@ export function BuyerOverview() {
           </motion.div>
         ))}
       </div>
+
+      {/* Recently Viewed */}
+      <RecentlyViewedSection hideWhenEmpty />
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

@@ -10,11 +10,13 @@ import { CTASection } from './cta-section'
 import { CommissionSection } from './commission-section'
 import { BrowseByTypeSection } from './browse-by-type-section'
 import { FlashDealsSection } from './flash-deals-section'
+import { RecentlyViewedSection } from '@/components/marketplace/shared/recently-viewed-section'
 
 export function LandingPage() {
   return (
     <div className="min-h-screen">
       <HeroSection />
+      <RecentlyViewedSection hideWhenEmpty />
       <BrowseByTypeSection />
       <FlashDealsSection />
       <AboutSection />

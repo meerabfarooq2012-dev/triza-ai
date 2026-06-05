@@ -243,6 +243,9 @@ const productsApi = {
 
   deleteProduct: (id: string) =>
     request<ApiResponse>(`/products/${id}`, { method: 'DELETE' }),
+
+  compareProducts: (ids: string[]) =>
+    request<ApiResponse<Product[]>>(`/products/compare?ids=${ids.join(',')}`),
 }
 
 // ----- Orders API -----

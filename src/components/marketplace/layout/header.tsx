@@ -56,6 +56,7 @@ import { cn } from '@/lib/utils'
 import type { ViewMode } from '@/types'
 import { NotificationBell } from '@/components/marketplace/notifications/notification-bell'
 import { ThemeToggle } from '@/components/marketplace/layout/theme-toggle'
+import { SearchAutocomplete } from '@/components/marketplace/search/search-autocomplete'
 
 export function Header() {
   const {
@@ -74,8 +75,10 @@ export function Header() {
   const [searchInput, setSearchInput] = useState('')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [searchExpanded, setSearchExpanded] = useState(false)
+  const [searchFocused, setSearchFocused] = useState(false)
   const [unreadMessages, setUnreadMessages] = useState(0)
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const mobileSearchInputRef = useRef<HTMLInputElement>(null)
 
   // Fetch unread message count
   useEffect(() => {
@@ -92,8 +95,35 @@ export function Header() {
     return () => clearInterval(interval)
   }, [isAuthenticated, currentUser])
 
+  const showAutocomplete = searchInput.length >= 2 && searchFocused
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
+    if (searchInput.trim()) {
+      setSearchFocused(false)
+      setSearchQuery(searchInput.trim())
+      setCurrentView('search', { query: searchInput.trim() })
+    }
+  }
+
+  const handleSelectProduct = (id: string) => {
+    setSearchFocused(false)
+    setSearchInput('')
+    setCurrentView('product-detail', { productId: id })
+  }
+
+  const handleSelectShop = (slug: string) => {
+    setSearchFocused(false)
+    setSearchInput('')
+    setCurrentView('shop-view', { shopSlug: slug })
+  }
+
+  const handleAutocompleteClose = () => {
+    setSearchFocused(false)
+  }
+
+  const handleViewAllResults = () => {
+    setSearchFocused(false)
     if (searchInput.trim()) {
       setSearchQuery(searchInput.trim())
       setCurrentView('search', { query: searchInput.trim() })
@@ -170,17 +200,27 @@ export function Header() {
           </div>
 
           {/* Center: Search bar (desktop) */}
-          <div className="hidden md:flex flex-1 max-w-md mx-4">
+          <div className="hidden md:flex flex-1 max-w-md mx-4 relative">
             <form onSubmit={handleSearch} className="w-full relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 ref={searchInputRef}
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
+                onFocus={() => setSearchFocused(true)}
                 placeholder="Search products, shops..."
                 className="pl-9 pr-4 h-9 bg-muted/40 border-0 focus-visible:bg-background focus-visible:ring-1 focus-visible:ring-ring"
               />
             </form>
+            {showAutocomplete && (
+              <SearchAutocomplete
+                query={searchInput}
+                onSelectProduct={handleSelectProduct}
+                onSelectShop={handleSelectShop}
+                onClose={handleAutocompleteClose}
+                onViewAll={handleViewAllResults}
+              />
+            )}
           </div>
 
           {/* Right: Actions */}
@@ -434,8 +474,10 @@ export function Header() {
               <form onSubmit={handleSearch} className="px-4 py-2 relative">
                 <Search className="absolute left-7 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
+                  ref={mobileSearchInputRef}
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
+                  onFocus={() => setSearchFocused(true)}
                   placeholder="Search products, shops..."
                   className="pl-9 pr-10 h-9 bg-muted/40 border-0"
                   autoFocus
@@ -452,6 +494,18 @@ export function Header() {
                   </Button>
                 )}
               </form>
+              {/* Mobile autocomplete */}
+              {showAutocomplete && (
+                <div className="px-4 pb-2">
+                  <SearchAutocomplete
+                    query={searchInput}
+                    onSelectProduct={handleSelectProduct}
+                    onSelectShop={handleSelectShop}
+                    onClose={handleAutocompleteClose}
+                    onViewAll={handleViewAllResults}
+                  />
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

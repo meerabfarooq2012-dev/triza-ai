@@ -52,6 +52,7 @@ export type ViewMode =
   | 'dispute-detail'
   | 'verification-center'
   | 'wishlist-view'
+  | 'compare'
 
 // ----- Core Domain Models -----
 

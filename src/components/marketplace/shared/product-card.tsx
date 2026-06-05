@@ -3,12 +3,14 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { Heart, Download, Package, Briefcase, Layers, MessageCircleQuestion } from 'lucide-react'
+import { Heart, Download, Package, Briefcase, Layers, MessageCircleQuestion, GitCompare } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { RatingStars } from '@/components/marketplace/shared/rating-stars'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { useComparisonStore } from '@/store/use-comparison-store'
+import { useRecentlyViewed } from '@/hooks/use-recently-viewed'
 import { api } from '@/lib/api'
 import { PRODUCT_TYPE_LABELS } from '@/lib/constants'
 import { cn } from '@/lib/utils'
@@ -33,8 +35,10 @@ const typeBadgeVariant: Record<ProductType, string> = {
 
 export function ProductCard({ product, className }: ProductCardProps) {
   const { setCurrentView, currentUser } = useMarketplaceStore()
+  const { addToCompare, isInCompare } = useComparisonStore()
   const [isFavorited, setIsFavorited] = useState(product.isFavorited ?? false)
   const [imageError, setImageError] = useState(false)
+  const inCompare = isInCompare(product.id)
 
   const images: string[] = product.images
     ? (typeof product.images === 'string'
@@ -44,7 +48,10 @@ export function ProductCard({ product, className }: ProductCardProps) {
 
   const primaryImage = images.length > 0 ? images[0] : null
 
+  const { addViewedProduct } = useRecentlyViewed()
+
   const handleClick = () => {
+    addViewedProduct(product.id)
     setCurrentView('product-detail', { productId: product.id })
   }
 
@@ -63,6 +70,11 @@ export function ProductCard({ product, className }: ProductCardProps) {
       // Revert on error
       setIsFavorited(previousState)
     }
+  }
+
+  const handleCompare = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    addToCompare(product.id)
   }
 
   const handleShopClick = (e: React.MouseEvent) => {
@@ -108,20 +120,38 @@ export function ProductCard({ product, className }: ProductCardProps) {
             {PRODUCT_TYPE_LABELS[product.type]}
           </Badge>
 
-          {/* Favorite button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className={cn(
-              'absolute top-2 right-2 h-8 w-8 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white',
-              isFavorited && 'text-red-500 hover:text-red-600'
-            )}
-            onClick={handleFavorite}
-          >
-            <Heart
-              className={cn('h-4 w-4', isFavorited && 'fill-current')}
-            />
-          </Button>
+          {/* Action buttons */}
+          <div className="absolute top-2 right-2 flex flex-col gap-1.5">
+            {/* Favorite button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn(
+                'h-8 w-8 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white',
+                isFavorited && 'text-red-500 hover:text-red-600'
+              )}
+              onClick={handleFavorite}
+            >
+              <Heart
+                className={cn('h-4 w-4', isFavorited && 'fill-current')}
+              />
+            </Button>
+
+            {/* Compare button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn(
+                'h-8 w-8 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white',
+                inCompare && 'text-amber-600 bg-amber-50 hover:bg-amber-100'
+              )}
+              onClick={handleCompare}
+            >
+              <GitCompare
+                className={cn('h-4 w-4', inCompare && 'fill-current')}
+              />
+            </Button>
+          </div>
         </div>
 
         <CardContent className="p-4 space-y-2">

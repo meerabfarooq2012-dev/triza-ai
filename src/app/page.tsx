@@ -267,6 +267,16 @@ const UserProfile = dynamic(
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
+const ComparisonView = dynamic(
+  withChunkRetry(() => import('@/components/marketplace/search/comparison-view'), 'ComparisonView'),
+  { ssr: false, loading: () => <ViewLoader /> }
+)
+
+const CompareBar = dynamic(
+  withChunkRetry(() => import('@/components/marketplace/shared/compare-bar'), 'CompareBar'),
+  { ssr: false }
+)
+
 // Error boundary component to catch rendering errors in child components
 type ErrorBoundaryProps = { children: React.ReactNode; fallback?: React.ReactNode }
 type ErrorBoundaryState = { hasError: boolean; error: Error | null }
@@ -529,6 +539,8 @@ function MarketplaceApp() {
         case 'settings':
           if (!isAuthenticated) return <AuthModal />
           return <UserProfile />
+        case 'compare':
+          return <ComparisonView />
         case 'admin':
           if (!isAuthenticated || !currentUser?.isAdmin) {
             return (
@@ -574,6 +586,7 @@ function MarketplaceApp() {
       </main>
       <Footer />
       <CartDrawer />
+      <CompareBar />
       <FeedbackWidget />
       <EmailVerificationDialog
         open={showEmailVerify}

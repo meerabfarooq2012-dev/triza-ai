@@ -50,6 +50,7 @@ import {
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { useRecentlyViewed } from '@/hooks/use-recently-viewed'
 import { useToast } from '@/hooks/use-toast'
 import { openCartDrawer } from '@/components/marketplace/shared/cart-drawer'
 import { ShareShopUrl } from '@/components/marketplace/shared/share-shop-url'
@@ -63,6 +64,7 @@ import {
 } from '@/lib/constants'
 import { countryCodeData } from '@/lib/country-codes'
 import { VariantSelector } from '@/components/marketplace/shared/variant-selector'
+import { ProductRecommendations } from '@/components/marketplace/shared/product-recommendations'
 import type { Product, CartItem, ProductVariantOption, ProductVariant, FlashSale, Wishlist } from '@/types'
 
 function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
@@ -89,10 +91,10 @@ function ProductTypeIcon({ type, size = 20 }: { type: string; size?: number }) {
 
 export default function ProductDetail() {
   const { viewParams, setCurrentView, addToCart, currentUser, cart } = useMarketplaceStore()
+  const { addViewedProduct } = useRecentlyViewed()
   const productId = viewParams.productId
 
   const [product, setProduct] = useState<Product | null>(null)
-  const [relatedProducts, setRelatedProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState(0)
   const [quantity, setQuantity] = useState(1)
@@ -138,6 +140,8 @@ export default function ProductDetail() {
         if (data) {
           setProduct(data)
           setIsFavorited(data.isFavorited || false)
+          // Track recently viewed
+          addViewedProduct(data.id)
         }
       })
       .catch(() => {
@@ -147,7 +151,7 @@ export default function ProductDetail() {
         if (!cancelled) setLoading(false)
       })
     return () => { cancelled = true }
-  }, [productId])
+  }, [productId, addViewedProduct])
 
   // Fetch active flash sale for this product
   useEffect(() => {
@@ -199,25 +203,6 @@ export default function ProductDetail() {
       if (flashIntervalRef.current) clearInterval(flashIntervalRef.current)
     }
   }, [activeFlashSale])
-
-  // Fetch related products
-  useEffect(() => {
-    if (!product) return
-    api.products
-      .getProducts({
-        category: product.categoryId || undefined,
-        limit: 4,
-        sortBy: 'popular',
-      })
-      .then((res) => {
-        if (res.data?.items) {
-          setRelatedProducts(
-            res.data.items.filter((p) => p.id !== product.id).slice(0, 4)
-          )
-        }
-      })
-      .catch(() => setRelatedProducts([]))
-  }, [product])
 
   const handleAddToCart = () => {
     if (!product || !product.shop) return
@@ -964,52 +949,12 @@ export default function ProductDetail() {
         />
       </section>
 
-      {/* Related Products */}
-      {relatedProducts.length > 0 && (
-        <section className="mt-16">
-          <h2 className="text-xl font-bold mb-6">Related Products</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {relatedProducts.map((rp) => {
-              const rpImages = safeJsonParse<string[]>(rp.images, [])
-              return (
-                <motion.div
-                  key={rp.id}
-                  whileHover={{ y: -4 }}
-                  className="cursor-pointer"
-                  onClick={() => {
-                    setCurrentView('product-detail', { productId: rp.id })
-                    window.scrollTo({ top: 0, behavior: 'smooth' })
-                  }}
-                >
-                  <Card className="overflow-hidden border-0 shadow-sm">
-                    <div className="aspect-square relative overflow-hidden bg-muted">
-                      {rpImages[0] ? (
-                        <img
-                          src={rpImages[0]}
-                          alt={rp.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <ProductTypeIcon type={rp.type} />
-                        </div>
-                      )}
-                    </div>
-                    <CardContent className="p-3">
-                      <h3 className="font-medium text-sm line-clamp-1">
-                        {rp.name}
-                      </h3>
-                      <p className="font-bold text-sm mt-1">
-                        ${(rp.price ?? 0).toFixed(2)}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              )
-            })}
-          </div>
-        </section>
-      )}
+      {/* Product Recommendations — You Might Also Like */}
+      <ProductRecommendations
+        productId={product.id}
+        shopId={product.shopId}
+        categoryId={product.categoryId ?? undefined}
+      />
     </div>
   )
 }
