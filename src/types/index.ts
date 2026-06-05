@@ -54,6 +54,8 @@ export type ViewMode =
   | 'wishlist-view'
   | 'compare'
   | 'my-downloads'
+  | 'wallet'
+  | 'payment-settings'
 
 // ----- Core Domain Models -----
 
