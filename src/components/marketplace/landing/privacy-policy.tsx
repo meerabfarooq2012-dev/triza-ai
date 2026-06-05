@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Shield, Lock, Eye, Share2, UserCheck, FileText, ArrowLeft } from 'lucide-react'
+import { Shield, Lock, Eye, Share2, UserCheck, FileText, ArrowLeft, Cookie, BarChart3, Megaphone } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 
@@ -40,6 +40,13 @@ const sections = [
     content:
       'You can update or delete your account information at any time through your profile settings.',
     gradient: 'from-cyan-500 to-sky-600',
+  },
+  {
+    icon: <Cookie className="h-5 w-5" />,
+    title: 'Cookie Policy',
+    content:
+      'We use cookies and similar tracking technologies to provide and improve our services. Essential cookies are required for authentication, shopping cart functionality, and security (e.g., CSRF protection) — these cannot be disabled. Analytics cookies help us understand how visitors interact with our platform by collecting anonymous usage data. Marketing cookies are used to track visitors across websites and display relevant advertisements. You can manage your cookie preferences at any time through the cookie consent banner or your browser settings. Third-party services we use (such as payment processors and analytics tools) may also set their own cookies.',
+    gradient: 'from-amber-500 to-amber-600',
   },
   {
     icon: <FileText className="h-5 w-5" />,
@@ -124,6 +131,91 @@ export function PrivacyPolicy() {
               </motion.div>
             ))}
           </div>
+
+          {/* Detailed Cookie Breakdown */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="mt-12 rounded-2xl border border-amber-200 dark:border-amber-800/50 bg-gradient-to-br from-amber-50/50 via-background to-amber-50/30 dark:from-amber-950/20 dark:via-background dark:to-amber-950/10 p-6 sm:p-8"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-lg">
+                <Cookie className="h-5 w-5" />
+              </div>
+              <h2 className="text-xl font-semibold">Detailed Cookie Information</h2>
+            </div>
+
+            <div className="space-y-5">
+              {/* Essential */}
+              <div className="flex items-start gap-3">
+                <div className="shrink-0 flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 mt-0.5">
+                  <Shield className="h-4 w-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold">Essential Cookies</h3>
+                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400">Always Active</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    These cookies are strictly necessary for the website to function. They enable core features such as authentication (session tokens), shopping cart persistence, security (CSRF protection), and page navigation. You cannot opt out of essential cookies.
+                  </p>
+                </div>
+              </div>
+
+              {/* Analytics */}
+              <div className="flex items-start gap-3">
+                <div className="shrink-0 flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 mt-0.5">
+                  <BarChart3 className="h-4 w-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold">Analytics Cookies</h3>
+                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400">Optional</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    These cookies help us understand how visitors interact with our platform by collecting anonymous data about pages visited, time spent, and navigation patterns. This information is used to improve the user experience and platform performance. No personally identifiable information is collected.
+                  </p>
+                </div>
+              </div>
+
+              {/* Marketing */}
+              <div className="flex items-start gap-3">
+                <div className="shrink-0 flex h-8 w-8 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 mt-0.5">
+                  <Megaphone className="h-4 w-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold">Marketing Cookies</h3>
+                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950/50 text-orange-700 dark:text-orange-400">Optional</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    These cookies are used to track visitors across websites to display relevant and engaging advertisements. They may be set by third-party advertising partners and help measure the effectiveness of advertising campaigns. Opting out does not remove advertisements but makes them less relevant.
+                  </p>
+                </div>
+              </div>
+
+              {/* Third-party */}
+              <div className="flex items-start gap-3">
+                <div className="shrink-0 flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-muted-foreground mt-0.5">
+                  <Share2 className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold">Third-Party Cookies</h3>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    Some cookies are placed by third-party services that appear on our pages. These include payment processors for secure transactions, analytics services for traffic measurement, and embedded content providers. We do not control these cookies — please refer to the respective third-party privacy policies for more information.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5 pt-4 border-t border-amber-200/50 dark:border-amber-800/30">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                <strong>Managing Your Preferences:</strong> You can change your cookie preferences at any time by clicking the cookie icon in the consent banner, or by adjusting your browser settings to block or delete cookies. Note that disabling certain cookies may affect the functionality of some parts of our website.
+              </p>
+            </div>
+          </motion.div>
 
           {/* Agreement note */}
           <motion.div

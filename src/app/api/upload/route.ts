@@ -11,6 +11,7 @@ import {
   uploadToStorage,
 } from '@/lib/supabase-storage'
 import { rateLimit, getRateLimitKey } from '@/lib/rate-limit'
+import { withCsrf } from '@/lib/with-csrf'
 
 // ---------------------------------------------------------------------------
 // Validation constants
@@ -40,7 +41,7 @@ const MAX_AVATAR_SIZE = 2 * 1024 * 1024 // 2MB for avatars
 // POST handler
 // ---------------------------------------------------------------------------
 
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
   // Rate limit: 30 per minute
   const rlKey = getRateLimitKey(request)
   const rl = rateLimit({ windowMs: 60_000, maxRequests: 30, key: `upload:${rlKey}` })
@@ -128,4 +129,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})

@@ -22,6 +22,9 @@ import {
   MessageSquare,
   Phone,
   Mail,
+  Download,
+  FileText,
+  RefreshCw,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -50,6 +53,251 @@ import {
 } from '@/lib/constants'
 import type { Order, OrderStatus, OrderStatusLog, Payment, EscrowStatus } from '@/types'
 import { ShipmentTracker } from '@/components/marketplace/shipping/shipment-tracker'
+import { toast } from 'sonner'
+
+// ----- Digital Downloads Sub-Component -----
+interface DigitalDownloadInfo {
+  id: string
+  downloadToken: string
+  fileName: string | null
+  fileSize: number | null
+  downloadCount: number
+  maxDownloads: number
+  expiresAt: string
+  isActive: boolean
+  isExpired: boolean
+  isExhausted: boolean
+  productName?: string
+  productImage?: string | null
+  product?: { id: string; name: string; images: string } | null
+}
+
+function DigitalDownloadsSection({ orderId, userId }: { orderId: string; userId: string }) {
+  const [downloads, setDownloads] = useState<DigitalDownloadInfo[]>([])
+  const [loading, setLoading] = useState(true)
+  const [creating, setCreating] = useState(false)
+
+  const fetchDownloads = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/downloads/order/${orderId}`)
+      const data = await res.json()
+      if (data.success) {
+        setDownloads(data.data || [])
+        return data.data || []
+      }
+      return []
+    } catch {
+      console.error('Failed to fetch downloads for order')
+      return []
+    }
+  }, [orderId])
+
+  const handleCreateDownloads = useCallback(async () => {
+    if (creating) return
+    setCreating(true)
+    try {
+      const res = await fetch('/api/downloads/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, orderId }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setDownloads(data.data || [])
+        if (data.created > 0) {
+          toast.success(`${data.created} download link${data.created > 1 ? 's' : ''} generated!`)
+        }
+      } else {
+        toast.error(data.error || 'Failed to generate download links')
+      }
+    } catch {
+      toast.error('Network error. Please try again.')
+    } finally {
+      setCreating(false)
+    }
+  }, [orderId, userId, creating])
+
+  useEffect(() => {
+    async function init() {
+      const fetched = await fetchDownloads()
+      setLoading(false)
+      // If no downloads exist yet, auto-create them
+      if (fetched.length === 0) {
+        setCreating(true)
+        try {
+          const res = await fetch('/api/downloads/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, orderId }),
+          })
+          const data = await res.json()
+          if (data.success) {
+            setDownloads(data.data || [])
+            if (data.created > 0) {
+              toast.success(`${data.created} download link${data.created > 1 ? 's' : ''} generated!`)
+            }
+          }
+        } catch {
+          // Silently fail — user can retry manually
+        } finally {
+          setCreating(false)
+        }
+      }
+    }
+    init()
+  }, [orderId, userId, fetchDownloads])
+
+  const formatFileSize = (bytes: number | null) => {
+    if (!bytes) return ''
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  }
+
+  if (loading || creating) {
+    return (
+      <Card className="border-0 shadow-sm border-l-4 border-l-amber-400">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Download className="h-5 w-5 text-amber-600" />
+            <h3 className="font-semibold">Digital Downloads</h3>
+            <Loader2 className="h-4 w-4 animate-spin text-amber-500 ml-1" />
+          </div>
+          <div className="space-y-3">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <div key={i} className="h-14 bg-muted rounded-lg animate-pulse" />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (downloads.length === 0) {
+    return (
+      <Card className="border-0 shadow-sm border-l-4 border-l-amber-400">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-2 mb-3">
+            <Download className="h-5 w-5 text-amber-600" />
+            <h3 className="font-semibold">Digital Downloads</h3>
+          </div>
+          <p className="text-sm text-muted-foreground mb-3">
+            No download links available for this order yet.
+          </p>
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5 border-amber-300 text-amber-600 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-400"
+            onClick={handleCreateDownloads}
+            disabled={creating}
+          >
+            {creating ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Download className="h-3.5 w-3.5" />
+            )}
+            Generate Download Links
+          </Button>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <Card className="border-0 shadow-sm border-l-4 border-l-amber-400">
+      <CardContent className="p-6">
+        <h3 className="font-semibold mb-4 flex items-center gap-2">
+          <Download className="h-5 w-5 text-amber-600" />
+          Digital Downloads
+        </h3>
+        <div className="space-y-3">
+          {downloads.map((dl) => {
+            const isAvailable = dl.isActive && !dl.isExpired && !dl.isExhausted
+            const displayName = dl.productName || dl.product?.name || dl.fileName || 'Digital File'
+            // Parse product images
+            let productImg: string | null = dl.productImage || null
+            if (!productImg && dl.product?.images) {
+              try {
+                const imgs = JSON.parse(dl.product.images)
+                productImg = imgs[0] || null
+              } catch {
+                // ignore
+              }
+            }
+
+            return (
+              <div
+                key={dl.id}
+                className="flex items-center gap-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800"
+              >
+                <div className="flex-shrink-0 h-10 w-10 rounded-lg overflow-hidden bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
+                  {productImg ? (
+                    <img src={productImg} alt={displayName} className="h-full w-full object-cover" />
+                  ) : (
+                    <FileText className="h-5 w-5 text-amber-600" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm truncate">
+                    {displayName}
+                  </p>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5 flex-wrap">
+                    {dl.fileSize && <span>{formatFileSize(dl.fileSize)}</span>}
+                    <span>
+                      {dl.isExpired ? 'Expired' : dl.isExhausted ? 'Downloads exhausted' : `${dl.downloadCount}/${dl.maxDownloads} downloads used`}
+                    </span>
+                    {!dl.isExpired && (
+                      <span>Expires {new Date(dl.expiresAt).toLocaleDateString()}</span>
+                    )}
+                  </div>
+                  {/* Mini progress bar */}
+                  {!dl.isExpired && (
+                    <div className="mt-1.5 h-1 w-full max-w-[200px] rounded-full bg-muted overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${
+                          dl.isExhausted ? 'bg-red-400' : dl.downloadCount / dl.maxDownloads > 0.6 ? 'bg-amber-500' : 'bg-emerald-500'
+                        }`}
+                        style={{ width: `${Math.min((dl.downloadCount / dl.maxDownloads) * 100, 100)}%` }}
+                      />
+                    </div>
+                  )}
+                </div>
+                {isAvailable ? (
+                  <Button
+                    size="sm"
+                    className="gap-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white flex-shrink-0"
+                    onClick={() => {
+                      window.open(`/api/downloads/${dl.downloadToken}`, '_blank')
+                      toast.success('Download started!')
+                    }}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Download
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1 border-amber-300 text-amber-600 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-400 dark:hover:bg-amber-950/30 flex-shrink-0"
+                    onClick={handleCreateDownloads}
+                    disabled={creating}
+                  >
+                    {creating ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3.5 w-3.5" />
+                    )}
+                    New Link
+                  </Button>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
 // ----- Order Status Timeline Steps -----
 const TIMELINE_STEPS: {
@@ -672,6 +920,13 @@ export default function OrderTrackingPage() {
 
           {/* Shipment Tracker - Rich visual timeline with carrier management */}
           <ShipmentTracker orderId={order.id} isSeller={isSeller} />
+
+          {/* Digital Downloads Section */}
+          {isBuyer && order.items?.some((item) => item.type === 'digital') && (
+            order.paymentStatus === 'paid' || order.status === 'delivered'
+          ) && (
+            <DigitalDownloadsSection orderId={order.id} userId={currentUser.id} />
+          )}
 
           {/* Payment & Escrow Section */}
           {paymentData && (

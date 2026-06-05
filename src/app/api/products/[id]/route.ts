@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { withCsrf } from '@/lib/with-csrf';
 
 export async function GET(
   request: NextRequest,
@@ -75,11 +76,12 @@ export async function GET(
   }
 }
 
-export async function PUT(
+async function handleUpdateProduct(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context?: unknown
 ) {
   try {
+    const { params } = context as { params: Promise<{ id: string }> };
     const { id } = await params;
     const body = await request.json();
 
@@ -165,18 +167,15 @@ export async function PUT(
   }
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  return PUT(request, { params });
-}
+export const PUT = withCsrf(handleUpdateProduct)
+export const PATCH = withCsrf(handleUpdateProduct)
 
-export async function DELETE(
+export const DELETE = withCsrf(async (
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+  context?: unknown
+) => {
   try {
+    const { params } = context as { params: Promise<{ id: string }> };
     const { id } = await params;
     const userId = request.nextUrl.searchParams.get('userId');
 
@@ -219,4 +218,4 @@ export async function DELETE(
       { status: 500 }
     );
   }
-}
+})

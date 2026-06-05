@@ -16,6 +16,8 @@ import {
   XCircle,
   ArrowLeft,
   Calendar,
+  AlertTriangle,
+  Trash2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -30,6 +32,9 @@ import { api } from '@/lib/api'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { USER_ROLE_LABELS } from '@/lib/constants'
 import { ChangePasswordForm } from '@/components/marketplace/auth/change-password-form'
+import { SessionManager } from '@/components/marketplace/settings/session-manager'
+import { DeleteAccountDialog } from '@/components/marketplace/auth/delete-account-dialog'
+import { DataExportButton } from '@/components/marketplace/settings/data-export-button'
 
 export function UserProfile() {
   const { currentUser, setCurrentView, login } = useMarketplaceStore()
@@ -39,6 +44,7 @@ export function UserProfile() {
   const [isSaving, setIsSaving] = useState(false)
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
   const [isResendingVerification, setIsResendingVerification] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
   // Form state
   const [name, setName] = useState(currentUser?.name || '')
@@ -470,6 +476,15 @@ export function UserProfile() {
                 </CardContent>
               </Card>
             </motion.div>
+
+            {/* Active Sessions */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.25 }}
+            >
+              <SessionManager />
+            </motion.div>
           </div>
 
           {/* Right column — Status & Quick Info */}
@@ -628,6 +643,63 @@ export function UserProfile() {
             </motion.div>
           </div>
         </div>
+
+        {/* Danger Zone */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.3 }}
+          className="mt-8 border-t pt-8"
+        >
+          <div className="max-w-4xl mx-auto">
+            <Card className="shadow-md border-red-200 dark:border-red-900/50">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg flex items-center gap-2 text-red-600 dark:text-red-400">
+                  <AlertTriangle className="h-5 w-5" />
+                  Danger Zone
+                </CardTitle>
+                <CardDescription>
+                  Irreversible and destructive actions for your account.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Data Export */}
+                <div className="p-4 rounded-lg border bg-muted/30">
+                  <DataExportButton />
+                </div>
+
+                {/* Account Deletion */}
+                <div className="p-4 rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50/50 dark:bg-red-950/10">
+                  <div className="flex items-start gap-3">
+                    <div className="rounded-lg bg-red-100 dark:bg-red-900/30 p-2.5">
+                      <Trash2 className="h-5 w-5 text-red-600 dark:text-red-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-semibold text-red-700 dark:text-red-400">Delete Account</h4>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Permanently delete your account and all associated data. This action cannot be undone.
+                      </p>
+                    </div>
+                    <Button
+                      variant="destructive"
+                      onClick={() => setShowDeleteDialog(true)}
+                      className="bg-red-600 hover:bg-red-700 text-white shrink-0"
+                    >
+                      <Trash2 className="h-4 w-4 mr-1.5" />
+                      Delete Account
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </motion.div>
+
+        {/* Delete Account Dialog */}
+        <DeleteAccountDialog
+          open={showDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
+        />
       </div>
     </div>
   )

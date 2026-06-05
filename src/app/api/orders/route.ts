@@ -5,6 +5,7 @@ import { sendEmailAsync } from '@/lib/email';
 import { orderConfirmationBuyerEmail, newOrderSellerEmail } from '@/lib/email-templates';
 import { notifyOrderCreated } from '@/lib/notifications';
 import { PLATFORM_FEE_PERCENT } from '@/lib/constants';
+import { withCsrf } from '@/lib/with-csrf';
 
 export async function GET(request: NextRequest) {
   try {
@@ -196,7 +197,7 @@ async function resolveItem(
 // POST — Create orders (split by shop)
 // ---------------------------------------------------------------------------
 
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
   try {
     const body = await request.json();
     const {
@@ -479,4 +480,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})

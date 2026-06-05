@@ -6,6 +6,7 @@ import { welcomeEmail, emailVerificationEmail } from '@/lib/email-templates';
 import { notifyWelcome } from '@/lib/notifications';
 import { rateLimit, getRateLimitKey, authRateLimit } from '@/lib/rate-limit';
 import { signToken } from '@/lib/auth-middleware';
+import { withCsrf } from '@/lib/with-csrf';
 import { randomBytes } from 'crypto';
 
 function slugify(text: string): string {
@@ -15,7 +16,7 @@ function slugify(text: string): string {
     .replace(/(^-|-$)/g, '');
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
   try {
     // Rate limiting
     const rateLimitKey = getRateLimitKey(request);
@@ -145,4 +146,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

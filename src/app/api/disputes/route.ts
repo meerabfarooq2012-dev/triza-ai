@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { withCsrf } from '@/lib/with-csrf';
 
 // GET /api/disputes — List disputes with filters and pagination
 export async function GET(request: NextRequest) {
@@ -116,7 +117,7 @@ export async function GET(request: NextRequest) {
 }
 
 // POST /api/disputes — Create a new dispute
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
   try {
     const body = await request.json();
     const {
@@ -295,4 +296,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})

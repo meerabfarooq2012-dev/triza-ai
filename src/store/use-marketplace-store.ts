@@ -144,13 +144,15 @@ export const useMarketplaceStore = create<MarketplaceState>()(
       },
 
       logout: () => {
-        // Fire-and-forget logout API call
-        const userId = get().currentUser?.id
-        if (userId) {
+        // Fire-and-forget logout API call (sends auth token so server can revoke session)
+        const authToken = get().authToken
+        if (authToken) {
           fetch('/api/auth/logout', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId }),
+            headers: {
+              'Content-Type': 'application/json',
+              ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+            },
           }).catch(() => {
             // Silently ignore logout API errors
           })

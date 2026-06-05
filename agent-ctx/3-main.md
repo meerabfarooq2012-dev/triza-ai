@@ -1,22 +1,32 @@
-# Task 3 — Product Recommendations Feature
+# Task 3 — Apply CSRF Protection to More API Routes
 
-## Agent: main
-## Date: 2025-06-05
+**Agent:** main  
+**Status:** Completed  
+**Date:** 2025-03-04
 
-### Summary
-Implemented a product recommendations feature for Marketo marketplace with a priority-based API endpoint and a gold-themed UI component with staggered animations.
+## Summary
+Extended CSRF protection to 12 additional API routes, created a new `/api/csrf-token` endpoint with non-HttpOnly cookies (double-submit pattern), rewrote the `useCsrf` hook with `useSyncExternalStore` for hydration safety and auto-refresh, and updated the API client to read CSRF tokens from cookies with fallback fetching.
 
-### Files Created
-1. `/home/z/my-project/src/app/api/products/recommendations/route.ts` — GET endpoint with priority strategy (same shop → same category → same type)
-2. `/home/z/my-project/src/components/marketplace/shared/product-recommendations.tsx` — 'use client' component with "You Might Also Like" section
+## Files Created
+- `src/app/api/csrf-token/route.ts` — New CSRF token endpoint (non-HttpOnly cookie, Lax SameSite, 24h max-age)
 
-### Files Modified
-1. `/home/z/my-project/src/components/marketplace/shop/product-detail.tsx` — Replaced basic "Related Products" section with ProductRecommendations component; removed relatedProducts state and fetch
-2. `/home/z/my-project/worklog.md` — Appended work record
+## Files Modified
+- `src/hooks/use-csrf.ts` — Rewritten with useSyncExternalStore, auto-refresh every 23h, fetches from /api/csrf-token
+- `src/lib/api.ts` — Added readCsrfCookie(), withCsrfHeaders(); updated direct fetch calls (upload, avatar, deleteAccount) to include CSRF headers
+- `src/app/api/orders/route.ts` — POST wrapped with withCsrf
+- `src/app/api/products/route.ts` — POST wrapped with withCsrf
+- `src/app/api/products/[id]/route.ts` — PUT, PATCH, DELETE wrapped with withCsrf; extracted handleUpdateProduct
+- `src/app/api/shops/route.ts` — POST wrapped with withCsrf
+- `src/app/api/shops/[slug]/route.ts` — PUT, PATCH, DELETE wrapped with withCsrf; extracted handleUpdateShop; added PATCH handler
+- `src/app/api/withdrawals/route.ts` — POST wrapped with withCsrf
+- `src/app/api/disputes/route.ts` — POST wrapped with withCsrf
+- `src/app/api/returns/route.ts` — POST wrapped with withCsrf
+- `src/app/api/reviews/route.ts` — POST wrapped with withCsrf
+- `src/app/api/feedback/route.ts` — POST wrapped with withCsrf
+- `src/app/api/upload/route.ts` — POST wrapped with withCsrf
 
-### Files Not Modified (intentionally)
-- `/home/z/my-project/src/components/marketplace/shop/shop-view.tsx` — Already has Featured tab, adding recommendations doesn't make semantic sense for a shop page
+## Skipped
+- `src/app/api/wallet/route.ts` — No POST handler exists (withdrawal POST is in /api/withdrawals)
 
-### Lint Status
-- 0 new errors in created/modified files
-- Pre-existing errors in unrelated files remain unchanged
+## Lint
+- 0 errors, 1 pre-existing warning (unrelated)

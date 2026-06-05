@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { User, CreditCard, Settings, ListChecks } from 'lucide-react'
+import { User, CreditCard, Settings, ListChecks, Download } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { BuyerOverview } from './buyer-overview'
@@ -12,13 +12,14 @@ import { BuyerMessages } from './buyer-messages'
 import { BuyerWishlists } from './buyer-wishlists'
 import { PaymentSettingsPage } from '@/components/marketplace/payment/payment-settings-page'
 import { AddressBook } from '@/components/marketplace/shipping/address-book'
+import { BuyerDownloads } from './buyer-downloads'
 
 export function BuyerDashboard() {
   const { currentUser, viewParams } = useMarketplaceStore()
   const [manualTab, setManualTab] = useState<string | null>(null)
 
   // Support deep-linking to a specific tab via viewParams
-  const validTabs = ['overview', 'orders', 'payments', 'wishlists', 'messages', 'payment-settings', 'addresses']
+  const validTabs = ['overview', 'orders', 'payments', 'wishlists', 'messages', 'payment-settings', 'addresses', 'downloads']
   const activeTab = useMemo(() => {
     if (manualTab) return manualTab
     if (viewParams?.tab && validTabs.includes(viewParams.tab)) return viewParams.tab
@@ -92,6 +93,10 @@ export function BuyerDashboard() {
               <TabsTrigger value="addresses" className="gap-1.5">
                 📍 Addresses
               </TabsTrigger>
+              <TabsTrigger value="downloads" className="gap-1.5">
+                <Download className="h-3.5 w-3.5" />
+                Downloads
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview">
@@ -116,6 +121,9 @@ export function BuyerDashboard() {
             </TabsContent>
             <TabsContent value="addresses">
               {currentUser && <AddressBook userId={currentUser.id} />}
+            </TabsContent>
+            <TabsContent value="downloads">
+              <BuyerDownloads />
             </TabsContent>
           </Tabs>
         </motion.div>

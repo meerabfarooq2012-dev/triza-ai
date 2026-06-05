@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { PLATFORM_FEE_PERCENT } from '@/lib/constants';
+import { createDownloadLink } from '@/lib/digital-download';
 
 // Rate limiting: tracks release attempts per paymentId
 const releaseAttempts = new Map<string, { count: number; resetAt: number }>();
@@ -214,6 +215,53 @@ export async function PUT(
         },
       });
 
+      // Create download links for digital products when payment is confirmed
+      try {
+        const orderItems = await db.orderItem.findMany({
+          where: { orderId: payment.orderId },
+          include: {
+            product: {
+              select: {
+                id: true,
+                name: true,
+                type: true,
+                fileUrl: true,
+                fileSize: true,
+              },
+            },
+          },
+        });
+
+        for (const item of orderItems) {
+          if (item.product?.type === 'digital' && item.product?.fileUrl) {
+            const urlParts = item.product.fileUrl.split('/')
+            const rawFileName = urlParts[urlParts.length - 1] || item.product.name
+            let fileSizeBytes: number | undefined
+            if (item.product.fileSize) {
+              const sizeStr = item.product.fileSize.toLowerCase()
+              const sizeMatch = sizeStr.match(/(\d+(?:\.\d+)?)\s*(b|kb|mb|gb)/)
+              if (sizeMatch) {
+                const num = parseFloat(sizeMatch[1])
+                const unit = sizeMatch[2]
+                const multipliers: Record<string, number> = { b: 1, kb: 1024, mb: 1024 * 1024, gb: 1024 * 1024 * 1024 }
+                fileSizeBytes = Math.round(num * (multipliers[unit] || 1))
+              }
+            }
+
+            await createDownloadLink(
+              payment.buyerId,
+              item.productId,
+              item.product.fileUrl,
+              payment.orderId,
+              rawFileName,
+              fileSizeBytes
+            )
+          }
+        }
+      } catch (dlError) {
+        console.error('[Payment] Failed to create download links on confirmation:', dlError)
+      }
+
       return NextResponse.json({ success: true, data: updatedPayment });
     }
 
@@ -349,6 +397,56 @@ export async function PUT(
 
         return paymentWithRelations;
       });
+
+      // After successful escrow release, create download links for digital products
+      try {
+        const orderItems = await db.orderItem.findMany({
+          where: { orderId: payment.orderId },
+          include: {
+            product: {
+              select: {
+                id: true,
+                name: true,
+                type: true,
+                fileUrl: true,
+                fileSize: true,
+              },
+            },
+          },
+        });
+
+        for (const item of orderItems) {
+          if (item.product?.type === 'digital' && item.product?.fileUrl) {
+            // Extract file name from URL
+            const urlParts = item.product.fileUrl.split('/')
+            const rawFileName = urlParts[urlParts.length - 1] || item.product.name
+            // Parse file size from string (e.g., "15 MB" -> numeric bytes)
+            let fileSizeBytes: number | undefined
+            if (item.product.fileSize) {
+              const sizeStr = item.product.fileSize.toLowerCase()
+              const sizeMatch = sizeStr.match(/(\d+(?:\.\d+)?)\s*(b|kb|mb|gb)/)
+              if (sizeMatch) {
+                const num = parseFloat(sizeMatch[1])
+                const unit = sizeMatch[2]
+                const multipliers: Record<string, number> = { b: 1, kb: 1024, mb: 1024 * 1024, gb: 1024 * 1024 * 1024 }
+                fileSizeBytes = Math.round(num * (multipliers[unit] || 1))
+              }
+            }
+
+            await createDownloadLink(
+              payment.buyerId,
+              item.productId,
+              item.product.fileUrl,
+              payment.orderId,
+              rawFileName,
+              fileSizeBytes
+            )
+          }
+        }
+      } catch (dlError) {
+        // Don't fail the payment if download link creation fails
+        console.error('[Payment] Failed to create download links:', dlError)
+      }
 
       return NextResponse.json({ success: true, data: result });
     }

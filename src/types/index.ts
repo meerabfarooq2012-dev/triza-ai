@@ -53,6 +53,7 @@ export type ViewMode =
   | 'verification-center'
   | 'wishlist-view'
   | 'compare'
+  | 'my-downloads'
 
 // ----- Core Domain Models -----
 
@@ -69,6 +70,7 @@ export interface User {
   emailVerified?: boolean
   isAdmin: boolean
   isActive: boolean
+  deletedAt?: string | null
   createdAt: string
   updatedAt: string
   shop?: Shop | null

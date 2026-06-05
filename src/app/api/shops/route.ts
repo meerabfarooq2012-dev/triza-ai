@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { withCsrf } from '@/lib/with-csrf';
 
 function slugify(text: string): string {
   return text
@@ -80,7 +81,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
   try {
     const body = await request.json();
     const {
@@ -152,4 +153,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})

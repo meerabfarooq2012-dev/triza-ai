@@ -31,6 +31,7 @@ model User {
   loginAttempts    Int       @default(0)
   lockoutUntil     DateTime?
   lastLoginAt      DateTime?
+  deletedAt        DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -65,6 +66,8 @@ model User {
   gigQuestions     GigQuestion[]
   gigAnswers       GigAnswer[]
   wishlists        Wishlist[]
+  sessions         Session[]
+  downloads        DigitalDownload[]
 }
 
 model Shop {
@@ -180,6 +183,7 @@ model Product {
   flashSales       FlashSale[]
   questions        ProductQuestion[]
   wishlistItems    WishlistItem[]
+  downloads        DigitalDownload[]
 
   @@unique([shopId, slug])
   @@index([shopId])
@@ -222,6 +226,7 @@ model Order {
   statusLogs      OrderStatusLog[]
   shipment        Shipment?
   returnRequest   ReturnRequest?
+  downloads       DigitalDownload[]
 
   @@index([buyerId])
   @@index([sellerId])
@@ -1361,4 +1366,49 @@ model PlatformSettings {
   socialLinks  String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// =============================================================================
+// SESSION MANAGEMENT MODEL — Token blacklist / session revocation
+// =============================================================================
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash    String   @unique  // Hash of the JWT token (not the token itself)
+  deviceInfo   String?           // Browser/device info
+  ipAddress    String?           // IP address at login
+  expiresAt    DateTime          // When this session expires
+  createdAt    DateTime @default(now())
+  lastActiveAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([tokenHash])
+}
+
+// =============================================================================
+// DIGITAL DOWNLOAD MODEL — Secure download links for digital products
+// =============================================================================
+
+model DigitalDownload {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId     String
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderId       String?
+  order         Order?   @relation(fields: [orderId], references: [id])
+  downloadToken String   @unique
+  fileUrl       String
+  fileName      String?
+  fileSize      Int?
+  maxDownloads  Int      @default(5)
+  downloadCount Int      @default(0)
+  expiresAt     DateTime
+  createdAt     DateTime @default(now())
+  lastDownloadedAt DateTime?
+
+  @@index([userId, productId])
+  @@index([downloadToken])
 }

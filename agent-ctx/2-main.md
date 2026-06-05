@@ -1,18 +1,21 @@
-# Task 2 — Recently Viewed Products Feature
+# Task 2 — Buyer Digital Download UI (Agent: main)
 
 ## Summary
-Implemented a comprehensive "Recently Viewed Products" feature for the Marketo marketplace with localStorage tracking, API endpoint, and UI components.
+Built the Buyer Digital Download UI for the Marketo marketplace including:
+1. A comprehensive `BuyerDownloads` component with progress bars, status badges, expiry countdowns, and "Request New Link" functionality
+2. A download generation API endpoint (`/api/downloads/create`)
+3. An order-specific downloads API (`/api/downloads/order/[orderId]`)
+4. Updated the buyer dashboard to use the new `BuyerDownloads` component
+5. Enhanced the order tracking page's `DigitalDownloadsSection` with auto-creation of download links
 
 ## Files Created
-1. `src/hooks/use-recently-viewed.ts` — Hook using useSyncExternalStore for hydration-safe localStorage
-2. `src/app/api/products/recently-viewed/route.ts` — GET endpoint to fetch products by IDs
-3. `src/components/marketplace/shared/recently-viewed-section.tsx` — Horizontal scrollable section component
+- `src/components/marketplace/buyer/buyer-downloads.tsx` — BuyerDownloads component
+- `src/app/api/downloads/create/route.ts` — POST endpoint for generating download links
+- `src/app/api/downloads/order/[orderId]/route.ts` — GET endpoint for order-specific downloads
 
 ## Files Modified
-4. `src/components/marketplace/landing/landing-page.tsx` — Added RecentlyViewedSection after HeroSection
-5. `src/components/marketplace/buyer/buyer-overview.tsx` — Added RecentlyViewedSection after stats
-6. `src/components/marketplace/shared/product-card.tsx` — Track views on product card click
-7. `src/components/marketplace/shop/product-detail.tsx` — Track views when product detail loads
+- `src/components/marketplace/buyer/buyer-dashboard.tsx` — Changed MyDownloads → BuyerDownloads import
+- `src/components/marketplace/orders/order-tracking-page.tsx` — Enhanced DigitalDownloadsSection with userId prop, auto-create, progress bars, product images, Request New Link button
 
-## Lint Status
-- 0 errors, 1 pre-existing warning
+## Lint
+- 0 errors, 1 pre-existing warning (unrelated)

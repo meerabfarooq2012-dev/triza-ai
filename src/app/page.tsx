@@ -272,8 +272,18 @@ const ComparisonView = dynamic(
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
+const MyDownloads = dynamic(
+  withChunkRetry(() => import('@/components/marketplace/buyer/my-downloads'), 'MyDownloads'),
+  { ssr: false, loading: () => <ViewLoader /> }
+)
+
 const CompareBar = dynamic(
   withChunkRetry(() => import('@/components/marketplace/shared/compare-bar'), 'CompareBar'),
+  { ssr: false }
+)
+
+const CookieConsent = dynamic(
+  () => import('@/components/marketplace/layout/cookie-consent').then(m => ({ default: m.CookieConsent })),
   { ssr: false }
 )
 
@@ -541,6 +551,9 @@ function MarketplaceApp() {
           return <UserProfile />
         case 'compare':
           return <ComparisonView />
+        case 'my-downloads':
+          if (!isAuthenticated) return <AuthModal />
+          return <MyDownloads />
         case 'admin':
           if (!isAuthenticated || !currentUser?.isAdmin) {
             return (
@@ -588,6 +601,7 @@ function MarketplaceApp() {
       <CartDrawer />
       <CompareBar />
       <FeedbackWidget />
+      <CookieConsent />
       <EmailVerificationDialog
         open={showEmailVerify}
         onOpenChange={setShowEmailVerify}

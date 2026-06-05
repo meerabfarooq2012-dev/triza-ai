@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { Prisma } from '@prisma/client';
 import { sendEmailAsync } from '@/lib/email';
 import { withdrawalNotificationEmail } from '@/lib/email-templates';
+import { withCsrf } from '@/lib/with-csrf';
 
 export async function GET(request: NextRequest) {
   try {
@@ -78,7 +79,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
   try {
     const body = await request.json();
     const { userId, amount, method, accountDetails } = body;
@@ -275,4 +276,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})

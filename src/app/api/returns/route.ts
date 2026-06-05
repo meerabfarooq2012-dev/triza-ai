@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { Prisma } from '@prisma/client';
 import { createNotification } from '@/lib/notifications';
+import { withCsrf } from '@/lib/with-csrf';
 
 // GET /api/returns — List return requests
 export async function GET(request: NextRequest) {
@@ -107,7 +108,7 @@ export async function GET(request: NextRequest) {
 }
 
 // POST /api/returns — Create a return request
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
   try {
     const body = await request.json();
     const { orderId, userId, reason, description, images, type } = body;
@@ -313,4 +314,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})

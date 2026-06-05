@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import ZAI from 'z-ai-web-dev-sdk';
+import { withCsrf } from '@/lib/with-csrf';
 
 // Singleton ZAI instance
 let zaiInstance: ZAI | null = null;
@@ -59,7 +60,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/feedback
 // Send a message and receive an AI response
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
   try {
     const body = await request.json();
     const { sessionId, userId, content, category } = body;
@@ -187,4 +188,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})

@@ -55,11 +55,99 @@ class ApiError extends Error {
   }
 }
 
+// =============================================================================
+// CSRF Token Cache — Read cookie first, then fetch if needed
+// =============================================================================
+
+const MUTATING_METHODS = new Set(['POST', 'PATCH', 'PUT', 'DELETE'])
+
+let cachedCsrfToken: string | null = null
+let csrfFetchPromise: Promise<string | null> | null = null
+
+/**
+ * Read the CSRF token from the cookie set by /api/csrf-token.
+ * Cookie name is `csrf-token` (HTTP) or `__Host-csrf-token` (HTTPS).
+ */
+function readCsrfCookie(): string | null {
+  if (typeof document === 'undefined') return null
+  const cookies = document.cookie.split(';')
+  for (const cookie of cookies) {
+    const [name, ...rest] = cookie.trim().split('=')
+    if (name === 'csrf-token' || name === '__Host-csrf-token') {
+      return rest.join('=')
+    }
+  }
+  return null
+}
+
+/**
+ * Get a CSRF token — reads from cookie first, then from cache, then fetches.
+ * Returns the token or null on failure.
+ */
+async function getCsrfToken(): Promise<string | null> {
+  // 1. Try reading from cookie first (fastest, always fresh)
+  const cookieToken = readCsrfCookie()
+  if (cookieToken) {
+    cachedCsrfToken = cookieToken
+    return cookieToken
+  }
+
+  // 2. Try cached token
+  if (cachedCsrfToken) return cachedCsrfToken
+
+  // 3. Fetch a new token from the API
+  if (csrfFetchPromise) return csrfFetchPromise
+
+  csrfFetchPromise = (async () => {
+    try {
+      const response = await fetch('/api/csrf-token')
+      const data = await response.json()
+      if (data.success && data.token) {
+        cachedCsrfToken = data.token
+        return cachedCsrfToken
+      }
+    } catch (error) {
+      console.error('Failed to fetch CSRF token:', error)
+    } finally {
+      csrfFetchPromise = null
+    }
+    return null
+  })()
+
+  return csrfFetchPromise
+}
+
+/**
+ * Invalidate the cached CSRF token (e.g., after a 403 CSRF error).
+ * The next mutating request will fetch a fresh token.
+ */
+export function invalidateCsrfToken(): void {
+  cachedCsrfToken = null
+}
+
+/**
+ * Add CSRF token to fetch headers for mutating requests.
+ * Returns the updated headers object.
+ */
+async function withCsrfHeaders(
+  headers: Record<string, string>,
+  method: string
+): Promise<Record<string, string>> {
+  if (!MUTATING_METHODS.has(method.toUpperCase())) return headers
+
+  const csrfToken = await getCsrfToken()
+  if (csrfToken) {
+    headers['x-csrf-token'] = csrfToken
+  }
+  return headers
+}
+
 async function request<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
   const url = `/api${endpoint}`
+  const method = (options.method || 'GET').toUpperCase()
 
   // Get the auth token from the store and add as Authorization header
   const authToken = useMarketplaceStore.getState().authToken
@@ -70,6 +158,9 @@ async function request<T>(
   if (authToken) {
     headers['Authorization'] = `Bearer ${authToken}`
   }
+
+  // Include CSRF token for mutating requests
+  await withCsrfHeaders(headers, method)
 
   const config: RequestInit = {
     headers,
@@ -87,6 +178,11 @@ async function request<T>(
     const data = await response.json()
 
     if (!response.ok) {
+      // If CSRF validation failed, invalidate the cached token so the next
+      // request fetches a fresh one
+      if (response.status === 403 && data?.error === 'Invalid CSRF token') {
+        invalidateCsrfToken()
+      }
       throw new ApiError(
         data.error || `Request failed with status ${response.status}`,
         response.status,
@@ -153,6 +249,29 @@ const authApi = {
   resendVerification: (userId: string) =>
     request<ApiResponse>('/auth/resend-verification', {
       method: 'POST',
+      body: JSON.stringify({ userId }),
+    }),
+
+  // ----- Session Management -----
+  getSessions: () =>
+    request<ApiResponse<Array<{
+      id: string
+      deviceInfo: string | null
+      ipAddress: string | null
+      createdAt: string
+      lastActiveAt: string
+      expiresAt: string
+      isCurrentSession: boolean
+    }>>>('/auth/sessions'),
+
+  revokeSession: (sessionId: string) =>
+    request<ApiResponse>(`/auth/sessions/${sessionId}`, {
+      method: 'DELETE',
+    }),
+
+  revokeAllOtherSessions: (userId: string) =>
+    request<ApiResponse<{ revokedCount: number }>>('/auth/sessions', {
+      method: 'DELETE',
       body: JSON.stringify({ userId }),
     }),
 }
@@ -610,14 +729,23 @@ const uploadApi = {
     const formData = new FormData()
     formData.append('file', file)
 
+    // Get CSRF token for mutating request
+    const headers: Record<string, string> = {}
+    await withCsrfHeaders(headers, 'POST')
+
     const response = await fetch('/api/upload', {
       method: 'POST',
+      headers,
       body: formData,
     })
 
     const data = await response.json()
 
     if (!response.ok) {
+      // If CSRF validation failed, invalidate cached token
+      if (response.status === 403 && data?.error === 'Invalid CSRF token') {
+        invalidateCsrfToken()
+      }
       throw new ApiError(
         data.error || 'Upload failed',
         response.status,
@@ -650,6 +778,8 @@ const usersApi = {
     if (authToken) {
       headers['Authorization'] = `Bearer ${authToken}`
     }
+    // Get CSRF token for mutating request
+    await withCsrfHeaders(headers, 'POST')
 
     const response = await fetch(`/api/users/${userId}/avatar`, {
       method: 'POST',
@@ -660,6 +790,9 @@ const usersApi = {
     const data = await response.json()
 
     if (!response.ok) {
+      if (response.status === 403 && data?.error === 'Invalid CSRF token') {
+        invalidateCsrfToken()
+      }
       throw new ApiError(
         data.error || 'Avatar upload failed',
         response.status,
@@ -668,6 +801,76 @@ const usersApi = {
     }
 
     return data
+  },
+
+  deleteAccount: async (userId: string, password: string, reason?: string): Promise<ApiResponse<{ message: string }>> => {
+    const authToken = useMarketplaceStore.getState().authToken
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    }
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`
+    }
+    // Get CSRF token for mutating request
+    await withCsrfHeaders(headers, 'POST')
+
+    const response = await fetch('/api/users/delete', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        userId,
+        password,
+        reason: reason || undefined,
+      }),
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      if (response.status === 403 && data?.error === 'Invalid CSRF token') {
+        invalidateCsrfToken()
+      }
+      throw new ApiError(
+        data.error || 'Account deletion failed',
+        response.status,
+        data
+      )
+    }
+
+    return data
+  },
+
+  exportData: async (userId: string): Promise<Blob> => {
+    const authToken = useMarketplaceStore.getState().authToken
+    const headers: Record<string, string> = {}
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`
+    }
+
+    const response = await fetch(`/api/users/export?userId=${userId}`, {
+      method: 'GET',
+      headers,
+    })
+
+    if (response.status === 429) {
+      const data = await response.json()
+      throw new ApiError(
+        data.error || 'Rate limited',
+        response.status,
+        data
+      )
+    }
+
+    if (!response.ok) {
+      const data = await response.json()
+      throw new ApiError(
+        data.error || 'Data export failed',
+        response.status,
+        data
+      )
+    }
+
+    return response.blob()
   },
 }
 

@@ -891,3 +891,421 @@ Implemented a comprehensive "Recently Viewed Products" feature for the Marketo m
 - Used `useSyncExternalStore` (React 18+) for the localStorage hook to avoid hydration issues and comply with strict lint rules about setState in effects
 - The `eslint-disable-next-line` comment on `setLoading(true)` in the section component is necessary because the lint rule `react-hooks/set-state-in-effect` is overly strict for this common data-fetching pattern
 - Cross-tab sync is supported via the `storage` event listener
+
+---
+
+## Task 3 — Cookie Consent Banner (GDPR/ePrivacy Compliance) (Agent: main)
+
+### Summary
+Implemented a GDPR/ePrivacy-compliant cookie consent banner for the Marketo marketplace. Created a dedicated Zustand store with persist middleware for consent state, a responsive cookie consent banner component with a detailed preferences sheet, integrated it into the main page layout, and added a comprehensive Cookie Policy section to the privacy policy page.
+
+### Changes Made
+
+#### 1. Cookie Consent Store (`src/store/use-cookie-consent-store.ts`) — NEW
+- `'use client'` Zustand store with `persist` middleware
+- Persisted to localStorage under key `marketo-cookie-consent`
+- **State**: `consentGiven` (boolean), `consentLevel` ('none' | 'essential' | 'all'), `consentDate` (string | null), `analyticsEnabled` (boolean), `marketingEnabled` (boolean)
+- **Actions**: `acceptAll()`, `acceptEssential()`, `revokeConsent()`, `updatePreferences(prefs)`
+- **Helper functions**: `isConsentExpired(consentDate)` — checks if consent is older than 12 months; `shouldShowBanner(state)` — determines if the banner should be displayed
+- `updatePreferences()` determines `consentLevel` based on which toggles are enabled: both on → 'all', otherwise → 'essential'
+
+#### 2. Cookie Consent Banner Component (`src/components/marketplace/layout/cookie-consent.tsx`) — NEW
+- `'use client'` component with `useSyncExternalStore` for safe hydration check (avoids React 19 lint issues)
+- **Main Banner** (fixed, bottom of screen, z-40):
+  - Cookie icon with gold gradient + "We value your privacy" heading
+  - Description about cookies with "Accept All" consent language
+  - "Learn More" link → navigates to privacy policy view
+  - "Manage Preferences" link → opens preferences sheet
+  - Two action buttons: "Accept All Cookies" (gold gradient, primary) and "Essential Only" (outline, secondary)
+  - Responsive: full-width bar on mobile, centered card (max-w-2xl) on desktop
+  - Slide-up animation with framer-motion (`AnimatePresence`)
+  - Auto-hides after consent given; re-shows if consent expired (>12 months)
+  - Does NOT block content interaction (users can scroll past)
+- **Preferences Sheet** (bottom sheet):
+  - "Essential Cookies" — always on, disabled toggle, emerald icon
+  - "Analytics Cookies" — toggle, amber icon
+  - "Marketing Cookies" — toggle, orange icon
+  - "Save Preferences" button + "Accept All" button with gold gradient
+  - Preferences toggles sync with store values when sheet opens
+  - Uses `useCookieConsentStore.getState()` to read latest store values at open time (avoids stale closures)
+- Banner visibility is derived directly from store state (no useEffect + setState needed)
+- All amber/gold accent theme — NO indigo/blue
+
+#### 3. Page Integration (`src/app/page.tsx`) — MODIFIED
+- Added dynamic import for `CookieConsent` with `ssr: false`:
+  ```tsx
+  const CookieConsent = dynamic(
+    () => import('@/components/marketplace/layout/cookie-consent').then(m => ({ default: m.CookieConsent })),
+    { ssr: false }
+  )
+  ```
+- Added `<CookieConsent />` in the component tree (after `<FeedbackWidget />` and before `<EmailVerificationDialog />`)
+
+#### 4. Privacy Policy Updates (`src/components/marketplace/landing/privacy-policy.tsx`) — MODIFIED
+- Added `Cookie`, `BarChart3`, `Megaphone` icon imports
+- Added "Cookie Policy" section to the main `sections` array with description covering essential, analytics, marketing, third-party cookies, and preference management
+- Added a detailed "Detailed Cookie Information" card after the main sections with:
+  - Essential Cookies — "Always Active" badge, emerald icon, detailed description
+  - Analytics Cookies — "Optional" badge, amber icon, detailed description
+  - Marketing Cookies — "Optional" badge, orange icon, detailed description
+  - Third-Party Cookies — muted icon, detailed description about payment processors and analytics services
+  - "Managing Your Preferences" note at bottom with info about changing preferences via banner or browser settings
+
+### Lint Results
+- 0 new errors, 0 new warnings in all created/modified files
+- Pre-existing warning in `seller-reviews.tsx` is unrelated
+
+---
+
+## Task 2 — Account Deletion & Data Export (GDPR Compliance) (Agent: main)
+
+### Summary
+Implemented GDPR-compliant Account Deletion (soft delete) and Data Export features for the Marketo marketplace, including API endpoints, UI components, and integration into the user profile page.
+
+### Changes Made
+
+#### 1. Prisma Schema Updates
+- Added `deletedAt DateTime?` field to User model in all 3 schema files
+- Ran `bun run db:push` to sync the database
+
+#### 2. Account Deletion API (`src/app/api/users/delete/route.ts`) — NEW
+- POST /api/users/delete — Soft-delete user account with password verification
+- Requires JWT auth, rate limited (5/15min)
+- Soft delete: anonymizes personal data, keeps transaction records
+- Cancels pending orders, anonymizes reviews, deletes wishlists/favorites/notifications/messages
+- Deactivates shop and products, clears auth cookie on success
+
+#### 3. Data Export API (`src/app/api/users/export/route.ts`) — NEW
+- GET /api/users/export?userId=xxx — Export all user data as downloadable JSON
+- Requires JWT auth, rate limited (1/hour per user)
+- Comprehensive export: profile, orders, products, reviews, wallet, addresses, wishlists, messages, notifications, payment info
+
+#### 4. Delete Account Dialog (`src/components/marketplace/auth/delete-account-dialog.tsx`) — NEW
+- Warning dialog with AlertTriangle icon, password confirmation, DELETE typing confirmation
+- Optional reason textarea, destructive red button, success state with redirect
+
+#### 5. Data Export Button (`src/components/marketplace/settings/data-export-button.tsx`) — NEW
+- Amber-themed export section with Download icon, rate limit display, loading state
+
+#### 6. User Profile Updates (`src/components/marketplace/profile/user-profile.tsx`)
+- Added Danger Zone section with red/danger styling at bottom
+- Includes DataExportButton and DeleteAccountDialog integration
+
+#### 7. API Client Updates (`src/lib/api.ts`)
+- Added `deleteAccount()` and `exportData()` methods to usersApi
+
+#### 8. Type Updates (`src/types/index.ts`)
+- Added `deletedAt?: string | null` to User interface
+
+### Lint Results
+- 0 errors, 1 pre-existing warning (unrelated to this task)
+
+---
+
+## Task 4 — Session Revocation / Token Blacklist (Agent: main)
+
+### Summary
+Implemented comprehensive session management with server-side JWT token revocation for the Marketo marketplace. Previously, JWT tokens were stateless with a 7-day expiry and no way to invalidate them. Now, each login creates a session record (storing only SHA-256 hashes), and sessions can be individually or bulk-revoked via API and UI.
+
+### Changes Made
+
+#### 1. Prisma Schema Updates
+- Added `Session` model to all 3 schema files with fields: `id`, `userId`, `tokenHash` (unique), `deviceInfo`, `ipAddress`, `expiresAt`, `createdAt`, `lastActiveAt`
+- Added `sessions Session[]` relation to the `User` model in all 3 schemas
+- Indexes on `userId` and `tokenHash` for fast lookups
+- Only SHA-256 hashes stored — NEVER raw JWT tokens
+- Ran `bun run db:push` to sync the database
+
+#### 2. Session Management Utility (`src/lib/session.ts`) — NEW
+- `hashToken(token)` — SHA-256 hash using `crypto.createHash`
+- `createSession(userId, token, deviceInfo?, ipAddress?)` — Creates session with hashed token, 7-day expiry
+- `validateSession(token)` — Checks session exists and not expired; throttles `lastActiveAt` updates to every 5 min
+- `revokeSession(token)` — Deletes session by token hash
+- `revokeAllUserSessions(userId, exceptToken?)` — Deletes all sessions except current; returns count
+- `getUserSessions(userId)` — Returns active sessions; cleans expired ones on read
+- `revokeSessionById(sessionId, userId)` — Deletes session with ownership verification
+- `cleanExpiredSessions()` — Deletes all expired sessions
+
+#### 3. Session Validation Middleware (`src/lib/with-session.ts`) — NEW
+- `withSession(handler)` — Wraps API route handlers with JWT + session validation
+- Returns 401 with "Session expired or revoked" if invalid
+
+#### 4. Updated Auth Login Route (`src/app/api/auth/login/route.ts`)
+- After successful login, calls `createSession()` with JWT token
+- Captures User-Agent header as device info
+- Captures x-forwarded-for header as IP address
+- Session creation failure does not block login
+
+#### 5. Updated Auth Logout Route (`src/app/api/auth/logout/route.ts`)
+- Extracts JWT token from Authorization header
+- Calls `revokeSession(token)` to delete the specific session
+- Falls back gracefully if token extraction fails
+
+#### 6. Updated Store Logout (`src/store/use-marketplace-store.ts`)
+- Logout now sends `Authorization: Bearer` header so server can identify and revoke the session
+
+#### 7. Session Management API Endpoints
+- **GET /api/auth/sessions** — List active sessions; marks current session; rate limited
+- **DELETE /api/auth/sessions** — Revoke all other sessions; body: `{ userId }`; returns `revokedCount`
+- **DELETE /api/auth/sessions/[id]** — Revoke specific session by ID; ownership verified
+
+#### 8. Session Manager UI (`src/components/marketplace/settings/session-manager.tsx`) — NEW
+- Gold/amber accent theme with Shield icon header
+- Parses User-Agent into human-readable device info (browser, OS, device type)
+- Shows device icons (Desktop/Mobile/Tablet), masked IP, relative last-active time
+- "Current Session" emerald badge on active session
+- "Revoke" button per session (red, with loading state)
+- "Sign Out All Other Devices" destructive button with confirmation dialog
+- Refresh button, loading spinner, max-height with scroll overflow
+- Responsive design with shadcn/ui components
+
+#### 9. User Profile Integration
+- Imported `SessionManager` into `user-profile.tsx`
+- Added after the Change Password section, before the right sidebar
+
+#### 10. API Client Updates (`src/lib/api.ts`)
+- Added `getSessions()`, `revokeSession(sessionId)`, `revokeAllOtherSessions(userId)` to authApi
+
+### Lint Results
+- 0 errors, 1 pre-existing warning (unrelated to this task)
+- All new and modified files pass ESLint cleanly
+
+## Task 1 — CSRF Protection for Marketo Marketplace (Agent: main)
+
+### Summary
+Implemented comprehensive CSRF (Cross-Site Request Forgery) protection for the Marketo marketplace using the double-submit cookie pattern. All state-changing API calls (POST/PATCH/PUT/DELETE) to auth routes are now protected. Created a signed CSRF token utility, a token issuance endpoint, a middleware wrapper for route handlers, a client-side hook, and updated the API client to automatically include CSRF tokens.
+
+### Changes Made
+
+#### 1. CSRF Token Utility (`src/lib/csrf.ts`) — NEW
+- `generateCsrfToken(): string` — generates a signed CSRF token using `crypto.randomUUID()` + HMAC-SHA256
+- `validateCsrfToken(token: string): boolean` — validates the token's HMAC signature with timing-safe comparison
+- Token format: `randomId.hmacSignature`
+- Secret derived from `CSRF_SECRET` env, falls back to `JWT_SECRET`, then dev default
+- Timing-safe comparison to prevent timing attacks
+
+#### 2. CSRF Token API Endpoint (`src/app/api/auth/csrf/route.ts`) — NEW
+- **GET /api/auth/csrf** — Issues a CSRF token
+- Sets token as HttpOnly cookie: `__Host-csrf-token` (HTTPS) or `csrf-token` (HTTP)
+- Cookie flags: `SameSite=Strict`, `HttpOnly`, `Secure` (when HTTPS), `Max-Age=3600`
+- Returns `{ success: true, token: "..." }` in response body for client-side storage
+
+#### 3. CSRF Validation Middleware Helper (`src/lib/with-csrf.ts`) — NEW
+- `withCsrf(handler)` — Higher-order function wrapping API route handlers
+- Only validates CSRF on mutating methods (POST/PATCH/PUT/DELETE); GET passes through
+- Checks `x-csrf-token` header first, then `csrfToken` JSON body field
+- Validates token signature and compares with cookie (double-submit pattern)
+- Returns 403 `{ success: false, error: "Invalid CSRF token" }` on failure
+- Uses `request.clone()` for body reading so original body remains available to handler
+
+#### 4. Client-Side CSRF Hook (`src/hooks/use-csrf.ts`) — NEW
+- `'use client'` hook — `useCsrf()`
+- Fetches CSRF token from `/api/auth/csrf` on mount
+- Returns `{ csrfToken, fetchCsrfToken }`
+- Uses `useRef` for mount tracking and IIFE async pattern to avoid lint issues
+- Supports manual refetch via `fetchCsrfToken()`
+
+#### 5. API Client Updates (`src/lib/api.ts`) — MODIFIED
+- Added CSRF token caching with `cachedCsrfToken` and `csrfFetchPromise` (dedupes concurrent fetches)
+- `getCsrfToken()` — fetches token from `/api/auth/csrf` if not cached
+- `invalidateCsrfToken()` — exported function to clear cache (called on 403 CSRF errors)
+- `request()` function updated to:
+  - Detect mutating methods (POST/PATCH/PUT/DELETE)
+  - Auto-fetch and include CSRF token as `x-csrf-token` header
+  - Auto-invalidate cached token on 403 "Invalid CSRF token" responses
+
+#### 6. Auth Routes Protected with `withCsrf` — MODIFIED
+All 5 security-sensitive auth routes wrapped with `withCsrf()`:
+- `src/app/api/auth/login/route.ts` — `export const POST = withCsrf(async ...)` 
+- `src/app/api/auth/register/route.ts` — `export const POST = withCsrf(async ...)`
+- `src/app/api/auth/change-password/route.ts` — `export const POST = withCsrf(async ...)`
+- `src/app/api/auth/reset-password/route.ts` — `export const POST = withCsrf(async ...)`
+- `src/app/api/auth/logout/route.ts` — `export const POST = withCsrf(async ...)`
+
+### Test Results
+- **GET /api/auth/csrf** — Returns token + sets HttpOnly cookie ✓
+- **POST without CSRF token** — Returns 403 "Invalid CSRF token" ✓
+- **POST with mismatched CSRF tokens** (header ≠ cookie) — Returns 403 ✓
+- **POST with valid CSRF token** (double-submit pattern) — Passes through to handler ✓
+
+### Lint Results
+- 0 new errors, 0 new warnings in all created/modified files
+- Pre-existing issues in unrelated files remain unchanged
+
+---
+
+## Task 1 — Account Deletion & Data Export API Endpoints (Agent: main)
+
+### Summary
+Updated the existing `/api/users/delete` and `/api/users/export` endpoints to match the specified requirements: added CSRF protection, session revocation via `revokeAllUserSessions`, corrected rate limits, anonymized email domain, masked payment details in exports, and removed message content from exports for privacy.
+
+### Changes Made
+
+#### 1. Account Deletion API (`src/app/api/users/delete/route.ts`) — UPDATED
+- **CSRF Protection**: Wrapped POST handler with `withCsrf` from `@/lib/with-csrf`
+- **Session Revocation**: Replaced `db.session.deleteMany` with `revokeAllUserSessions(userId)` from `@/lib/session`
+- **Rate Limit**: Changed from 5/15min to 3/15min using `authRateLimit` preset with overridden `maxRequests: 3`
+- **Anonymized Email**: Changed domain from `@marketo.invalid` to `@marketo.deleted`
+- **Buyer Anonymization**: Added anonymization of shippingName/shippingPhone on completed orders for legal/tax compliance
+- **Security**: Removed debug info from error responses
+
+#### 2. Data Export API (`src/app/api/users/export/route.ts`) — UPDATED
+- **Payment Method Masking**: Added `maskAccountDetails()` function that masks sensitive details per payment method type (card, easypaisa, jazzcash, payoneer, wise, bank_transfer)
+- **Messages Metadata Only**: Changed message queries to only return metadata (id, conversationId, senderId/receiverId, messageType, isRead, createdAt) — no content for privacy
+- **Parallel Queries**: Sent and received messages now fetched with `Promise.all`
+- **Security**: Removed debug info from error responses
+
+### Lint Results
+- 0 errors, 1 pre-existing warning (unrelated to this task)
+
+---
+
+## Task 2 — Buyer Digital Download UI (Agent: main)
+
+### Summary
+Built the Buyer Digital Download UI for the Marketo marketplace. Created a comprehensive `BuyerDownloads` component with progress bars, status badges, expiry countdowns, and "Request New Link" functionality. Added a download generation API endpoint, an order-specific downloads API, and enhanced the order tracking page with auto-creation of download links for digital products.
+
+### Changes Made
+
+#### 1. BuyerDownloads Component (`src/components/marketplace/buyer/buyer-downloads.tsx`) — NEW
+- `'use client'` component that fetches downloads from `/api/downloads?userId={currentUser.id}`
+- **DownloadCard** sub-component with:
+  - Product image thumbnail (from product.images), fallback to Package icon in amber-50 bg
+  - Product name, file name (or "Digital File"), file size (formatted), product type badge
+  - Download progress bar with animated fill: emerald (< 60%), amber (> 60%), red (exhausted)
+  - "X/Y downloads used" label with expiry countdown (e.g., "Expires in 3 days 4h")
+  - Status badges: Active (emerald), Expired (red), Maxed Out (amber)
+  - "Download" button (gold gradient, only if active)
+  - "Request New Link" button (outline amber, for expired/exhausted)
+  - Expiry and exhausted warning messages with AlertTriangle icon
+- **Loading skeleton** with 3 pulse-animated card placeholders
+- **Empty state**: "No digital downloads yet" with security notice
+- **Error state**: Retry button with amber AlertTriangle
+- **Active / Past sections**: Separate sections for active and expired/exhausted downloads
+- **Auto-refresh**: Polls every 60 seconds to update countdowns
+- **Request New Link**: Calls `/api/downloads/create` with userId and orderId
+- Gold/amber accent theme throughout, responsive design
+- Security notice at bottom: "Download links expire after 7 days and have a maximum download limit"
+
+#### 2. Download Generation API (`src/app/api/downloads/create/route.ts`) — NEW
+- **POST /api/downloads/create** — Generate download links for digital products in an order
+- Accepts: `{ userId, orderId }`
+- Rate limited: 5 requests per 15 minutes
+- Verifies order belongs to user and is paid/delivered/shipped
+- Finds digital items in the order
+- Checks which products already have download links (skips duplicates)
+- Creates new download links via `createDownloadLink` from `@/lib/digital-download`
+- Returns all downloads (existing + new) with enriched computed fields
+- Returns `{ success: true, data: DigitalDownload[], created: number }`
+
+#### 3. Order Downloads API (`src/app/api/downloads/order/[orderId]/route.ts`) — NEW
+- **GET /api/downloads/order/[orderId]** — Get downloads for a specific order
+- Uses `getDownloadsForOrder` from `@/lib/digital-download`
+- Returns enriched download data with computed fields (isExpired, isExhausted, isActive, timeRemaining)
+- Includes product relation data (id, name, images, type)
+
+#### 4. Buyer Dashboard Update (`src/components/marketplace/buyer/buyer-dashboard.tsx`) — MODIFIED
+- Changed import from `MyDownloads` to `BuyerDownloads` (from `./buyer-downloads`)
+- Updated `TabsContent value="downloads"` to render `<BuyerDownloads />` instead of `<MyDownloads />`
+- Downloads tab was already present with Download icon and 'downloads' in validTabs — no other changes needed
+
+#### 5. Order Tracking Page Update (`src/components/marketplace/orders/order-tracking-page.tsx`) — MODIFIED
+- Added `RefreshCw` to lucide-react imports
+- **Enhanced `DigitalDownloadsSection`** component:
+  - Now accepts `userId` prop in addition to `orderId`
+  - Uses `useCallback` for `fetchDownloads` (fetches from `/api/downloads/order/${orderId}`)
+  - **Auto-creates downloads**: On initial load, if no downloads exist for the order, automatically calls `/api/downloads/create` to generate them
+  - Shows loading state with Loader2 spinner during creation
+  - **Empty state**: Shows "Generate Download Links" button if no downloads exist
+  - **Product images**: Now shows product thumbnail alongside download items
+  - **Progress bars**: Mini progress bar per download showing usage
+  - **Request New Link**: Replaces expired/exhausted badge with "New Link" button that calls `/api/downloads/create`
+  - Toast notifications on successful generation
+- Updated `<DigitalDownloadsSection orderId={order.id} />` → `<DigitalDownloadsSection orderId={order.id} userId={currentUser.id} />`
+
+### Lint Results
+- 0 errors, 1 pre-existing warning (unrelated to this task)
+- All new and modified files pass ESLint cleanly
+
+---
+
+## Task 3 — Apply CSRF Protection to More API Routes (Agent: main)
+
+### Summary
+Extended CSRF protection to 12 additional API routes, created a new `/api/csrf-token` endpoint with non-HttpOnly cookies (double-submit pattern), rewrote the `useCsrf` hook with `useSyncExternalStore` for hydration safety and auto-refresh, and updated the API client to read CSRF tokens from cookies with fallback fetching.
+
+### Changes Made
+
+#### 1. CSRF Token API Endpoint (`src/app/api/csrf-token/route.ts`) — NEW
+- **GET /api/csrf-token** — Generates a CSRF token and sets it as a non-HttpOnly cookie
+- Cookie name: `csrf-token` (HTTP) or `__Host-csrf-token` (HTTPS)
+- Cookie settings: HttpOnly: false, SameSite: Lax, Secure on HTTPS, Path: /, Max-Age: 86400 (24 hours)
+- Returns `{ success: true, token: "..." }`
+- Non-HttpOnly cookie allows JavaScript to read it for the `x-csrf-token` header
+
+#### 2. CSRF Token Provider Hook (`src/hooks/use-csrf.ts`) — REWRITTEN
+- Uses `useSyncExternalStore` for hydration-safe state management
+- External store pattern with subscribe/getSnapshot/getServerSnapshot
+- Fetches from `/api/csrf-token` on mount and when token is stale (23-hour refresh interval)
+- Dedupes concurrent fetch requests with ref guard
+- Returns `{ csrfToken, fetchCsrfToken }`
+- Auto-refresh fires on mount when token is stale
+
+#### 3. Routes with withCsrf Applied (11 files modified)
+
+| Route File | Methods Wrapped | Notes |
+|---|---|---|
+| `/api/orders/route.ts` | POST | Create order — converted to `export const POST = withCsrf(...)` |
+| `/api/products/route.ts` | POST | Create product |
+| `/api/products/[id]/route.ts` | PUT, PATCH, DELETE | Extracted `handleUpdateProduct` for shared logic; PATCH now works independently |
+| `/api/shops/route.ts` | POST | Create shop |
+| `/api/shops/[slug]/route.ts` | PUT, PATCH, DELETE | Extracted `handleUpdateShop`; added PATCH handler (was missing before) |
+| `/api/wallet/route.ts` | — | **Skipped** — no POST handler exists (withdrawals are in `/api/withdrawals`) |
+| `/api/withdrawals/route.ts` | POST | Create withdrawal |
+| `/api/disputes/route.ts` | POST | File dispute |
+| `/api/returns/route.ts` | POST | Request return |
+| `/api/reviews/route.ts` | POST | Create review / helpful vote |
+| `/api/feedback/route.ts` | POST | Submit feedback |
+| `/api/upload/route.ts` | POST | File upload (FormData) — CSRF validated via header only |
+
+All conversions from `export async function METHOD(...)` to `export const METHOD = withCsrf(async (...) => { ... })` style were done where needed. GET handlers were left unchanged.
+
+Dynamic route files (`products/[id]`, `shops/[slug]`) use `context?: unknown` parameter with type casting to access `params` Promise.
+
+#### 4. API Client Updates (`src/lib/api.ts`)
+- **New `readCsrfCookie()` helper** — reads `csrf-token` or `__Host-csrf-token` from `document.cookie`
+- **Updated `getCsrfToken()`** — reads cookie first (fastest), then cached token, then fetches from `/api/csrf-token`
+- **New `withCsrfHeaders()` helper** — adds `x-csrf-token` header for mutating requests (POST/PATCH/PUT/DELETE)
+- **Updated `request()` function** — uses `withCsrfHeaders()` instead of inline CSRF logic
+- **Updated `uploadApi.uploadImage()`** — now includes CSRF header in direct fetch call
+- **Updated `usersApi.uploadAvatar()`** — now includes CSRF header in direct fetch call
+- **Updated `usersApi.deleteAccount()`** — now includes CSRF header in direct fetch call
+- All direct fetch calls also handle 403 CSRF errors by invalidating the cached token
+
+### Important Notes
+- The old `/api/auth/csrf` endpoint still exists and works (not removed to avoid breaking changes)
+- The `/api/wallet` route has no POST handler — withdrawal POST is in `/api/withdrawals`
+- The `shops/[slug]` route now has a PATCH handler alongside PUT (previously only PUT existed, but the API client sent PATCH)
+- FormData uploads work because `withCsrf` checks `x-csrf-token` header first before attempting JSON body parsing
+
+### Lint Results
+- 0 errors, 1 pre-existing warning (unrelated to this task)
+- All new and modified files pass ESLint cleanly
+
+### Files Created
+- `src/app/api/csrf-token/route.ts`
+
+### Files Modified
+- `src/hooks/use-csrf.ts`
+- `src/lib/api.ts`
+- `src/app/api/orders/route.ts`
+- `src/app/api/products/route.ts`
+- `src/app/api/products/[id]/route.ts`
+- `src/app/api/shops/route.ts`
+- `src/app/api/shops/[slug]/route.ts`
+- `src/app/api/withdrawals/route.ts`
+- `src/app/api/disputes/route.ts`
+- `src/app/api/returns/route.ts`
+- `src/app/api/reviews/route.ts`
+- `src/app/api/feedback/route.ts`
+- `src/app/api/upload/route.ts`

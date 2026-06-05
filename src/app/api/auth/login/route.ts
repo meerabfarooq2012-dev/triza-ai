@@ -3,11 +3,13 @@ import { db } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { rateLimit, getRateLimitKey, authRateLimit } from '@/lib/rate-limit';
 import { signToken } from '@/lib/auth-middleware';
+import { createSession } from '@/lib/session';
+import { withCsrf } from '@/lib/with-csrf';
 
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
 
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
   try {
     // Rate limiting
     const rateLimitKey = getRateLimitKey(request);
@@ -127,6 +129,17 @@ export async function POST(request: NextRequest) {
       role: user.role,
     });
 
+    // Create a session record in the database (token is hashed, never stored raw)
+    const userAgent = request.headers.get('user-agent') || undefined;
+    const ipAddress =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      undefined;
+
+    await createSession(user.id, token, userAgent, ipAddress).catch((err) => {
+      // Log but don't block login if session creation fails
+      console.error('Failed to create session:', err);
+    });
+
     const { password: _, ...userWithoutPassword } = user;
 
     return NextResponse.json({
@@ -142,4 +155,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

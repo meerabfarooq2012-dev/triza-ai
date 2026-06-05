@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimit, getRateLimitKey, authRateLimit } from '@/lib/rate-limit';
+import { extractToken, verifyToken } from '@/lib/auth-middleware';
+import { revokeSession } from '@/lib/session';
+import { withCsrf } from '@/lib/with-csrf';
 
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
   try {
     // Rate limiting
     const rateLimitKey = getRateLimitKey(request);
@@ -22,8 +25,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // In a real app, this would invalidate the JWT/server session.
-    // For now, the client-side store handles clearing the token and user state.
+    // Try to extract the token and revoke the session server-side
+    const token = extractToken(request)
+    if (token) {
+      const payload = verifyToken(token)
+      if (payload) {
+        // Revoke this specific session in the database
+        await revokeSession(token).catch((err) => {
+          console.error('Failed to revoke session on logout:', err)
+        })
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Logged out successfully.',
@@ -35,4 +48,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
