@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import {
   Save,
@@ -9,6 +9,8 @@ import {
   Wrench,
   Settings,
   CheckCircle,
+  Loader2,
+  AlertCircle,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -18,32 +20,128 @@ import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
-import { PLATFORM_NAME, PLATFORM_FEE_PERCENT } from '@/lib/constants'
+import { toast } from 'sonner'
+
+interface PlatformSettingsData {
+  id: string
+  platformName: string
+  tagline: string | null
+  description: string | null
+  logoUrl: string | null
+  primaryColor: string | null
+  accentColor: string | null
+  maintenanceMode: boolean
+  allowRegistration: boolean
+  allowSellerRegistration: boolean
+  commissionRate: number
+  minWithdrawalAmount: number
+  supportEmail: string | null
+  supportPhone: string | null
+  socialLinks: string | null
+  createdAt: string
+  updatedAt: string
+}
 
 export default function AdminSettings() {
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   // Platform settings state
-  const [platformName, setPlatformName] = useState(PLATFORM_NAME)
+  const [platformName, setPlatformName] = useState('Marketo')
   const [tagline, setTagline] = useState('Your Marketplace, Your Way')
   const [description, setDescription] = useState(
     'Create your own customizable shop, sell digital & physical products, or offer freelance services — all in one place.'
   )
-  const [feePercent, setFeePercent] = useState(String(PLATFORM_FEE_PERCENT))
+  const [commissionRate, setCommissionRate] = useState('10')
   const [maintenanceMode, setMaintenanceMode] = useState(false)
   const [allowRegistration, setAllowRegistration] = useState(true)
-  const [allowNewShops, setAllowNewShops] = useState(true)
-  const [maxImagesPerProduct, setMaxImagesPerProduct] = useState('8')
-  const [maxFileSize, setMaxFileSize] = useState('50')
+  const [allowSellerRegistration, setAllowSellerRegistration] = useState(true)
+
+  // Load settings from the database via API on mount
+  const fetchSettings = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/admin/settings')
+      if (!res.ok) throw new Error('Failed to load settings')
+      const data = await res.json()
+      const s: PlatformSettingsData = data.settings
+
+      setPlatformName(s.platformName || 'Marketo')
+      setTagline(s.tagline || 'Your Marketplace, Your Way')
+      setDescription(
+        s.description ||
+          'Create your own customizable shop, sell digital & physical products, or offer freelance services — all in one place.'
+      )
+      setCommissionRate(String(s.commissionRate ?? 10))
+      setMaintenanceMode(s.maintenanceMode ?? false)
+      setAllowRegistration(s.allowRegistration ?? true)
+      setAllowSellerRegistration(s.allowSellerRegistration ?? true)
+    } catch (err) {
+      console.error('Failed to load admin settings:', err)
+      setError('Failed to load settings. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchSettings()
+  }, [fetchSettings])
 
   const handleSave = async () => {
     setSaving(true)
-    // Simulate save delay
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    setSaving(false)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 3000)
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          platformName,
+          tagline,
+          description,
+          commissionRate: parseFloat(commissionRate) || 10,
+          maintenanceMode,
+          allowRegistration,
+          allowSellerRegistration,
+        }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to save settings')
+      }
+
+      toast.success('Settings saved successfully')
+    } catch (err) {
+      console.error('Failed to save admin settings:', err)
+      toast.error(err instanceof Error ? err.message : 'Failed to save settings')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-3 text-muted-foreground">Loading settings...</span>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-4">
+        <AlertCircle className="h-10 w-10 text-destructive" />
+        <p className="text-destructive font-medium">{error}</p>
+        <Button variant="outline" onClick={fetchSettings}>
+          Retry
+        </Button>
+      </div>
+    )
   }
 
   return (
@@ -62,11 +160,9 @@ export default function AdminSettings() {
           className="gap-2"
         >
           {saving ? (
-            'Saving...'
-          ) : saved ? (
             <>
-              <CheckCircle size={16} />
-              Saved!
+              <Loader2 size={16} className="animate-spin" />
+              Saving...
             </>
           ) : (
             <>
@@ -144,22 +240,22 @@ export default function AdminSettings() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="fee-percent">Platform Fee (%)</Label>
+              <Label htmlFor="commission-rate">Platform Fee (%)</Label>
               <div className="flex items-center gap-3">
                 <Input
-                  id="fee-percent"
+                  id="commission-rate"
                   type="number"
                   min="0"
                   max="50"
-                  value={feePercent}
-                  onChange={(e) => setFeePercent(e.target.value)}
+                  value={commissionRate}
+                  onChange={(e) => setCommissionRate(e.target.value)}
                   className="w-24"
                 />
                 <span className="text-sm text-muted-foreground">
                   Percentage taken from each transaction
                 </span>
               </div>
-              {Number(feePercent) > 20 && (
+              {Number(commissionRate) > 20 && (
                 <p className="text-xs text-yellow-600">
                   Warning: A fee above 20% may discourage sellers
                 </p>
@@ -231,8 +327,8 @@ export default function AdminSettings() {
                 </p>
               </div>
               <Switch
-                checked={allowNewShops}
-                onCheckedChange={setAllowNewShops}
+                checked={allowSellerRegistration}
+                onCheckedChange={setAllowSellerRegistration}
               />
             </div>
           </CardContent>
@@ -263,10 +359,13 @@ export default function AdminSettings() {
                 type="number"
                 min="1"
                 max="20"
-                value={maxImagesPerProduct}
-                onChange={(e) => setMaxImagesPerProduct(e.target.value)}
+                defaultValue="8"
                 className="w-24"
+                disabled
               />
+              <p className="text-xs text-muted-foreground">
+                Configurable in a future update
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="max-file-size">Max File Size (MB)</Label>
@@ -275,10 +374,13 @@ export default function AdminSettings() {
                 type="number"
                 min="1"
                 max="500"
-                value={maxFileSize}
-                onChange={(e) => setMaxFileSize(e.target.value)}
+                defaultValue="50"
                 className="w-24"
+                disabled
               />
+              <p className="text-xs text-muted-foreground">
+                Configurable in a future update
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -293,15 +395,13 @@ export default function AdminSettings() {
           className="gap-2"
         >
           {saving ? (
-            'Saving...'
-          ) : saved ? (
             <>
-              <CheckCircle size={16} />
-              Settings Saved!
+              <Loader2 size={16} className="animate-spin" />
+              Saving Settings...
             </>
           ) : (
             <>
-              <Save size={16} />
+              <CheckCircle size={16} />
               Save All Settings
             </>
           )}

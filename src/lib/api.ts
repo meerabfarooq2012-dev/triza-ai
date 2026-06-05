@@ -149,6 +149,12 @@ const authApi = {
       method: 'POST',
       body: JSON.stringify({ token }),
     }),
+
+  resendVerification: (userId: string) =>
+    request<ApiResponse>('/auth/resend-verification', {
+      method: 'POST',
+      body: JSON.stringify({ userId }),
+    }),
 }
 
 // ----- Shops API -----
@@ -541,6 +547,15 @@ const adminApi = {
   approveProduct: (id: string) =>
     request<ApiResponse<Product>>(`/admin/products/${id}/approve`, {
       method: 'PATCH',
+    }),
+
+  getSettings: () =>
+    request<ApiResponse<{ settings: Record<string, unknown> }>>('/admin/settings'),
+
+  updateSettings: (data: Record<string, unknown>) =>
+    request<ApiResponse<{ settings: Record<string, unknown> }>>('/admin/settings', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
     }),
 }
 

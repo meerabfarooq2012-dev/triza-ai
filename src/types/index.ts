@@ -576,6 +576,28 @@ export interface CreateOrderInput {
   paymentMethod?: string
 }
 
+/** Summary returned when a checkout creates multiple orders (one per shop) */
+export interface CreatedOrderSummary {
+  id: string
+  sellerId: string
+  totalAmount: number
+  platformFee: number
+  items: {
+    productId: string
+    quantity: number
+    price: number
+    type: string
+    variantId?: string
+    variantLabel?: string
+    variantSku?: string
+  }[]
+}
+
+export interface MultiOrderResponse {
+  orders: CreatedOrderSummary[]
+  totalOrders: number
+}
+
 export interface CreateReviewInput {
   shopId?: string
   productId?: string

@@ -144,11 +144,22 @@ export const useMarketplaceStore = create<MarketplaceState>()(
       },
 
       logout: () => {
+        // Fire-and-forget logout API call
+        const userId = get().currentUser?.id
+        if (userId) {
+          fetch('/api/auth/logout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId }),
+          }).catch(() => {
+            // Silently ignore logout API errors
+          })
+        }
         set({
+          authToken: null,
           currentUser: null,
           isAuthenticated: false,
           isLoadingAuth: false,
-          authToken: null,
           currentView: 'landing',
           viewParams: {},
           cart: [],

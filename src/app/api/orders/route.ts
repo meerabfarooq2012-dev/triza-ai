@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client';
 import { sendEmailAsync } from '@/lib/email';
 import { orderConfirmationBuyerEmail, newOrderSellerEmail } from '@/lib/email-templates';
 import { notifyOrderCreated } from '@/lib/notifications';
+import { PLATFORM_FEE_PERCENT } from '@/lib/constants';
 
 export async function GET(request: NextRequest) {
   try {
@@ -112,12 +113,94 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Helper: resolve price / variant info for a single cart item
+// ---------------------------------------------------------------------------
+
+interface ResolvedItem {
+  productId: string;
+  quantity: number;
+  price: number;
+  type: string;
+  variantId?: string;
+  variantLabel?: string;
+  variantSku?: string;
+}
+
+async function resolveItem(
+  item: { productId: string; quantity?: number; variantId?: string },
+  product: { id: string; name: string; price: number; type: string; stock: number; hasVariants: boolean }
+): Promise<ResolvedItem> {
+  const quantity = item.quantity || 1;
+
+  if (product.hasVariants) {
+    if (!item.variantId) {
+      throw new Error(`Please select a variant for "${product.name}"`);
+    }
+
+    const variant = await db.productVariant.findUnique({
+      where: { id: item.variantId },
+      include: { values: { include: { option: true } } },
+    });
+
+    if (!variant || variant.productId !== product.id || !variant.isActive) {
+      throw new Error(`Selected variant for "${product.name}" is not available`);
+    }
+
+    if (variant.stock < quantity) {
+      throw new Error(`Not enough stock for variant of "${product.name}"`);
+    }
+
+    const price = variant.price;
+
+    // Build human-readable variant label
+    const optionValueIds = variant.values.map((vv) => vv.valueId);
+    const optionValueRecords = await db.productVariantOptionValue.findMany({
+      where: { id: { in: optionValueIds } },
+      include: { option: true },
+    });
+
+    const readableLabel = optionValueRecords
+      .map((ovr) => `${ovr.option.name}: ${ovr.value}`)
+      .join(' / ');
+
+    const fallbackLabel = variant.values
+      .map((vv) => `${vv.option.name}: ${vv.valueId}`)
+      .join(' / ');
+
+    return {
+      productId: product.id,
+      quantity,
+      price,
+      type: product.type,
+      variantId: variant.id,
+      variantLabel: readableLabel || fallbackLabel,
+      variantSku: variant.sku || undefined,
+    };
+  }
+
+  // No variants — use product price and stock
+  if (product.stock !== -1 && product.stock < quantity) {
+    throw new Error(`Not enough stock for "${product.name}"`);
+  }
+
+  return {
+    productId: product.id,
+    quantity,
+    price: product.price,
+    type: product.type,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// POST — Create orders (split by shop)
+// ---------------------------------------------------------------------------
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const {
       buyerId,
-      sellerId: providedSellerId,
       items,
       paymentMethod = 'card',
       shippingName,
@@ -139,38 +222,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // ------------------------------------------------------------------
+    // 1. Fetch all products & group items by shopId
+    // ------------------------------------------------------------------
     const productIds = items.map((item: { productId: string }) => item.productId);
     const products = await db.product.findMany({
       where: { id: { in: productIds } },
-      include: { shop: { select: { id: true, userId: true } } },
+      include: { shop: { select: { id: true, userId: true, name: true } } },
     });
 
-    // Derive sellerId from the first product's shop if not provided
-    let sellerId = providedSellerId;
-    if (!sellerId && products.length > 0 && products[0].shop) {
-      sellerId = products[0].shop.userId;
-    }
-    if (!sellerId) {
-      return NextResponse.json(
-        { success: false, error: 'Could not determine seller. Please try again.' },
-        { status: 400 }
-      );
-    }
-
-    let totalAmount = 0;
-    const orderItemsData: {
-      productId: string;
-      quantity: number;
-      price: number;
-      type: string;
-      variantId?: string;
-      variantLabel?: string;
-      variantSku?: string;
-    }[] = [];
-
-    // Track variant stock decrements separately
-    const variantStockDecrements: { variantId: string; quantity: number }[] = [];
-
+    // Validate all products exist and are active
     for (const item of items) {
       const product = products.find((p) => p.id === item.productId);
       if (!product) {
@@ -185,252 +246,232 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
+    }
 
-      const quantity = item.quantity || 1;
+    // Group items by shopId
+    const shopGroups = new Map<string, typeof items>();
+    for (const item of items) {
+      const product = products.find((p) => p.id === item.productId)!;
+      const shopId = product.shopId;
+      if (!shopGroups.has(shopId)) {
+        shopGroups.set(shopId, []);
+      }
+      shopGroups.get(shopId)!.push(item);
+    }
 
-      // Variant handling
-      if (product.hasVariants) {
-        // If product has variants, variantId is required
-        if (!item.variantId) {
+    // ------------------------------------------------------------------
+    // 2. Create one order per shop group
+    // ------------------------------------------------------------------
+    const createdOrders: Array<{
+      id: string;
+      sellerId: string;
+      totalAmount: number;
+      platformFee: number;
+      items: ResolvedItem[];
+    }> = [];
+
+    const feePercent = PLATFORM_FEE_PERCENT / 100;
+
+    for (const [shopId, shopItems] of shopGroups) {
+      // Derive sellerId from shop
+      const shopProduct = products.find((p) => p.shopId === shopId)!;
+      const sellerId = shopProduct.shop?.userId;
+
+      if (!sellerId) {
+        return NextResponse.json(
+          { success: false, error: `Could not determine seller for shop ${shopId}` },
+          { status: 400 }
+        );
+      }
+
+      // Resolve all item prices / variants for this shop group
+      let totalAmount = 0;
+      const orderItemsData: ResolvedItem[] = [];
+      const variantStockDecrements: { variantId: string; quantity: number }[] = [];
+
+      for (const item of shopItems) {
+        const product = products.find((p) => p.id === item.productId)!;
+
+        try {
+          const resolved = await resolveItem(item, product);
+          totalAmount += resolved.price * resolved.quantity;
+          orderItemsData.push(resolved);
+
+          if (resolved.variantId) {
+            variantStockDecrements.push({ variantId: resolved.variantId, quantity: resolved.quantity });
+          }
+        } catch (err) {
+          const message = err instanceof Error ? err.message : 'Invalid item';
           return NextResponse.json(
-            { success: false, error: `Please select a variant for "${product.name}"` },
+            { success: false, error: message },
             { status: 400 }
           );
         }
+      }
 
-        // Look up the variant
-        const variant = await db.productVariant.findUnique({
-          where: { id: item.variantId },
-          include: {
-            values: {
-              include: {
-                option: true,
+      const platformFee = Math.round(totalAmount * feePercent * 100) / 100;
+
+      // Distribute shipping cost evenly across shop orders (or 0 if not applicable)
+      const perShopShippingCost = shippingCost ? Math.round((shippingCost / shopGroups.size) * 100) / 100 : 0;
+
+      const order = await db.order.create({
+        data: {
+          buyerId,
+          sellerId,
+          totalAmount,
+          platformFee,
+          paymentMethod,
+          paymentStatus: 'paid',
+          shippingName,
+          shippingAddr,
+          shippingCity,
+          shippingState,
+          shippingZip,
+          shippingCountry: shippingCountry || 'PK',
+          shippingPhone,
+          shippingMethod,
+          shippingCost: perShopShippingCost,
+          notes,
+          items: {
+            create: orderItemsData,
+          },
+        },
+        include: {
+          items: {
+            include: {
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                  images: true,
+                  type: true,
+                },
               },
             },
           },
-        });
+          buyer: { select: { id: true, name: true, avatar: true } },
+          seller: { select: { id: true, name: true, avatar: true } },
+        },
+      });
 
-        if (!variant || variant.productId !== product.id || !variant.isActive) {
-          return NextResponse.json(
-            { success: false, error: `Selected variant for "${product.name}" is not available` },
-            { status: 400 }
-          );
+      // Create initial status log
+      await db.orderStatusLog.create({
+        data: {
+          orderId: order.id,
+          status: 'pending',
+          note: 'Order placed',
+          changedBy: buyerId,
+        },
+      });
+
+      // Update product sales and stock
+      for (const itemData of orderItemsData) {
+        const product = products.find((p) => p.id === itemData.productId)!;
+        if (!itemData.variantId) {
+          await db.product.update({
+            where: { id: itemData.productId },
+            data: {
+              totalSales: { increment: itemData.quantity },
+              ...(product.stock !== -1
+                ? { stock: { decrement: itemData.quantity } }
+                : {}),
+            },
+          });
+        } else {
+          await db.product.update({
+            where: { id: itemData.productId },
+            data: {
+              totalSales: { increment: itemData.quantity },
+            },
+          });
         }
+      }
 
-        if (variant.stock < quantity) {
-          return NextResponse.json(
-            { success: false, error: `Not enough stock for variant of "${product.name}"` },
-            { status: 400 }
-          );
-        }
-
-        // Use variant.price instead of product.price
-        const price = variant.price;
-        totalAmount += price * quantity;
-
-        // Build variantLabel from option name + value pairs joined by " / "
-        const variantLabel = variant.values
-          .map((vv) => `${vv.option.name}: ${vv.valueId}`)
-          .join(' / ');
-
-        // Try to resolve human-readable variant label
-        // Fetch option values for better labels
-        const optionValueIds = variant.values.map((vv) => vv.valueId);
-        const optionValueRecords = await db.productVariantOptionValue.findMany({
-          where: { id: { in: optionValueIds } },
-          include: { option: true },
-        });
-
-        const readableLabel = optionValueRecords
-          .map((ovr) => `${ovr.option.name}: ${ovr.value}`)
-          .join(' / ');
-
-        orderItemsData.push({
-          productId: product.id,
-          quantity,
-          price,
-          type: product.type,
-          variantId: variant.id,
-          variantLabel: readableLabel || variantLabel,
-          variantSku: variant.sku || null,
-        });
-
-        variantStockDecrements.push({ variantId: variant.id, quantity });
-      } else {
-        // No variants — use product price and stock
-        if (product.stock !== -1 && product.stock < quantity) {
-          return NextResponse.json(
-            { success: false, error: `Not enough stock for "${product.name}"` },
-            { status: 400 }
-          );
-        }
-
-        const price = product.price;
-        totalAmount += price * quantity;
-
-        orderItemsData.push({
-          productId: product.id,
-          quantity,
-          price,
-          type: product.type,
+      // Decrement variant stock
+      for (const { variantId, quantity } of variantStockDecrements) {
+        await db.productVariant.update({
+          where: { id: variantId },
+          data: { stock: { decrement: quantity } },
         });
       }
-    }
 
-    const platformFee = Math.round(totalAmount * 0.1 * 100) / 100;
+      // Update shop total sales
+      await db.shop.update({
+        where: { userId: sellerId },
+        data: { totalSales: { increment: 1 } },
+      });
 
-    const order = await db.order.create({
-      data: {
-        buyerId,
+      // Create notifications (non-blocking)
+      notifyOrderCreated(buyerId, sellerId, order.id, totalAmount).catch(() => {});
+
+      // Send order confirmation emails (non-blocking)
+      const orderItemsForEmail = order.items.map((item) => ({
+        name: item.product?.name || 'Unknown Product',
+        quantity: item.quantity,
+        price: item.price,
+        type: item.type,
+      }));
+
+      // Fetch buyer and seller emails
+      const [buyerUser, sellerUser] = await Promise.all([
+        db.user.findUnique({ where: { id: buyerId }, select: { email: true, name: true } }),
+        db.user.findUnique({ where: { id: sellerId }, select: { email: true, name: true } }),
+      ]);
+
+      if (buyerUser?.email) {
+        sendEmailAsync({
+          to: buyerUser.email,
+          subject: `Order Confirmation #${order.id.slice(-8)} — Marketo`,
+          html: orderConfirmationBuyerEmail({
+            orderNumber: order.id.slice(-8),
+            buyerName: buyerUser.name,
+            items: orderItemsForEmail,
+            totalAmount,
+            sellerName: sellerUser?.name || 'Seller',
+            paymentMethod,
+          }),
+        });
+      }
+
+      if (sellerUser?.email) {
+        sendEmailAsync({
+          to: sellerUser.email,
+          subject: `🎉 New Order #${order.id.slice(-8)} — Marketo`,
+          html: newOrderSellerEmail({
+            orderNumber: order.id.slice(-8),
+            sellerName: sellerUser.name,
+            buyerName: buyerUser?.name || 'Buyer',
+            items: orderItemsForEmail,
+            totalAmount,
+            platformFee,
+            sellerPayout: Math.round((totalAmount - platformFee) * 100) / 100,
+          }),
+        });
+      }
+
+      createdOrders.push({
+        id: order.id,
         sellerId,
         totalAmount,
         platformFee,
-        paymentMethod,
-        paymentStatus: 'paid',
-        shippingName,
-        shippingAddr,
-        shippingCity,
-        shippingState,
-        shippingZip,
-        shippingCountry: shippingCountry || 'PK',
-        shippingPhone,
-        shippingMethod,
-        shippingCost: shippingCost || 0,
-        notes,
-        items: {
-          create: orderItemsData,
+        items: orderItemsData,
+      });
+    }
+
+    // ------------------------------------------------------------------
+    // 3. Return all created orders
+    // ------------------------------------------------------------------
+    return NextResponse.json(
+      {
+        success: true,
+        data: {
+          orders: createdOrders,
+          totalOrders: createdOrders.length,
         },
       },
-      include: {
-        items: {
-          include: {
-            product: {
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-                images: true,
-                type: true,
-              },
-            },
-          },
-        },
-        buyer: { select: { id: true, name: true, avatar: true } },
-        seller: { select: { id: true, name: true, avatar: true } },
-      },
-    });
-
-    // Create initial status log
-    await db.orderStatusLog.create({
-      data: {
-        orderId: order.id,
-        status: 'pending',
-        note: 'Order placed',
-        changedBy: buyerId,
-      },
-    });
-
-    // Update product sales and stock
-    for (const item of orderItemsData) {
-      const product = products.find((p) => p.id === item.productId)!;
-      // Only decrement product stock if no variant (variant stock is handled separately)
-      if (!item.variantId) {
-        await db.product.update({
-          where: { id: item.productId },
-          data: {
-            totalSales: { increment: item.quantity },
-            ...(product.stock !== -1
-              ? { stock: { decrement: item.quantity } }
-              : {}),
-          },
-        });
-      } else {
-        // For variant products, just increment totalSales on the product
-        await db.product.update({
-          where: { id: item.productId },
-          data: {
-            totalSales: { increment: item.quantity },
-          },
-        });
-      }
-    }
-
-    // Decrement variant stock
-    for (const { variantId, quantity } of variantStockDecrements) {
-      await db.productVariant.update({
-        where: { id: variantId },
-        data: { stock: { decrement: quantity } },
-      });
-    }
-
-    // Update shop total sales
-    await db.shop.update({
-      where: { userId: sellerId },
-      data: { totalSales: { increment: 1 } },
-    });
-
-    // Create notifications for buyer and seller (non-blocking)
-    notifyOrderCreated(buyerId, sellerId, order.id, totalAmount).catch(() => {});
-
-    // Send order confirmation emails (non-blocking)
-    const orderItemsForEmail = order.items.map((item) => ({
-      name: item.product?.name || 'Unknown Product',
-      quantity: item.quantity,
-      price: item.price,
-      type: item.type,
-    }));
-
-    // Fetch buyer and seller emails
-    const [buyerUser, sellerUser] = await Promise.all([
-      db.user.findUnique({ where: { id: buyerId }, select: { email: true, name: true } }),
-      db.user.findUnique({ where: { id: sellerId }, select: { email: true, name: true } }),
-    ]);
-
-    if (buyerUser?.email) {
-      sendEmailAsync({
-        to: buyerUser.email,
-        subject: `Order Confirmation #${order.id.slice(-8)} — Marketo`,
-        html: orderConfirmationBuyerEmail({
-          orderNumber: order.id.slice(-8),
-          buyerName: buyerUser.name,
-          items: orderItemsForEmail,
-          totalAmount,
-          sellerName: sellerUser?.name || 'Seller',
-          paymentMethod,
-        }),
-      });
-    }
-
-    if (sellerUser?.email) {
-      sendEmailAsync({
-        to: sellerUser.email,
-        subject: `🎉 New Order #${order.id.slice(-8)} — Marketo`,
-        html: newOrderSellerEmail({
-          orderNumber: order.id.slice(-8),
-          sellerName: sellerUser.name,
-          buyerName: buyerUser?.name || 'Buyer',
-          items: orderItemsForEmail,
-          totalAmount,
-          platformFee,
-          sellerPayout: Math.round((totalAmount - platformFee) * 100) / 100,
-        }),
-      });
-    }
-
-    const parsedOrder = {
-      ...order,
-      items: order.items.map((item) => ({
-        ...item,
-        product: item.product
-          ? {
-              ...item.product,
-              images: JSON.parse(item.product.images || '[]'),
-            }
-          : null,
-      })),
-    };
-
-    return NextResponse.json({ success: true, data: parsedOrder }, { status: 201 });
+      { status: 201 }
+    );
   } catch (error) {
     console.error('Create order error:', error);
     return NextResponse.json(

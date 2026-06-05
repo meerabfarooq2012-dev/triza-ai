@@ -174,6 +174,69 @@ Built the frontend UI components for the new auth features: forgot password flow
 
 ---
 
+## Task 9 — Email Verification UI + Logout API (Agent: main)
+
+### Summary
+Built the Email Verification UI flow and Logout API route. Created an email verification dialog component, resend verification API, logout API route, updated the API client with new endpoints, wired email verification into the registration flow, and updated the store logout function to call the logout API.
+
+### Changes Made
+
+#### 1. Email Verification Dialog (`src/components/marketplace/auth/email-verification-dialog.tsx`) — NEW
+- Dialog component using shadcn/ui Dialog
+- Accepts `open`, `onOpenChange`, `userId`, and `userEmail` props
+- Green/emerald theme (verification = positive) with `ShieldCheck` icon
+- "Verify Your Email" heading with description mentioning the user's email
+- Info banner explaining benefits of verification
+- Token text input with auto-detection from URL params (`?token=`)
+- "Verify Email" button with gold gradient, calls `api.auth.verifyEmail(token)`
+- "Resend Verification Email" link with 60-second cooldown timer
+- On verify success: animated "Email Verified!" screen with `CheckCircle2` checkmark
+- Updates user state in Zustand store on successful verification
+- Toast notifications for verification success and resend confirmation
+
+#### 2. Resend Verification API (`src/app/api/auth/resend-verification/route.ts`) — NEW
+- **POST /api/auth/resend-verification** — Resend verification email
+- Accepts: `{ userId }`
+- Rate limited: 3 requests per 15 minutes (stricter than auth preset)
+- Finds user by ID, returns 404 if not found
+- Returns 400 if email is already verified
+- Generates new `emailVerifyToken` using `randomBytes(32).toString('hex')`
+- Sends verification email using existing `emailVerificationEmail` template via `sendEmailAsync`
+- Returns `{ success: true, message: 'Verification email sent successfully.' }`
+
+#### 3. Logout API Route (`src/app/api/auth/logout/route.ts`) — NEW
+- **POST /api/auth/logout** — Logout endpoint
+- Accepts: `{ userId }`
+- Rate limited using `authRateLimit` preset
+- Returns `{ success: true, message: 'Logged out successfully.' }`
+- Simple endpoint for client-side state cleanup (JWT is stateless)
+
+#### 4. API Client Updates (`src/lib/api.ts`)
+- Added `resendVerification(userId)` method to `authApi`:
+  - POST `/auth/resend-verification` with `{ userId }` body
+
+#### 5. Auth Modal Updates (`src/components/marketplace/auth/auth-modal.tsx`)
+- Imported `EmailVerificationDialog` component
+- Added state variables: `showEmailVerification`, `verificationUserId`, `verificationEmail`
+- Updated `handleRegister()`: after successful registration, stores token via `setAuthToken()`, shows email verification dialog if `user.emailVerified` is false
+- Added `EmailVerificationDialog` component in the JSX return (wrapped in fragment alongside the main div)
+- Dialog receives `userId` and `userEmail` props for resend functionality
+
+#### 6. Store Logout Function Update (`src/store/use-marketplace-store.ts`)
+- Updated `logout()` function to:
+  1. Capture `currentUser?.id` before clearing state
+  2. Fire-and-forget POST to `/api/auth/logout` with `{ userId }` (silently ignores errors)
+  3. Clear `authToken` first in the `set()` call
+  4. Clear `currentUser`, `isAuthenticated`, `isLoadingAuth`
+  5. Reset view to 'landing' with empty `viewParams`
+  6. Clear all transient state (cart, favorites, notifications, shipping, etc.)
+
+### Lint Results
+- 0 errors, 1 pre-existing warning (unrelated to this task)
+- All new and modified files pass ESLint cleanly
+
+---
+
 ## Task 4b — User Profile Management Feature (Agent: main)
 
 ### Summary
@@ -248,6 +311,69 @@ Implemented the User Profile Management feature including backend API routes (GE
 
 ---
 
+## Task 9 — Email Verification UI + Logout API (Agent: main)
+
+### Summary
+Built the Email Verification UI flow and Logout API route. Created an email verification dialog component, resend verification API, logout API route, updated the API client with new endpoints, wired email verification into the registration flow, and updated the store logout function to call the logout API.
+
+### Changes Made
+
+#### 1. Email Verification Dialog (`src/components/marketplace/auth/email-verification-dialog.tsx`) — NEW
+- Dialog component using shadcn/ui Dialog
+- Accepts `open`, `onOpenChange`, `userId`, and `userEmail` props
+- Green/emerald theme (verification = positive) with `ShieldCheck` icon
+- "Verify Your Email" heading with description mentioning the user's email
+- Info banner explaining benefits of verification
+- Token text input with auto-detection from URL params (`?token=`)
+- "Verify Email" button with gold gradient, calls `api.auth.verifyEmail(token)`
+- "Resend Verification Email" link with 60-second cooldown timer
+- On verify success: animated "Email Verified!" screen with `CheckCircle2` checkmark
+- Updates user state in Zustand store on successful verification
+- Toast notifications for verification success and resend confirmation
+
+#### 2. Resend Verification API (`src/app/api/auth/resend-verification/route.ts`) — NEW
+- **POST /api/auth/resend-verification** — Resend verification email
+- Accepts: `{ userId }`
+- Rate limited: 3 requests per 15 minutes (stricter than auth preset)
+- Finds user by ID, returns 404 if not found
+- Returns 400 if email is already verified
+- Generates new `emailVerifyToken` using `randomBytes(32).toString('hex')`
+- Sends verification email using existing `emailVerificationEmail` template via `sendEmailAsync`
+- Returns `{ success: true, message: 'Verification email sent successfully.' }`
+
+#### 3. Logout API Route (`src/app/api/auth/logout/route.ts`) — NEW
+- **POST /api/auth/logout** — Logout endpoint
+- Accepts: `{ userId }`
+- Rate limited using `authRateLimit` preset
+- Returns `{ success: true, message: 'Logged out successfully.' }`
+- Simple endpoint for client-side state cleanup (JWT is stateless)
+
+#### 4. API Client Updates (`src/lib/api.ts`)
+- Added `resendVerification(userId)` method to `authApi`:
+  - POST `/auth/resend-verification` with `{ userId }` body
+
+#### 5. Auth Modal Updates (`src/components/marketplace/auth/auth-modal.tsx`)
+- Imported `EmailVerificationDialog` component
+- Added state variables: `showEmailVerification`, `verificationUserId`, `verificationEmail`
+- Updated `handleRegister()`: after successful registration, stores token via `setAuthToken()`, shows email verification dialog if `user.emailVerified` is false
+- Added `EmailVerificationDialog` component in the JSX return (wrapped in fragment alongside the main div)
+- Dialog receives `userId` and `userEmail` props for resend functionality
+
+#### 6. Store Logout Function Update (`src/store/use-marketplace-store.ts`)
+- Updated `logout()` function to:
+  1. Capture `currentUser?.id` before clearing state
+  2. Fire-and-forget POST to `/api/auth/logout` with `{ userId }` (silently ignores errors)
+  3. Clear `authToken` first in the `set()` call
+  4. Clear `currentUser`, `isAuthenticated`, `isLoadingAuth`
+  5. Reset view to 'landing' with empty `viewParams`
+  6. Clear all transient state (cart, favorites, notifications, shipping, etc.)
+
+### Lint Results
+- 0 errors, 1 pre-existing warning (unrelated to this task)
+- All new and modified files pass ESLint cleanly
+
+---
+
 ## Task 1b — Supabase Storage Upload Integration (Agent: main)
 
 ### Summary
@@ -312,6 +438,173 @@ Wired Supabase Storage into all places where images/files need to be uploaded ac
 - Client-side validation (file type, size)
 - Updated helper text: "Upload up to 5 images as evidence — JPG, PNG, WebP, GIF, max 5MB each"
 - Added imports: `useRef`, `Cloud` from lucide-react
+
+### Lint Results
+- 0 errors, 1 pre-existing warning (unrelated to this task)
+- All new and modified files pass ESLint cleanly
+
+---
+
+## Task 9 — Email Verification UI + Logout API (Agent: main)
+
+### Summary
+Built the Email Verification UI flow and Logout API route. Created an email verification dialog component, resend verification API, logout API route, updated the API client with new endpoints, wired email verification into the registration flow, and updated the store logout function to call the logout API.
+
+### Changes Made
+
+#### 1. Email Verification Dialog (`src/components/marketplace/auth/email-verification-dialog.tsx`) — NEW
+- Dialog component using shadcn/ui Dialog
+- Accepts `open`, `onOpenChange`, `userId`, and `userEmail` props
+- Green/emerald theme (verification = positive) with `ShieldCheck` icon
+- "Verify Your Email" heading with description mentioning the user's email
+- Info banner explaining benefits of verification
+- Token text input with auto-detection from URL params (`?token=`)
+- "Verify Email" button with gold gradient, calls `api.auth.verifyEmail(token)`
+- "Resend Verification Email" link with 60-second cooldown timer
+- On verify success: animated "Email Verified!" screen with `CheckCircle2` checkmark
+- Updates user state in Zustand store on successful verification
+- Toast notifications for verification success and resend confirmation
+
+#### 2. Resend Verification API (`src/app/api/auth/resend-verification/route.ts`) — NEW
+- **POST /api/auth/resend-verification** — Resend verification email
+- Accepts: `{ userId }`
+- Rate limited: 3 requests per 15 minutes (stricter than auth preset)
+- Finds user by ID, returns 404 if not found
+- Returns 400 if email is already verified
+- Generates new `emailVerifyToken` using `randomBytes(32).toString('hex')`
+- Sends verification email using existing `emailVerificationEmail` template via `sendEmailAsync`
+- Returns `{ success: true, message: 'Verification email sent successfully.' }`
+
+#### 3. Logout API Route (`src/app/api/auth/logout/route.ts`) — NEW
+- **POST /api/auth/logout** — Logout endpoint
+- Accepts: `{ userId }`
+- Rate limited using `authRateLimit` preset
+- Returns `{ success: true, message: 'Logged out successfully.' }`
+- Simple endpoint for client-side state cleanup (JWT is stateless)
+
+#### 4. API Client Updates (`src/lib/api.ts`)
+- Added `resendVerification(userId)` method to `authApi`:
+  - POST `/auth/resend-verification` with `{ userId }` body
+
+#### 5. Auth Modal Updates (`src/components/marketplace/auth/auth-modal.tsx`)
+- Imported `EmailVerificationDialog` component
+- Added state variables: `showEmailVerification`, `verificationUserId`, `verificationEmail`
+- Updated `handleRegister()`: after successful registration, stores token via `setAuthToken()`, shows email verification dialog if `user.emailVerified` is false
+- Added `EmailVerificationDialog` component in the JSX return (wrapped in fragment alongside the main div)
+- Dialog receives `userId` and `userEmail` props for resend functionality
+
+#### 6. Store Logout Function Update (`src/store/use-marketplace-store.ts`)
+- Updated `logout()` function to:
+  1. Capture `currentUser?.id` before clearing state
+  2. Fire-and-forget POST to `/api/auth/logout` with `{ userId }` (silently ignores errors)
+  3. Clear `authToken` first in the `set()` call
+  4. Clear `currentUser`, `isAuthenticated`, `isLoadingAuth`
+  5. Reset view to 'landing' with empty `viewParams`
+  6. Clear all transient state (cart, favorites, notifications, shipping, etc.)
+
+### Lint Results
+- 0 errors, 1 pre-existing warning (unrelated to this task)
+- All new and modified files pass ESLint cleanly
+
+---
+
+## Task 8 — Cart Multi-Shop Splitting (Agent: main)
+
+### Summary
+Implemented cart multi-shop splitting so that when a buyer checks out with items from multiple sellers, the system creates separate orders for each seller instead of one combined order. This allows each seller to manage their own order status, shipping, and payments independently.
+
+### Changes Made
+
+#### 1. Order Creation API (`src/app/api/orders/route.ts`) — MAJOR REWRITE of POST handler
+- **Group items by shopId**: Fetches all products, then groups cart items by their product's `shopId`
+- **Create separate Order per shop**: Iterates over each shop group and creates a distinct Order record with:
+  - Unique `orderId`
+  - Correct `sellerId` derived from the shop
+  - Only items belonging to that shop
+  - Calculated `totalAmount` for that shop's items only
+  - `platformFee` computed per-shop subtotal
+  - Shipping cost distributed evenly across shop orders
+- **Per-order post-creation**: For each order:
+  - Creates initial `OrderStatusLog`
+  - Updates product sales/stock (including variant stock decrements)
+  - Updates shop total sales count
+  - Sends notifications to buyer and seller
+  - Sends order confirmation emails to both parties
+- **New response format**: Returns `{ orders: CreatedOrderSummary[], totalOrders: number }` instead of a single order object
+- **Extracted `resolveItem()` helper**: Handles variant resolution, stock checks, and price calculation for individual items — reused for each shop group
+- **Backward compatible**: Single-shop carts create exactly one order; the response format works for both cases
+
+#### 2. Checkout Modal (`src/components/marketplace/payment/checkout-modal.tsx`) — UPDATED
+- **Added `Store` icon import** from lucide-react
+- **Added `useMemo` import** for efficient cart grouping
+- **Added `createdOrderIds` state** to track all order IDs from a multi-shop checkout
+- **Added `shopGroups` computed value**: Groups cart items by `shopId` with shop name, items, and subtotal per group
+- **Added `isMultiShop` flag**: `shopGroups.length > 1`
+- **Updated Summary step**:
+  - Shows multi-shop notice banner when cart contains items from multiple shops
+  - Groups items under shop headers with Store icon
+  - Shows per-shop subtotal in multi-shop mode
+  - Increased max-height to `max-h-64` for grouped view
+- **Updated `handlePayNow()`**:
+  - Handles new multi-order API response format (`data.orders` array)
+  - Falls back to single-order format for backward compatibility
+  - Creates payment records for each order in parallel via `Promise.all`
+  - Verifies payments for all orders, not just the first
+  - Gateway redirect still uses first order's ID
+- **Updated Success step**:
+  - Shows "X Orders Placed!" when multiple orders created
+  - Lists all order IDs in a scrollable list when multi-shop
+  - Shows single Order ID field when single shop
+  - Added info banner about independent order tracking in multi-shop mode
+
+#### 3. Type Updates (`src/types/index.ts`)
+- **Added `CreatedOrderSummary` interface**: Represents a single order summary in the multi-order response
+- **Added `MultiOrderResponse` interface**: Wraps the array of `CreatedOrderSummary` with `totalOrders` count
+- **No breaking changes**: Existing `CreateOrderInput` and `Order` types unchanged
+
+### Lint Results
+- 0 errors, 1 pre-existing warning (unrelated to this task)
+- All new and modified files pass ESLint cleanly
+
+
+---
+
+## Task 10: Persist Admin Settings to Database
+
+**Date:** 2025-03-04
+**Agent:** main
+
+### Summary
+Migrated Admin Settings from in-memory/localStorage to database persistence via Prisma. Settings now load from and save to a `PlatformSettings` table with a single-row pattern (`id = "default"`).
+
+### Changes
+
+#### 1. Prisma Schema (`prisma/schema.prisma`, `schema.sqlite.prisma`, `schema.postgresql.prisma`)
+- **Added `PlatformSettings` model** with fields: `id`, `platformName`, `tagline`, `description`, `logoUrl`, `primaryColor`, `accentColor`, `maintenanceMode`, `allowRegistration`, `allowSellerRegistration`, `commissionRate`, `minWithdrawalAmount`, `supportEmail`, `supportPhone`, `socialLinks`, `createdAt`, `updatedAt`
+- Uses `@id @default("default")` for single-row pattern
+- All three schema files updated identically
+- Ran `bun run db:push` to sync the database
+
+#### 2. Admin Settings API (`src/app/api/admin/settings/route.ts`)
+- **GET /api/admin/settings**: Returns the single `PlatformSettings` row; auto-creates default row if not exists
+- **PATCH /api/admin/settings**: Upserts settings with whitelisted fields; returns updated settings
+- Both endpoints are rate-limited using `apiRateLimit` preset
+
+#### 3. API Client (`src/lib/api.ts`)
+- **Added `getSettings`** method to `adminApi` — calls `GET /admin/settings`
+- **Added `updateSettings`** method to `adminApi` — calls `PATCH /admin/settings` with settings data
+
+#### 4. Admin Settings Component (`src/components/marketplace/admin/admin-settings.tsx`)
+- **Removed all localStorage references** (previously used in-memory state with simulated save)
+- **Added `useEffect` + `fetchSettings`** to load settings from `GET /api/admin/settings` on mount
+- **Updated `handleSave`** to persist via `PATCH /api/admin/settings`
+- **Added loading spinner** (Loader2 icon) while fetching settings
+- **Added error state** with retry button when settings fail to load
+- **Added toast notifications** via `sonner` — success on save, error on failure
+- **Replaced `saved` state** with toast feedback instead of temporary button text
+- **Mapped DB fields** to UI: `commissionRate` → "Platform Fee (%)", `allowSellerRegistration` → "Allow New Shop Creation"
+- **Upload Limits section** is now read-only (disabled inputs) with "Configurable in a future update" note since those fields are not in the DB model yet
+- **Same UI layout** preserved — General, Financial, Operations, Upload Limits cards
 
 ### Lint Results
 - 0 errors, 1 pre-existing warning (unrelated to this task)

@@ -29,6 +29,7 @@ import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { api } from '@/lib/api'
 import { PLATFORM_NAME, PLATFORM_TAGLINE, USER_ROLE_LABELS, USER_ROLE_DESCRIPTIONS } from '@/lib/constants'
 import type { UserRole, User as UserType } from '@/types'
+import { EmailVerificationDialog } from '@/components/marketplace/auth/email-verification-dialog'
 
 type AuthTab = 'login' | 'register' | 'forgotPassword'
 
@@ -83,6 +84,11 @@ export function AuthModal() {
   const errorRef = useRef<HTMLDivElement>(null)
 
   const { login, setAuthToken, setCurrentView } = useMarketplaceStore()
+
+  // Email verification dialog state
+  const [showEmailVerification, setShowEmailVerification] = useState(false)
+  const [verificationUserId, setVerificationUserId] = useState<string | undefined>()
+  const [verificationEmail, setVerificationEmail] = useState<string | undefined>()
 
   // Mark a field as touched
   const markTouched = useCallback((field: string) => {
@@ -198,7 +204,17 @@ export function AuthModal() {
       })
       if (res.success && res.data) {
         const user = res.data.user || res.data
+        const token = res.data.token
+        if (token) {
+          setAuthToken(token)
+        }
         login(user)
+        // Show email verification dialog if email is not verified
+        if (!user.emailVerified) {
+          setVerificationUserId(user.id)
+          setVerificationEmail(user.email)
+          setShowEmailVerification(true)
+        }
         navigateAfterAuth(user)
       } else {
         showError(res.error || 'Registration failed')
@@ -362,6 +378,7 @@ export function AuthModal() {
   }
 
   return (
+    <>
     <div className="min-h-screen flex flex-col lg:flex-row">
       {/* Left - Branding / Illustration */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-amber-600 via-amber-600 to-amber-500">
@@ -1028,5 +1045,14 @@ export function AuthModal() {
         </div>
       </div>
     </div>
+
+    {/* Email Verification Dialog */}
+    <EmailVerificationDialog
+      open={showEmailVerification}
+      onOpenChange={setShowEmailVerification}
+      userId={verificationUserId}
+      userEmail={verificationEmail}
+    />
+    </>
   )
 }

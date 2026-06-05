@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   CreditCard,
@@ -18,6 +18,7 @@ import {
   Ticket,
   X,
   Tag,
+  Store,
 } from 'lucide-react'
 import {
   Dialog,
@@ -127,6 +128,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   const [shippingCost, setShippingCost] = useState<number>(0)
   const [orderId, setOrderId] = useState<string>('')
   const [paymentId, setPaymentId] = useState<string>('')
+  const [createdOrderIds, setCreatedOrderIds] = useState<string[]>([])
   const [paymentAuthConfirmed, setPaymentAuthConfirmed] = useState(false)
 
   // Gateway redirect state
@@ -211,6 +213,26 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   }
 
   const hasPhysicalItems = cart.some((item) => item.type === 'physical')
+
+  // Group cart items by shop for multi-shop splitting display
+  const shopGroups = useMemo(() => {
+    const groups = new Map<string, { shopName: string; items: typeof cart }>()
+    for (const item of cart) {
+      const key = item.shopId
+      if (!groups.has(key)) {
+        groups.set(key, { shopName: item.shopName, items: [] })
+      }
+      groups.get(key)!.items.push(item)
+    }
+    return Array.from(groups.entries()).map(([shopId, data]) => ({
+      shopId,
+      shopName: data.shopName,
+      items: data.items,
+      subtotal: data.items.reduce((sum, item) => sum + (item.price ?? 0) * (item.quantity ?? 1), 0),
+    }))
+  }, [cart])
+
+  const isMultiShop = shopGroups.length > 1
   const couponDiscount = appliedCoupon ? appliedCoupon.discountAmount : 0
   const effectiveCartTotal = Math.max(0, (cartTotal ?? 0) - couponDiscount)
   const platformFee = effectiveCartTotal * (PLATFORM_FEE_PERCENT / 100)
@@ -287,6 +309,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
     setShippingCost(0)
     setOrderId('')
     setPaymentId('')
+    setCreatedOrderIds([])
     setPaymentAuthConfirmed(false)
     setGatewayRedirectUrl('')
     setGatewayMode('')
@@ -372,7 +395,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
         }
       }
 
-      // Step 1: Create order
+      // Step 1: Create orders (split by shop on the backend)
       const orderRes = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -405,11 +428,20 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
         throw new Error(orderData.error || 'Failed to create order')
       }
 
-      const createdOrderId = orderData.data?.id || orderData.data?.order?.id || ''
-      setOrderId(createdOrderId)
+      // Support both old single-order and new multi-order response formats
+      const ordersArray: Array<{ id: string; sellerId: string; totalAmount: number }> =
+        orderData.data?.orders || (orderData.data?.id ? [orderData.data] : [])
 
-      // Redeem coupon after order is created
-      if (appliedCoupon && createdOrderId) {
+      if (ordersArray.length === 0) {
+        throw new Error('No orders were created')
+      }
+
+      const firstOrderId = ordersArray[0].id
+      setOrderId(firstOrderId)
+      setCreatedOrderIds(ordersArray.map((o: { id: string }) => o.id))
+
+      // Redeem coupon after first order is created
+      if (appliedCoupon && firstOrderId) {
         try {
           await fetch('/api/coupons/redeem', {
             method: 'POST',
@@ -417,7 +449,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
             body: JSON.stringify({
               couponId: appliedCoupon.coupon.id,
               userId: currentUser.id,
-              orderId: createdOrderId,
+              orderId: firstOrderId,
               discountAmount: appliedCoupon.discountAmount,
             }),
           })
@@ -426,38 +458,38 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
         }
       }
 
-      // Get sellerId from the created order (which derives it from the product's shop)
-      const sellerId = orderData.data?.sellerId || orderData.data?.seller?.id || cart[0]?.shopId || ''
+      // Step 2: Create payment records for each order
+      const paymentPromises = ordersArray.map((order: { id: string; sellerId: string; totalAmount: number }) =>
+        fetch('/api/payments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: order.id,
+            buyerId: currentUser.id,
+            sellerId: order.sellerId,
+            paymentMethod,
+            amount: order.totalAmount,
+          }),
+        }).then((r) => r.json())
+      )
 
-      // Step 2: Create payment record (escrow hold)
-      const paymentRes = await fetch('/api/payments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          orderId: createdOrderId,
-          buyerId: currentUser.id,
-          sellerId,
-          paymentMethod,
-          amount: effectiveCartTotal,
-        }),
-      })
-
-      const paymentData = await paymentRes.json()
-      if (!paymentData.success) {
-        throw new Error(paymentData.error || 'Failed to process payment')
+      const paymentResults = await Promise.all(paymentPromises)
+      const failedPayment = paymentResults.find((r: { success?: boolean }) => !r.success)
+      if (failedPayment) {
+        throw new Error(failedPayment.error || 'Failed to process payment')
       }
 
-      const createdPaymentId = paymentData.data?.id || ''
-      setPaymentId(createdPaymentId)
+      const firstPaymentId = paymentResults[0]?.data?.id || ''
+      setPaymentId(firstPaymentId)
 
-      // Step 3: For Easypaisa/JazzCash, redirect to payment gateway
+      // Step 3: For Easypaisa/JazzCash, redirect to payment gateway (use first order)
       if (paymentMethod === 'easypaisa' || paymentMethod === 'jazzcash') {
         try {
           const initiateRes = await fetch('/api/payments/initiate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              orderId: createdOrderId,
+              orderId: firstOrderId,
               paymentMethod,
               buyerId: currentUser.id,
               amount: cartTotal,
@@ -473,7 +505,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
             setStep('gateway_redirect')
 
             // Start polling for payment status
-            pollPaymentStatus(createdPaymentId)
+            pollPaymentStatus(firstPaymentId)
             return
           }
           // If gateway initiation fails, fall through to verify flow
@@ -483,30 +515,32 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
         }
       }
 
-      // Step 4: For card/payoneer/wise, verify payment with token
-      const metadata = paymentData.data?.metadata
-      let verificationToken = ''
-      try {
-        const parsed = typeof metadata === 'string' ? JSON.parse(metadata) : metadata
-        verificationToken = parsed?.verificationToken || ''
-      } catch {
-        verificationToken = ''
-      }
+      // Step 4: For card/payoneer/wise, verify payments with tokens
+      for (const paymentResult of paymentResults) {
+        const metadata = paymentResult.data?.metadata
+        let verificationToken = ''
+        try {
+          const parsed = typeof metadata === 'string' ? JSON.parse(metadata) : metadata
+          verificationToken = parsed?.verificationToken || ''
+        } catch {
+          verificationToken = ''
+        }
 
-      if (verificationToken && createdPaymentId) {
-        const verifyRes = await fetch('/api/payments/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            paymentId: createdPaymentId,
-            verificationToken,
-            buyerId: currentUser.id,
-          }),
-        })
+        if (verificationToken && paymentResult.data?.id) {
+          const verifyRes = await fetch('/api/payments/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              paymentId: paymentResult.data.id,
+              verificationToken,
+              buyerId: currentUser.id,
+            }),
+          })
 
-        const verifyData = await verifyRes.json()
-        if (!verifyData.success) {
-          console.warn('Payment verification failed:', verifyData.error)
+          const verifyData = await verifyRes.json()
+          if (!verifyData.success) {
+            console.warn('Payment verification failed:', verifyData.error)
+          }
         }
       }
 
@@ -637,27 +671,55 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 Order Summary
               </h3>
 
-              <div className="space-y-3 max-h-48 overflow-y-auto">
-                {cart.map((item) => (
-                  <div
-                    key={`${item.productId}-${item.variantId ?? 'default'}`}
-                    className="flex items-center gap-3 rounded-lg border p-3"
-                  >
-                    <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                      <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+              {/* Multi-shop notice */}
+              {isMultiShop && (
+                <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 p-3">
+                  <Info className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <p className="text-xs text-amber-700">
+                    Your cart contains items from <strong>{shopGroups.length} shops</strong>. Each shop will receive a separate order so they can manage shipping independently.
+                  </p>
+                </div>
+              )}
+
+              <div className="space-y-4 max-h-64 overflow-y-auto">
+                {shopGroups.map((group) => (
+                  <div key={group.shopId} className="space-y-2">
+                    {/* Shop header */}
+                    <div className="flex items-center gap-2 px-1">
+                      <Store className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{group.shopName}</span>
+                      <span className="text-xs text-muted-foreground">({group.items.length} {group.items.length === 1 ? 'item' : 'items'})</span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{item.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {item.shopName} &middot; Qty: {item.quantity}
-                        {item.variantLabel && (
-                          <span className="text-emerald-600 ml-1">&middot; {item.variantLabel}</span>
-                        )}
-                      </p>
-                    </div>
-                    <span className="text-sm font-semibold">
-                      ${((item.price ?? 0) * (item.quantity ?? 1)).toFixed(2)}
-                    </span>
+                    {/* Shop items */}
+                    {group.items.map((item) => (
+                      <div
+                        key={`${item.productId}-${item.variantId ?? 'default'}`}
+                        className="flex items-center gap-3 rounded-lg border p-3 ml-5"
+                      >
+                        <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                          <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{item.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Qty: {item.quantity}
+                            {item.variantLabel && (
+                              <span className="text-emerald-600 ml-1">&middot; {item.variantLabel}</span>
+                            )}
+                          </p>
+                        </div>
+                        <span className="text-sm font-semibold">
+                          ${((item.price ?? 0) * (item.quantity ?? 1)).toFixed(2)}
+                        </span>
+                      </div>
+                    ))}
+                    {/* Shop subtotal (only show in multi-shop) */}
+                    {isMultiShop && (
+                      <div className="flex justify-between text-xs text-muted-foreground px-1 ml-5">
+                        <span>Subtotal for {group.shopName}</span>
+                        <span className="font-medium">${group.subtotal.toFixed(2)}</span>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -1458,19 +1520,41 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
               </motion.div>
 
               <div className="text-center space-y-1">
-                <h3 className="font-bold text-xl">Payment Successful!</h3>
+                <h3 className="font-bold text-xl">
+                  {createdOrderIds.length > 1
+                    ? `${createdOrderIds.length} Orders Placed!`
+                    : 'Payment Successful!'}
+                </h3>
                 <p className="text-sm text-muted-foreground">
-                  Your order has been placed and payment is held in escrow
+                  {createdOrderIds.length > 1
+                    ? 'Your items have been split into separate orders for each shop'
+                    : 'Your order has been placed and payment is held in escrow'}
                 </p>
               </div>
 
               <Card className="w-full p-4 space-y-2 bg-muted/30">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Order ID</span>
-                  <span className="font-mono text-xs">
-                    {orderId ? `#${orderId.slice(-8)}` : 'N/A'}
-                  </span>
-                </div>
+                {createdOrderIds.length > 1 ? (
+                  <>
+                    <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                      Order IDs
+                    </div>
+                    <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                      {createdOrderIds.map((oid, idx) => (
+                        <div key={oid} className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Order {idx + 1}</span>
+                          <span className="font-mono text-xs">#{oid.slice(-8)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Order ID</span>
+                    <span className="font-mono text-xs">
+                      {orderId ? `#${orderId.slice(-8)}` : 'N/A'}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Payment ID</span>
                   <span className="font-mono text-xs">
@@ -1492,6 +1576,15 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                   </Badge>
                 </div>
               </Card>
+
+              {createdOrderIds.length > 1 && (
+                <div className="flex items-start gap-2 rounded-lg bg-blue-50 border border-blue-200 p-3 w-full">
+                  <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <p className="text-xs text-blue-700">
+                    Each seller will manage their own order independently. You can track each order separately from your orders page.
+                  </p>
+                </div>
+              )}
 
               <div className="flex items-center gap-2 rounded-lg bg-emerald-50 border border-emerald-200 p-2.5 w-full">
                 <ShieldCheck className="h-4 w-4 text-emerald-600 flex-shrink-0" />

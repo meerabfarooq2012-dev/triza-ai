@@ -1339,4 +1339,26 @@ model WishlistItem {
   @@index([productId])
 }
 
+// =============================================================================
+// PLATFORM SETTINGS MODEL — Single-row config for admin settings
+// =============================================================================
 
+model PlatformSettings {
+  id          String   @id @default("default")
+  platformName String  @default("Marketo")
+  tagline     String?
+  description String?
+  logoUrl     String?
+  primaryColor String?
+  accentColor  String?
+  maintenanceMode Boolean @default(false)
+  allowRegistration Boolean @default(true)
+  allowSellerRegistration Boolean @default(true)
+  commissionRate Float @default(10.0)
+  minWithdrawalAmount Float @default(50.0)
+  supportEmail String?
+  supportPhone String?
+  socialLinks  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
