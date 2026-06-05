@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { withCsrf } from '@/lib/with-csrf';
 
 // POST /api/messages/conversations/create
 // Create or find a conversation between two users
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
   try {
     const body = await request.json();
     const { userId, otherUserId, productId, gigId, initialMessage } = body;
@@ -171,4 +172,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})

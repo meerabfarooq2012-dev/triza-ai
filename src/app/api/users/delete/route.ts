@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 import { rateLimit, getRateLimitKey, authRateLimit } from '@/lib/rate-limit'
-import { authenticateRequest } from '@/lib/auth-middleware'
+import { authenticateRequestWithSession } from '@/lib/auth-middleware'
 import { revokeAllUserSessions } from '@/lib/session'
 import { withCsrf } from '@/lib/with-csrf'
 
 export const POST = withCsrf(async (request: NextRequest) => {
   try {
-    // Authenticate the request
-    const auth = authenticateRequest(request)
+    // Authenticate the request (with session validation)
+    const auth = await authenticateRequestWithSession(request)
     if (!auth) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },

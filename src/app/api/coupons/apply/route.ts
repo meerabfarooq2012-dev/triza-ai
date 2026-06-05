@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateAndApplyCoupon } from '../_lib/validate-coupon';
 import type { ApplyCouponInput } from '@/types';
+import { withCsrf } from '@/lib/with-csrf';
 
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
   try {
     const body = await request.json();
     const { code, shopId, userId, cartTotal, items }: ApplyCouponInput & { userId?: string } = body;
@@ -55,4 +56,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})

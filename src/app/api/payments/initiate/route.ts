@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { authenticateRequestWithSession } from '@/lib/auth-middleware';
 import {
   initiateEasypaisaPayment,
   initiateJazzCashPayment,
   getGatewayMode,
 } from '@/lib/payment-gateway';
+import { withCsrf } from '@/lib/with-csrf';
 
 // =============================================================================
 // POST /api/payments/initiate
@@ -12,10 +14,27 @@ import {
 // Creates a gateway payment request and returns a redirect URL or payment token.
 // =============================================================================
 
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
   try {
+    // Authenticate the request (with session validation)
+    const auth = await authenticateRequestWithSession(request);
+    if (!auth) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const { orderId, paymentMethod, buyerId, amount } = body;
+
+    // Verify the authenticated user matches the buyerId
+    if (auth.userId !== buyerId) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: buyer ID mismatch' },
+        { status: 403 }
+      );
+    }
 
     // ----- Validation -----
     if (!orderId || !paymentMethod || !buyerId || !amount) {
@@ -186,4 +205,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})

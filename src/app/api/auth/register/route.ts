@@ -6,6 +6,7 @@ import { welcomeEmail, emailVerificationEmail } from '@/lib/email-templates';
 import { notifyWelcome } from '@/lib/notifications';
 import { rateLimit, getRateLimitKey, authRateLimit } from '@/lib/rate-limit';
 import { signToken } from '@/lib/auth-middleware';
+import { createSession } from '@/lib/session';
 import { withCsrf } from '@/lib/with-csrf';
 import { randomBytes } from 'crypto';
 
@@ -123,6 +124,17 @@ export const POST = withCsrf(async (request: NextRequest) => {
       userId: user.id,
       email: user.email,
       role: user.role,
+    });
+
+    // Create a session record in the database (token is hashed, never stored raw)
+    const userAgent = request.headers.get('user-agent') || undefined;
+    const ipAddress =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      undefined;
+
+    await createSession(user.id, token, userAgent, ipAddress).catch((err) => {
+      // Log but don't block registration if session creation fails
+      console.error('Failed to create session:', err);
     });
 
     // Send welcome email (non-blocking)

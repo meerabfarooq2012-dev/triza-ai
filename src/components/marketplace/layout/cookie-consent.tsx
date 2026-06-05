@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useSyncExternalStore } from 'react'
+import { useState, useCallback, useEffect, useSyncExternalStore } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Cookie, Shield, BarChart3, Megaphone, Settings, ChevronRight, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -37,6 +37,13 @@ export function CookieConsent() {
   const [preferencesOpen, setPreferencesOpen] = useState(false)
   const [prefAnalytics, setPrefAnalytics] = useState(false)
   const [prefMarketing, setPrefMarketing] = useState(false)
+
+  // Listen for custom event to reopen cookie preferences (e.g., from footer link)
+  useEffect(() => {
+    const handler = () => setPreferencesOpen(true)
+    window.addEventListener('marketo:open-cookie-preferences', handler)
+    return () => window.removeEventListener('marketo:open-cookie-preferences', handler)
+  }, [])
 
   // Derive banner visibility from store state (no useEffect + setState needed)
   const showBanner = hydrated && shouldShowBanner({ consentGiven, consentDate })

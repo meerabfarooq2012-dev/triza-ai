@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { authenticateRequest } from '@/lib/auth-middleware';
 import { rateLimit, getRateLimitKey, apiRateLimit } from '@/lib/rate-limit';
+import { withCsrf } from '@/lib/with-csrf';
 
 export async function GET(request: NextRequest) {
   try {
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function DELETE(request: NextRequest) {
+export const DELETE = withCsrf(async (request: NextRequest) => {
   try {
     const auth = await authenticateRequest(request);
     if (!auth) {
@@ -37,4 +38,4 @@ export async function DELETE(request: NextRequest) {
     console.error('Clear cart error:', error);
     return NextResponse.json({ success: false, error: 'Failed to clear cart' }, { status: 500 });
   }
-}
+})

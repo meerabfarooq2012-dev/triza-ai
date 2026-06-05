@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { authenticateRequest } from '@/lib/auth-middleware';
+import { authenticateRequestWithSession } from '@/lib/auth-middleware';
 import { rateLimit, getRateLimitKey, apiRateLimit } from '@/lib/rate-limit';
 
 // GET /api/users/[id] — Get user profile
@@ -60,8 +60,8 @@ export async function PATCH(
   try {
     const { id } = await params;
 
-    // Authenticate the request
-    const auth = authenticateRequest(request);
+    // Authenticate the request (with session validation)
+    const auth = await authenticateRequestWithSession(request);
     if (!auth || auth.userId !== id) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized — you can only update your own profile' },

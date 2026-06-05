@@ -3,7 +3,7 @@
 // =============================================================================
 
 import { NextRequest, NextResponse } from 'next/server'
-import { authenticateRequest } from '@/lib/auth-middleware'
+import { authenticateRequestWithSession } from '@/lib/auth-middleware'
 import { revokeSessionById } from '@/lib/session'
 import { rateLimit, getRateLimitKey, apiRateLimit } from '@/lib/rate-limit'
 
@@ -22,8 +22,8 @@ export async function DELETE(
       )
     }
 
-    // Authenticate
-    const payload = authenticateRequest(request)
+    // Authenticate (with session validation)
+    const payload = await authenticateRequestWithSession(request)
     if (!payload) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },

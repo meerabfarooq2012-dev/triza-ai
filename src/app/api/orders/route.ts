@@ -6,6 +6,7 @@ import { orderConfirmationBuyerEmail, newOrderSellerEmail } from '@/lib/email-te
 import { notifyOrderCreated } from '@/lib/notifications';
 import { PLATFORM_FEE_PERCENT } from '@/lib/constants';
 import { withCsrf } from '@/lib/with-csrf';
+import { authenticateRequestWithSession } from '@/lib/auth-middleware';
 
 export async function GET(request: NextRequest) {
   try {
@@ -199,6 +200,15 @@ async function resolveItem(
 
 export const POST = withCsrf(async (request: NextRequest) => {
   try {
+    // Authenticate the request (with session validation)
+    const auth = await authenticateRequestWithSession(request);
+    if (!auth) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const {
       buyerId,
@@ -220,6 +230,14 @@ export const POST = withCsrf(async (request: NextRequest) => {
       return NextResponse.json(
         { success: false, error: 'buyerId and items are required' },
         { status: 400 }
+      );
+    }
+
+    // Verify the authenticated user matches the buyerId
+    if (auth.userId !== buyerId) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: buyer ID mismatch' },
+        { status: 403 }
       );
     }
 

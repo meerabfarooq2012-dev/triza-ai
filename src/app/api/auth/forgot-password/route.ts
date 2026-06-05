@@ -4,8 +4,9 @@ import { rateLimit, getRateLimitKey, passwordResetRateLimit } from '@/lib/rate-l
 import { generateResetToken, generateResetExpiry } from '@/lib/auth-middleware';
 import { sendEmailAsync } from '@/lib/email';
 import { passwordResetEmail } from '@/lib/email-templates';
+import { withCsrf } from '@/lib/with-csrf';
 
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
   try {
     // Rate limiting — 5 per 15 minutes
     const rateLimitKey = getRateLimitKey(request);
@@ -77,4 +78,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})

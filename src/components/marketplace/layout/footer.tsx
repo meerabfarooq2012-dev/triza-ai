@@ -125,7 +125,12 @@ export function Footer() {
           <div className="flex items-center gap-4">
             <button onClick={() => setCurrentView('terms')} className="hover:text-foreground transition-colors">Terms</button>
             <button onClick={() => setCurrentView('privacy')} className="hover:text-foreground transition-colors">Privacy</button>
-            <a href="#" className="hover:text-foreground transition-colors">Cookies</a>
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('marketo:open-cookie-preferences'))}
+              className="hover:text-foreground transition-colors"
+            >
+              Cookie Settings
+            </button>
           </div>
         </div>
       </div>

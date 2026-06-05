@@ -4,7 +4,7 @@
 // =============================================================================
 
 import { NextRequest, NextResponse } from 'next/server'
-import { authenticateRequest, extractToken } from '@/lib/auth-middleware'
+import { authenticateRequestWithSession, extractToken } from '@/lib/auth-middleware'
 import { getUserSessions, revokeAllUserSessions, hashToken } from '@/lib/session'
 import { rateLimit, getRateLimitKey, apiRateLimit } from '@/lib/rate-limit'
 
@@ -20,8 +20,8 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Authenticate
-    const payload = authenticateRequest(request)
+    // Authenticate (with session validation)
+    const payload = await authenticateRequestWithSession(request)
     if (!payload) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },
@@ -71,8 +71,8 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // Authenticate
-    const payload = authenticateRequest(request)
+    // Authenticate (with session validation)
+    const payload = await authenticateRequestWithSession(request)
     if (!payload) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },

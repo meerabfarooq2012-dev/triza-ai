@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { withCsrf } from '@/lib/with-csrf';
 
 // Helper: Ensure a default "All Items" collection exists for the user
 async function ensureDefaultCollection(userId: string) {
@@ -153,7 +154,7 @@ export async function GET(request: NextRequest) {
 }
 
 // POST /api/wishlist — Add item to wishlist
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
   try {
     const body = await request.json();
     const {
@@ -406,4 +407,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})

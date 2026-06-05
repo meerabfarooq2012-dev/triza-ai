@@ -5,6 +5,7 @@
 
 import jwt from 'jsonwebtoken'
 import { randomBytes } from 'crypto'
+import { validateSession } from '@/lib/session'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'marketo-dev-secret-change-in-production'
 const JWT_EXPIRES_IN = '7d' // 7 days
@@ -58,6 +59,26 @@ export function authenticateRequest(request: Request): AuthPayload | null {
   if (!token) return null
 
   return verifyToken(token)
+}
+
+/**
+ * Authenticate a request by extracting and verifying the JWT token,
+ * AND validating that the session is still active (not revoked) in the database.
+ * Use this for critical endpoints where revoked sessions must be rejected immediately.
+ * @returns the AuthPayload if valid and session is active, null otherwise
+ */
+export async function authenticateRequestWithSession(request: Request): Promise<AuthPayload | null> {
+  const token = extractToken(request)
+  if (!token) return null
+
+  const payload = verifyToken(token)
+  if (!payload) return null
+
+  // Check if the session is still active (not revoked)
+  const isValidSession = await validateSession(token)
+  if (!isValidSession) return null
+
+  return payload
 }
 
 /**

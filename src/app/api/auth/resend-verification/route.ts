@@ -4,8 +4,9 @@ import { sendEmailAsync } from '@/lib/email';
 import { emailVerificationEmail } from '@/lib/email-templates';
 import { rateLimit, getRateLimitKey, authRateLimit } from '@/lib/rate-limit';
 import { randomBytes } from 'crypto';
+import { withCsrf } from '@/lib/with-csrf';
 
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
   try {
     // Rate limiting: 3 per 15 minutes
     const rateLimitKey = getRateLimitKey(request);
@@ -84,4 +85,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})
