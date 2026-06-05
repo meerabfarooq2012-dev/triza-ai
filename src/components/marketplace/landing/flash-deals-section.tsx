@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import Image from 'next/image'
 import { Zap, Flame, Clock, Package, ChevronRight } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -174,10 +175,12 @@ export function FlashDealsSection() {
                 {/* Image */}
                 <div className="relative aspect-video bg-muted overflow-hidden">
                   {images[0] ? (
-                    <img
+                    <Image
                       src={images[0]}
                       alt={deal.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      sizes="(max-width: 640px) 280px, (max-width: 1024px) 33vw, 25vw"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
@@ -208,7 +211,7 @@ export function FlashDealsSection() {
                   {/* Shop */}
                   <div className="flex items-center gap-1.5">
                     {shopLogo ? (
-                      <img src={shopLogo} alt={shopName} className="w-4 h-4 rounded-full object-cover" />
+                      <Image src={shopLogo} alt={shopName} width={16} height={16} className="rounded-full object-cover" />
                     ) : (
                       <div className="w-4 h-4 rounded-full bg-muted flex items-center justify-center text-[8px] font-bold">
                         {shopName[0]}

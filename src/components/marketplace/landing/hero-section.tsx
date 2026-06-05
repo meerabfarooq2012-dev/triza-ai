@@ -5,9 +5,11 @@ import { ArrowRight, ShoppingBag, Briefcase } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { PLATFORM_NAME, PLATFORM_DESCRIPTION } from '@/lib/constants'
+import { useLanguage } from '@/hooks/use-language'
 
 export function HeroSection() {
   const { setCurrentView } = useMarketplaceStore()
+  const { t } = useLanguage()
 
   return (
     <section className="relative min-h-[90vh] flex items-center overflow-hidden">
@@ -34,9 +36,9 @@ export function HeroSection() {
 
           {/* Heading */}
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
-            <span className="block text-foreground">Create Your Shop,</span>
+            <span className="block text-foreground">{t('landing.heroHeadline1')}</span>
             <span className="block gold-gradient-text">
-              Sell Your Way
+              {t('landing.heroHeadline2')}
             </span>
           </h1>
 
@@ -62,7 +64,7 @@ export function HeroSection() {
               className="gold-gradient hover:opacity-90 text-white shadow-xl shadow-amber-500/25 px-8 text-base transition-opacity duration-300"
               onClick={() => setCurrentView('auth', { tab: 'register' })}
             >
-              Start Selling
+              {t('landing.startSelling')}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
             <Button
@@ -72,7 +74,7 @@ export function HeroSection() {
               onClick={() => setCurrentView('search')}
             >
               <ShoppingBag className="mr-2 h-4 w-4" />
-              Browse Products
+              {t('landing.browseProducts')}
             </Button>
             <Button
               size="lg"
@@ -81,7 +83,7 @@ export function HeroSection() {
               onClick={() => setCurrentView('gigs-browse')}
             >
               <Briefcase className="mr-2 h-4 w-4" />
-              Browse Gigs
+              {t('landing.browseGigs')}
             </Button>
           </div>
         </motion.div>

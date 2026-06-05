@@ -1,5 +1,5 @@
 $ bun --hot index.ts
-[ChatService] Socket.io chat service running on port 3003
+[NotificationService] Socket.io notification service running on port 3004
 46 |     }
 47 |   }
 48 |   let er;
@@ -7,5 +7,5 @@ $ bun --hot index.ts
 50 |     er = args[0];
 51 |     throw er;
                  ^
-error: Failed to start server. Is port 3003 in use?
+error: Failed to start server. Is port 3004 in use?
       at emitError (node:events:51:13)

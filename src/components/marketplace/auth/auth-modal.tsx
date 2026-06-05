@@ -33,6 +33,7 @@ import type { UserRole, User as UserType } from '@/types'
 import { EmailVerificationDialog } from '@/components/marketplace/auth/email-verification-dialog'
 import { TwoFactorVerify } from '@/components/marketplace/auth/two-factor-verify'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { useLanguage } from '@/hooks/use-language'
 
 type AuthTab = 'login' | 'register' | 'forgotPassword'
 
@@ -87,6 +88,8 @@ export function AuthModal() {
   const errorRef = useRef<HTMLDivElement>(null)
 
   const { login, setAuthToken, setCurrentView } = useMarketplaceStore()
+
+  const { t } = useLanguage()
 
   // Email verification dialog state
   const [showEmailVerification, setShowEmailVerification] = useState(false)
@@ -513,7 +516,7 @@ export function AuthModal() {
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              Sign In
+              {t('auth.signIn')}
             </button>
             <button
               onClick={() => { setTab('register'); setError(''); setTouchedFields({}); setForgotSuccess(false) }}
@@ -523,7 +526,7 @@ export function AuthModal() {
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              Sign Up
+              {t('auth.signUp')}
             </button>
           </div>
 

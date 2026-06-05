@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import Image from 'next/image'
 import {
   ShoppingCart,
   Zap,
@@ -425,16 +426,23 @@ export default function ProductDetail() {
             layoutId={`product-image-${productId}`}
           >
             <AnimatePresence mode="wait">
-              <motion.img
+              <motion.div
                 key={selectedImage}
-                src={galleryImages[selectedImage] || '/placeholder.png'}
-                alt={product.name}
-                className="w-full h-full object-cover"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-              />
+                className="w-full h-full"
+              >
+                <Image
+                  src={galleryImages[selectedImage] || '/placeholder.png'}
+                  alt={product.name}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  priority
+                />
+              </motion.div>
             </AnimatePresence>
             {galleryImages.length === 0 && (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground">
@@ -456,16 +464,18 @@ export default function ProductDetail() {
                 <button
                   key={index}
                   onClick={() => setSelectedImage(index)}
-                  className={`flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border-2 transition-all ${
+                  className={`relative flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border-2 transition-all ${
                     selectedImage === index
                       ? 'border-primary ring-2 ring-primary/20'
                       : 'border-transparent hover:border-muted-foreground/30'
                   }`}
                 >
-                  <img
+                  <Image
                     src={img}
                     alt={`${product.name} ${index + 1}`}
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
+                    sizes="80px"
                   />
                 </button>
               ))}

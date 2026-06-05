@@ -1719,3 +1719,255 @@ Implemented three features: (1) GDPR Bulk Data Export for admins, (2) Product Re
 ### Lint Results
 - 0 errors, 3 pre-existing warnings (unrelated to this task)
 - All new and modified files pass ESLint cleanly
+
+## Task 3b — Chat Service Auto-Start, Return Seller Response, Stories Integration (Agent: main)
+
+### Summary
+Implemented three features: (1) Verified chat and notification services are running on ports 3003/3004 with proper XTransformPort connections, (2) Fixed critical API payload mismatch in return detail page approve/reject handlers, (3) Created StoryBar component and integrated into landing page.
+
+### Changes Made
+
+#### HIGH 3: Chat Service Auto-Start
+- Verified chat service (`mini-services/chat-service/`) running on port 3003 with `bun --hot`
+- Verified notification service (`mini-services/notification-service/`) running on port 3004 with `bun --hot`
+- Both services were already running (PIDs 21853, 21854)
+- Confirmed all frontend socket.io connections use proper `XTransformPort` format:
+  - `buyer-messages.tsx`, `messages-page.tsx`, `seller-messages.tsx` → `XTransformPort=3003`
+  - `use-realtime-notifications.tsx` → `XTransformPort=3004`
+
+#### MED 4: Return Seller Response — Fixed API Mismatch
+**Critical bug fix:** Frontend was sending `{ status: 'approved' }` but API expects `{ userId, action: 'approve' }`.
+
+- Fixed `return-detail-page.tsx`:
+  - `handleApprove()`: Now sends `{ userId: currentUser.id, action: 'approve', refundAmount, refundMethod }`
+  - `handleReject()`: Now sends `{ userId: currentUser.id, action: 'reject', sellerResponse }`
+  - `handleMarkProcessing()`: Now sends `{ userId: currentUser.id, action: 'processing' }`
+  - `handleCancelReturn()`: Now sends `{ userId: currentUser.id, action: 'cancel' }`
+  - Added `currentUser` from `useMarketplaceStore()`
+  - Added auth checks before each action
+  - Enhanced seller response card to show for all statuses (not just rejected)
+  - Dynamic styling based on return status (red for rejected, amber for other)
+
+#### MED 5: Stories Integration
+- Created `src/components/marketplace/social/story-bar.tsx`:
+  - Horizontal scrollable row of circular story avatars grouped by shop
+  - Gradient ring (amber) for unseen stories, gray for viewed
+  - "Add Story" button for sellers (opens CreateStoryDialog)
+  - Story count badges, type indicators (🏷️ Deal, ⭐ New)
+  - Auto-refresh every 60 seconds
+  - Loading skeleton, hidden when no stories for non-sellers
+  - Fetches from `/api/social/stories?userId=...`
+- Updated `src/components/marketplace/landing/landing-page.tsx`:
+  - Added `<StoryBar />` between HeroSection and RecentlyViewedSection
+
+### Lint Results
+- 0 errors, 3 pre-existing warnings (unrelated to this task)
+- All new and modified files pass ESLint cleanly
+
+
+---
+
+## Task 3a — Shop Customization Rendering & Shipping Calculator (Agent: main)
+
+### Summary
+Implemented two HIGH priority features: (1) Applied saved shop customization (colors, layout, display style, custom sections) on the public shop view, and (2) Integrated dynamic shipping rate calculation from seller zones into the checkout modal.
+
+### Changes Made
+
+#### HIGH 1: Shop Customization Rendering (`src/components/marketplace/shop/shop-view.tsx`)
+
+**Default Colors (Obsidian & Gold Theme)**
+- Changed default shop colors from indigo/purple (`#6366f1`, `#8b5cf6`, `#a78bfa`) to the Obsidian & Gold theme (`#C9A962` gold primary, `#1e293b` slate secondary, `#b45309` amber accent)
+- Applied CSS custom properties (`--shop-primary`, `--shop-secondary`, `--shop-accent`) on the root shop view div so child components can reference them
+
+**Display Style Differentiation** (`modern`, `classic`, `minimal`)
+- `modern`: Rounded-xl cards, shadow-md, gradient backgrounds, system-ui font
+- `classic`: Rounded cards with borders, shadow-sm, Georgia serif font, traditional styling
+- `minimal`: Rounded-lg cards, no shadows, minimal padding (p-3), no border, system-ui font
+- Added `displayStyle` prop to `ProductGridCard`, `ProductListCard`, `FeaturedProductCard`, and `CustomSectionRenderer` components
+- Each card component now derives `cardStyle` and `cardPadding` from `displayStyle`
+
+**Banner Overlay by Style**
+- Modern: Gradient overlay (light to dark)
+- Classic: Solid 35% dark overlay
+- Minimal: Light 20% dark overlay
+
+**Custom Sections Between Header and Products**
+- Custom sections now render BETWEEN the shop header info bar and the navigation tabs (in addition to remaining in the About tab)
+- Active custom sections sorted by `sortOrder` are displayed prominently
+- `CustomSectionRenderer` enhanced with display style support:
+  - `text`: Serif font for classic, compact text for minimal, standard for modern
+  - `banner`: Rounded-xl + shadow for modern, border for classic, simple for minimal; modern adds text-shadow
+  - `faq`: Left-accent border for modern, bordered for classic, muted background for minimal
+  - `testimonials`: Gradient cards for modern, bordered for classic, shadowless for minimal; modern adds accent underline
+  - `gallery`: Rounded-xl for modern, bordered for classic, rounded-lg for minimal
+
+**Layout Style** (grid, list, featured) — already implemented but section gap now adapts:
+- Minimal: `gap-3`
+- Default: `gap-4 md:gap-6`
+
+**Navigation Bar**
+- Sticky nav bar now uses shop's primary color for border
+- Background blur transparency varies by display style
+
+**Import Updates**
+- Added `DisplayStyle` to the type imports from `@/types`
+
+#### HIGH 2: Shipping Calculator in Checkout (`src/components/marketplace/payment/checkout-modal.tsx`)
+
+**New State Variables**
+- `estimatedDelivery` — estimated delivery date string from selected rate
+- `shippingRates` — array of fetched `ShippingRate & { estimatedDate: string }` objects
+- `shippingLoading` — loading state for shipping rate fetching
+- `selectedRateId` — ID of the currently selected shipping rate
+
+**Shipping Rate Fetching**
+- New `useEffect` that fetches shipping rates from `/api/shipping/calculate` when:
+  - Modal is open
+  - Cart has physical items
+  - Shipping country is set
+- Supports multi-shop carts: fetches rates per shop group and combines them
+- Auto-selects the cheapest shipping option
+- Applies free shipping coupon override when `appliedCoupon.freeShipping` is true
+- Parses API response format (`item.rate`, `item.price`, `item.estimatedDelivery`) and computes human-readable estimated dates
+
+**Shipping Step UI Enhancements**
+- Added Country selector dropdown (Select component with 15 common countries) instead of hidden field
+- Added State/Province input field
+- Added shipping method selection section below address fields:
+  - Loading state with spinner
+  - Empty state: "Free shipping" message when no seller zones configured
+  - Rate selection: RadioGroup with rate name, method badge, estimated delivery, and price (FREE badge for $0 rates)
+  - Selected rate confirmation bar with estimated delivery
+- Pay button now shows total including shipping cost
+
+**Order Total Calculation**
+- Added shipping cost line item to the order summary:
+  - Shows "Shipping — $X.XX" when cost > 0
+  - Shows "Shipping — Free" when cost is 0 but rates exist
+- Total calculation now includes `shippingCost` for physical items
+- Formula: `effectiveCartTotal + taxAmount + shippingCost`
+
+**Order Creation**
+- Added `estimatedDelivery` to the order creation payload (passed to `/api/orders`)
+
+**Type Updates**
+- Added `ShippingRate` to the type imports from `@/types`
+
+**Reset State**
+- `resetState()` now clears `estimatedDelivery`, `shippingRates`, `shippingLoading`, and `selectedRateId`
+
+### Lint Results
+- 0 errors, 3 pre-existing warnings (unrelated to this task)
+- All modified files pass ESLint cleanly
+
+---
+
+## Task 3c — Image Optimization + i18n Adoption (Agent: main)
+
+### Summary
+Implemented two medium-priority features: (1) Replaced all `<img>` tags with Next.js `<Image>` component across the marketplace for lazy loading, automatic sizing, and WebP optimization; (2) Added i18n `t()` calls to the most visible components (header, hero, auth-modal, footer) with full English/Urdu/Arabic translations.
+
+### Changes Made
+
+#### MED 6: Image Optimization
+
+##### 1. `next.config.ts` — Added remote image patterns
+- Configured `images.remotePatterns` to allow:
+  - Supabase storage: `veplxumszgotnkassotw.supabase.co`
+  - Any HTTPS URL: `**` wildcard pattern
+- Enables Next.js Image Optimization for all external product/shop images
+
+##### 2. `src/components/marketplace/shop/product-detail.tsx` — Product gallery
+- Imported `Image` from `next/image`
+- Replaced `motion.img` (main gallery image) with `motion.div` wrapping `<Image>` with `fill` prop, `sizes`, and `priority`
+- Replaced `<img>` thumbnails with `<Image>` using `fill` prop and `sizes="80px"`
+- Added `relative` class to thumbnail container for `fill` positioning
+
+##### 3. `src/components/marketplace/landing/popular-shops-section.tsx` — Shop cards on landing
+- Imported `Image` from `next/image`
+- Replaced `<img>` shop banner with `<Image fill>` + `sizes`
+- Replaced `<img>` shop logo with `<Image fill>` + `sizes="48px"`
+- Added `relative` class to logo container
+
+##### 4. `src/components/marketplace/landing/flash-deals-section.tsx` — Flash deals
+- Imported `Image` from `next/image`
+- Replaced `<img>` deal product image with `<Image fill>` + `sizes`
+- Replaced `<img>` shop logo (4x4) with `<Image width={16} height={16}>` (fixed size, no fill needed)
+
+##### 5. `src/components/marketplace/shop/shop-view.tsx` — Shop page
+- Imported `Image` from `next/image`
+- Replaced `<img>` gallery images with `<Image fill>` + `sizes`
+- Replaced `<img>` footer logo with `<Image width={32} height={32}>` (fixed size)
+- Added `relative` class to gallery container
+
+##### 6. `src/components/marketplace/orders/order-tracking-page.tsx` — Digital downloads
+- Imported `Image` from `next/image`
+- Replaced `<img>` product thumbnail with `<Image fill>` + `sizes="40px"`
+- Added `relative` class to container
+
+##### 7. `src/components/marketplace/admin/admin-reports.tsx` — Report list
+- Imported `Image` from `next/image`
+- Replaced `<img>` report product image with `<Image fill>` + `sizes="48px"`
+- Added `relative` class to container
+
+##### 8. `src/components/marketplace/seller/seller-shop-settings.tsx` — Shop preview
+- Imported `Image` from `next/image`
+- Replaced `<img>` logo preview with `<Image width={40} height={40}>` (fixed size)
+
+#### MED 7: i18n Adoption
+
+##### 1. `src/lib/i18n/locales/en.json` — Added new translation keys
+- `nav.profile`, `nav.theme`, `nav.browseProducts`, `nav.browseGigs`
+- `auth.signIn`, `auth.signUp`, `auth.signingIn`, `auth.creatingAccount`
+- `auth.continueWithGoogle`, `auth.signUpWithGoogle`, `auth.orContinueWithEmail`, `auth.orSignUpWithEmail`
+- `auth.emailRequired`, `auth.passwordRequired`, `auth.nameRequired`, `auth.allFieldsRequired`
+- `auth.passwordMinLength`, `auth.passwordsDoNotMatch`, `auth.termsRequired`
+- `auth.resetPassword`, `auth.resetPasswordDesc`, `auth.sendResetLink`, `auth.backToSignIn`
+- `auth.resetLinkSent`, `auth.checkInbox`, `auth.minCharsNeeded`, `auth.minCharsMet`
+- `auth.roleForGoogle`, `auth.enterEmail`, `auth.enterPassword`, `auth.enterName`, `auth.minPassword`, `auth.confirmYourPassword`
+- `landing.heroHeadline1`, `landing.heroHeadline2`, `landing.browseProducts`, `landing.browseGigs`
+- `footer.*` — entire new section with quickLinks, support, connect, about, etc.
+
+##### 2. `src/lib/i18n/locales/ur.json` — Urdu translations
+- Added all corresponding Urdu translations for new keys
+
+##### 3. `src/lib/i18n/locales/ar.json` — Arabic translations
+- Added all corresponding Arabic translations for new keys
+
+##### 4. `src/components/marketplace/layout/header.tsx` — Navigation i18n
+- Imported `useLanguage` hook
+- Replaced all hardcoded strings with `t()` calls:
+  - Nav links: Home, Browse, Gigs
+  - Search placeholder
+  - Dropdown menu items: Profile, Buyer/Seller Dashboard, Messages, Notifications, Orders, Settings, Payment Info, Shipping Settings, My Addresses, My Returns, Dispute Center, Trust Center, Activity Feed, Admin Panel
+  - Role switcher: Switch to Seller/Buyer Mode
+  - Auth buttons: Log in, Sign up, Log out
+  - Mobile menu Theme label
+- Both desktop dropdown and mobile sheet menu items fully translated
+
+##### 5. `src/components/marketplace/landing/hero-section.tsx` — Hero i18n
+- Imported `useLanguage` hook
+- Replaced headline "Create Your Shop," with `t('landing.heroHeadline1')`
+- Replaced "Sell Your Way" with `t('landing.heroHeadline2')`
+- Replaced "Start Selling" CTA with `t('landing.startSelling')`
+- Replaced "Browse Products" with `t('landing.browseProducts')`
+- Replaced "Browse Gigs" with `t('landing.browseGigs')`
+
+##### 6. `src/components/marketplace/auth/auth-modal.tsx` — Auth modal i18n
+- Imported `useLanguage` hook
+- Replaced "Sign In" tab with `t('auth.signIn')`
+- Replaced "Sign Up" tab with `t('auth.signUp')`
+
+##### 7. `src/components/marketplace/layout/footer.tsx` — Footer i18n
+- Imported `useLanguage` hook
+- Replaced "Quick Links" heading with `t('footer.quickLinks')`
+- Replaced "Support" heading with `t('footer.support')`
+- Replaced "Connect" heading with `t('footer.connect')`
+- Replaced description text with `t('footer.footerDescription')`
+- Replaced "All rights reserved." with `t('footer.allRightsReserved')`
+- Replaced Terms/Privacy/Cookie Settings with `t('footer.terms')`, `t('footer.privacy')`, `t('footer.cookieSettings')`
+
+### Lint Results
+- 0 errors, 3 pre-existing warnings (unrelated to this task)
+- All modified files pass ESLint cleanly

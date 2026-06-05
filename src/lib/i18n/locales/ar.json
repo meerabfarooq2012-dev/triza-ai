@@ -46,7 +46,11 @@
     "disputeCenter": "مركز النزاعات",
     "trustCenter": "مركز الثقة",
     "activityFeed": "تغذية النشاط",
-    "adminPanel": "لوحة الإدارة"
+    "adminPanel": "لوحة الإدارة",
+    "profile": "الملف الشخصي",
+    "theme": "المظهر",
+    "browseProducts": "تصفح المنتجات",
+    "browseGigs": "تصفح الخدمات"
   },
   "auth": {
     "welcomeBack": "مرحباً بعودتك",
@@ -64,7 +68,36 @@
     "registerButton": "إنشاء حساب",
     "buyerAccount": "حساب مشتري",
     "sellerAccount": "حساب بائع",
-    "bothAccount": "مشتري وبائع"
+    "bothAccount": "مشتري وبائع",
+    "signIn": "تسجيل الدخول",
+    "signUp": "إنشاء حساب",
+    "signingIn": "...جارٍ تسجيل الدخول",
+    "creatingAccount": "...جارٍ إنشاء الحساب",
+    "continueWithGoogle": "المتابعة مع جوجل",
+    "signUpWithGoogle": "التسجيل مع جوجل",
+    "orContinueWithEmail": "أو المتابعة بالبريد الإلكتروني",
+    "orSignUpWithEmail": "أو التسجيل بالبريد الإلكتروني",
+    "emailRequired": "البريد الإلكتروني مطلوب",
+    "passwordRequired": "كلمة المرور مطلوبة",
+    "nameRequired": "الاسم الكامل مطلوب",
+    "allFieldsRequired": "يرجى ملء جميع الحقول",
+    "passwordMinLength": "يجب أن تكون كلمة المرور 6 أحرف على الأقل",
+    "passwordsDoNotMatch": "كلمتا المرور غير متطابقتين",
+    "termsRequired": "يجب الموافقة على الشروط والأحكام",
+    "resetPassword": "إعادة تعيين كلمة المرور",
+    "resetPasswordDesc": "أدخل بريدك الإلكتروني وسنرسل لك رابط إعادة التعيين.",
+    "sendResetLink": "إرسال رابط إعادة التعيين",
+    "backToSignIn": "العودة لتسجيل الدخول",
+    "resetLinkSent": "إذا كان هناك حساب بهذا البريد الإلكتروني، فقد أرسلنا رابط إعادة التعيين.",
+    "checkInbox": "تحقق من صندوق الوارد ومجلد الرسائل غير المرغوب فيها.",
+    "minCharsNeeded": "{count} حرف/أحرف إضافية مطلوبة",
+    "minCharsMet": "6 أحرف على الأقل",
+    "roleForGoogle": "الدور للتسجيل بجوجل",
+    "enterEmail": "you@example.com",
+    "enterPassword": "أدخل كلمة المرور",
+    "enterName": "John Doe",
+    "minPassword": "6 أحرف على الأقل",
+    "confirmYourPassword": "أكد كلمة المرور"
   },
   "product": {
     "description": "الوصف",
@@ -106,7 +139,11 @@
     "commissionDesc": "نحافظ على رسومنا منخفضة لتستفيد أكثر من أرباحك",
     "testimonials": "ماذا يقول الناس",
     "startSelling": "ابدأ البيع اليوم",
-    "startSellingDesc": "انضم إلى آلاف البائعين على ماركيتو ووصل إلى العملاء حول العالم"
+    "startSellingDesc": "انضم إلى آلاف البائعين على ماركيتو ووصل إلى العملاء حول العالم",
+    "heroHeadline1": "أنشئ متجرك،",
+    "heroHeadline2": "بِع بطريقتك",
+    "browseProducts": "تصفح المنتجات",
+    "browseGigs": "تصفح الخدمات"
   },
   "dashboard": {
     "overview": "نظرة عامة",
@@ -125,6 +162,24 @@
     "pendingOrders": "الطلبات المعلقة",
     "totalProducts": "إجمالي المنتجات",
     "totalSales": "إجمالي المبيعات"
+  },
+  "footer": {
+    "quickLinks": "روابط سريعة",
+    "support": "الدعم",
+    "connect": "تواصل",
+    "about": "حول",
+    "howItWorks": "كيف يعمل",
+    "categories": "الفئات",
+    "becomeASeller": "كن بائعاً",
+    "helpCenter": "مركز المساعدة",
+    "contactUs": "اتصل بنا",
+    "termsOfService": "شروط الخدمة",
+    "privacyPolicy": "سياسة الخصوصية",
+    "allRightsReserved": "جميع الحقوق محفوظة.",
+    "terms": "الشروط",
+    "privacy": "الخصوصية",
+    "cookieSettings": "إعدادات ملفات تعريف الارتباط",
+    "footerDescription": "أنشئ متجرك الخاص، وبِع المنتجات الرقمية والمادية، أو قدّم خدمات العمل الحر."
   },
   "language": {
     "title": "اللغة",

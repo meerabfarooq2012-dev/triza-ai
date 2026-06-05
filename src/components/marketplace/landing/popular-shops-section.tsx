@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { ArrowRight, Star, ExternalLink } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
@@ -92,10 +93,12 @@ export function PopularShopsSection() {
                   {/* Banner */}
                   <div className="relative h-32 bg-gradient-to-br from-amber-500 to-amber-400 overflow-hidden">
                     {shop.banner ? (
-                      <img
+                      <Image
                         src={shop.banner}
                         alt={shop.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center">
@@ -108,9 +111,9 @@ export function PopularShopsSection() {
                   <CardContent className="p-4 -mt-6 relative">
                     <div className="flex items-end gap-3 mb-3">
                       {/* Logo */}
-                      <div className="h-12 w-12 rounded-xl border-2 border-background bg-muted flex items-center justify-center overflow-hidden shadow-lg shrink-0">
+                      <div className="relative h-12 w-12 rounded-xl border-2 border-background bg-muted flex items-center justify-center overflow-hidden shadow-lg shrink-0">
                         {shop.logo ? (
-                          <img src={shop.logo} alt={shop.name} className="w-full h-full object-cover" />
+                          <Image src={shop.logo} alt={shop.name} fill className="object-cover" sizes="48px" />
                         ) : (
                           <span className="text-lg font-bold text-amber-500">{shop.name.charAt(0)}</span>
                         )}

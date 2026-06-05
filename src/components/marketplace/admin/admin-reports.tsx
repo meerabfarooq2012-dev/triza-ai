@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import {
   ShieldAlert,
   Eye,
@@ -235,9 +236,9 @@ export function AdminReports() {
                     onClick={() => setExpandedId(isExpanded ? null : report.id)}
                   >
                     {/* Product image */}
-                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-slate-100 shrink-0">
+                    <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-slate-100 shrink-0">
                       {images[0] ? (
-                        <img src={images[0]} alt="" className="w-full h-full object-cover" />
+                        <Image src={images[0]} alt="" fill className="object-cover" sizes="48px" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-slate-400">
                           <ShieldAlert size={20} />

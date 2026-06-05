@@ -156,7 +156,7 @@ const TIMELINE_STEPS: { status: ReturnStatus; label: string }[] = [
 // ---------------------------------------------------------------------------
 
 export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) {
-  const { setCurrentView } = useMarketplaceStore()
+  const { setCurrentView, currentUser } = useMarketplaceStore()
   const [returnData, setReturnData] = useState<ReturnRequest | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -203,20 +203,25 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
       toast.error('Please enter a valid refund amount')
       return
     }
+    if (!currentUser?.id) {
+      toast.error('You must be logged in to perform this action')
+      return
+    }
     setActionLoading(true)
     try {
       const res = await fetch(`/api/returns/${returnId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          status: 'approved',
+          userId: currentUser.id,
+          action: 'approve',
           refundAmount: parseFloat(refundAmount),
           refundMethod,
         }),
       })
       const json = await res.json()
       if (json.success) {
-        toast.success('Return approved successfully!')
+        toast.success('Return approved successfully! The buyer has been notified.')
         setApproveDialogOpen(false)
         fetchReturn()
       } else {
@@ -235,19 +240,24 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
       toast.error('Please provide a reason for rejection')
       return
     }
+    if (!currentUser?.id) {
+      toast.error('You must be logged in to perform this action')
+      return
+    }
     setActionLoading(true)
     try {
       const res = await fetch(`/api/returns/${returnId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          status: 'rejected',
+          userId: currentUser.id,
+          action: 'reject',
           sellerResponse: sellerResponse.trim(),
         }),
       })
       const json = await res.json()
       if (json.success) {
-        toast.success('Return rejected')
+        toast.success('Return rejected. The buyer has been notified.')
         setRejectDialogOpen(false)
         fetchReturn()
       } else {
@@ -262,12 +272,16 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
 
   // Handle mark as processing
   const handleMarkProcessing = async () => {
+    if (!currentUser?.id) {
+      toast.error('You must be logged in to perform this action')
+      return
+    }
     setActionLoading(true)
     try {
       const res = await fetch(`/api/returns/${returnId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'processing' }),
+        body: JSON.stringify({ userId: currentUser.id, action: 'processing' }),
       })
       const json = await res.json()
       if (json.success) {
@@ -308,12 +322,16 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
 
   // Handle cancel return (buyer)
   const handleCancelReturn = async () => {
+    if (!currentUser?.id) {
+      toast.error('You must be logged in to perform this action')
+      return
+    }
     setActionLoading(true)
     try {
       const res = await fetch(`/api/returns/${returnId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'cancelled' }),
+        body: JSON.stringify({ userId: currentUser.id, action: 'cancel' }),
       })
       const json = await res.json()
       if (json.success) {
@@ -653,21 +671,23 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
             </Card>
           </motion.div>
 
-          {/* Seller Response (if rejected) */}
+          {/* Seller Response */}
           {returnData.sellerResponse && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <Card className="border-0 shadow-sm border-l-4 border-l-red-400">
+              <Card className={`border-0 shadow-sm border-l-4 ${returnData.status === 'rejected' ? 'border-l-red-400' : 'border-l-amber-400'}`}>
                 <CardContent className="p-4 sm:p-6">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-50">
-                      <MessageSquare className="h-4 w-4 text-red-600" />
+                    <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${returnData.status === 'rejected' ? 'bg-red-50' : 'bg-amber-50'}`}>
+                      <MessageSquare className={`h-4 w-4 ${returnData.status === 'rejected' ? 'text-red-600' : 'text-amber-600'}`} />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-red-700">Seller&apos;s Response</p>
+                      <p className={`text-sm font-semibold ${returnData.status === 'rejected' ? 'text-red-700' : 'text-amber-700'}`}>
+                        Seller&apos;s Response
+                      </p>
                       <p className="text-sm text-muted-foreground mt-1">{returnData.sellerResponse}</p>
                     </div>
                   </div>

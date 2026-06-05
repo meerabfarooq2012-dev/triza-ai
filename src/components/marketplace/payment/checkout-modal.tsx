@@ -38,7 +38,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { toast } from 'sonner'
 import { PLATFORM_FEE_PERCENT } from '@/lib/constants'
-import type { PaymentMethod, PaymentInfo, PaymentInfoAccountDetails, Coupon, ApplyCouponResult } from '@/types'
+import type { PaymentMethod, PaymentInfo, PaymentInfoAccountDetails, Coupon, ApplyCouponResult, ShippingRate } from '@/types'
 
 interface CheckoutModalProps {
   open: boolean
@@ -126,6 +126,10 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   })
   const [shippingMethod, setShippingMethod] = useState<string>('standard')
   const [shippingCost, setShippingCost] = useState<number>(0)
+  const [estimatedDelivery, setEstimatedDelivery] = useState<string>('')
+  const [shippingRates, setShippingRates] = useState<(ShippingRate & { estimatedDate: string })[]>([])
+  const [shippingLoading, setShippingLoading] = useState(false)
+  const [selectedRateId, setSelectedRateId] = useState<string | null>(null)
   const [taxInfo, setTaxInfo] = useState<{ taxRate: number; taxAmount: number; taxLabel: string; taxInclusive: boolean }>({ taxRate: 0, taxAmount: 0, taxLabel: 'Tax', taxInclusive: false })
   const [orderId, setOrderId] = useState<string>('')
   const [paymentId, setPaymentId] = useState<string>('')
@@ -269,6 +273,64 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
     fetchTax()
   }, [open, cartTotal, shippingInfo.country, shippingCost, hasPhysicalItems, cart])
 
+  // Fetch shipping rates when country changes and cart has physical items
+  useEffect(() => {
+    if (!open || !hasPhysicalItems || !shippingInfo.country || cart.length === 0) return
+    const fetchShippingRates = async () => {
+      setShippingLoading(true)
+      try {
+        // For multi-shop carts, fetch rates per shop and combine
+        const allRates: (ShippingRate & { estimatedDate: string })[] = []
+        for (const group of shopGroups) {
+          const res = await fetch('/api/shipping/calculate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              shopId: group.shopId,
+              country: shippingInfo.country,
+              orderTotal: group.subtotal,
+            }),
+          })
+          const data = await res.json()
+          if (data.success && Array.isArray(data.data)) {
+            for (const item of data.data) {
+              const rate = item.rate
+              const price = item.price
+              const estDelivery = item.estimatedDelivery
+              const minDate = new Date(estDelivery.min)
+              const maxDate = new Date(estDelivery.max)
+              const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+              const estimatedDate = rate.minDays === rate.maxDays ? fmt(minDate) : `${fmt(minDate)} — ${fmt(maxDate)}`
+              allRates.push({
+                ...rate,
+                price,
+                estimatedDate,
+              })
+            }
+          }
+        }
+        // Apply free shipping coupon if applicable
+        const finalRates = appliedCoupon?.freeShipping
+          ? allRates.map(r => ({ ...r, price: 0 }))
+          : allRates
+        setShippingRates(finalRates)
+        // Auto-select the cheapest option
+        if (finalRates.length > 0) {
+          const cheapest = finalRates[0]
+          setSelectedRateId(cheapest.id)
+          setShippingCost(cheapest.price)
+          setShippingMethod(cheapest.method)
+          setEstimatedDelivery(cheapest.estimatedDate)
+        }
+      } catch {
+        // Non-critical — default to 0 shipping
+      } finally {
+        setShippingLoading(false)
+      }
+    }
+    fetchShippingRates()
+  }, [open, hasPhysicalItems, shippingInfo.country, cart, shopGroups, appliedCoupon?.freeShipping])
+
   // Apply coupon handler
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return
@@ -338,6 +400,10 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
     })
     setShippingMethod('standard')
     setShippingCost(0)
+    setEstimatedDelivery('')
+    setShippingRates([])
+    setShippingLoading(false)
+    setSelectedRateId(null)
     setOrderId('')
     setPaymentId('')
     setCreatedOrderIds([])
@@ -449,6 +515,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
           shippingPhone: shippingInfo.phone || undefined,
           shippingMethod: hasPhysicalItems ? shippingMethod : undefined,
           shippingCost: hasPhysicalItems ? shippingCost : undefined,
+          estimatedDelivery: hasPhysicalItems && estimatedDelivery ? estimatedDelivery : undefined,
           couponCode: appliedCoupon?.coupon.code || undefined,
           discountAmount: appliedCoupon?.discountAmount || undefined,
           taxRate: taxInfo.taxRate || undefined,
@@ -862,10 +929,28 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                     <span>${taxInfo.taxAmount.toFixed(2)}</span>
                   </div>
                 )}
+                {hasPhysicalItems && shippingCost > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground flex items-center gap-1">
+                      <Truck className="h-3 w-3" />
+                      Shipping
+                    </span>
+                    <span>${shippingCost.toFixed(2)}</span>
+                  </div>
+                )}
+                {hasPhysicalItems && shippingCost === 0 && shippingRates.length > 0 && (
+                  <div className="flex justify-between text-sm text-emerald-600">
+                    <span className="flex items-center gap-1">
+                      <Truck className="h-3 w-3" />
+                      Shipping
+                    </span>
+                    <span>Free</span>
+                  </div>
+                )}
                 <Separator />
                 <div className="flex justify-between font-bold text-lg">
                   <span>Total</span>
-                  <span>${(effectiveCartTotal + (taxInfo.taxInclusive ? 0 : taxInfo.taxAmount)).toFixed(2)}</span>
+                  <span>${(effectiveCartTotal + (taxInfo.taxInclusive ? 0 : taxInfo.taxAmount) + (hasPhysicalItems ? shippingCost : 0)).toFixed(2)}</span>
                 </div>
               </div>
 
@@ -1388,6 +1473,49 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                     />
                   </div>
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ship-state">State / Province</Label>
+                    <Input
+                      id="ship-state"
+                      value={shippingInfo.state}
+                      onChange={(e) =>
+                        setShippingInfo({ ...shippingInfo, state: e.target.value })
+                      }
+                      placeholder="State"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ship-country">Country *</Label>
+                    <Select
+                      value={shippingInfo.country}
+                      onValueChange={(val) =>
+                        setShippingInfo({ ...shippingInfo, country: val })
+                      }
+                    >
+                      <SelectTrigger id="ship-country">
+                        <SelectValue placeholder="Select country" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="PK">Pakistan</SelectItem>
+                        <SelectItem value="US">United States</SelectItem>
+                        <SelectItem value="GB">United Kingdom</SelectItem>
+                        <SelectItem value="CA">Canada</SelectItem>
+                        <SelectItem value="AU">Australia</SelectItem>
+                        <SelectItem value="AE">UAE</SelectItem>
+                        <SelectItem value="SA">Saudi Arabia</SelectItem>
+                        <SelectItem value="IN">India</SelectItem>
+                        <SelectItem value="DE">Germany</SelectItem>
+                        <SelectItem value="FR">France</SelectItem>
+                        <SelectItem value="CN">China</SelectItem>
+                        <SelectItem value="JP">Japan</SelectItem>
+                        <SelectItem value="TR">Turkey</SelectItem>
+                        <SelectItem value="MY">Malaysia</SelectItem>
+                        <SelectItem value="BD">Bangladesh</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="ship-phone">Phone Number *</Label>
                   <Input
@@ -1401,6 +1529,82 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 </div>
               </div>
 
+              <Separator />
+
+              {/* Shipping Method Selection */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium flex items-center gap-1.5">
+                  <Truck className="h-3.5 w-3.5" />
+                  Shipping Method
+                </Label>
+                {shippingLoading ? (
+                  <div className="flex items-center gap-2 p-4 rounded-lg bg-muted/30">
+                    <Loader2 className="h-4 w-4 animate-spin text-emerald-500" />
+                    <span className="text-sm text-muted-foreground">Loading shipping options...</span>
+                  </div>
+                ) : shippingRates.length === 0 ? (
+                  <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+                    <p className="text-xs text-emerald-700 flex items-center gap-1">
+                      <Truck className="h-3.5 w-3.5" />
+                      Free shipping — The seller hasn&apos;t configured specific shipping zones for your destination. No additional shipping cost will be applied.
+                    </p>
+                  </div>
+                ) : (
+                  <RadioGroup
+                    value={selectedRateId ?? undefined}
+                    onValueChange={(rateId) => {
+                      setSelectedRateId(rateId)
+                      const selected = shippingRates.find(r => r.id === rateId)
+                      if (selected) {
+                        setShippingCost(selected.price)
+                        setShippingMethod(selected.method)
+                        setEstimatedDelivery(selected.estimatedDate)
+                      }
+                    }}
+                    className="space-y-2"
+                  >
+                    {shippingRates.map((rate) => (
+                      <label
+                        key={rate.id}
+                        className={`flex items-center gap-3 rounded-lg border-2 p-3 cursor-pointer transition-all ${
+                          selectedRateId === rate.id
+                            ? 'border-emerald-400 bg-emerald-50/50'
+                            : 'border-transparent bg-card shadow-sm hover:border-muted-foreground/20'
+                        }`}
+                      >
+                        <RadioGroupItem value={rate.id} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium">{rate.name}</span>
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize">
+                              {rate.method}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Est. delivery: {rate.estimatedDate}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          {rate.price === 0 ? (
+                            <Badge className="bg-emerald-600 text-white text-[10px] px-1.5 py-0.5">FREE</Badge>
+                          ) : (
+                            <span className="text-sm font-bold">${rate.price.toFixed(2)}</span>
+                          )}
+                        </div>
+                      </label>
+                    ))}
+                  </RadioGroup>
+                )}
+                {estimatedDelivery && selectedRateId && (
+                  <div className="flex items-center gap-2 rounded-lg bg-emerald-50 border border-emerald-200 p-2.5">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                    <p className="text-xs text-emerald-700">
+                      Estimated delivery: <span className="font-semibold">{estimatedDelivery}</span>
+                    </p>
+                  </div>
+                )}
+              </div>
+
               <div className="flex gap-3">
                 <Button
                   variant="outline"
@@ -1411,7 +1615,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 </Button>
                 <Button className="flex-1" onClick={handlePayNow}>
                   <CreditCard className="h-4 w-4 mr-2" />
-                  Pay ${(cartTotal ?? 0).toFixed(2)}
+                  Pay ${(effectiveCartTotal + (taxInfo.taxInclusive ? 0 : taxInfo.taxAmount) + (hasPhysicalItems ? shippingCost : 0)).toFixed(2)}
                 </Button>
               </div>
             </motion.div>

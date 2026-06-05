@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft,
@@ -231,9 +232,9 @@ function DigitalDownloadsSection({ orderId, userId }: { orderId: string; userId:
                 key={dl.id}
                 className="flex items-center gap-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800"
               >
-                <div className="flex-shrink-0 h-10 w-10 rounded-lg overflow-hidden bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
+                <div className="relative flex-shrink-0 h-10 w-10 rounded-lg overflow-hidden bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
                   {productImg ? (
-                    <img src={productImg} alt={displayName} className="h-full w-full object-cover" />
+                    <Image src={productImg} alt={displayName} fill className="object-cover" sizes="40px" />
                   ) : (
                     <FileText className="h-5 w-5 text-amber-600" />
                   )}

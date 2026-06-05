@@ -11,11 +11,13 @@ import { CommissionSection } from './commission-section'
 import { BrowseByTypeSection } from './browse-by-type-section'
 import { FlashDealsSection } from './flash-deals-section'
 import { RecentlyViewedSection } from '@/components/marketplace/shared/recently-viewed-section'
+import { StoryBar } from '@/components/marketplace/social/story-bar'
 
 export function LandingPage() {
   return (
     <div className="min-h-screen">
       <HeroSection />
+      <StoryBar />
       <RecentlyViewedSection hideWhenEmpty />
       <BrowseByTypeSection />
       <FlashDealsSection />

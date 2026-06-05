@@ -46,7 +46,11 @@
     "disputeCenter": "Dispute Center",
     "trustCenter": "Trust Center",
     "activityFeed": "Activity Feed",
-    "adminPanel": "Admin Panel"
+    "adminPanel": "Admin Panel",
+    "profile": "Profile",
+    "theme": "Theme",
+    "browseProducts": "Browse Products",
+    "browseGigs": "Browse Gigs"
   },
   "auth": {
     "welcomeBack": "Welcome Back",
@@ -64,7 +68,36 @@
     "registerButton": "Create Account",
     "buyerAccount": "Buyer Account",
     "sellerAccount": "Seller Account",
-    "bothAccount": "Buyer & Seller"
+    "bothAccount": "Buyer & Seller",
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "signingIn": "Signing in...",
+    "creatingAccount": "Creating account...",
+    "continueWithGoogle": "Continue with Google",
+    "signUpWithGoogle": "Sign Up with Google",
+    "orContinueWithEmail": "or continue with email",
+    "orSignUpWithEmail": "or sign up with email",
+    "emailRequired": "Email is required",
+    "passwordRequired": "Password is required",
+    "nameRequired": "Full name is required",
+    "allFieldsRequired": "Please fill in all fields",
+    "passwordMinLength": "Password must be at least 6 characters",
+    "passwordsDoNotMatch": "Passwords do not match",
+    "termsRequired": "You must agree to the terms and conditions",
+    "resetPassword": "Reset your password",
+    "resetPasswordDesc": "Enter your email and we'll send you a reset link.",
+    "sendResetLink": "Send Reset Link",
+    "backToSignIn": "Back to Sign In",
+    "resetLinkSent": "If an account with that email exists, we've sent a reset link.",
+    "checkInbox": "Check your inbox and spam folder.",
+    "minCharsNeeded": "{count} more character(s) needed",
+    "minCharsMet": "Minimum 6 characters",
+    "roleForGoogle": "Role for Google sign-up",
+    "enterEmail": "you@example.com",
+    "enterPassword": "Enter your password",
+    "enterName": "John Doe",
+    "minPassword": "Min 6 characters",
+    "confirmYourPassword": "Confirm your password"
   },
   "product": {
     "description": "Description",
@@ -106,7 +139,11 @@
     "commissionDesc": "We keep our fees low so you keep more of your earnings",
     "testimonials": "What People Say",
     "startSelling": "Start Selling Today",
-    "startSellingDesc": "Join thousands of sellers on Marketo and reach customers worldwide"
+    "startSellingDesc": "Join thousands of sellers on Marketo and reach customers worldwide",
+    "heroHeadline1": "Create Your Shop,",
+    "heroHeadline2": "Sell Your Way",
+    "browseProducts": "Browse Products",
+    "browseGigs": "Browse Gigs"
   },
   "dashboard": {
     "overview": "Overview",
@@ -125,6 +162,24 @@
     "pendingOrders": "Pending Orders",
     "totalProducts": "Total Products",
     "totalSales": "Total Sales"
+  },
+  "footer": {
+    "quickLinks": "Quick Links",
+    "support": "Support",
+    "connect": "Connect",
+    "about": "About",
+    "howItWorks": "How it Works",
+    "categories": "Categories",
+    "becomeASeller": "Become a Seller",
+    "helpCenter": "Help Center",
+    "contactUs": "Contact Us",
+    "termsOfService": "Terms of Service",
+    "privacyPolicy": "Privacy Policy",
+    "allRightsReserved": "All rights reserved.",
+    "terms": "Terms",
+    "privacy": "Privacy",
+    "cookieSettings": "Cookie Settings",
+    "footerDescription": "Create your own customizable shop, sell digital & physical products, or offer freelance services."
   },
   "language": {
     "title": "Language",

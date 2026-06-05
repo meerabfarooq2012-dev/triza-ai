@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
 import {
   Save,
@@ -723,7 +724,7 @@ export function SellerShopSettings() {
               style={{ background: primaryColor }}
             >
               {logo ? (
-                <img src={logo} alt="Logo" className="h-10 w-10 rounded-lg object-cover border border-white/20" />
+                <Image src={logo} alt="Logo" width={40} height={40} className="rounded-lg object-cover border border-white/20" />
               ) : (
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20">
                   <Store className="h-5 w-5 text-white" />

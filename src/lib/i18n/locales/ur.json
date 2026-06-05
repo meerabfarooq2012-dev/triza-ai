@@ -46,7 +46,11 @@
     "disputeCenter": "تنازع مرکز",
     "trustCenter": "اعتماد مرکز",
     "activityFeed": "سرگرمی فیڈ",
-    "adminPanel": "ایڈمن پینل"
+    "adminPanel": "ایڈمن پینل",
+    "profile": "پروفائل",
+    "theme": "تھیم",
+    "browseProducts": "مصنوعات دیکھیں",
+    "browseGigs": "گِگز دیکھیں"
   },
   "auth": {
     "welcomeBack": "خوش آمدید",
@@ -64,7 +68,36 @@
     "registerButton": "اکاؤنٹ بنائیں",
     "buyerAccount": "خریدار اکاؤنٹ",
     "sellerAccount": "فروخت کنندہ اکاؤنٹ",
-    "bothAccount": "خریدار و فروخت کنندہ"
+    "bothAccount": "خریدار و فروخت کنندہ",
+    "signIn": "سائن ان",
+    "signUp": "سائن اپ",
+    "signingIn": "...سائن ان ہو رہا ہے",
+    "creatingAccount": "...اکاؤنٹ بنایا جا رہا ہے",
+    "continueWithGoogle": "گوگل سے جاری رکھیں",
+    "signUpWithGoogle": "گوگل سے سائن اپ",
+    "orContinueWithEmail": "یا ای میل سے جاری رکھیں",
+    "orSignUpWithEmail": "یا ای میل سے سائن اپ",
+    "emailRequired": "ای میل ضروری ہے",
+    "passwordRequired": "پاس ورڈ ضروری ہے",
+    "nameRequired": "پورا نام ضروری ہے",
+    "allFieldsRequired": "براہ کرم تمام فیلڈز پُر کریں",
+    "passwordMinLength": "پاس ورڈ کم از کم 6 حروف کا ہونا چاہیے",
+    "passwordsDoNotMatch": "پاس ورڈ مماثل نہیں",
+    "termsRequired": "آپ کو شرائط و ضوابط سے اتفاق کرنا چاہیے",
+    "resetPassword": "اپنا پاس ورڈ ری سیٹ کریں",
+    "resetPasswordDesc": "اپنا ای میل درج کریں اور ہم آپ کو ری سیٹ لنک بھیجیں گے۔",
+    "sendResetLink": "ری سیٹ لنک بھیجیں",
+    "backToSignIn": "سائن ان پر واپس جائیں",
+    "resetLinkSent": "اگر اس ای میل کا اکاؤنٹ موجود ہے تو ہم نے ری سیٹ لنک بھیج دیا ہے۔",
+    "checkInbox": "اپنا ان باکس اور اسپام فولڈر چیک کریں۔",
+    "minCharsNeeded": "{count} مزید حرف درکار ہیں",
+    "minCharsMet": "کم از کم 6 حروف",
+    "roleForGoogle": "گوگل سائن اپ کے لیے کردار",
+    "enterEmail": "you@example.com",
+    "enterPassword": "اپنا پاس ورڈ درج کریں",
+    "enterName": "John Doe",
+    "minPassword": "کم از کم 6 حروف",
+    "confirmYourPassword": "اپنا پاس ورڈ دوبارہ لکھیں"
   },
   "product": {
     "description": "تفصیل",
@@ -106,7 +139,11 @@
     "commissionDesc": "ہم اپنی فیس کم رکھتے ہیں تاکہ آپ اپنی کمائی زیادہ رکھ سکیں",
     "testimonials": "لوگ کیا کہتے ہیں",
     "startSelling": "آج فروخت شروع کریں",
-    "startSellingDesc": "مارکیٹو پر ہزاروں فروخت کنندگان میں شامل ہوں اور دنیا بھر کے گاہکوں تک پہنچیں"
+    "startSellingDesc": "مارکیٹو پر ہزاروں فروخت کنندگان میں شامل ہوں اور دنیا بھر کے گاہکوں تک پہنچیں",
+    "heroHeadline1": "اپنی دکان بنائیں،",
+    "heroHeadline2": "اپنا طریقہ بیچیں",
+    "browseProducts": "مصنوعات دیکھیں",
+    "browseGigs": "گِگز دیکھیں"
   },
   "dashboard": {
     "overview": "جائزہ",
@@ -125,6 +162,24 @@
     "pendingOrders": "زیر التوا آرڈرز",
     "totalProducts": "کل مصنوعات",
     "totalSales": "کل فروخت"
+  },
+  "footer": {
+    "quickLinks": "فوری لنکس",
+    "support": "مدد",
+    "connect": "رابطہ",
+    "about": "ہمارے بارے میں",
+    "howItWorks": "یہ کیسے کام کرتا ہے",
+    "categories": "زمرے",
+    "becomeASeller": "فروخت کنندہ بنیں",
+    "helpCenter": "مدد مرکز",
+    "contactUs": "ہم سے رابطہ کریں",
+    "termsOfService": "خدمت کی شرائط",
+    "privacyPolicy": "رازداری کی پالیسی",
+    "allRightsReserved": "جملہ حقوق محفوظ ہیں۔",
+    "terms": "شرائط",
+    "privacy": "رازداری",
+    "cookieSettings": "کوکی ترتیبات",
+    "footerDescription": "اپنی مرضی کی دکان بنائیں، ڈیجیٹل اور مادی مصنوعات بیچیں، یا فری لانس خدمات پیش کریں۔"
   },
   "language": {
     "title": "زبان",

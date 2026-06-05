@@ -4,6 +4,7 @@ import { Github, Twitter, Linkedin, Mail } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { PLATFORM_NAME, PLATFORM_TAGLINE } from '@/lib/constants'
+import { useLanguage } from '@/hooks/use-language'
 import type { ViewMode } from '@/types'
 
 const quickLinks = [
@@ -29,6 +30,7 @@ const socialLinks = [
 
 export function Footer() {
   const { setCurrentView, isAuthenticated } = useMarketplaceStore()
+  const { t } = useLanguage()
 
   const handleNavClick = (view: ViewMode, params?: Record<string, string>) => {
     if (view === 'auth' && !isAuthenticated) {
@@ -53,13 +55,13 @@ export function Footer() {
               </span>
             </button>
             <p className="text-sm text-muted-foreground max-w-xs">
-              {PLATFORM_TAGLINE}. Create your own customizable shop, sell digital &amp; physical products, or offer freelance services.
+              {PLATFORM_TAGLINE}. {t('footer.footerDescription')}
             </p>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h4 className="text-sm font-semibold text-foreground mb-4">Quick Links</h4>
+            <h4 className="text-sm font-semibold text-foreground mb-4">{t('footer.quickLinks')}</h4>
             <ul className="space-y-2.5">
               {quickLinks.map((link) => (
                 <li key={link.label}>
@@ -76,7 +78,7 @@ export function Footer() {
 
           {/* Support */}
           <div>
-            <h4 className="text-sm font-semibold text-foreground mb-4">Support</h4>
+            <h4 className="text-sm font-semibold text-foreground mb-4">{t('footer.support')}</h4>
             <ul className="space-y-2.5">
               {supportLinks.map((link) => (
                 <li key={link.label}>
@@ -102,7 +104,7 @@ export function Footer() {
 
           {/* Connect */}
           <div>
-            <h4 className="text-sm font-semibold text-foreground mb-4">Connect</h4>
+            <h4 className="text-sm font-semibold text-foreground mb-4">{t('footer.connect')}</h4>
             <div className="flex items-center gap-3">
               {socialLinks.map((link) => (
                 <a
@@ -121,15 +123,15 @@ export function Footer() {
         <Separator className="my-8 gold-divider" />
 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} {PLATFORM_NAME}. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} {PLATFORM_NAME}. {t('footer.allRightsReserved')}</p>
           <div className="flex items-center gap-4">
-            <button onClick={() => setCurrentView('terms')} className="hover:text-foreground transition-colors">Terms</button>
-            <button onClick={() => setCurrentView('privacy')} className="hover:text-foreground transition-colors">Privacy</button>
+            <button onClick={() => setCurrentView('terms')} className="hover:text-foreground transition-colors">{t('footer.terms')}</button>
+            <button onClick={() => setCurrentView('privacy')} className="hover:text-foreground transition-colors">{t('footer.privacy')}</button>
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('marketo:open-cookie-preferences'))}
               className="hover:text-foreground transition-colors"
             >
-              Cookie Settings
+              {t('footer.cookieSettings')}
             </button>
           </div>
         </div>

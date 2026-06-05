@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
 import {
   ShoppingBag,
@@ -41,7 +42,7 @@ import { ShareShopUrl } from '@/components/marketplace/shared/share-shop-url'
 import { RatingStars } from '@/components/marketplace/shared/rating-stars'
 import { ReviewSection } from '@/components/marketplace/shared/review-section'
 import { SellerTierCard } from '@/components/marketplace/verification/seller-tier-card'
-import type { Shop, Product, SocialLink, CustomSection } from '@/types'
+import type { Shop, Product, SocialLink, CustomSection, DisplayStyle } from '@/types'
 
 // Helper to parse JSON strings safely
 function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
@@ -85,12 +86,23 @@ function SocialIcon({ platform }: { platform: string }) {
 function ProductGridCard({
   product,
   shopColors,
+  displayStyle,
   onProductClick,
 }: {
   product: Product
   shopColors: { primary: string; secondary: string; accent: string }
+  displayStyle: DisplayStyle
   onProductClick: (id: string) => void
 }) {
+  const isModern = displayStyle === 'modern'
+  const isClassic = displayStyle === 'classic'
+  const isMinimal = displayStyle === 'minimal'
+  const cardStyle = isModern
+    ? 'rounded-xl shadow-md border-0'
+    : isClassic
+      ? 'rounded border shadow-sm'
+      : 'rounded-lg border-0 shadow-none'
+  const cardPadding = isMinimal ? 'p-3' : 'p-4'
   const images = safeJsonParse<string[]>(product.images, [])
   const tags = safeJsonParse<string[]>(product.tags, [])
   const firstImage = images[0]
@@ -101,8 +113,9 @@ function ProductGridCard({
       transition={{ duration: 0.2 }}
     >
       <Card
-        className="overflow-hidden cursor-pointer group border-0 shadow-sm hover:shadow-lg transition-all"
+        className={`overflow-hidden cursor-pointer group transition-all ${cardStyle}`}
         onClick={() => onProductClick(product.id)}
+        style={isModern ? { background: `linear-gradient(135deg, white, ${shopColors.primary}08)` } : undefined}
       >
         <div className="aspect-square relative overflow-hidden bg-muted">
           {firstImage ? (
@@ -135,7 +148,7 @@ function ProductGridCard({
             {PRODUCT_TYPE_LABELS[product.type]}
           </Badge>
         </div>
-        <CardContent className="p-4">
+        <CardContent className={cardPadding}>
           <h3 className="font-semibold text-sm line-clamp-2 mb-1 group-hover:text-primary transition-colors">
             {product.name}
           </h3>
@@ -180,20 +193,31 @@ function ProductGridCard({
 function ProductListCard({
   product,
   shopColors,
+  displayStyle,
   onProductClick,
 }: {
   product: Product
   shopColors: { primary: string; secondary: string; accent: string }
+  displayStyle: DisplayStyle
   onProductClick: (id: string) => void
 }) {
+  const isModern = displayStyle === 'modern'
+  const isClassic = displayStyle === 'classic'
+  const isMinimal = displayStyle === 'minimal'
+  const cardStyle = isModern
+    ? 'rounded-xl shadow-md border-0'
+    : isClassic
+      ? 'rounded border shadow-sm'
+      : 'rounded-lg border-0 shadow-none'
   const images = safeJsonParse<string[]>(product.images, [])
   const firstImage = images[0]
 
   return (
     <motion.div whileHover={{ x: 4 }} transition={{ duration: 0.2 }}>
       <Card
-        className="overflow-hidden cursor-pointer group border-0 shadow-sm hover:shadow-md transition-all"
+        className={`overflow-hidden cursor-pointer group transition-all ${cardStyle}`}
         onClick={() => onProductClick(product.id)}
+        style={isModern ? { background: `linear-gradient(90deg, white, ${shopColors.primary}08)` } : undefined}
       >
         <div className="flex">
           <div className="w-32 h-32 sm:w-48 sm:h-48 flex-shrink-0 relative overflow-hidden bg-muted">
@@ -220,7 +244,7 @@ function ProductListCard({
               </Badge>
             )}
           </div>
-          <CardContent className="flex-1 p-4 sm:p-6">
+          <CardContent className="flex-1 p-4 sm:p-6" style={isMinimal ? { padding: '12px' } : undefined}>
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
                 <h3 className="font-semibold text-base sm:text-lg group-hover:text-primary transition-colors">
@@ -266,20 +290,31 @@ function ProductListCard({
 function FeaturedProductCard({
   product,
   shopColors,
+  displayStyle,
   onProductClick,
 }: {
   product: Product
   shopColors: { primary: string; secondary: string; accent: string }
+  displayStyle: DisplayStyle
   onProductClick: (id: string) => void
 }) {
+  const isModern = displayStyle === 'modern'
+  const isClassic = displayStyle === 'classic'
+  const isMinimal = displayStyle === 'minimal'
+  const cardStyle = isModern
+    ? 'rounded-xl shadow-md border-0'
+    : isClassic
+      ? 'rounded border shadow-sm'
+      : 'rounded-lg border-0 shadow-none'
   const images = safeJsonParse<string[]>(product.images, [])
   const firstImage = images[0]
 
   return (
     <motion.div whileHover={{ scale: 1.01 }} transition={{ duration: 0.2 }}>
       <Card
-        className="overflow-hidden cursor-pointer group border-0 shadow-lg"
+        className={`overflow-hidden cursor-pointer group ${isModern ? 'shadow-lg' : cardStyle}`}
         onClick={() => onProductClick(product.id)}
+        style={isModern ? { background: `linear-gradient(135deg, white, ${shopColors.primary}05)` } : undefined}
       >
         <div className="grid md:grid-cols-2 gap-0">
           <div className="aspect-video md:aspect-auto relative overflow-hidden bg-muted">
@@ -349,38 +384,56 @@ function FeaturedProductCard({
 function CustomSectionRenderer({
   section,
   shopColors,
+  displayStyle,
 }: {
   section: CustomSection
   shopColors: { primary: string; secondary: string; accent: string }
+  displayStyle: DisplayStyle
 }) {
+  const isModern = displayStyle === 'modern'
+  const isClassic = displayStyle === 'classic'
+  const isMinimal = displayStyle === 'minimal'
+
   return (
-    <section className="mb-8">
+    <section className={isMinimal ? 'mb-6' : 'mb-8'}>
       <h3
-        className="text-xl font-bold mb-4"
+        className={`font-bold mb-4 ${isMinimal ? 'text-lg' : 'text-xl'}`}
         style={{ color: shopColors.primary }}
       >
         {section.title}
       </h3>
       {section.type === 'text' && (
-        <div className="prose prose-sm max-w-none text-muted-foreground">
-          {section.content}
+        <div
+          className={`prose max-w-none text-muted-foreground ${isMinimal ? 'prose-sm' : 'prose-sm'}`}
+          style={isClassic ? { fontFamily: 'Georgia, serif' } : undefined}
+        >
+          {section.content.split('\n').map((line, i) => (
+            <p key={i} className={isMinimal ? 'text-sm leading-relaxed' : 'leading-relaxed'}>{line}</p>
+          ))}
         </div>
       )}
       {section.type === 'banner' && (
         <div
-          className="w-full h-48 rounded-xl flex items-center justify-center text-white font-bold text-xl"
+          className={`w-full h-48 flex items-center justify-center text-white font-bold text-xl ${isModern ? 'rounded-xl shadow-lg' : isClassic ? 'rounded border-2 border-current' : 'rounded-lg'}`}
           style={{
             background: `linear-gradient(135deg, ${shopColors.primary}, ${shopColors.secondary})`,
+            borderColor: isClassic ? shopColors.primary : undefined,
           }}
         >
-          {section.content}
+          <span style={isModern ? { textShadow: '0 2px 8px rgba(0,0,0,0.3)' } : undefined}>
+            {section.content}
+          </span>
         </div>
       )}
       {section.type === 'faq' && (
         <div className="space-y-3">
           {section.content.split('\n').filter(Boolean).map((line, i) => (
-            <div key={i} className="p-3 rounded-lg bg-muted/50">
-              <p className="text-sm">{line}</p>
+            <div
+              key={i}
+              className={`p-3 ${isModern ? 'rounded-xl bg-muted/30 border-l-4' : isClassic ? 'rounded border' : 'rounded-lg bg-muted/50'}`}
+              style={isModern ? { borderLeftColor: shopColors.accent } : undefined}
+            >
+              <p className={`text-sm ${isClassic ? 'font-medium' : ''}`}>{line}</p>
             </div>
           ))}
         </div>
@@ -388,8 +441,15 @@ function CustomSectionRenderer({
       {section.type === 'testimonials' && (
         <div className="grid sm:grid-cols-2 gap-4">
           {section.content.split('\n').filter(Boolean).map((line, i) => (
-            <Card key={i} className="p-4">
-              <p className="text-sm italic text-muted-foreground">&ldquo;{line}&rdquo;</p>
+            <Card
+              key={i}
+              className={`${isModern ? 'p-4 rounded-xl shadow-md border-0' : isClassic ? 'p-4 rounded border' : 'p-4 rounded-lg shadow-none'}`}
+              style={isModern ? { background: `linear-gradient(135deg, white, ${shopColors.primary}08)` } : undefined}
+            >
+              <p className={`text-sm italic text-muted-foreground ${isClassic ? 'font-serif' : ''}`}>&ldquo;{line}&rdquo;</p>
+              {isModern && (
+                <div className="mt-2 h-1 w-8 rounded-full" style={{ backgroundColor: shopColors.accent }} />
+              )}
             </Card>
           ))}
         </div>
@@ -397,9 +457,9 @@ function CustomSectionRenderer({
       {section.type === 'gallery' && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {section.content.split('\n').filter(Boolean).map((line, i) => (
-            <div key={i} className="aspect-square rounded-lg bg-muted flex items-center justify-center overflow-hidden">
+            <div key={i} className={`relative aspect-square ${isModern ? 'rounded-xl' : isClassic ? 'rounded border' : 'rounded-lg'} bg-muted flex items-center justify-center overflow-hidden`}>
               {line.startsWith('http') ? (
-                <img src={line} alt="" className="w-full h-full object-cover" />
+                <Image src={line} alt="" fill className="object-cover" sizes="(max-width: 640px) 50vw, 33vw" />
               ) : (
                 <span className="text-xs text-muted-foreground">{line}</span>
               )}
@@ -424,11 +484,11 @@ export default function ShopView() {
 
   const shopColors = shop
     ? {
-        primary: shop.primaryColor || '#6366f1',
-        secondary: shop.secondaryColor || '#8b5cf6',
-        accent: shop.accentColor || '#a78bfa',
+        primary: shop.primaryColor || '#C9A962',
+        secondary: shop.secondaryColor || '#1e293b',
+        accent: shop.accentColor || '#b45309',
       }
-    : { primary: '#6366f1', secondary: '#8b5cf6', accent: '#a78bfa' }
+    : { primary: '#C9A962', secondary: '#1e293b', accent: '#b45309' }
 
   useEffect(() => {
     if (!shopSlug) return
@@ -504,12 +564,32 @@ export default function ShopView() {
   const customSections = safeJsonParse<CustomSection[]>(shop.customSections, [])
   const socialLinks = shop.socialLinks || []
   const isModern = shop.displayStyle === 'modern'
+  const isClassic = shop.displayStyle === 'classic'
   const isMinimal = shop.displayStyle === 'minimal'
 
+  // Display style classes
+  const cardStyle = isModern
+    ? 'rounded-xl shadow-md border-0'
+    : isClassic
+      ? 'rounded border shadow-sm'
+      : 'rounded-lg border-0 shadow-none'
+  const cardPadding = isMinimal ? 'p-3' : 'p-4'
+  const sectionGap = isMinimal ? 'gap-3' : 'gap-4 md:gap-6'
+  const bannerRadius = isModern ? 'rounded-none' : isClassic ? 'rounded-none' : 'rounded-none'
+
   return (
-    <div className="min-h-screen" style={{ fontFamily: isModern ? 'system-ui' : isMinimal ? 'system-ui' : 'Georgia, serif' }}>
+    <div
+      className="min-h-screen"
+      style={{
+        fontFamily: isClassic ? 'Georgia, \'Times New Roman\', serif' : 'system-ui, -apple-system, sans-serif',
+        // CSS custom properties for child components to reference
+        '--shop-primary': shopColors.primary,
+        '--shop-secondary': shopColors.secondary,
+        '--shop-accent': shopColors.accent,
+      } as React.CSSProperties}
+    >
       {/* Banner */}
-      <div className="relative w-full h-48 sm:h-64 md:h-80 overflow-hidden">
+      <div className={`relative w-full h-48 sm:h-64 md:h-80 overflow-hidden ${bannerRadius}`}>
         {shop.banner ? (
           <img
             src={shop.banner}
@@ -524,7 +604,16 @@ export default function ShopView() {
             }}
           />
         )}
-        <div className="absolute inset-0 bg-black/30" />
+        <div
+          className="absolute inset-0"
+          style={{
+            background: isModern
+              ? 'linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.5) 100%)'
+              : isClassic
+                ? 'rgba(0,0,0,0.35)'
+                : 'rgba(0,0,0,0.2)',
+          }}
+        />
         <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10">
           <div className="max-w-7xl mx-auto flex items-end gap-4">
             {shop.logo ? (
@@ -636,8 +725,26 @@ export default function ShopView() {
         </div>
       </div>
 
+      {/* Custom Sections — rendered between header and navigation */}
+      {customSections.filter((s) => s.isActive).sort((a, b) => a.sortOrder - b.sortOrder).length > 0 && (
+        <div className="max-w-7xl mx-auto px-4 md:px-10 py-6 space-y-6">
+          {customSections
+            .filter((s) => s.isActive)
+            .sort((a, b) => a.sortOrder - b.sortOrder)
+            .map((section) => (
+              <CustomSectionRenderer key={section.id} section={section} shopColors={shopColors} displayStyle={shop.displayStyle} />
+            ))}
+        </div>
+      )}
+
       {/* Navigation Tabs */}
-      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b">
+      <div
+        className="sticky top-0 z-30 backdrop-blur border-b"
+        style={{
+          backgroundColor: isModern ? 'rgba(255,255,255,0.92)' : isClassic ? 'rgba(255,255,255,0.97)' : 'rgba(255,255,255,0.95)',
+          borderColor: `${shopColors.primary}20`,
+        }}
+      >
         <div className="max-w-7xl mx-auto px-4 md:px-10">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="bg-transparent h-auto p-0 border-b-0">
@@ -696,12 +803,13 @@ export default function ShopView() {
                   </p>
                 </div>
               ) : shop.layoutStyle === 'grid' ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+                <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 ${sectionGap}`}>
                   {products.map((product) => (
                     <ProductGridCard
                       key={product.id}
                       product={product}
                       shopColors={shopColors}
+                      displayStyle={shop.displayStyle}
                       onProductClick={handleProductClick}
                     />
                   ))}
@@ -713,6 +821,7 @@ export default function ShopView() {
                       key={product.id}
                       product={product}
                       shopColors={shopColors}
+                      displayStyle={shop.displayStyle}
                       onProductClick={handleProductClick}
                     />
                   ))}
@@ -726,17 +835,19 @@ export default function ShopView() {
                         <FeaturedProductCard
                           product={featuredProducts[0]}
                           shopColors={shopColors}
+                          displayStyle={shop.displayStyle}
                           onProductClick={handleProductClick}
                         />
                       )}
                     </div>
                   )}
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+                  <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 ${sectionGap}`}>
                     {regularProducts.map((product) => (
                       <ProductGridCard
                         key={product.id}
                         product={product}
                         shopColors={shopColors}
+                        displayStyle={shop.displayStyle}
                         onProductClick={handleProductClick}
                       />
                     ))}
@@ -745,6 +856,7 @@ export default function ShopView() {
                         key={product.id}
                         product={product}
                         shopColors={shopColors}
+                        displayStyle={shop.displayStyle}
                         onProductClick={handleProductClick}
                       />
                     ))}
@@ -770,6 +882,7 @@ export default function ShopView() {
                       key={product.id}
                       product={product}
                       shopColors={shopColors}
+                      displayStyle={shop.displayStyle}
                       onProductClick={handleProductClick}
                     />
                   ))}
@@ -801,6 +914,7 @@ export default function ShopView() {
                       key={section.id}
                       section={section}
                       shopColors={shopColors}
+                      displayStyle={shop.displayStyle}
                     />
                   ))}
 
@@ -915,7 +1029,7 @@ export default function ShopView() {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               {shop.logo ? (
-                <img src={shop.logo} alt={shop.name} className="w-8 h-8 rounded-full object-cover" />
+                <Image src={shop.logo} alt={shop.name} width={32} height={32} className="rounded-full object-cover" />
               ) : (
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold"
