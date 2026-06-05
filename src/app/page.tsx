@@ -137,6 +137,11 @@ const AuthModal = dynamic(
   { ssr: false, loading: () => <PageLoader /> }
 )
 
+const EmailVerificationDialog = dynamic(
+  withChunkRetry(() => import('@/components/marketplace/auth/email-verification-dialog'), 'EmailVerificationDialog'),
+  { ssr: false }
+)
+
 const BuyerDashboard = dynamic(
   withChunkRetry(() => import('@/components/marketplace/buyer/buyer-dashboard'), 'BuyerDashboard'),
   { ssr: false, loading: () => <ViewLoader /> }
@@ -402,6 +407,14 @@ export default function Home() {
 function MarketplaceApp() {
   const { currentView, isAuthenticated, currentUser, setCurrentView, viewParams, activeRole } = useMarketplaceStore()
   const searchParams = useSearchParams()
+  const [showEmailVerify, setShowEmailVerify] = useState(() => {
+    // Initialize from URL params on first render (avoids setState in effect)
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      return !!params.get('verify')
+    }
+    return false
+  })
 
   // Initialize real-time notification system
   useRealtimeNotifications()
@@ -562,6 +575,12 @@ function MarketplaceApp() {
       <Footer />
       <CartDrawer />
       <FeedbackWidget />
+      <EmailVerificationDialog
+        open={showEmailVerify}
+        onOpenChange={setShowEmailVerify}
+        userId={currentUser?.id}
+        userEmail={currentUser?.email}
+      />
     </div>
   )
 }

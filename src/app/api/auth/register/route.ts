@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { sendEmailAsync } from '@/lib/email';
-import { welcomeEmail } from '@/lib/email-templates';
+import { welcomeEmail, emailVerificationEmail } from '@/lib/email-templates';
 import { notifyWelcome } from '@/lib/notifications';
 import { rateLimit, getRateLimitKey, authRateLimit } from '@/lib/rate-limit';
 import { signToken } from '@/lib/auth-middleware';
@@ -121,6 +121,14 @@ export async function POST(request: NextRequest) {
       to: email,
       subject: 'Welcome to Marketo! 🎉',
       html: welcomeEmail({ name, role }),
+    });
+
+    // Send email verification (non-blocking)
+    const verifyUrl = `${process.env.NEXT_PUBLIC_PLATFORM_URL || 'https://marketo-alpha.vercel.app'}?verify=${emailVerifyToken}`;
+    sendEmailAsync({
+      to: email,
+      subject: 'Verify your email — Marketo',
+      html: emailVerificationEmail(name, verifyUrl),
     });
 
     // Send welcome notification (non-blocking)

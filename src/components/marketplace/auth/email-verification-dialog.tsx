@@ -40,13 +40,15 @@ export function EmailVerificationDialog({
   const { login, currentUser } = useMarketplaceStore()
   const { toast } = useToast()
 
-  // Auto-detect token from URL params
+  // Auto-detect token from URL params (supports both ?verify= and ?token=)
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search)
-      const urlToken = params.get('token')
+      const urlToken = params.get('verify') || params.get('token')
       if (urlToken) {
         setToken(urlToken)
+        // Auto-verify if token found in URL
+        handleVerifyWithToken(urlToken)
       }
     }
   }, [])
@@ -65,12 +67,16 @@ export function EmailVerificationDialog({
       setError('Please enter the verification token')
       return
     }
+    await handleVerifyWithToken(token.trim())
+  }
+
+  const handleVerifyWithToken = async (verifyToken: string) => {
 
     setIsVerifying(true)
     setError('')
 
     try {
-      const res = await api.auth.verifyEmail(token.trim())
+      const res = await api.auth.verifyEmail(verifyToken)
       if (res.success) {
         setIsVerified(true)
         // Update user state if logged in
