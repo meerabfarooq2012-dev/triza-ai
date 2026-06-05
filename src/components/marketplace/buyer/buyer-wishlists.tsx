@@ -591,6 +591,78 @@ export function BuyerWishlists() {
                     </div>
                   </CardHeader>
                   <CardContent className="pt-0">
+                    {/* Product Preview Thumbnails */}
+                    {(() => {
+                      const previewItems = (wishlist as Record<string, unknown>).items as Array<{ product: { name: string; images: string | null; price: number } }> | undefined
+                      const previewProducts = previewItems?.map(i => i.product) ?? []
+                      const totalItems = wishlist._count?.items ?? 0
+                      const hasItems = previewProducts.length > 0
+
+                      return hasItems ? (
+                        <div className="mb-3">
+                          {/* Thumbnail Grid */}
+                          <div className={cn(
+                            'grid gap-1.5 rounded-xl overflow-hidden',
+                            previewProducts.length === 1 ? 'grid-cols-1' :
+                            previewProducts.length === 2 ? 'grid-cols-2' :
+                            'grid-cols-2'
+                          )}>
+                            {previewProducts.slice(0, 4).map((product, i) => {
+                              const images = safeJsonParse<string[]>(product.images, [])
+                              return (
+                                <div
+                                  key={i}
+                                  className={cn(
+                                    'relative overflow-hidden bg-gray-100',
+                                    previewProducts.length === 3 && i === 0 ? 'col-span-2' : '',
+                                    previewProducts.length >= 3 ? 'aspect-square' : 'aspect-[4/3]'
+                                  )}
+                                >
+                                  {images[0] ? (
+                                    <img
+                                      src={images[0]}
+                                      alt={product.name}
+                                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                    />
+                                  ) : (
+                                    <div className="flex h-full items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+                                      <Package className="h-6 w-6 text-gray-300" />
+                                    </div>
+                                  )}
+                                  {/* +N overlay on last thumbnail */}
+                                  {i === Math.min(previewProducts.length, 4) - 1 && totalItems > 4 && (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                                      <span className="text-lg font-bold text-white">+{totalItems - 4}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+                          {/* Product names preview */}
+                          <div className="mt-2 space-y-0.5">
+                            {previewProducts.slice(0, 3).map((product, i) => (
+                              <p key={i} className="text-xs text-gray-600 truncate">
+                                {product.name} — <span className="font-semibold text-gray-900">${(product.price ?? 0).toFixed(2)}</span>
+                              </p>
+                            ))}
+                            {totalItems > 3 && (
+                              <p className="text-xs text-amber-600 font-medium">
+                                +{totalItems - 3} more item{totalItems - 3 !== 1 ? 's' : ''}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="mb-3 flex items-center justify-center rounded-xl bg-gray-50 py-6">
+                          <div className="text-center">
+                            <Package className="mx-auto h-8 w-8 text-gray-300" />
+                            <p className="mt-1 text-xs text-gray-400">No items yet</p>
+                          </div>
+                        </div>
+                      )
+                    })()}
+
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-2xl font-bold text-gray-900">

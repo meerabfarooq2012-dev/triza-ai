@@ -15,6 +15,24 @@ export async function GET(req: NextRequest) {
       where: { userId },
       include: {
         _count: { select: { items: true } },
+        items: {
+          take: 4,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            productId: true,
+            product: {
+              select: {
+                id: true,
+                name: true,
+                price: true,
+                images: true,
+                type: true,
+                stock: true,
+              },
+            },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     })
