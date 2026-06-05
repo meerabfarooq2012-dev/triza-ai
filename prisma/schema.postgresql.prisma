@@ -192,6 +192,7 @@ model Product {
   questions        ProductQuestion[]
   wishlistItems    WishlistItem[]
   reports         ProductReport[]
+  downloads       DigitalDownload[]
 
   @@unique([shopId, slug])
   @@index([shopId])
