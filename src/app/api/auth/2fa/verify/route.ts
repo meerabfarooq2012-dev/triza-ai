@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createHmac } from 'crypto';
 import { db } from '@/lib/db';
 import { authenticateRequest, signToken } from '@/lib/auth-middleware';
 import { rateLimit, getRateLimitKey, apiRateLimit } from '@/lib/rate-limit';
@@ -49,7 +50,8 @@ async function handler(request: NextRequest) {
         isValid = true;
         usedBackupCode = true;
         // Remove used backup code
-        const remainingCodes = hashedCodes.filter(hc => hc !== (await import('crypto')).createHmac('sha256', process.env.JWT_SECRET || 'marketo-dev-secret').update(code).digest('hex'));
+        const usedCodeHash = createHmac('sha256', process.env.JWT_SECRET || 'marketo-dev-secret').update(code).digest('hex');
+        const remainingCodes = hashedCodes.filter(hc => hc !== usedCodeHash);
         await db.user.update({
           where: { id: user.id },
           data: { twoFactorBackupCodes: JSON.stringify(remainingCodes) },
