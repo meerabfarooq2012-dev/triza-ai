@@ -66,22 +66,20 @@ async function pushNotificationSocket(
   }
 ) {
   try {
-    // Use the notification service directly on port 3004 (internal)
-    // The service is a mini-service that runs alongside the Next.js app
-    await fetch(`http://localhost:3004/socket.io/?EIO=4&transport=polling`, {
-      method: 'GET',
-    }).catch(() => {})
-
-    // Emit push-notification event to the notification service via Socket.io
-    // Since we can't directly emit from server-side, we use the internal HTTP endpoint
-    // The notification service will relay to connected clients
-    await fetch(`http://localhost:3004/socket.io/?EIO=4&transport=polling`, {
+    // Use the notification service's HTTP push endpoint (port 3005)
+    // The service will relay the notification to connected Socket.io clients
+    const res = await fetch(`http://localhost:3005/push`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/octet-stream' },
-      body: `42["push-notification",${JSON.stringify({ userId, notification })}]`,
-    }).catch(() => {})
-  } catch {
-    // Socket push is non-critical
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, notification }),
+    })
+
+    if (!res.ok) {
+      console.warn('[pushNotificationSocket] HTTP push failed:', res.status)
+    }
+  } catch (error) {
+    // Socket push is non-critical - don't throw
+    console.warn('[pushNotificationSocket] Failed to push notification via HTTP:', error)
   }
 }
 

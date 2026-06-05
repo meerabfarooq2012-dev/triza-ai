@@ -287,6 +287,16 @@ const CookieConsent = dynamic(
   { ssr: false }
 )
 
+const SellerWallet = dynamic(
+  withChunkRetry(() => import('@/components/marketplace/payment/seller-wallet'), 'SellerWallet'),
+  { ssr: false, loading: () => <ViewLoader /> }
+)
+
+const PaymentSettingsPage = dynamic(
+  withChunkRetry(() => import('@/components/marketplace/payment/payment-settings-page'), 'PaymentSettingsPage'),
+  { ssr: false, loading: () => <ViewLoader /> }
+)
+
 // Error boundary component to catch rendering errors in child components
 type ErrorBoundaryProps = { children: React.ReactNode; fallback?: React.ReactNode }
 type ErrorBoundaryState = { hasError: boolean; error: Error | null }
@@ -397,11 +407,16 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
 // Custom hook for safe hydration check using useSyncExternalStore
 // This avoids React 19 lint issues with setState-in-effect
+// Cached snapshot functions to prevent infinite loop warning
+const hydratedSubscribe = () => () => {}
+const hydratedClientSnapshot = () => true
+const hydratedServerSnapshot = () => false
+
 function useHydrated(): boolean {
   return useSyncExternalStore(
-    () => () => {},   // subscribe (no-op)
-    () => true,       // client snapshot: hydrated
-    () => false       // server snapshot: not hydrated
+    hydratedSubscribe,
+    hydratedClientSnapshot,
+    hydratedServerSnapshot
   )
 }
 
@@ -554,6 +569,12 @@ function MarketplaceApp() {
         case 'my-downloads':
           if (!isAuthenticated) return <AuthModal />
           return <MyDownloads />
+        case 'wallet':
+          if (!isAuthenticated) return <AuthModal />
+          return <SellerWallet />
+        case 'payment-settings':
+          if (!isAuthenticated) return <AuthModal />
+          return <PaymentSettingsPage userId={currentUser?.id || ''} userRole={currentUser?.role || 'buyer'} />
         case 'admin':
           if (!isAuthenticated || !currentUser?.isAdmin) {
             return (
@@ -584,10 +605,6 @@ function MarketplaceApp() {
       )
     }
   }, [currentView, isAuthenticated, currentUser, activeRole, setCurrentView, viewParams])
-
-  if (currentView === 'auth') {
-    return <AuthModal />
-  }
 
   return (
     <div className="min-h-screen flex flex-col">

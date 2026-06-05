@@ -1,6 +1,9 @@
 import { Server } from "socket.io";
+import http from "http";
 
 const PORT = 3004;
+
+// ─── Socket.io Server ─────────────────────────────────────────────────────
 
 const io = new Server(PORT, {
   cors: {
@@ -129,6 +132,57 @@ io.on("connection", (socket) => {
       }
     }
   });
+});
+
+// ─── HTTP Push Endpoint ───────────────────────────────────────────────────
+// Allows server-side code (e.g., Next.js API routes) to push notifications
+// by POSTing to http://localhost:3004/push with { userId, notification }
+
+const httpServer = http.createServer(async (req, res) => {
+  if (req.method === "POST" && req.url === "/push") {
+    try {
+      let body = "";
+      for await (const chunk of req) {
+        body += chunk;
+      }
+
+      const data = JSON.parse(body);
+      const { userId, notification } = data;
+
+      if (!userId || !notification) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: false, error: "Missing userId or notification" }));
+        return;
+      }
+
+      const roomName = `user:${userId}`;
+      console.log(
+        `[NotificationService] HTTP push: notifying user ${userId}: "${notification.title}"`
+      );
+
+      // Emit to the user's room
+      io.to(roomName).emit("new-notification", notification);
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: true }));
+    } catch (error) {
+      console.error("[NotificationService] HTTP push error:", error);
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: false, error: "Internal server error" }));
+    }
+  } else if (req.method === "GET" && req.url === "/health") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ status: "ok", connections: userSocketsMap.size }));
+  } else {
+    res.writeHead(404, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "Not found" }));
+  }
+});
+
+// Use a different port for HTTP to avoid conflicting with Socket.io
+const HTTP_PORT = 3005;
+httpServer.listen(HTTP_PORT, () => {
+  console.log(`[NotificationService] HTTP push endpoint running on port ${HTTP_PORT}`);
 });
 
 console.log(`[NotificationService] Socket.io notification service running on port ${PORT}`);

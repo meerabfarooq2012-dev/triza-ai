@@ -17,6 +17,7 @@ import {
   ScrollText,
   Download,
   RotateCcw,
+  Store,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -34,12 +35,14 @@ import AdminVerifications from './admin-verifications'
 import { AdminReports } from './admin-reports'
 import { AdminAuditLog } from './admin-audit-log'
 import { AdminDataExport } from './admin-data-export'
+import { AdminShops } from './admin-shops'
 
-type AdminTab = 'dashboard' | 'users' | 'products' | 'orders' | 'transactions' | 'disputes' | 'categories' | 'verifications' | 'reports' | 'audit-log' | 'data-export' | 'settings' | 'returns'
+type AdminTab = 'dashboard' | 'users' | 'shops' | 'products' | 'orders' | 'transactions' | 'disputes' | 'categories' | 'verifications' | 'reports' | 'audit-log' | 'data-export' | 'settings' | 'returns'
 
 const tabs: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
   { id: 'users', label: 'Users', icon: <Users size={18} /> },
+  { id: 'shops', label: 'Shops', icon: <Store size={18} /> },
   { id: 'products', label: 'Products', icon: <Package size={18} /> },
   { id: 'orders', label: 'Orders', icon: <ShoppingCart size={18} /> },
   { id: 'returns', label: 'Returns', icon: <RotateCcw size={18} /> },
@@ -91,6 +94,8 @@ export default function AdminPanel() {
         return <AdminDashboard />
       case 'users':
         return <AdminUsers />
+      case 'shops':
+        return <AdminShops />
       case 'products':
         return <AdminProducts />
       case 'orders':

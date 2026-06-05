@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { io, Socket } from 'socket.io-client'
 import {
   MessageSquare,
   Send,
@@ -28,6 +27,7 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { useChatSocket } from '@/hooks/use-chat-socket'
 import type { Conversation, Message, User } from '@/types'
 
 // =============================================================================
@@ -255,32 +255,40 @@ export function MessagesPage() {
   const [sendingMessage, setSendingMessage] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [showMobileThread, setShowMobileThread] = useState(false)
-  const [typingUser, setTypingUser] = useState<{ userId: string; userName: string } | null>(null)
-  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set())
+  // ── Chat Socket Hook ──────────────────────────────────────────────────
+  const {
+    isConnected: socketConnected,
+    typingUsers,
+    onlineUsers,
+    joinConversation: socketJoinConversation,
+    leaveConversation: socketLeaveConversation,
+    sendMessage: socketSendMessage,
+    emitTyping,
+    emitStopTyping,
+    markRead: socketMarkRead,
+    onNewMessage,
+    onMessagesRead,
+  } = useChatSocket()
+
+  // Derive typing user for the currently selected conversation
+  const typingUser: { userId: string; userName: string } | null = (() => {
+    if (!selectedConversation) return null
+    const users = typingUsers.get(selectedConversation.id)
+    if (!users || users.length === 0) return null
+    return { userId: '', userName: users[users.length - 1] }
+  })()
 
   // ── Refs ──────────────────────────────────────────────────────────────
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
-  const socketRef = useRef<Socket | null>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  // ── Socket.io Connection ──────────────────────────────────────────────
+  // ── Socket.io: Listen for new messages via hook ───────────────────────
   useEffect(() => {
     if (!currentUser) return
 
-    const socket = io('/?XTransformPort=3003', {
-      transports: ['websocket', 'polling'],
-      autoConnect: true,
-    })
-
-    socketRef.current = socket
-
-    socket.on('connect', () => {
-      console.log('[Messages] Socket connected:', socket.id)
-    })
-
-    socket.on('new-message', (message: ConversationMessage) => {
+    const unsubMessage = onNewMessage((message: ConversationMessage) => {
       setMessages((prev) => {
         // Avoid duplicates
         if (prev.some((m) => m.id === message.id)) return prev
@@ -313,19 +321,7 @@ export function MessagesPage() {
       )
     })
 
-    socket.on('user-typing', ({ conversationId, userId, userName }: { conversationId: string; userId: string; userName: string }) => {
-      if (selectedConversation?.id === conversationId && userId !== currentUser.id) {
-        setTypingUser({ userId, userName })
-      }
-    })
-
-    socket.on('user-stop-typing', ({ conversationId, userId }: { conversationId: string; userId: string }) => {
-      if (selectedConversation?.id === conversationId && userId !== currentUser.id) {
-        setTypingUser(null)
-      }
-    })
-
-    socket.on('messages-read', ({ conversationId }: { conversationId: string }) => {
+    const unsubRead = onMessagesRead(({ conversationId }: { conversationId: string }) => {
       if (selectedConversation?.id === conversationId) {
         setMessages((prev) =>
           prev.map((msg) =>
@@ -335,23 +331,11 @@ export function MessagesPage() {
       }
     })
 
-    socket.on('user-joined', ({ userId }: { userId: string }) => {
-      setOnlineUsers((prev) => new Set(prev).add(userId))
-    })
-
-    socket.on('user-left', ({ userId }: { userId: string }) => {
-      setOnlineUsers((prev) => {
-        const next = new Set(prev)
-        next.delete(userId)
-        return next
-      })
-    })
-
     return () => {
-      socket.disconnect()
-      socketRef.current = null
+      unsubMessage()
+      unsubRead()
     }
-  }, [currentUser, selectedConversation?.id])
+  }, [currentUser, selectedConversation?.id, onNewMessage, onMessagesRead])
 
   // ── Responsive Detection ──────────────────────────────────────────────
   useEffect(() => {
@@ -365,26 +349,17 @@ export function MessagesPage() {
   const handleSelectConversation = useCallback(
     async (conversation: EnrichedConversation) => {
       // Leave previous conversation room
-      if (socketRef.current && selectedConversation?.id) {
-        socketRef.current.emit('leave-conversation', {
-          conversationId: selectedConversation.id,
-        })
+      if (selectedConversation?.id) {
+        socketLeaveConversation(selectedConversation.id)
       }
 
       setSelectedConversation(conversation)
-      setTypingUser(null)
       setShowMobileThread(true)
 
       // Join new conversation room
-      if (socketRef.current && currentUser) {
-        socketRef.current.emit('join-conversation', {
-          conversationId: conversation.id,
-          userId: currentUser.id,
-        })
-        socketRef.current.emit('mark-read', {
-          conversationId: conversation.id,
-          userId: currentUser.id,
-        })
+      if (currentUser) {
+        socketJoinConversation(conversation.id)
+        socketMarkRead(conversation.id)
       }
 
       // Fetch messages
@@ -410,7 +385,7 @@ export function MessagesPage() {
         setLoadingMessages(false)
       }
     },
-    [selectedConversation?.id, currentUser]
+    [selectedConversation?.id, currentUser, socketLeaveConversation, socketJoinConversation, socketMarkRead]
   )
 
   // ── Create Conversation ───────────────────────────────────────────────
@@ -558,16 +533,8 @@ export function MessagesPage() {
         )
 
         // Emit via Socket.io
-        if (socketRef.current) {
-          socketRef.current.emit('send-message', {
-            conversationId: selectedConversation.id,
-            message: data.data,
-          })
-          socketRef.current.emit('stop-typing', {
-            conversationId: selectedConversation.id,
-            userId: currentUser.id,
-          })
-        }
+        socketSendMessage(selectedConversation.id, data.data)
+        emitStopTyping(selectedConversation.id)
 
         // Update conversation list
         setConversations((prev) => {
@@ -600,17 +567,13 @@ export function MessagesPage() {
     } finally {
       setSendingMessage(false)
     }
-  }, [newMessage, currentUser, selectedConversation])
+  }, [newMessage, currentUser, selectedConversation, socketSendMessage, emitStopTyping])
 
   // ── Typing Indicator Logic ────────────────────────────────────────────
   const handleTyping = useCallback(() => {
-    if (!socketRef.current || !currentUser || !selectedConversation) return
+    if (!currentUser || !selectedConversation) return
 
-    socketRef.current.emit('typing', {
-      conversationId: selectedConversation.id,
-      userId: currentUser.id,
-      userName: currentUser.name,
-    })
+    emitTyping(selectedConversation.id)
 
     // Clear previous timeout
     if (typingTimeoutRef.current) {
@@ -619,12 +582,9 @@ export function MessagesPage() {
 
     // Set new timeout to stop typing after 2 seconds
     typingTimeoutRef.current = setTimeout(() => {
-      socketRef.current?.emit('stop-typing', {
-        conversationId: selectedConversation!.id,
-        userId: currentUser!.id,
-      })
+      emitStopTyping(selectedConversation.id)
     }, 2000)
-  }, [currentUser, selectedConversation])
+  }, [currentUser, selectedConversation, emitTyping, emitStopTyping])
 
   // ── Auto-scroll to bottom ─────────────────────────────────────────────
   useEffect(() => {
@@ -670,15 +630,12 @@ export function MessagesPage() {
   // ── Back to list (mobile) ─────────────────────────────────────────────
   const handleBackToList = useCallback(() => {
     setShowMobileThread(false)
-    if (socketRef.current && selectedConversation?.id) {
-      socketRef.current.emit('leave-conversation', {
-        conversationId: selectedConversation.id,
-      })
+    if (selectedConversation?.id) {
+      socketLeaveConversation(selectedConversation.id)
     }
     setSelectedConversation(null)
     setMessages([])
-    setTypingUser(null)
-  }, [selectedConversation])
+  }, [selectedConversation, socketLeaveConversation])
 
   // ── Not authenticated ─────────────────────────────────────────────────
   if (!currentUser) {
