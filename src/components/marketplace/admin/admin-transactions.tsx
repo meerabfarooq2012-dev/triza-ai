@@ -116,10 +116,15 @@ export function AdminTransactions() {
   const [releaseSubmitting, setReleaseSubmitting] = useState(false)
 
   const fetchData = useCallback(async () => {
+    if (!currentUser?.id) {
+      setLoading(false)
+      setError('You must be logged in to view transactions')
+      return
+    }
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch('/api/admin/transactions')
+      const res = await fetch(`/api/admin/transactions?userId=${currentUser.id}`)
       const json = await res.json()
       if (json.success) {
         setData(json.data)
@@ -131,7 +136,7 @@ export function AdminTransactions() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [currentUser?.id])
 
   useEffect(() => {
     fetchData()

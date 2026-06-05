@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       buyerId,
-      sellerId,
+      sellerId: providedSellerId,
       items,
       paymentMethod = 'card',
       shippingName,
@@ -132,9 +132,9 @@ export async function POST(request: NextRequest) {
       notes,
     } = body;
 
-    if (!buyerId || !sellerId || !items || !items.length) {
+    if (!buyerId || !items || !items.length) {
       return NextResponse.json(
-        { success: false, error: 'buyerId, sellerId, and items are required' },
+        { success: false, error: 'buyerId and items are required' },
         { status: 400 }
       );
     }
@@ -142,7 +142,20 @@ export async function POST(request: NextRequest) {
     const productIds = items.map((item: { productId: string }) => item.productId);
     const products = await db.product.findMany({
       where: { id: { in: productIds } },
+      include: { shop: { select: { id: true, userId: true } } },
     });
+
+    // Derive sellerId from the first product's shop if not provided
+    let sellerId = providedSellerId;
+    if (!sellerId && products.length > 0 && products[0].shop) {
+      sellerId = products[0].shop.userId;
+    }
+    if (!sellerId) {
+      return NextResponse.json(
+        { success: false, error: 'Could not determine seller. Please try again.' },
+        { status: 400 }
+      );
+    }
 
     let totalAmount = 0;
     const orderItemsData: {

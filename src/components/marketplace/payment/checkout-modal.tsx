@@ -377,6 +377,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          buyerId: currentUser?.id,
           items: cart.map((item) => ({
             productId: item.productId,
             quantity: item.quantity,
@@ -425,8 +426,8 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
         }
       }
 
-      // Find the sellerId from the cart items
-      const sellerId = cart[0]?.shopId || ''
+      // Get sellerId from the created order (which derives it from the product's shop)
+      const sellerId = orderData.data?.sellerId || orderData.data?.seller?.id || cart[0]?.shopId || ''
 
       // Step 2: Create payment record (escrow hold)
       const paymentRes = await fetch('/api/payments', {
