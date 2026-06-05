@@ -2,13 +2,12 @@
 
 import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { User, CreditCard, Settings, Heart, ListChecks } from 'lucide-react'
+import { User, CreditCard, Settings, ListChecks } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { BuyerOverview } from './buyer-overview'
 import { BuyerOrders } from './buyer-orders'
 import { BuyerPayments } from './buyer-payments'
-import { BuyerFavorites } from './buyer-favorites'
 import { BuyerMessages } from './buyer-messages'
 import { BuyerWishlists } from './buyer-wishlists'
 import { PaymentSettingsPage } from '@/components/marketplace/payment/payment-settings-page'
@@ -19,7 +18,7 @@ export function BuyerDashboard() {
   const [manualTab, setManualTab] = useState<string | null>(null)
 
   // Support deep-linking to a specific tab via viewParams
-  const validTabs = ['overview', 'orders', 'payments', 'favorites', 'wishlists', 'messages', 'payment-settings', 'addresses']
+  const validTabs = ['overview', 'orders', 'payments', 'wishlists', 'messages', 'payment-settings', 'addresses']
   const activeTab = useMemo(() => {
     if (manualTab) return manualTab
     if (viewParams?.tab && validTabs.includes(viewParams.tab)) return viewParams.tab
@@ -83,10 +82,6 @@ export function BuyerDashboard() {
                 <Settings className="h-3.5 w-3.5" />
                 Payment Info
               </TabsTrigger>
-              <TabsTrigger value="favorites" className="gap-1.5">
-                <Heart className="h-3.5 w-3.5" />
-                Favorites
-              </TabsTrigger>
               <TabsTrigger value="wishlists" className="gap-1.5">
                 <ListChecks className="h-3.5 w-3.5" />
                 📋 Wishlists
@@ -112,9 +107,6 @@ export function BuyerDashboard() {
               {currentUser && (
                 <PaymentSettingsPage userId={currentUser.id} userRole={currentUser.role} />
               )}
-            </TabsContent>
-            <TabsContent value="favorites">
-              <BuyerFavorites />
             </TabsContent>
             <TabsContent value="wishlists">
               <BuyerWishlists />
