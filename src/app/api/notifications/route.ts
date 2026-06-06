@@ -86,31 +86,33 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Try to push notification via Socket.io
-    try {
-      await fetch(`http://localhost:3004/?XTransformPort=3004`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          event: 'push-notification',
-          data: {
-            userId,
-            notification: {
-              id: notification.id,
-              title: notification.title,
-              message: notification.message,
-              type: notification.type,
-              category: notification.category,
-              link: notification.link,
-              image: notification.image,
-              priority: notification.priority,
-              createdAt: notification.createdAt,
+    // Try to push notification via Socket.io (skip on Vercel)
+    if (!(process.env.VERCEL || process.env.VERCEL_ENV)) {
+      try {
+        await fetch(`http://localhost:3004/?XTransformPort=3004`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            event: 'push-notification',
+            data: {
+              userId,
+              notification: {
+                id: notification.id,
+                title: notification.title,
+                message: notification.message,
+                type: notification.type,
+                category: notification.category,
+                link: notification.link,
+                image: notification.image,
+                priority: notification.priority,
+                createdAt: notification.createdAt,
+              },
             },
-          },
-        }),
-      });
-    } catch {
-      // Socket.io push is non-critical; if it fails, the notification is still in DB
+          }),
+        });
+      } catch {
+        // Socket.io push is non-critical; if it fails, the notification is still in DB
+      }
     }
 
     return NextResponse.json({

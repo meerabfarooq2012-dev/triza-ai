@@ -121,9 +121,19 @@ export function BuyerMessages() {
   useEffect(() => {
     if (!currentUser) return
 
-    const socket = io('/?XTransformPort=3003', {
+    // Determine if we're on Vercel (no WebSocket server available)
+    const isVercel = typeof window !== 'undefined' && (
+      window.location.hostname.endsWith('.vercel.app') ||
+      window.location.hostname.endsWith('.app') ||
+      !window.location.hostname.includes('localhost')
+    )
+
+    const socketUrl = isVercel ? '' : undefined
+    const socket = io(socketUrl ?? '/?XTransformPort=3003', {
       transports: ['websocket', 'polling'],
       autoConnect: true,
+      reconnectionAttempts: isVercel ? 3 : Infinity,
+      timeout: isVercel ? 5000 : 20000,
     })
 
     socketRef.current = socket

@@ -65,6 +65,12 @@ async function pushNotificationSocket(
     createdAt: string
   }
 ) {
+  // Skip socket push on Vercel — no mini-service available
+  // Notifications are still persisted in DB and available via REST API polling
+  if (process.env.VERCEL || process.env.VERCEL_ENV) {
+    return
+  }
+
   try {
     // Use the notification service's HTTP push endpoint (port 3005)
     // The service will relay the notification to connected Socket.io clients

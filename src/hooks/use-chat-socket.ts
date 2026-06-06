@@ -34,13 +34,31 @@ let chatSocketConnected = false
 function getChatSocket(): Socket | null {
   if (typeof window === 'undefined') return null
 
+  // On Vercel (or any environment without the chat service), skip socket creation
+  // Chat will fall back to REST API polling via the messages API routes
+  const isVercel = typeof window !== 'undefined' && (
+    window.location.hostname.endsWith('.vercel.app') ||
+    window.location.hostname.endsWith('.app') ||
+    !window.location.hostname.includes('localhost')
+  )
+
+  // Allow explicit override via env var
+  const socketDisabled = typeof window !== 'undefined' &&
+    (window as unknown as { __SOCKET_DISABLED__?: boolean }).__SOCKET_DISABLED__
+
+  if (socketDisabled) return null
+
   if (!chatSocket) {
-    chatSocket = io('/?XTransformPort=3003', {
+    // Determine socket URL based on environment
+    const socketUrl = isVercel ? '' : undefined // empty string = same origin on Vercel (will fail gracefully)
+
+    chatSocket = io(socketUrl ?? '/?XTransformPort=3003', {
       transports: ['websocket', 'polling'],
       autoConnect: false,
       reconnection: true,
-      reconnectionAttempts: 15,
+      reconnectionAttempts: isVercel ? 3 : 15, // Fewer attempts on Vercel
       reconnectionDelay: 1000,
+      timeout: isVercel ? 5000 : 20000, // Shorter timeout on Vercel
     })
 
     chatSocket.on('connect', () => {
@@ -51,6 +69,16 @@ function getChatSocket(): Socket | null {
     chatSocket.on('disconnect', () => {
       chatSocketConnected = false
       console.log('[ChatSocket] Disconnected')
+    })
+
+    chatSocket.on('connect_error', (err) => {
+      // On Vercel, this is expected — no WebSocket server available
+      if (isVercel) {
+        console.log('[ChatSocket] Socket not available (expected on Vercel) — using REST fallback')
+        chatSocket?.disconnect()
+      } else {
+        console.warn('[ChatSocket] Connection error:', err.message)
+      }
     })
   }
 

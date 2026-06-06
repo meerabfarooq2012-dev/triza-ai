@@ -13,13 +13,31 @@ let socketConnected = false
 function getNotificationSocket(): Socket | null {
   if (typeof window === 'undefined') return null
 
+  // On Vercel (or any environment without the notification service), skip socket creation
+  // Notifications will fall back to polling via the notifications API routes
+  const isVercel = typeof window !== 'undefined' && (
+    window.location.hostname.endsWith('.vercel.app') ||
+    window.location.hostname.endsWith('.app') ||
+    !window.location.hostname.includes('localhost')
+  )
+
+  // Allow explicit override
+  const socketDisabled = typeof window !== 'undefined' &&
+    (window as unknown as { __SOCKET_DISABLED__?: boolean }).__SOCKET_DISABLED__
+
+  if (socketDisabled) return null
+
   if (!notifSocket) {
-    notifSocket = io('/?XTransformPort=3004', {
+    // Determine socket URL based on environment
+    const socketUrl = isVercel ? '' : undefined
+
+    notifSocket = io(socketUrl ?? '/?XTransformPort=3004', {
       transports: ['websocket', 'polling'],
       autoConnect: false,
       reconnection: true,
-      reconnectionAttempts: 10,
+      reconnectionAttempts: isVercel ? 3 : 10,
       reconnectionDelay: 2000,
+      timeout: isVercel ? 5000 : 20000,
     })
 
     notifSocket.on('connect', () => {
@@ -30,6 +48,16 @@ function getNotificationSocket(): Socket | null {
     notifSocket.on('disconnect', () => {
       socketConnected = false
       console.log('[Notifications] Socket disconnected')
+    })
+
+    notifSocket.on('connect_error', (err) => {
+      // On Vercel, this is expected — no WebSocket server available
+      if (isVercel) {
+        console.log('[Notifications] Socket not available (expected on Vercel) — using REST fallback')
+        notifSocket?.disconnect()
+      } else {
+        console.warn('[Notifications] Connection error:', err.message)
+      }
     })
   }
 

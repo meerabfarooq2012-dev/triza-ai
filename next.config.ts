@@ -12,6 +12,10 @@ const nextConfig: NextConfig = {
     '127.0.0.1',
     '21.0.15.82',
   ],
+
+  // Required for Prisma + PostgreSQL on Vercel serverless
+  serverExternalPackages: ['@prisma/client', 'prisma', 'pg', 'bcryptjs', 'sharp'],
+
   images: {
     remotePatterns: [
       {
@@ -27,4 +31,3 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
-
