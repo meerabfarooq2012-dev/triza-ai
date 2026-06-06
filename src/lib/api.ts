@@ -409,22 +409,28 @@ const reviewsApi = {
       body: JSON.stringify(data),
     }),
 
-  getProductReviews: (productId: string, params?: { page?: number; limit?: number; sort?: string }) => {
+  getProductReviews: (productId: string, params?: { page?: number; limit?: number; sort?: string; isVerified?: boolean; hasImages?: boolean; rating?: number }) => {
     const searchParams = new URLSearchParams()
     if (params?.page) searchParams.set('page', String(params.page))
     if (params?.limit) searchParams.set('limit', String(params.limit))
     if (params?.sort) searchParams.set('sort', params.sort)
+    if (params?.isVerified) searchParams.set('isVerified', 'true')
+    if (params?.hasImages) searchParams.set('hasImages', 'true')
+    if (params?.rating) searchParams.set('rating', String(params.rating))
     const qs = searchParams.toString()
     return request<ApiResponse<PaginatedResponse<Review>>>(
       `/reviews/product/${productId}${qs ? `?${qs}` : ''}`
     )
   },
 
-  getShopReviews: (shopSlug: string, params?: { page?: number; limit?: number; sort?: string }) => {
+  getShopReviews: (shopSlug: string, params?: { page?: number; limit?: number; sort?: string; isVerified?: boolean; hasImages?: boolean; rating?: number }) => {
     const searchParams = new URLSearchParams()
     if (params?.page) searchParams.set('page', String(params.page))
     if (params?.limit) searchParams.set('limit', String(params.limit))
     if (params?.sort) searchParams.set('sort', params.sort)
+    if (params?.isVerified) searchParams.set('isVerified', 'true')
+    if (params?.hasImages) searchParams.set('hasImages', 'true')
+    if (params?.rating) searchParams.set('rating', String(params.rating))
     const qs = searchParams.toString()
     return request<ApiResponse<PaginatedResponse<Review>>>(
       `/reviews/shop/${shopSlug}${qs ? `?${qs}` : ''}`
@@ -452,11 +458,14 @@ const reviewsApi = {
       body: JSON.stringify(data),
     }),
 
-  getGigReviews: (gigId: string, params?: { page?: number; limit?: number; sort?: string }) => {
+  getGigReviews: (gigId: string, params?: { page?: number; limit?: number; sort?: string; isVerified?: boolean; hasImages?: boolean; rating?: number }) => {
     const searchParams = new URLSearchParams()
     if (params?.page) searchParams.set('page', String(params.page))
     if (params?.limit) searchParams.set('limit', String(params.limit))
     if (params?.sort) searchParams.set('sort', params.sort)
+    if (params?.isVerified) searchParams.set('isVerified', 'true')
+    if (params?.hasImages) searchParams.set('hasImages', 'true')
+    if (params?.rating) searchParams.set('rating', String(params.rating))
     const qs = searchParams.toString()
     return request<ApiResponse<PaginatedResponse<Review>>>(
       `/reviews/gig/${gigId}${qs ? `?${qs}` : ''}`

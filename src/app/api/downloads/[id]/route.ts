@@ -1,62 +1,117 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { validateDownloadToken, incrementDownloadCount } from '@/lib/digital-download'
+import { db } from '@/lib/db'
 import { createClient } from '@supabase/supabase-js'
 
 const SUPABASE_URL = 'https://veplxumszgotnkassotw.supabase.co'
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || ''
 const STORAGE_BUCKET = 'marketplace'
 
-// GET /api/downloads/[token] — Secure file download endpoint
+// GET /api/downloads/[id] — Secure file download endpoint with userId verification
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ token: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { token } = await params
+    const { id } = await params
 
-    // 1. Validate the token
-    const download = await validateDownloadToken(token)
+    // Get userId from query params (the purchaser must identify themselves)
+    const { searchParams } = new URL(request.url)
+    const userId = searchParams.get('userId')
 
-    if (!download) {
-      // Determine the specific error
-      const existingDownload = await findDownloadByToken(token)
-
-      if (!existingDownload) {
-        return NextResponse.json(
-          { success: false, error: 'Download link not found' },
-          { status: 404 }
-        )
-      }
-
-      if (new Date() > existingDownload.expiresAt) {
-        return NextResponse.json(
-          { success: false, error: 'Download link has expired' },
-          { status: 410 }
-        )
-      }
-
-      if (existingDownload.downloadCount >= existingDownload.maxDownloads) {
-        return NextResponse.json(
-          { success: false, error: 'Maximum downloads exceeded' },
-          { status: 410 }
-        )
-      }
-
-      // Generic error if we couldn't determine the specific reason
+    if (!userId) {
       return NextResponse.json(
-        { success: false, error: 'Download link is not valid' },
+        { success: false, error: 'userId is required for download verification' },
         { status: 400 }
       )
     }
 
-    // 2. Increment download count
-    await incrementDownloadCount(token)
+    // 1. Find the download record by ID
+    const download = await db.digitalDownload.findUnique({
+      where: { id },
+      include: {
+        product: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+            fileUrl: true,
+          },
+        },
+        order: {
+          select: {
+            id: true,
+            buyerId: true,
+            status: true,
+            paymentStatus: true,
+          },
+        },
+      },
+    })
 
-    // 3. Generate a signed URL for secure file access
+    if (!download) {
+      return NextResponse.json(
+        { success: false, error: 'Download not found' },
+        { status: 404 }
+      )
+    }
+
+    // 2. Verify the user is the purchaser
+    if (download.userId !== userId) {
+      return NextResponse.json(
+        { success: false, error: 'You do not have permission to download this file' },
+        { status: 403 }
+      )
+    }
+
+    // 3. Verify order status allows downloads
+    const orderAllowsDownload =
+      download.order?.status === 'delivered' ||
+      download.order?.status === 'completed' ||
+      download.order?.status === 'shipped'
+
+    if (!orderAllowsDownload) {
+      return NextResponse.json(
+        { success: false, error: 'Order must be delivered before downloading' },
+        { status: 400 }
+      )
+    }
+
+    if (download.order?.paymentStatus !== 'paid') {
+      return NextResponse.json(
+        { success: false, error: 'Payment must be confirmed before downloading' },
+        { status: 400 }
+      )
+    }
+
+    // 4. Check if expired
+    if (new Date() > download.expiresAt) {
+      return NextResponse.json(
+        { success: false, error: 'Download link has expired' },
+        { status: 410 }
+      )
+    }
+
+    // 5. Check if max downloads exceeded
+    if (download.downloadCount >= download.maxDownloads) {
+      return NextResponse.json(
+        { success: false, error: 'Maximum download limit reached' },
+        { status: 410 }
+      )
+    }
+
+    // 6. Increment download count
+    await db.digitalDownload.update({
+      where: { id },
+      data: {
+        downloadCount: { increment: 1 },
+        lastDownloadedAt: new Date(),
+      },
+    })
+
+    // 7. Generate a signed URL for secure file access
     const fileName = download.fileName || 'download'
     const fileUrl = download.fileUrl
 
-    // Try to generate a Supabase signed URL
     let signedUrl: string | null = null
 
     if (SUPABASE_SERVICE_KEY) {
@@ -83,7 +138,7 @@ export async function GET(
       }
     }
 
-    // 4. Redirect to the signed URL (preferred) or the file URL
+    // 8. Redirect to the signed URL (preferred) or the file URL
     const redirectUrl = signedUrl || fileUrl
 
     // Determine content type based on file extension
@@ -112,11 +167,8 @@ export async function GET(
 
     const contentType = contentTypes[ext || ''] || 'application/octet-stream'
 
-    // For security, redirect to the signed URL rather than proxying
-    // This handles large files gracefully and doesn't expose the raw URL
     const response = NextResponse.redirect(redirectUrl)
 
-    // Set headers for download
     response.headers.set('Content-Type', contentType)
     response.headers.set(
       'Content-Disposition',
@@ -131,12 +183,4 @@ export async function GET(
       { status: 500 }
     )
   }
-}
-
-// Helper to find a download by token without validation
-async function findDownloadByToken(token: string) {
-  const { db } = await import('@/lib/db')
-  return db.digitalDownload.findUnique({
-    where: { downloadToken: token },
-  })
 }

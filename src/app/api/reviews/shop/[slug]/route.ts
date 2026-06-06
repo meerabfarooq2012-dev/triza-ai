@@ -12,6 +12,9 @@ export async function GET(
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '20', 10);
     const sort = searchParams.get('sort') || 'newest';
+    const ratingFilter = searchParams.get('rating');
+    const hasImages = searchParams.get('hasImages');
+    const isVerified = searchParams.get('isVerified');
     const userId = searchParams.get('userId') || '';
     const skip = (page - 1) * limit;
 
@@ -53,6 +56,24 @@ export async function GET(
     }
 
     const where: Prisma.ReviewWhereInput = { shopId: shop.id };
+
+    // Rating filter
+    if (ratingFilter) {
+      const ratingVal = parseInt(ratingFilter, 10);
+      if (ratingVal >= 1 && ratingVal <= 5) {
+        where.rating = ratingVal;
+      }
+    }
+
+    // Has images filter
+    if (hasImages === 'true') {
+      where.images = { not: '[]' };
+    }
+
+    // Verified only filter
+    if (isVerified === 'true') {
+      where.isVerified = true;
+    }
 
     const [reviews, total] = await Promise.all([
       db.review.findMany({

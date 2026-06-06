@@ -17,7 +17,7 @@ export async function createDownloadLink(
 ) {
   const token = generateDownloadToken()
   const expiresAt = new Date()
-  expiresAt.setDate(expiresAt.getDate() + 7) // 7 days from now
+  expiresAt.setDate(expiresAt.getDate() + 30) // 30 days from now
 
   const download = await db.digitalDownload.create({
     data: {

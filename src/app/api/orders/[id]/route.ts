@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { notifyOrderStatusUpdate } from '@/lib/notifications';
+import { createDownloadLink } from '@/lib/digital-download';
 
 export async function GET(
   request: NextRequest,
@@ -157,6 +158,74 @@ export async function PUT(
         seller: { select: { id: true, name: true } },
       },
     });
+
+    // Auto-generate download tokens for digital products when order is delivered
+    if (status === 'delivered') {
+      try {
+        // Fetch order items with product details for digital items
+        const orderItems = await db.orderItem.findMany({
+          where: { orderId: id },
+          include: {
+            product: {
+              select: {
+                id: true,
+                name: true,
+                type: true,
+                fileUrl: true,
+                fileSize: true,
+              },
+            },
+          },
+        });
+
+        const digitalItems = orderItems.filter(
+          (item) => item.type === 'digital' || item.product?.type === 'digital'
+        );
+
+        if (digitalItems.length > 0) {
+          // Check which products already have download records for this order
+          const existingDownloads = await db.digitalDownload.findMany({
+            where: {
+              orderId: id,
+              productId: { in: digitalItems.map((item) => item.productId) },
+            },
+            select: { productId: true },
+          });
+          const existingProductIds = new Set(existingDownloads.map((d) => d.productId));
+
+          for (const item of digitalItems) {
+            if (existingProductIds.has(item.productId)) continue;
+
+            const product = item.product;
+            if (!product || !product.fileUrl) continue;
+
+            const fileName = product.fileUrl.split('/').pop() || null;
+            const fileSize = product.fileSize
+              ? parseInt(product.fileSize, 10) || undefined
+              : undefined;
+
+            try {
+              await createDownloadLink(
+                order.buyerId,
+                product.id,
+                product.fileUrl,
+                id,
+                fileName || undefined,
+                fileSize
+              );
+            } catch (dlErr) {
+              console.error(
+                `[Order Delivery] Failed to create download for product ${product.id}:`,
+                dlErr
+              );
+            }
+          }
+        }
+      } catch (dlError) {
+        console.error('[Order Delivery] Error creating download records:', dlError);
+        // Don't fail the order update if download creation fails
+      }
+    }
 
     // Create notifications + send emails based on status changes
     // (email sending is handled inside notifyOrderStatusUpdate)

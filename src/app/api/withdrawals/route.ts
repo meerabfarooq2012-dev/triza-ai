@@ -106,11 +106,11 @@ export const POST = withCsrf(async (request: NextRequest) => {
       );
     }
 
-    // Minimum withdrawal amount
-    const MIN_WITHDRAWAL_AMOUNT = 10;
+    // Minimum withdrawal amount (PKR)
+    const MIN_WITHDRAWAL_AMOUNT = 500;
     if (amount < MIN_WITHDRAWAL_AMOUNT) {
       return NextResponse.json(
-        { success: false, error: `Minimum withdrawal amount is $${MIN_WITHDRAWAL_AMOUNT.toFixed(2)}. Please enter an amount of at least $${MIN_WITHDRAWAL_AMOUNT.toFixed(2)}.` },
+        { success: false, error: `Minimum withdrawal amount is PKR ${MIN_WITHDRAWAL_AMOUNT.toFixed(0)}. Please enter an amount of at least PKR ${MIN_WITHDRAWAL_AMOUNT.toFixed(0)}.` },
         { status: 400 }
       );
     }
@@ -126,9 +126,10 @@ export const POST = withCsrf(async (request: NextRequest) => {
       });
     }
 
-    // No withdrawal fees — Marketo only earns from 10% platform commission
-    const fee = 0;
-    const netAmount = Math.round(amount * 100) / 100;
+    // Withdrawal fee: 2% of amount or PKR 50 flat, whichever is greater
+    const calculatedFee = Math.max(Math.round(amount * 0.02 * 100) / 100, 50);
+    const fee = Math.round(calculatedFee * 100) / 100;
+    const netAmount = Math.round((amount - fee) * 100) / 100;
 
     // Check maximum pending withdrawals
     const pendingWithdrawalsCount = await db.withdrawal.count({
@@ -148,7 +149,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
     // Check sufficient balance
     if (wallet.balance < amount) {
       return NextResponse.json(
-        { success: false, error: `Insufficient balance. Available: $${wallet.balance.toFixed(2)}, Requested: $${amount.toFixed(2)}` },
+        { success: false, error: `Insufficient balance. Available: PKR ${wallet.balance.toFixed(0)}, Requested: PKR ${amount.toFixed(0)}` },
         { status: 400 }
       );
     }
@@ -160,7 +161,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
       });
 
       if (!freshWallet || freshWallet.balance < amount) {
-        throw new Error(`Insufficient balance. Available: $${freshWallet?.balance.toFixed(2) ?? '0.00'}, Requested: $${amount.toFixed(2)}`);
+        throw new Error(`Insufficient balance. Available: PKR ${freshWallet?.balance.toFixed(0) ?? '0'}, Requested: PKR ${amount.toFixed(0)}`);
       }
 
       // Create withdrawal record first
@@ -169,7 +170,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
           walletId: wallet!.id,
           userId,
           amount: Math.round(amount * 100) / 100,
-          fee: 0,
+          fee,
           netAmount,
           method,
           accountDetails: JSON.stringify(accountDetails),
@@ -179,7 +180,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
 
       // Deduct from wallet balance (using fresh balance from re-verified wallet)
       const newBalance = Math.round((freshWallet.balance - amount) * 100) / 100;
-      const newTotalWithdrawn = Math.round((freshWallet.totalWithdrawn + amount) * 100) / 100;
+      const newTotalWithdrawn = Math.round((freshWallet.totalWithdrawn + netAmount) * 100) / 100;
 
       const updatedWallet = await tx.wallet.update({
         where: { id: freshWallet.id },
@@ -196,10 +197,11 @@ export const POST = withCsrf(async (request: NextRequest) => {
           type: 'withdrawal',
           amount: amount,
           balance: updatedWallet.balance,
-          description: `Withdrawal via ${method}`,
+          description: `Withdrawal via ${method} (Fee: PKR ${fee.toFixed(0)})`,
           status: 'completed',
           referenceType: 'withdrawal',
           referenceId: newWithdrawal.id,
+          metadata: JSON.stringify({ fee, netAmount }),
         },
       });
 
@@ -208,8 +210,9 @@ export const POST = withCsrf(async (request: NextRequest) => {
         data: {
           userId,
           title: 'Withdrawal Requested',
-          message: `Your withdrawal of $${amount.toFixed(2)} via ${method} is being processed. You will receive the full amount — no fees!`,
+          message: `Your withdrawal of PKR ${amount.toFixed(0)} via ${method} is being processed. Net amount: PKR ${netAmount.toFixed(0)} (Fee: PKR ${fee.toFixed(0)})`,
           type: 'info',
+          category: 'payment',
         },
       });
 
@@ -254,7 +257,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
     if (withdrawal.user?.email) {
       sendEmailAsync({
         to: withdrawal.user.email,
-        subject: `⏳ Withdrawal Request — $${amount.toFixed(2)} — Marketo`,
+        subject: `⏳ Withdrawal Request — PKR ${amount.toFixed(0)} — Marketo`,
         html: withdrawalNotificationEmail({
           userName: withdrawal.user.name,
           amount,
@@ -262,7 +265,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
           status: 'pending',
           withdrawalId: withdrawal.id,
           netAmount,
-          fee: 0,
+          fee,
           expectedTimeline: '1–3 business days',
         }),
       });

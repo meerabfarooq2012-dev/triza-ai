@@ -72,7 +72,7 @@ interface ReviewSectionProps {
   shopOwnerId?: string
 }
 
-type ReviewSortOption = 'recent' | 'highest' | 'lowest' | 'helpful' | 'photos'
+type ReviewSortOption = 'newest' | 'highest' | 'lowest' | 'helpful'
 type FilterChip = 'all' | '5' | '4' | '3' | '2' | '1' | 'photos' | 'verified'
 
 // =============================================================================
@@ -83,11 +83,10 @@ const HELPED_STORAGE_KEY = 'marketo_helped_reviews'
 const REVIEWS_PER_PAGE = 10
 
 const SORT_OPTIONS: { value: ReviewSortOption; label: string }[] = [
-  { value: 'recent', label: 'Most Recent' },
-  { value: 'highest', label: 'Highest Rated' },
-  { value: 'lowest', label: 'Lowest Rated' },
+  { value: 'newest', label: 'Most Recent' },
+  { value: 'highest', label: 'Highest Rating' },
+  { value: 'lowest', label: 'Lowest Rating' },
   { value: 'helpful', label: 'Most Helpful' },
-  { value: 'photos', label: 'With Photos' },
 ]
 
 const FILTER_CHIPS: { value: FilterChip; label: string }[] = [
@@ -1310,8 +1309,9 @@ export function ReviewSection({
 }: ReviewSectionProps) {
   const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
-  const [reviewSort, setReviewSort] = useState<ReviewSortOption>('recent')
+  const [reviewSort, setReviewSort] = useState<ReviewSortOption>('newest')
   const [activeFilter, setActiveFilter] = useState<FilterChip>('all')
+  const [verifiedOnly, setVerifiedOnly] = useState(false)
   const [starFilter, setStarFilter] = useState<number | null>(null)
   const [reviewPage, setReviewPage] = useState(1)
   const [reviewTotal, setReviewTotal] = useState(0)
@@ -1325,6 +1325,19 @@ export function ReviewSection({
     distribution: { star: number; count: number; percentage: number }[]
   } | null>(null)
   const [editingReview, setEditingReview] = useState<Review | null>(null)
+
+  // Build common filter params for API calls
+  const buildFilterParams = useCallback((page: number) => {
+    const params: Record<string, string | number | boolean> = {
+      page,
+      limit: REVIEWS_PER_PAGE,
+      sort: reviewSort,
+    }
+    if (verifiedOnly) params.isVerified = true
+    if (activeFilter === 'photos') params.hasImages = true
+    if (starFilter) params.rating = starFilter
+    return params
+  }, [reviewSort, verifiedOnly, activeFilter, starFilter])
 
   // Fetch reviews
   const fetchReviews = useCallback(async (page: number = 1, append: boolean = false) => {
@@ -1340,11 +1353,16 @@ export function ReviewSection({
         ratingSummary?: typeof apiRatingSummary
       } | null = null
 
+      const filterParams = buildFilterParams(page)
+
       if (productId) {
         const res = await api.reviews.getProductReviews(productId, {
           page,
           limit: REVIEWS_PER_PAGE,
-          sort: reviewSort === 'photos' ? 'recent' : reviewSort,
+          sort: reviewSort,
+          isVerified: verifiedOnly || undefined,
+          hasImages: activeFilter === 'photos' || undefined,
+          rating: starFilter ?? undefined,
         })
         if (res?.data) {
           resData = res.data
@@ -1353,7 +1371,10 @@ export function ReviewSection({
         const res = await api.reviews.getGigReviews(gigId, {
           page,
           limit: REVIEWS_PER_PAGE,
-          sort: reviewSort === 'photos' ? 'recent' : reviewSort,
+          sort: reviewSort,
+          isVerified: verifiedOnly || undefined,
+          hasImages: activeFilter === 'photos' || undefined,
+          rating: starFilter ?? undefined,
         })
         if (res?.data) {
           resData = res.data
@@ -1362,6 +1383,10 @@ export function ReviewSection({
         const res = await api.reviews.getShopReviews(shopSlug, {
           page,
           limit: REVIEWS_PER_PAGE,
+          sort: reviewSort,
+          isVerified: verifiedOnly || undefined,
+          hasImages: activeFilter === 'photos' || undefined,
+          rating: starFilter ?? undefined,
         })
         if (res?.data) {
           resData = res.data
@@ -1372,8 +1397,11 @@ export function ReviewSection({
           shopId,
           page: String(page),
           limit: String(REVIEWS_PER_PAGE),
-          sort: reviewSort === 'photos' ? 'recent' : reviewSort,
+          sort: reviewSort,
         })
+        if (verifiedOnly) searchParams.set('isVerified', 'true')
+        if (activeFilter === 'photos') searchParams.set('hasImages', 'true')
+        if (starFilter) searchParams.set('rating', String(starFilter))
         const response = await fetch(`/api/reviews?${searchParams.toString()}`)
         const data = await response.json()
         if (data.success) {
@@ -1400,18 +1428,18 @@ export function ReviewSection({
       setLoading(false)
       setLoadingMore(false)
     }
-  }, [productId, gigId, shopSlug, shopId, reviewSort])
+  }, [productId, gigId, shopSlug, shopId, reviewSort, verifiedOnly, activeFilter, starFilter, buildFilterParams])
 
   useEffect(() => {
     setReviewPage(1)
     fetchReviews(1, false)
   }, [fetchReviews])
 
-  // Refetch on sort change
+  // Refetch on sort or filter change
   useEffect(() => {
     setReviewPage(1)
     fetchReviews(1, false)
-  }, [reviewSort])
+  }, [reviewSort, verifiedOnly, activeFilter, starFilter])
 
   // Calculate rating distribution — prefer API's accurate summary
   const ratingDistribution = apiRatingSummary?.distribution ?? [5, 4, 3, 2, 1].map(star => ({ star, count: 0, percentage: 0 }))
@@ -1420,17 +1448,17 @@ export function ReviewSection({
 
   const totalReviews = apiRatingSummary?.count ?? reviewTotal
 
-  // Filter reviews
+  // Filter reviews (client-side fallback for in-page filtering; main filters are server-side)
   const filteredReviews = useMemo(() => {
     let filtered = [...reviews]
 
-    // Apply star filter (from sidebar or chip)
+    // Apply star filter (from sidebar or chip) — client-side for instant UI
     const effectiveStarFilter = starFilter ?? (activeFilter !== 'all' && !isNaN(Number(activeFilter)) ? Number(activeFilter) : null)
     if (effectiveStarFilter) {
       filtered = filtered.filter((r) => Math.round(r.rating) === effectiveStarFilter)
     }
 
-    // Apply photo filter
+    // Apply photo filter — client-side for instant UI
     if (activeFilter === 'photos') {
       filtered = filtered.filter((r) => {
         const imgs = safeJsonParse<string[]>(r.images as unknown as string, [])
@@ -1438,37 +1466,13 @@ export function ReviewSection({
       })
     }
 
-    // Apply verified filter
-    if (activeFilter === 'verified') {
+    // Apply verified filter — client-side for instant UI (also sent to API)
+    if (verifiedOnly || activeFilter === 'verified') {
       filtered = filtered.filter((r) => r.isVerified)
     }
 
-    // Client-side sort
-    switch (reviewSort) {
-      case 'highest':
-        filtered.sort((a, b) => b.rating - a.rating)
-        break
-      case 'lowest':
-        filtered.sort((a, b) => a.rating - b.rating)
-        break
-      case 'helpful':
-        filtered.sort((a, b) => (b.helpfulCount || 0) - (a.helpfulCount || 0))
-        break
-      case 'photos':
-        filtered.sort((a, b) => {
-          const aImgs = safeJsonParse<string[]>(a.images as unknown as string, [])
-          const bImgs = safeJsonParse<string[]>(b.images as unknown as string, [])
-          return bImgs.length - aImgs.length
-        })
-        break
-      case 'recent':
-      default:
-        filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        break
-    }
-
     return filtered
-  }, [reviews, starFilter, activeFilter, reviewSort])
+  }, [reviews, starFilter, activeFilter, verifiedOnly])
 
   const hasMoreReviews = reviews.length < reviewTotal
 
@@ -1554,9 +1558,14 @@ export function ReviewSection({
   // Handle filter chip
   const handleFilterChip = (chip: FilterChip) => {
     setActiveFilter(chip)
-    if (chip === 'all' || chip === 'photos' || chip === 'verified') {
+    if (chip === 'verified') {
+      setVerifiedOnly(true)
+      setStarFilter(null)
+    } else if (chip === 'all' || chip === 'photos') {
+      setVerifiedOnly(false)
       setStarFilter(null)
     } else {
+      setVerifiedOnly(false)
       setStarFilter(Number(chip))
     }
   }

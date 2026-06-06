@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
     const sort = searchParams.get('sort') || 'newest';
     const ratingFilter = searchParams.get('rating');
     const hasImages = searchParams.get('hasImages');
+    const isVerified = searchParams.get('isVerified');
     const userId = searchParams.get('userId') || '';
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '20', 10);
@@ -41,6 +42,11 @@ export async function GET(request: NextRequest) {
     // Has images filter
     if (hasImages === 'true') {
       where.images = { not: '[]' };
+    }
+
+    // Verified only filter
+    if (isVerified === 'true') {
+      where.isVerified = true;
     }
 
     // Build sort order
