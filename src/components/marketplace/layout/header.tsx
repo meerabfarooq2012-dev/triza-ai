@@ -27,6 +27,7 @@ import {
   Rss,
   Scale,
   ShieldCheck,
+  Download,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -59,6 +60,7 @@ import { NotificationBell } from '@/components/marketplace/notifications/notific
 import { ThemeToggle } from '@/components/marketplace/layout/theme-toggle'
 import { SearchAutocomplete } from '@/components/marketplace/search/search-autocomplete'
 import { LanguageSwitcher } from '@/components/marketplace/shared/language-switcher'
+import { usePwa } from '@/components/providers/pwa-provider'
 
 export function Header() {
   const {
@@ -75,6 +77,7 @@ export function Header() {
   } = useMarketplaceStore()
 
   const { t } = useLanguage()
+  const { canInstall, promptInstall } = usePwa()
 
   const [searchInput, setSearchInput] = useState('')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -277,6 +280,19 @@ export function Header() {
               <NotificationBell />
             )}
 
+            {/* Install App Button */}
+            {canInstall && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={promptInstall}
+                className="hidden sm:flex h-8 gap-1.5 border-amber-500/50 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 hover:border-amber-500"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span className="text-xs font-medium">Install App</span>
+              </Button>
+            )}
+
             {/* Theme Toggle */}
             <ThemeToggle />
 
@@ -416,6 +432,17 @@ export function Header() {
                       {t('nav.activityFeed')}
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
+
+                  {/* Install App */}
+                  {canInstall && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={promptInstall} className="text-amber-600 dark:text-amber-400 focus:text-amber-600">
+                        <Download className="mr-2 h-4 w-4" />
+                        Install Marketo App
+                      </DropdownMenuItem>
+                    </>
+                  )}
 
                   {/* Admin link */}
                   {currentUser?.isAdmin && (
@@ -747,6 +774,18 @@ export function Header() {
                     <Rss className="h-4.5 w-4.5" />
                     {t('nav.activityFeed')}
                   </Button>
+
+                  {/* Install App - Mobile */}
+                  {canInstall && (
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start gap-3 border-amber-500/50 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+                      onClick={() => { promptInstall(); setMobileMenuOpen(false) }}
+                    >
+                      <Download className="h-4.5 w-4.5" />
+                      Install Marketo App
+                    </Button>
+                  )}
 
                   {currentUser?.isAdmin && (
                     <Button
