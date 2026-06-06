@@ -52,6 +52,12 @@ export function proxy(request: NextRequest) {
   // Control referrer information leakage
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
 
+  // HTTP Strict Transport Security — force HTTPS
+  response.headers.set(
+    'Strict-Transport-Security',
+    'max-age=63072000; includeSubDomains; preload'
+  )
+
   // Disable unnecessary browser features
   response.headers.set(
     'Permissions-Policy',
@@ -67,11 +73,12 @@ export function proxy(request: NextRequest) {
 
   const csp = [
     `default-src 'self'`,
-    `script-src 'self' 'unsafe-inline' 'unsafe-eval'`, // Next.js requires unsafe-inline and unsafe-eval
+    `script-src 'self' 'unsafe-inline'`, // Next.js requires unsafe-inline but NOT unsafe-eval
     `style-src 'self' 'unsafe-inline'`, // Next.js CSS requires unsafe-inline
     `img-src ${cspImageSources.join(' ')}`,
     `font-src 'self' data:`,
     `connect-src 'self' https://${supabaseDomain || '*.supabase.co'} https://api.stripe.com`,
+    `object-src 'none'`, // Block all plugin content (Flash, Java, etc.)
     `frame-ancestors 'none'`, // Equivalent to X-Frame-Options: DENY
     `base-uri 'self'`,
     `form-action 'self'`,

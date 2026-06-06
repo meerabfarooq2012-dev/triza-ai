@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { withCsrf } from '@/lib/with-csrf';
+import { authenticateRequestWithSession } from '@/lib/auth-middleware';
 
 // GET /api/disputes — List disputes with filters and pagination
 export async function GET(request: NextRequest) {
@@ -119,10 +120,18 @@ export async function GET(request: NextRequest) {
 // POST /api/disputes — Create a new dispute
 export const POST = withCsrf(async (request: NextRequest) => {
   try {
+    // Authenticate the request (with session validation)
+    const auth = await authenticateRequestWithSession(request);
+    if (!auth) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const {
       orderId,
-      userId,
       sellerId: bodySellerId,
       shopId: bodyShopId,
       reason,
@@ -131,12 +140,15 @@ export const POST = withCsrf(async (request: NextRequest) => {
       priority,
     } = body;
 
+    // Use server-extracted userId from JWT instead of body
+    const userId = auth.userId;
+
     // Validate required fields
-    if (!orderId || !userId || !reason || !description) {
+    if (!orderId || !reason || !description) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Missing required fields: orderId, userId, reason, description',
+          error: 'Missing required fields: orderId, reason, description',
         },
         { status: 400 }
       );

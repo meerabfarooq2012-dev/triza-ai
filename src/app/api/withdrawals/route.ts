@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client';
 import { sendEmailAsync } from '@/lib/email';
 import { withdrawalNotificationEmail } from '@/lib/email-templates';
 import { withCsrf } from '@/lib/with-csrf';
+import { authenticateRequestWithSession } from '@/lib/auth-middleware';
 
 export async function GET(request: NextRequest) {
   try {
@@ -81,12 +82,24 @@ export async function GET(request: NextRequest) {
 
 export const POST = withCsrf(async (request: NextRequest) => {
   try {
-    const body = await request.json();
-    const { userId, amount, method, accountDetails } = body;
-
-    if (!userId || !amount || !method || !accountDetails) {
+    // Authenticate the request (with session validation)
+    const auth = await authenticateRequestWithSession(request);
+    if (!auth) {
       return NextResponse.json(
-        { success: false, error: 'userId, amount, method, and accountDetails are required' },
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const { amount, method, accountDetails } = body;
+
+    // Use server-extracted userId from JWT instead of body
+    const userId = auth.userId;
+
+    if (!amount || !method || !accountDetails) {
+      return NextResponse.json(
+        { success: false, error: 'amount, method, and accountDetails are required' },
         { status: 400 }
       );
     }

@@ -5,11 +5,11 @@
 
 import { createHmac } from 'crypto'
 
-// Derive the CSRF secret from CSRF_SECRET env, or fall back to JWT_SECRET, or a dev default
+// Derive the CSRF secret from CSRF_SECRET env, or fall back to JWT_SECRET
 const CSRF_SECRET =
   process.env.CSRF_SECRET ||
-  process.env.JWT_SECRET ||
-  'marketo-csrf-dev-secret-change-in-production'
+  process.env.JWT_SECRET
+if (!CSRF_SECRET) throw new Error('FATAL: CSRF_SECRET or JWT_SECRET environment variable must be set')
 
 /**
  * Generate a signed CSRF token.

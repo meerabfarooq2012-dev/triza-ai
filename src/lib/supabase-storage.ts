@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { randomBytes } from 'crypto'
 
 // =============================================================================
 // Supabase Storage Client - Server-side only (used in API routes)
@@ -7,6 +8,15 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js'
 const SUPABASE_URL = 'https://veplxumszgotnkassotw.supabase.co'
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || ''
 export const STORAGE_BUCKET = 'marketplace'
+
+// File upload validation constants
+const ALLOWED_MIME_TYPES = [
+  'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'
+]
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+
+// Allowed folder names for upload
+const ALLOWED_FOLDERS = ['products', 'avatars', 'shops', 'reviews', 'evidence', 'stories', 'general']
 
 // Lazy-initialized Supabase admin client
 let _supabaseAdmin: SupabaseClient | null = null
@@ -31,10 +41,34 @@ export function getPublicUrl(path: string): string {
   return `${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}/${path}`
 }
 
-// Generate a unique file path
+// Validate file before upload
+export function validateFile(
+  fileBuffer: Buffer,
+  contentType: string,
+  folder: string
+): { valid: boolean; error?: string } {
+  // Validate MIME type
+  if (!ALLOWED_MIME_TYPES.includes(contentType)) {
+    return { valid: false, error: `Invalid file type: ${contentType}. Allowed types: ${ALLOWED_MIME_TYPES.join(', ')}` }
+  }
+
+  // Validate file size
+  if (fileBuffer.length > MAX_FILE_SIZE) {
+    return { valid: false, error: `File too large: ${(fileBuffer.length / 1024 / 1024).toFixed(1)}MB. Maximum size: ${MAX_FILE_SIZE / 1024 / 1024}MB` }
+  }
+
+  // Validate folder
+  if (!ALLOWED_FOLDERS.includes(folder)) {
+    return { valid: false, error: `Invalid folder: ${folder}. Allowed folders: ${ALLOWED_FOLDERS.join(', ')}` }
+  }
+
+  return { valid: true }
+}
+
+// Generate a unique file path using cryptographically secure random bytes
 export function generateFilePath(folder: string, fileName: string): string {
   const ext = fileName.split('.').pop() || 'jpg'
-  const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`
+  const uniqueId = `${Date.now()}-${randomBytes(16).toString('hex')}`
   return `${folder}/${uniqueId}.${ext}`
 }
 
@@ -42,11 +76,19 @@ export function generateFilePath(folder: string, fileName: string): string {
 export async function uploadToStorage(
   filePath: string,
   fileBuffer: Buffer,
-  contentType: string
+  contentType: string,
+  folder?: string
 ): Promise<{ success: boolean; url?: string; error?: string }> {
   const admin = getSupabaseAdmin()
   if (!admin) {
     return { success: false, error: 'Supabase Storage not configured. Set SUPABASE_SERVICE_KEY env var.' }
+  }
+
+  // Validate file before uploading
+  const effectiveFolder = folder || filePath.split('/')[0] || 'general'
+  const validation = validateFile(fileBuffer, contentType, effectiveFolder)
+  if (!validation.valid) {
+    return { success: false, error: validation.error }
   }
 
   try {

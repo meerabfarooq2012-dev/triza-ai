@@ -3360,3 +3360,33 @@ Stage Summary:
 - Book shipment dialog for sellers
 - Live tracking section with carrier status timeline
 - 60+ Pakistani cities with carrier-specific city codes
+
+---
+Task ID: security-fix
+Agent: security-agent
+Task: Fix all critical security vulnerabilities
+
+Work Log:
+- Removed hardcoded secret fallbacks in auth-middleware.ts (JWT_SECRET), csrf.ts (CSRF_SECRET), two-factor.ts (hashBackupCode) — now throw FATAL errors if env vars missing
+- Added twoFactorPending field to AuthPayload interface and enforced it in both authenticateRequest() and authenticateRequestWithSession() — rejects tokens with 2FA still pending
+- Added authenticateRequestWithSession to product POST route, replaced body.userId with server-extracted auth.userId, added seller role check, price positive number validation, product type allowlist validation
+- Created src/lib/sanitize.ts with sanitizeString, sanitizeHtml, isValidEmail, isStrongPassword, normalizeEmail, isPositiveNumber utilities
+- Fixed register route: normalized email, validated email format with isValidEmail, strengthened password policy with isStrongPassword (8+ chars, uppercase, lowercase, number), sanitized name with sanitizeString, hashed emailVerifyToken with SHA-256 before storage
+- Fixed login route: normalized email with normalizeEmail, removed remaining attempts info leakage, removed debug info from 500 error response, changed "Invalid email or password" to generic "Invalid credentials" for user-not-found case
+- Added server-side file upload validation in supabase-storage.ts: MIME type allowlist (5 image types), 5MB max file size, folder allowlist validation, replaced Math.random() with crypto.randomBytes(16) for secure file paths, added validateFile() export
+- Fixed security headers in proxy.ts: added HSTS header (max-age=63072000; includeSubDomains; preload), removed unsafe-eval from script-src CSP, added object-src none to CSP
+- Added authenticateRequestWithSession to shops POST route (replaced body.userId with auth.userId), wallet GET route (with ownership verification), withdrawals POST route (replaced body.userId with auth.userId), disputes POST route (replaced body.userId with auth.userId)
+- Hashed email verification tokens in verify-email route (SHA-256 hashes incoming token before comparison) and resend-verification route (stores hashed token, sends raw in email)
+- Updated resend-verification route: uses ?verify= query param instead of ?token= for consistency with register flow
+
+Stage Summary:
+- All 10 critical security vulnerabilities fixed across 11 files
+- Zero lint errors (0 errors, 3 pre-existing warnings in unrelated files)
+- Dev server running without issues
+- No hardcoded secrets remain — all throw FATAL errors if env vars missing
+- All critical API routes now require authenticated sessions with server-extracted user IDs
+- Email verification tokens are hashed (SHA-256) before database storage
+- File uploads are validated server-side (MIME type allowlist, size limit, folder allowlist, crypto-secure paths)
+- CSP tightened (no unsafe-eval, object-src none), HSTS added
+- Login no longer leaks user existence or remaining attempt counts
+

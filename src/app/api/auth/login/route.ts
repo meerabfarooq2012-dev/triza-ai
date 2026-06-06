@@ -12,6 +12,7 @@ import {
 import { signToken } from '@/lib/auth-middleware';
 import { createSession } from '@/lib/session';
 import { withCsrf } from '@/lib/with-csrf';
+import { normalizeEmail } from '@/lib/sanitize';
 
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 30 * 60 * 1000; // 30 minutes (enhanced from 15)
@@ -46,7 +47,8 @@ export const POST = withCsrf(async (request: NextRequest) => {
     }
 
     const body = await request.json();
-    const { email, password } = body;
+    const { email: rawEmail, password } = body;
+    const email = normalizeEmail(rawEmail || '');
 
     if (!email || !password) {
       return NextResponse.json(
@@ -60,9 +62,10 @@ export const POST = withCsrf(async (request: NextRequest) => {
       include: { shop: true },
     });
 
+    // Use generic message to avoid revealing whether email exists
     if (!user) {
       return NextResponse.json(
-        { success: false, error: 'Invalid email or password' },
+        { success: false, error: 'Invalid credentials' },
         { status: 401 }
       );
     }
@@ -117,11 +120,10 @@ export const POST = withCsrf(async (request: NextRequest) => {
         );
       }
 
-      const remainingAttempts = MAX_LOGIN_ATTEMPTS - newAttempts;
       return NextResponse.json(
         {
           success: false,
-          error: `Invalid email or password. ${remainingAttempts} attempt(s) remaining.`,
+          error: 'Invalid credentials',
         },
         { status: 401 }
       );
@@ -187,9 +189,8 @@ export const POST = withCsrf(async (request: NextRequest) => {
     });
   } catch (error) {
     console.error('Login error:', error);
-    const errMsg = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { success: false, error: 'Failed to login', debug: errMsg.substring(0, 200) },
+      { success: false, error: 'Failed to login' },
       { status: 500 }
     );
   }

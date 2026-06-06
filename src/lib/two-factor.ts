@@ -64,7 +64,9 @@ export function generateBackupCodes(): string[] {
  * Hash a backup code for storage (we compare against hashed versions)
  */
 export function hashBackupCode(code: string): string {
-  return createHmac('sha256', process.env.JWT_SECRET || 'marketo-dev-secret')
+  const secret = process.env.JWT_SECRET
+  if (!secret) throw new Error('FATAL: JWT_SECRET environment variable is not set')
+  return createHmac('sha256', secret)
     .update(code)
     .digest('hex');
 }

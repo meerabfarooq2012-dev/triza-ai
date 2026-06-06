@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { authenticateRequestWithSession } from '@/lib/auth-middleware';
 
 export async function GET(request: NextRequest) {
   try {
+    // Authenticate the request (with session validation)
+    const auth = await authenticateRequestWithSession(request);
+    if (!auth) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get('userId');
 
@@ -10,6 +20,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: 'userId is required' },
         { status: 400 }
+      );
+    }
+
+    // Verify the authenticated user is requesting their own wallet
+    if (auth.userId !== userId) {
+      return NextResponse.json(
+        { success: false, error: 'You can only access your own wallet' },
+        { status: 403 }
       );
     }
 

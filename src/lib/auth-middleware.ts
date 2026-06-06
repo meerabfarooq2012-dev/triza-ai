@@ -7,13 +7,15 @@ import jwt from 'jsonwebtoken'
 import { randomBytes } from 'crypto'
 import { validateSession } from '@/lib/session'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'marketo-dev-secret-change-in-production'
+const JWT_SECRET = process.env.JWT_SECRET
+if (!JWT_SECRET) throw new Error('FATAL: JWT_SECRET environment variable is not set')
 const JWT_EXPIRES_IN = '7d' // 7 days
 
 export interface AuthPayload {
   userId: string
   email: string
   role: string
+  twoFactorPending?: boolean
 }
 
 /**
@@ -58,7 +60,15 @@ export function authenticateRequest(request: Request): AuthPayload | null {
   const token = extractToken(request)
   if (!token) return null
 
-  return verifyToken(token)
+  const decoded = verifyToken(token)
+  if (!decoded) return null
+
+  // Reject tokens that still have 2FA pending
+  if (decoded.twoFactorPending) {
+    return null
+  }
+
+  return decoded
 }
 
 /**
@@ -73,6 +83,11 @@ export async function authenticateRequestWithSession(request: Request): Promise<
 
   const payload = verifyToken(token)
   if (!payload) return null
+
+  // Reject tokens that still have 2FA pending
+  if (payload.twoFactorPending) {
+    return null
+  }
 
   // Check if the session is still active (not revoked)
   const isValidSession = await validateSession(token)

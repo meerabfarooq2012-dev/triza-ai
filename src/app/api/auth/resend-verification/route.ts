@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { sendEmailAsync } from '@/lib/email';
 import { emailVerificationEmail } from '@/lib/email-templates';
 import { rateLimit, getRateLimitKey, authRateLimit } from '@/lib/rate-limit';
-import { randomBytes } from 'crypto';
+import { randomBytes, createHash } from 'crypto';
 import { withCsrf } from '@/lib/with-csrf';
 
 export const POST = withCsrf(async (request: NextRequest) => {
@@ -58,16 +58,17 @@ export const POST = withCsrf(async (request: NextRequest) => {
       );
     }
 
-    // Generate new verification token
-    const emailVerifyToken = randomBytes(32).toString('hex');
+    // Generate new verification token (raw token for email, hashed for storage)
+    const verifyToken = randomBytes(32).toString('hex');
+    const hashedToken = createHash('sha256').update(verifyToken).digest('hex');
 
     await db.user.update({
       where: { id: user.id },
-      data: { emailVerifyToken },
+      data: { emailVerifyToken: hashedToken },
     });
 
-    // Send verification email (non-blocking)
-    const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://marketo.fun'}?token=${emailVerifyToken}`;
+    // Send verification email (non-blocking) — use raw token in the link
+    const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://marketo.fun'}?verify=${verifyToken}`;
     sendEmailAsync({
       to: user.email,
       subject: 'Verify Your Email — Marketo',

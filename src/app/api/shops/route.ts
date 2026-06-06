@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { withCsrf } from '@/lib/with-csrf';
 import { cache } from '@/lib/cache';
+import { authenticateRequestWithSession } from '@/lib/auth-middleware';
 
 function slugify(text: string): string {
   return text
@@ -107,9 +108,17 @@ export async function GET(request: NextRequest) {
 
 export const POST = withCsrf(async (request: NextRequest) => {
   try {
+    // Authenticate the request (with session validation)
+    const auth = await authenticateRequestWithSession(request);
+    if (!auth) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const {
-      userId,
       name,
       description,
       logo,
@@ -125,9 +134,12 @@ export const POST = withCsrf(async (request: NextRequest) => {
       address,
     } = body;
 
-    if (!userId || !name) {
+    // Use server-extracted userId from JWT instead of body
+    const userId = auth.userId;
+
+    if (!name) {
       return NextResponse.json(
-        { success: false, error: 'userId and name are required' },
+        { success: false, error: 'Shop name is required' },
         { status: 400 }
       );
     }

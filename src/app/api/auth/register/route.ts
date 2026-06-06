@@ -8,7 +8,8 @@ import { rateLimit, getFingerprintedRateLimitKey, registerRateLimit } from '@/li
 import { signToken } from '@/lib/auth-middleware';
 import { createSession } from '@/lib/session';
 import { withCsrf } from '@/lib/with-csrf';
-import { randomBytes } from 'crypto';
+import { randomBytes, createHash } from 'crypto';
+import { sanitizeString, normalizeEmail, isValidEmail, isStrongPassword } from '@/lib/sanitize';
 
 function slugify(text: string): string {
   return text
@@ -39,11 +40,23 @@ export const POST = withCsrf(async (request: NextRequest) => {
     }
 
     const body = await request.json();
-    const { email, password, name, role = 'buyer', termsAccepted } = body;
+    const { email: rawEmail, password, name: rawName, role = 'buyer', termsAccepted } = body;
+
+    // Normalize and sanitize inputs
+    const email = normalizeEmail(rawEmail || '');
+    const name = sanitizeString(rawName || '');
 
     if (!email || !password || !name) {
       return NextResponse.json(
         { success: false, error: 'Email, password, and name are required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate email format
+    if (!isValidEmail(email)) {
+      return NextResponse.json(
+        { success: false, error: 'Please enter a valid email address' },
         { status: 400 }
       );
     }
@@ -62,9 +75,11 @@ export const POST = withCsrf(async (request: NextRequest) => {
       );
     }
 
-    if (password.length < 6) {
+    // Validate password strength
+    const passwordCheck = isStrongPassword(password);
+    if (!passwordCheck.valid) {
       return NextResponse.json(
-        { success: false, error: 'Password must be at least 6 characters' },
+        { success: false, error: `Password requirements not met: ${passwordCheck.errors.join(', ')}` },
         { status: 400 }
       );
     }
@@ -78,7 +93,8 @@ export const POST = withCsrf(async (request: NextRequest) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
-    const emailVerifyToken = randomBytes(32).toString('hex');
+    const verifyToken = randomBytes(32).toString('hex');
+    const hashedToken = createHash('sha256').update(verifyToken).digest('hex');
 
     const user = await db.user.create({
       data: {
@@ -87,7 +103,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
         name,
         role,
         emailVerified: false,
-        emailVerifyToken,
+        emailVerifyToken: hashedToken,
         termsAcceptedAt: new Date(),
       },
     });
@@ -145,7 +161,8 @@ export const POST = withCsrf(async (request: NextRequest) => {
     });
 
     // Send email verification (non-blocking)
-    const verifyUrl = `${process.env.NEXT_PUBLIC_PLATFORM_URL || 'https://marketo-alpha.vercel.app'}?verify=${emailVerifyToken}`;
+    // Note: we send the raw token in the email link, but store the hashed version
+    const verifyUrl = `${process.env.NEXT_PUBLIC_PLATFORM_URL || 'https://marketo-alpha.vercel.app'}?verify=${verifyToken}`;
     sendEmailAsync({
       to: email,
       subject: 'Verify your email — Marketo',
