@@ -282,8 +282,18 @@ const CompareBar = dynamic(
   { ssr: false }
 )
 
+const DynamicSEO = dynamic(
+  withChunkRetry(() => import('@/components/marketplace/shared/dynamic-seo'), 'DynamicSEO'),
+  { ssr: false }
+)
+
 const CookieConsent = dynamic(
   () => import('@/components/marketplace/layout/cookie-consent').then(m => ({ default: m.CookieConsent })),
+  { ssr: false }
+)
+
+const CartSync = dynamic(
+  () => import('@/components/marketplace/shared/cart-sync').then(m => ({ default: m.CartSync })),
   { ssr: false }
 )
 
@@ -617,8 +627,10 @@ function MarketplaceApp() {
       <Footer />
       <CartDrawer />
       <CompareBar />
+      <DynamicSEO />
       <FeedbackWidget />
       <CookieConsent />
+      <CartSync />
       <EmailVerificationDialog
         open={showEmailVerify}
         onOpenChange={setShowEmailVerify}

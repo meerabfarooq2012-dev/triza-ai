@@ -326,6 +326,7 @@ export function SellerShopSettings() {
           layoutStyle,
           displayStyle,
           customSections,
+          socialLinks: socialLinks.map(({ platform, url }) => ({ platform, url })),
         }),
       })
       const data = await res.json()

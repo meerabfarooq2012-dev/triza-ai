@@ -2551,3 +2551,252 @@ Stage Summary:
 - Port-checking prevents duplicate service processes on restart
 - All 4 ports verified listening: 3000 (Next.js), 3003 (chat), 3004 (notifications), 3005 (HTTP push)
 - Server memory constraint noted: dev server uses ~1.5GB+ with Turbopack during first page compile
+
+---
+
+## Task 4 — Dynamic SEO Meta Tags for Product, Shop, and Gig Pages
+
+**Date:** 2025-03-05
+**Agent:** main
+
+### Summary
+Created a client-side DynamicSEO component that dynamically updates `document.title`, meta description, Open Graph tags, Twitter Card tags, and canonical URL when the user navigates between views in the SPA. Since Marketo uses Zustand-based client-side routing (not Next.js file-based routing), `generateMetadata` cannot be used in the traditional way. Instead, this component manipulates the DOM `<head>` directly via `useEffect`.
+
+### Changes Made
+
+#### 1. DynamicSEO Component (`src/components/marketplace/shared/dynamic-seo.tsx`) — NEW
+- `'use client'` component with no visual output (returns `null`)
+- Subscribes to `currentView` and `viewParams` from the Zustand marketplace store
+- **Product detail view** (`'product-detail'`):
+  - Fetches product data from `GET /api/products/[id]`
+  - Sets title: `"Product Name — Marketo"`
+  - Sets meta description: product `shortDesc` or `description` (truncated to 160 chars)
+  - Sets `og:type` to `'product'`, `og:image` to first product image
+  - Sets canonical URL: `{origin}?product={productId}`
+  - Shows "Loading Product…" title while data fetches
+- **Shop view** (`'shop-view'`):
+  - Fetches shop data from `GET /api/shops/[slug]`
+  - Sets title: `"Shop Name — Marketo"`
+  - Sets meta description: shop `description` or `about` (truncated to 160 chars)
+  - Sets `og:image` to shop logo or banner
+  - Sets canonical URL: `{origin}?shop={slug}`
+  - Shows "Loading Shop…" title while data fetches
+- **Gig detail view** (`'gig-detail'`):
+  - Fetches gig data from `GET /api/gigs/[id]`
+  - Sets title: `"Gig Title — Marketo"`
+  - Sets meta description: gig description (truncated to 160 chars)
+  - Sets `og:image` to first gig image
+  - Sets canonical URL: `{origin}?gig={gigId}`
+  - Shows "Loading Service…" title while data fetches
+- **Static views**: Pre-defined SEO data for `landing`, `gigs-browse`, `search`, `privacy`, `terms`, `buyer-dashboard`, `seller-dashboard`, `admin`
+- **Fallback**: Default Marketo SEO for any unhandled view
+- **Meta tags managed**:
+  - `<title>` (document.title)
+  - `<meta name="description">`
+  - `<meta name="keywords">`
+  - Open Graph: `og:title`, `og:description`, `og:image`, `og:type`, `og:url`, `og:site_name`
+  - Twitter Card: `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`
+  - `<link rel="canonical">`
+- **Performance features**:
+  - 150ms debounce on view changes to skip rapid navigation
+  - Cache key (`view + JSON(params)`) to skip no-op re-fetches
+  - `mountedRef` to avoid state updates after unmount
+  - Shows generic loading title immediately while data fetches
+- **Cleanup**: Removes all dynamically-managed meta tags on unmount
+- **Helper functions**:
+  - `truncate()` — truncates strings to max length with ellipsis
+  - `extractFirstImage()` — safely extracts first image from JSON-encoded image string or array
+  - `setMetaTag()` / `removeMetaTag()` — DOM helpers to create/update/remove meta elements
+  - `setCanonical()` / `removeCanonical()` — DOM helpers for canonical link
+  - `applySEO()` — applies full SEO data to `<head>`
+  - `applyDefaultSEO()` — resets to Marketo defaults
+  - `cleanupDynamicTags()` — removes all injected tags
+
+#### 2. Page Wiring (`src/app/page.tsx`)
+- Added dynamic import for `DynamicSEO` with `withChunkRetry` wrapper
+- Added `<DynamicSEO />` component in the `MarketplaceApp` JSX (after `<CompareBar />`, before `<FeedbackWidget />`)
+
+### Lint Results
+- 0 errors, 4 pre-existing warnings (all unrelated to this task)
+- All new and modified files pass ESLint cleanly
+
+---
+
+## Task 3 — Email Notifications for Order Status Changes (Agent: main)
+
+### Summary
+Integrated email notifications into the order lifecycle by centralizing email sending inside `src/lib/notifications.ts`. Previously, emails were sent ad-hoc in API route handlers; now each `notifyOrder*` function handles both in-app notifications AND email sending. Added a new `paymentReceivedSellerEmail` template. Removed duplicate email-sending code from the order API routes.
+
+### Changes Made
+
+#### 1. New Email Template: `paymentReceivedSellerEmail` (`src/lib/email-templates.ts`)
+- **Added `PaymentReceivedSellerData` interface**: sellerName, amount, orderNumber, buyerName, paymentMethod, platformFee, sellerPayout
+- **Added `paymentReceivedSellerEmail()` function**: Gold/amber header (matching seller theme), payment breakdown card (order total, platform fee, seller payout), order info section, escrow protection notice, CTA button to view order details
+- Section numbering updated (new section 7, password reset → 8, email verification → 9)
+
+#### 2. Email Helper Functions (`src/lib/notifications.ts`)
+- **Added `getVerifiedUserEmail(userId)`**: Fetches user email, name, and emailVerified from DB. Returns null if user not found, has no email, or email is not verified. This enforces the "only send email if user has verified email address" requirement.
+- **Added `getOrderItems(orderId)`**: Fetches order items with product names for email templates. Returns `OrderItem[]` suitable for all email templates.
+
+#### 3. Integrated Email into `notifyOrderCreated` (`src/lib/notifications.ts`)
+- After creating in-app notifications for buyer and seller, now also:
+  - Fetches buyer info, seller info, order items, and order details in parallel
+  - Sends `orderConfirmationBuyerEmail` to buyer (if email verified)
+  - Sends `newOrderSellerEmail` to seller (if email verified)
+  - All email sending is fire-and-forget via `sendEmailAsync`
+
+#### 4. Integrated Email into `notifyOrderStatusUpdate` (`src/lib/notifications.ts`)
+- After creating in-app notification, now also:
+  - Fetches user info, order items, and order details in parallel
+  - Sends `orderStatusUpdateEmail` to the user (if email verified)
+  - Supports all status types: processing, shipped, delivered, cancelled, refunded
+  - Tracking number automatically included when available
+  - When called for both buyer AND seller (e.g., cancelled orders), each gets their own email
+
+#### 5. Integrated Email into `notifyPaymentReceived` (`src/lib/notifications.ts`)
+- After creating in-app notification, now also:
+  - Fetches seller info and order details (including buyer name) in parallel
+  - Sends `paymentReceivedSellerEmail` to seller (if email verified)
+  - Includes payment breakdown with platform fee and seller payout
+
+#### 6. Removed Duplicate Email Code from `src/app/api/orders/route.ts`
+- Removed imports: `sendEmailAsync`, `orderConfirmationBuyerEmail`, `newOrderSellerEmail`
+- Removed inline email-sending block (lines that fetched buyer/seller emails and called `sendEmailAsync`)
+- Email sending is now handled entirely inside `notifyOrderCreated`
+- Updated comment to clarify email is handled inside the notification function
+
+#### 7. Removed Duplicate Email Code from `src/app/api/orders/[id]/route.ts`
+- Removed imports: `sendEmailAsync`, `orderStatusUpdateEmail`
+- Removed inline email-sending block (lines that fetched target user, built email items, and called `sendEmailAsync`)
+- Email sending is now handled entirely inside `notifyOrderStatusUpdate`
+- Updated comment to clarify email is handled inside the notification function
+- No change to notification call pattern (still calls `notifyOrderStatusUpdate` for buyer, and additionally for seller when cancelled)
+
+### Design Decisions
+- **Centralized email in notifications.ts**: Rather than having each API route handle its own email logic, email sending is now co-located with notification creation. This ensures consistency and reduces code duplication.
+- **DB queries in notification functions**: The notification functions now fetch additional data (user emails, order items) from the DB. This keeps function signatures simple and makes the notification layer self-contained. The extra queries are acceptable since they run in a fire-and-forget context.
+- **emailVerified check**: The `getVerifiedUserEmail()` helper enforces that emails are only sent to users with verified email addresses, matching the requirement.
+- **No behavioral change**: The existing notification behavior is preserved. Emails are sent asynchronously and non-blocking. Errors are caught and logged but never throw.
+
+### Lint Results
+- 0 errors, 0 warnings in all modified/created files
+- 3 pre-existing errors in `image-lightbox.tsx` (unrelated)
+- 3 pre-existing warnings in other files (unrelated)
+
+---
+
+## Task 2 — Product Image Lightbox/Zoom Feature (Agent: code)
+
+### Summary
+Created a full-featured ImageLightbox component and integrated it into the product detail page. The lightbox supports zoom (scroll + buttons), pan (drag when zoomed), keyboard navigation, touch swipe gestures, double-tap-to-zoom on mobile, thumbnail strip, and smooth Framer Motion animations.
+
+### Changes Made
+
+#### 1. ImageLightbox Component (`src/components/marketplace/shared/image-lightbox.tsx`) — NEW
+- `'use client'` component with props: `images`, `initialIndex`, `open`, `onClose`, `alt`
+- **Zoom capability**: Scroll to zoom (0.3 increments), zoom in/out buttons (0.5 increments), max 5x, reset button when zoomed
+- **Pan/drag**: Drag to pan when zoomed in, with grab/grabbing cursor feedback
+- **Navigation**: Left/right arrow buttons (circular wrap), keyboard arrow keys
+- **Close**: X button, Escape key, click on backdrop area
+- **Thumbnail strip**: Bottom strip with amber-500 highlight on active thumbnail, scrollable
+- **Framer Motion animations**: Fade+scale enter/exit on lightbox, fade+scale transition between images, slide-up animation on thumbnail strip
+- **Mobile support**: Touch swipe for navigation (when not zoomed), double-tap to zoom (2.5x), proper touch-action CSS
+- **Keyboard shortcuts**: Escape (close), Arrow Left/Right (navigate), +/- (zoom), 0 (reset)
+- **Zoom percentage display**: Shows current zoom level (e.g., "150%")
+- **Body scroll lock**: Prevents background scrolling when lightbox is open
+- **Combined ViewState**: Zoom, panX, panY stored in single state object to avoid `react-hooks/set-state-in-effect` lint errors and ensure atomic updates
+- **Image counter**: Shows "2 / 5" style indicator in top bar
+- **Obsidian & Gold theme**: Amber-500 active thumbnails and ring highlights
+
+#### 2. Product Detail Integration (`src/components/marketplace/shop/product-detail.tsx`) — MODIFIED
+- Imported `ImageLightbox` from `@/components/marketplace/shared/image-lightbox`
+- Added `lightboxOpen` state
+- Main product image now has `cursor-zoom-in` class and `group` hover effects
+- Clicking the main image opens the lightbox (`setLightboxOpen(true)`)
+- Added zoom hint overlay: on hover, a subtle dark overlay appears with a zoom-in icon centered
+- Image has `group-hover:scale-105` transition for a subtle zoom-on-hover preview effect
+- Rendered `<ImageLightbox>` with `key={lightboxOpen ? `lb-${selectedImage}` : 'lb-closed'}` pattern — the key ensures the component remounts with correct initial state when the lightbox opens, avoiding `useEffect`-based state sync (React-recommended pattern)
+- Passes `galleryImages`, `selectedImage` as `initialIndex`, `lightboxOpen`, close handler, and product name
+
+### Lint Results
+- 0 errors in new/modified files
+- 3 pre-existing warnings in unrelated files remain unchanged
+
+
+---
+
+## Task 5 — Server-Side Cart Sync & Abandoned Cart Recovery (Agent: main)
+
+### Summary
+Connected the existing client-side Zustand cart with the server-side cart API, enabling server-side persistence and abandoned cart recovery. Added `syncCartToServer` (debounced) and `loadCartFromServer` actions to the Zustand store, hooked sync into all cart actions, created a `CartSync` component that loads the server cart on auth change, updated logout to preserve cart in localStorage for guest fallback, and added CartSync to the app root.
+
+### Changes Made
+
+#### 1. Zustand Store Updates (`src/store/use-marketplace-store.ts`) — MODIFIED
+
+**New imports:**
+- Added `ProductType` from `@/types`
+
+**New module-level state:**
+- `cartSyncTimer` — module-level debounce timer (300ms) for `syncCartToServer`
+
+**New types:**
+- `ServerCartItem` interface — mirrors the enriched cart item shape returned by `GET /api/cart` (productId, quantity, variantId, addedAt, name, price, image, stock, isActive, type, shopId, shopName, shopSlug)
+- `mapServerItemToClient()` helper — maps `ServerCartItem` → `CartItem` for the client store
+
+**New store interface fields:**
+- `syncCartToServer: () => void` — debounced (300ms) POST to `/api/cart/sync`
+- `loadCartFromServer: () => Promise<void>` — GET `/api/cart`, merge with local cart (server priority)
+
+**`syncCartToServer` action:**
+- Only runs when `currentUser` exists and `authToken` exists
+- Debounces calls (300ms) via `cartSyncTimer` to avoid hammering the API on rapid adds
+- Calls `POST /api/cart/sync` with `items: cart.map(item => ({ productId, quantity, variantId: variantId || null }))`
+- Reads the latest cart state from `get()` at the time the debounced timer fires (not at call time)
+- Includes `Authorization: Bearer <token>` header
+- Handles errors silently (non-blocking, just `console.warn`)
+
+**`loadCartFromServer` action:**
+- Only runs when `currentUser` exists and `authToken` exists
+- Calls `GET /api/cart` with auth header
+- Maps server-enriched items to client `CartItem` format via `mapServerItemToClient`
+- Merges server items with existing localStorage cart:
+  - Server items take priority for conflicts (same productId + variantId)
+  - Local-only items (not on server) are preserved
+  - If server returns empty items, keeps local cart as-is (guest fallback)
+- Sets the merged cart and recalculates `cartTotal`
+
+**Modified cart actions — hooked `syncCartToServer`:**
+- `addToCart` — calls `get().syncCartToServer()` after updating state (fire-and-forget)
+- `removeFromCart` — calls `get().syncCartToServer()` after updating state
+- `updateCartQuantity` — calls `get().syncCartToServer()` after updating state (both branches: remove if qty ≤ 0, and update)
+- `clearCart` — calls `get().syncCartToServer()` after clearing state
+
+**Modified `logout` action:**
+- Added cancellation of any pending cart sync timer (`clearTimeout(cartSyncTimer)`)
+- Cart is intentionally **NOT cleared** on logout — this preserves cart in localStorage for guest users
+- When logging IN, `loadCartFromServer` (via CartSync component) takes priority and merges server cart data
+
+#### 2. CartSync Component (`src/components/marketplace/shared/cart-sync.tsx`) — NEW
+- `'use client'` component that renders nothing (purely a side-effect)
+- Subscribes to `currentUser`, `isAuthenticated`, and `loadCartFromServer` from the store
+- Uses `useRef` to track `loadedForUserId` — only loads once per auth change
+- On auth change (user logs in): calls `loadCartFromServer()` to fetch server cart
+- On logout: resets `loadedForUserId` so next login triggers a fresh load
+- Ensures cross-device cart recovery: if user logs in from a different device, they get their server cart
+
+#### 3. Page Wiring (`src/app/page.tsx`) — MODIFIED
+- Added dynamic import for `CartSync` with `ssr: false`
+- Added `<CartSync />` component in the `MarketplaceApp` JSX (between `CookieConsent` and `EmailVerificationDialog`)
+
+### Lint Results
+- 0 errors, 3 pre-existing warnings (unrelated to this task — unused eslint-disable directives in other files)
+- All new and modified files pass ESLint cleanly
+
+### Key Design Decisions
+- **Debounce at 300ms**: Prevents API flooding during rapid cart operations (e.g., adding multiple items quickly)
+- **Module-level timer**: Stores debounce timer outside Zustand to avoid persistence issues
+- **Server priority on merge**: When both server and local have the same product+variant, server data wins (more authoritative — includes latest price, stock, etc.)
+- **Preserve local-only items**: If a guest added items to cart, then logged in, those local items are kept alongside server items
+- **Cart preserved on logout**: Guest users retain their cart in localStorage; server cart takes priority on next login
+- **Fire-and-forget sync**: `syncCartToServer` never blocks the UI — errors are logged but don't disrupt the user experience

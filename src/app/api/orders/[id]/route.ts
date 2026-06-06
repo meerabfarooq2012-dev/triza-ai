@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { sendEmailAsync } from '@/lib/email';
-import { orderStatusUpdateEmail } from '@/lib/email-templates';
 import { notifyOrderStatusUpdate } from '@/lib/notifications';
 
 export async function GET(
@@ -160,45 +158,12 @@ export async function PUT(
       },
     });
 
-    // Create notifications based on status changes
+    // Create notifications + send emails based on status changes
+    // (email sending is handled inside notifyOrderStatusUpdate)
     if (status && validStatuses.includes(status)) {
-      // Notify both buyer and seller of status changes
       notifyOrderStatusUpdate(order.buyerId, id, status).catch(() => {});
       if (status === 'cancelled') {
         notifyOrderStatusUpdate(order.sellerId, id, status).catch(() => {});
-      }
-
-      // Send order status update emails (non-blocking)
-      const emailItems = updatedOrder.items.map((item) => ({
-        name: item.product?.name || 'Unknown Product',
-        quantity: item.quantity,
-        price: item.price,
-        type: item.type,
-      }));
-
-      const targetUserId = ['cancelled'].includes(status) ? order.sellerId : order.buyerId;
-      const targetUser = await db.user.findUnique({ where: { id: targetUserId }, select: { email: true, name: true } });
-
-      if (targetUser?.email) {
-        const statusEmoji: Record<string, string> = {
-          processing: '⏳',
-          shipped: '🚚',
-          delivered: '📦',
-          cancelled: '❌',
-          refunded: '💰',
-        };
-        sendEmailAsync({
-          to: targetUser.email,
-          subject: `${statusEmoji[status] || '📋'} Your Order #${order.id.slice(-8)} — ${status.charAt(0).toUpperCase() + status.slice(1)}`,
-          html: orderStatusUpdateEmail({
-            orderNumber: order.id.slice(-8),
-            userName: targetUser.name,
-            newStatus: status,
-            items: emailItems,
-            trackingNumber: trackingNo || undefined,
-            totalAmount: order.totalAmount,
-          }),
-        });
       }
     }
 
