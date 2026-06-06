@@ -174,8 +174,9 @@ export function Header() {
             {/* Logo */}
             <button
               onClick={() => handleNavClick('landing')}
-              className="flex items-center gap-1 flex-shrink-0"
+              className="flex items-center gap-2 flex-shrink-0"
             >
+              <img src="/logo.png" alt="Marketo" className="h-8 w-8 rounded-lg" />
               <span className="text-xl font-extrabold gold-gradient-text bg-clip-text text-transparent">
                 {PLATFORM_NAME}
               </span>
@@ -523,9 +524,12 @@ export function Header() {
         <SheetContent side="left" className="w-72 p-0">
           <SheetHeader className="p-4 pb-2 border-b">
             <SheetTitle>
-              <span className="text-lg font-extrabold gold-gradient-text bg-clip-text text-transparent">
-                {PLATFORM_NAME}
-              </span>
+              <div className="flex items-center gap-2">
+                <img src="/logo.png" alt="Marketo" className="h-7 w-7 rounded-lg" />
+                <span className="text-lg font-extrabold gold-gradient-text bg-clip-text text-transparent">
+                  {PLATFORM_NAME}
+                </span>
+              </div>
             </SheetTitle>
           </SheetHeader>
 

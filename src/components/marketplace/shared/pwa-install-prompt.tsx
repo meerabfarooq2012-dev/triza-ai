@@ -113,9 +113,7 @@ export function PwaInstallPrompt() {
         {/* Content */}
         <div className="flex items-start gap-3 pr-4">
           {/* Icon */}
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 text-white shadow-md">
-            <Smartphone className="h-5 w-5" />
-          </div>
+          <img src="/logo.png" alt="Marketo" className="h-10 w-10 shrink-0 rounded-lg shadow-md" />
 
           <div className="flex-1 space-y-2">
             <div>
