@@ -57,7 +57,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bgColor: str
   rejected: { label: 'Rejected', color: 'text-red-700', bgColor: 'bg-red-50' },
   processing: { label: 'Processing', color: 'text-amber-700', bgColor: 'bg-amber-50' },
   completed: { label: 'Completed', color: 'text-amber-700', bgColor: 'bg-amber-50' },
-  cancelled: { label: 'Cancelled', color: 'text-gray-700', bgColor: 'bg-gray-50' },
+  cancelled: { label: 'Cancelled', color: 'text-gray-700', bgColor: 'bg-gray-50 dark:bg-gray-800' },
 }
 
 export default function AdminReturns() {

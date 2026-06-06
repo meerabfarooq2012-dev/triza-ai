@@ -290,7 +290,7 @@ export function AdminReports() {
                             {report.description && (
                               <div>
                                 <span className="text-slate-500">Description:</span>
-                                <p className="mt-1 text-slate-700 bg-white rounded-md p-2 border">{report.description}</p>
+                                <p className="mt-1 text-slate-700 dark:text-slate-300 bg-white dark:bg-gray-800 rounded-md p-2 border">{report.description}</p>
                               </div>
                             )}
                             <div className="flex items-center gap-2">

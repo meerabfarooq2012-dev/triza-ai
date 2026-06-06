@@ -1,21 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import bcrypt from 'bcryptjs';
-import { rateLimit, getRateLimitKey, authRateLimit } from '@/lib/rate-limit';
+import {
+  rateLimit,
+  getFingerprintedRateLimitKey,
+  getRequestFingerprint,
+  loginRateLimit,
+  recordFailedLoginAttempt,
+  clearFailedLoginAttempts,
+} from '@/lib/rate-limit';
 import { signToken } from '@/lib/auth-middleware';
 import { createSession } from '@/lib/session';
 import { withCsrf } from '@/lib/with-csrf';
 
 const MAX_LOGIN_ATTEMPTS = 5;
-const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+const LOCKOUT_DURATION_MS = 30 * 60 * 1000; // 30 minutes (enhanced from 15)
 
 export const POST = withCsrf(async (request: NextRequest) => {
   try {
-    // Rate limiting
-    const rateLimitKey = getRateLimitKey(request);
+    // Rate limiting — use fingerprinted key (IP + User-Agent) for more accurate limiting
+    const rateLimitKey = getFingerprintedRateLimitKey(request, 'login');
     const rateLimitResult = rateLimit({
-      ...authRateLimit,
-      key: `login:${rateLimitKey}`,
+      ...loginRateLimit,
+      key: rateLimitKey,
     });
 
     if (!rateLimitResult.success) {
@@ -28,6 +35,14 @@ export const POST = withCsrf(async (request: NextRequest) => {
           },
         }
       );
+    }
+
+    // Progressive delay: check if this fingerprint has repeated failed attempts
+    const fingerprint = getRequestFingerprint(request);
+    const progressiveDelay = recordFailedLoginAttempt(fingerprint);
+    if (progressiveDelay > 0) {
+      // Apply the progressive delay before processing
+      await new Promise((resolve) => setTimeout(resolve, progressiveDelay));
     }
 
     const body = await request.json();
@@ -59,7 +74,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
       );
     }
 
-    // Check if user is locked out
+    // Check if user is locked out (30-minute lockout after 5 failed attempts)
     if (user.lockoutUntil && new Date() < user.lockoutUntil) {
       const retryAfterSeconds = Math.ceil(
         (user.lockoutUntil.getTime() - Date.now()) / 1000
@@ -111,6 +126,9 @@ export const POST = withCsrf(async (request: NextRequest) => {
         { status: 401 }
       );
     }
+
+    // Clear failed login attempts on success
+    clearFailedLoginAttempts(fingerprint);
 
     // Reset login attempts and update last login on success
     await db.user.update({

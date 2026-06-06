@@ -685,26 +685,26 @@ export function MessagesPage() {
         </div>
 
         {/* Main Layout */}
-        <div className="flex gap-0 md:gap-4 min-h-[calc(100vh-14rem)] bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+        <div className="flex gap-0 md:gap-4 min-h-[calc(100vh-14rem)] bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 overflow-hidden">
           {/* ═══ Left Panel: Conversation List ═══ */}
           {showConversationList && (
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.2 }}
-              className={`w-full md:w-80 lg:w-96 shrink-0 border-r border-gray-100 flex flex-col ${
-                isMobile ? 'absolute inset-0 z-10 bg-white' : ''
+              className={`w-full md:w-80 lg:w-96 shrink-0 border-r border-gray-100 dark:border-gray-800 flex flex-col ${
+                isMobile ? 'absolute inset-0 z-10 bg-white dark:bg-gray-900' : ''
               }`}
             >
               {/* Search */}
-              <div className="p-3 border-b border-gray-100">
+              <div className="p-3 border-b border-gray-100 dark:border-gray-800">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search conversations..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 h-9 bg-gray-50 border-gray-100 focus:bg-white"
+                    className="pl-9 h-9 bg-gray-50 dark:bg-gray-800 border-gray-100 dark:border-gray-700 focus:bg-white dark:focus:bg-gray-700"
                   />
                 </div>
               </div>
@@ -716,7 +716,7 @@ export function MessagesPage() {
                 ) : filteredConversations.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-16 px-4">
                     <MessageSquare className="h-12 w-12 text-gray-200 mb-3" />
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                       {searchQuery ? 'No results found' : 'No conversations yet'}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1 text-center">
@@ -738,8 +738,8 @@ export function MessagesPage() {
                           whileTap={{ scale: 0.99 }}
                           className={`w-full text-left px-3 py-3 transition-colors ${
                             isSelected
-                              ? 'bg-amber-50 border-l-2 border-amber-500'
-                              : 'border-l-2 border-transparent hover:bg-gray-50'
+                              ? 'bg-amber-50 dark:bg-amber-950/30 border-l-2 border-amber-500'
+                              : 'border-l-2 border-transparent hover:bg-gray-50 dark:hover:bg-gray-800/50'
                           }`}
                           onClick={() => handleSelectConversation(conv)}
                         >
@@ -751,7 +751,7 @@ export function MessagesPage() {
                                   src={conv.otherUser.avatar || undefined}
                                   alt={conv.otherUser.name}
                                 />
-                                <AvatarFallback className="bg-amber-100 text-amber-700 text-sm font-medium">
+                                <AvatarFallback className="bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 text-sm font-medium">
                                   {conv.otherUser.name.slice(0, 2).toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>
@@ -766,7 +766,7 @@ export function MessagesPage() {
                               <div className="flex items-center justify-between gap-2">
                                 <p
                                   className={`truncate text-sm ${
-                                    hasUnread ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'
+                                    hasUnread ? 'font-semibold text-gray-900 dark:text-gray-100' : 'font-medium text-gray-700 dark:text-gray-300'
                                   }`}
                                 >
                                   {conv.otherUser.name}
@@ -780,7 +780,7 @@ export function MessagesPage() {
                               <div className="flex items-center justify-between gap-2 mt-0.5">
                                 <p
                                   className={`truncate text-xs ${
-                                    hasUnread ? 'text-gray-800 font-medium' : 'text-muted-foreground'
+                                    hasUnread ? 'text-gray-800 dark:text-gray-200 font-medium' : 'text-muted-foreground'
                                   }`}
                                 >
                                   {conv.lastMessagePreview || 'No messages yet'}
@@ -797,7 +797,7 @@ export function MessagesPage() {
                                 <div className="mt-1.5">
                                   <Badge
                                     variant="outline"
-                                    className="text-[10px] h-5 gap-1 text-amber-700 border-amber-200 bg-amber-50/50"
+                                    className="text-[10px] h-5 gap-1 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/30"
                                   >
                                     {conv.product ? (
                                       <>
@@ -831,13 +831,13 @@ export function MessagesPage() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.2, delay: 0.05 }}
               className={`flex-1 flex flex-col min-w-0 ${
-                isMobile ? 'absolute inset-0 z-20 bg-white' : ''
+                isMobile ? 'absolute inset-0 z-20 bg-white dark:bg-gray-900' : ''
               }`}
             >
               {selectedConversation ? (
                 <>
                   {/* Thread Header */}
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
                     <div className="flex items-center gap-3">
                       {isMobile && (
                         <Button
@@ -855,7 +855,7 @@ export function MessagesPage() {
                             src={selectedConversation.otherUser.avatar || undefined}
                             alt={selectedConversation.otherUser.name}
                           />
-                          <AvatarFallback className="bg-amber-100 text-amber-700 text-xs font-medium">
+                          <AvatarFallback className="bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 text-xs font-medium">
                             {selectedConversation.otherUser.name.slice(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
@@ -864,7 +864,7 @@ export function MessagesPage() {
                         )}
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-gray-900">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                           {selectedConversation.otherUser.name}
                         </p>
                         <p className="text-xs text-amber-600">
@@ -889,8 +889,8 @@ export function MessagesPage() {
 
                   {/* Product/Gig Context Bar */}
                   {(selectedConversation.product || selectedConversation.gig) && (
-                    <div className="px-4 py-2.5 border-b border-gray-100 bg-gray-50/50">
-                      <div className="flex items-center gap-3 p-2 rounded-xl bg-white border border-gray-100 shadow-sm">
+                    <div className="px-4 py-2.5 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50">
+                      <div className="flex items-center gap-3 p-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm">
                         {/* Thumbnail */}
                         <div className="h-12 w-12 rounded-lg overflow-hidden bg-gray-100 shrink-0">
                           {selectedConversation.product ? (
@@ -922,7 +922,7 @@ export function MessagesPage() {
 
                         {/* Info */}
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-gray-900 truncate">
+                          <p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">
                             {selectedConversation.product?.name || selectedConversation.gig?.title}
                           </p>
                           <p className="text-xs text-amber-600 font-semibold mt-0.5">
@@ -978,10 +978,10 @@ export function MessagesPage() {
                       </div>
                     ) : messages.length === 0 ? (
                       <div className="flex flex-col items-center justify-center h-full px-4">
-                        <div className="h-16 w-16 rounded-full bg-amber-50 flex items-center justify-center mb-3">
+                        <div className="h-16 w-16 rounded-full bg-amber-50 dark:bg-amber-950/50 flex items-center justify-center mb-3">
                           <MessageSquare className="h-8 w-8 text-amber-400" />
                         </div>
-                        <p className="text-sm font-medium text-gray-900">No messages yet</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">No messages yet</p>
                         <p className="text-xs text-muted-foreground mt-1">
                           Send a message to start the conversation
                         </p>
@@ -1003,7 +1003,7 @@ export function MessagesPage() {
                                 {/* Date separator */}
                                 {showSeparator && (
                                   <div className="flex items-center justify-center my-4">
-                                    <div className="px-3 py-1 rounded-full bg-gray-100 text-[11px] text-muted-foreground font-medium">
+                                    <div className="px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-[11px] text-muted-foreground font-medium">
                                       {formatDateSeparator(msg.createdAt)}
                                     </div>
                                   </div>
@@ -1031,7 +1031,7 @@ export function MessagesPage() {
                                           <AvatarImage
                                             src={msg.sender?.avatar || selectedConversation.otherUser.avatar || undefined}
                                           />
-                                          <AvatarFallback className="bg-amber-100 text-amber-700 text-[10px]">
+                                          <AvatarFallback className="bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 text-[10px]">
                                             {(msg.sender?.name || selectedConversation.otherUser.name)
                                               .slice(0, 2)
                                               .toUpperCase()}
@@ -1044,7 +1044,7 @@ export function MessagesPage() {
                                           className={`rounded-2xl px-3.5 py-2.5 ${
                                             isMine
                                               ? 'bg-gradient-to-br from-amber-500 to-yellow-600 text-white rounded-br-md'
-                                              : 'bg-gray-100 text-gray-900 rounded-bl-md'
+                                              : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-md'
                                           }`}
                                         >
                                           <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
@@ -1081,11 +1081,11 @@ export function MessagesPage() {
                             <div className="flex justify-start mb-1">
                               <div className="flex items-end gap-2">
                                 <Avatar className="h-7 w-7 shrink-0">
-                                  <AvatarFallback className="bg-amber-100 text-amber-700 text-[10px]">
+                                  <AvatarFallback className="bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 text-[10px]">
                                     {typingUser.userName.slice(0, 2).toUpperCase()}
                                   </AvatarFallback>
                                 </Avatar>
-                                <div className="bg-gray-100 rounded-2xl rounded-bl-md px-3.5 py-2.5">
+                                <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl rounded-bl-md px-3.5 py-2.5">
                                   <TypingIndicator userName={typingUser.userName} />
                                 </div>
                               </div>
@@ -1099,7 +1099,7 @@ export function MessagesPage() {
                   </div>
 
                   {/* Message Input Area */}
-                  <div className="border-t border-gray-100 p-3 bg-white">
+                  <div className="border-t border-gray-100 dark:border-gray-800 p-3 bg-white dark:bg-gray-900">
                     <div className="flex items-end gap-2">
                       <div className="flex-1 relative">
                         <Textarea
@@ -1116,7 +1116,7 @@ export function MessagesPage() {
                             }
                           }}
                           placeholder="Type a message..."
-                          className="min-h-[40px] max-h-[120px] resize-none rounded-xl bg-gray-50 border-gray-100 focus:bg-white pr-2 text-sm"
+                          className="min-h-[40px] max-h-[120px] resize-none rounded-xl bg-gray-50 dark:bg-gray-800 border-gray-100 dark:border-gray-700 focus:bg-white dark:focus:bg-gray-700 pr-2 text-sm"
                           rows={1}
                           disabled={sendingMessage}
                         />
@@ -1141,7 +1141,7 @@ export function MessagesPage() {
                   <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-amber-50 to-yellow-50 flex items-center justify-center mb-4">
                     <MessageSquare className="h-10 w-10 text-amber-400" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">
                     Select a conversation
                   </h3>
                   <p className="text-sm text-muted-foreground text-center max-w-xs">
@@ -1159,7 +1159,7 @@ export function MessagesPage() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.2, delay: 0.1 }}
-              className="w-72 lg:w-80 shrink-0 border-l border-gray-100 bg-gray-50/30 flex flex-col"
+              className="w-72 lg:w-80 shrink-0 border-l border-gray-100 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-800/30 flex flex-col"
             >
               <ScrollArea className="flex-1">
                 <div className="p-4 space-y-4">
@@ -1194,7 +1194,7 @@ export function MessagesPage() {
 
                   {/* Title & Price */}
                   <div>
-                    <h4 className="font-semibold text-gray-900 text-sm line-clamp-2">
+                    <h4 className="font-semibold text-gray-900 dark:text-gray-100 text-sm line-clamp-2">
                       {selectedConversation.product?.name || selectedConversation.gig?.title}
                     </h4>
                     <p className="text-lg font-bold text-amber-600 mt-1">
@@ -1228,7 +1228,7 @@ export function MessagesPage() {
                   </Button>
 
                   {/* Seller Info */}
-                  <div className="rounded-xl bg-white p-3 border border-gray-100">
+                  <div className="rounded-xl bg-white dark:bg-gray-800 p-3 border border-gray-100 dark:border-gray-700">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-10 w-10">
                         <AvatarImage
@@ -1240,7 +1240,7 @@ export function MessagesPage() {
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                           {selectedConversation.otherUser.name}
                         </p>
                         <p className="text-xs text-muted-foreground">Seller</p>
@@ -1254,15 +1254,15 @@ export function MessagesPage() {
                       Trust & Safety
                     </p>
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-xs text-gray-600">
+                      <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                         <ShieldCheck className="h-4 w-4 text-amber-500 shrink-0" />
                         <span>Secure messaging</span>
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-gray-600">
+                      <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                         <Star className="h-4 w-4 text-amber-500 shrink-0" />
                         <span>Verified seller</span>
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-gray-600">
+                      <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                         <Info className="h-4 w-4 text-blue-500 shrink-0" />
                         <span>Escrow protection</span>
                       </div>

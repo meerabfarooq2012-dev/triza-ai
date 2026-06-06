@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { withCsrf } from '@/lib/with-csrf';
 
 // GET — Get a single address
 export async function GET(
@@ -32,10 +33,11 @@ export async function GET(
 
 // PUT — Update a delivery address
 // If isDefault is being set to true, unset any existing defaults first
-export async function PUT(
+export const PUT = withCsrf(async (
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+  context?: unknown
+) => {
+  const { params } = context as { params: Promise<{ id: string }> };
   try {
     const { id } = await params;
     const body = await request.json();
@@ -101,13 +103,14 @@ export async function PUT(
       { status: 500 }
     );
   }
-}
+});
 
 // DELETE — Delete a delivery address
-export async function DELETE(
+export const DELETE = withCsrf(async (
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+  context?: unknown
+) => {
+  const { params } = context as { params: Promise<{ id: string }> };
   try {
     const { id } = await params;
 
@@ -146,4 +149,4 @@ export async function DELETE(
       { status: 500 }
     );
   }
-}
+});

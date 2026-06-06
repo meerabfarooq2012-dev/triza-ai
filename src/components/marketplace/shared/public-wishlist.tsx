@@ -163,7 +163,7 @@ export function PublicWishlist({ slug }: PublicWishlistProps) {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
                 {wishlist.name}
               </h1>
               <Badge className="bg-amber-100 text-amber-700 gap-1">
@@ -191,12 +191,12 @@ export function PublicWishlist({ slug }: PublicWishlistProps) {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 py-20"
+          className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 py-20"
         >
           <div className="rounded-full bg-gray-100 p-4 mb-4">
             <Package className="h-10 w-10 text-gray-300" />
           </div>
-          <h3 className="text-xl font-bold text-gray-900">No items yet</h3>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">No items yet</h3>
           <p className="mt-2 max-w-sm text-center text-sm text-gray-500">
             This wishlist is empty. Check back later for new additions!
           </p>

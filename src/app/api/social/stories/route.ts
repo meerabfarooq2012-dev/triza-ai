@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { withCsrf } from '@/lib/with-csrf';
 
 // GET: Get active stories
 export async function GET(request: NextRequest) {
@@ -98,8 +99,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST: Create a story
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
   try {
     const body = await request.json();
     const { shopId, type, content, imageUrl, productId, expiresAt } = body;
@@ -167,4 +167,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

@@ -24,7 +24,7 @@ const browseTypes = [
     gradient: 'from-amber-50 to-amber-50 dark:from-amber-950/30 dark:to-amber-950/30',
     iconColor: 'text-amber-600 dark:text-amber-400',
     hoverBorder: 'hover:border-amber-300 dark:hover:border-amber-700',
-    buttonClass: 'bg-amber-600 hover:bg-amber-700 text-gray-900',
+    buttonClass: 'bg-amber-600 hover:bg-amber-700 text-gray-900 dark:text-gray-900',
   },
   {
     type: 'freelance' as const,
@@ -34,7 +34,7 @@ const browseTypes = [
     gradient: 'from-amber-50 to-yellow-50 dark:from-amber-950/30 dark:to-yellow-950/30',
     iconColor: 'text-amber-600 dark:text-amber-400',
     hoverBorder: 'hover:border-amber-300 dark:hover:border-amber-700',
-    buttonClass: 'bg-amber-600 hover:bg-amber-700 text-gray-900',
+    buttonClass: 'bg-amber-600 hover:bg-amber-700 text-gray-900 dark:text-gray-900',
   },
 ]
 

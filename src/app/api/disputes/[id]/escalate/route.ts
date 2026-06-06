@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { withCsrf } from '@/lib/with-csrf';
 
 // POST /api/disputes/[id]/escalate — Escalate a dispute
-export async function POST(
+export const POST = withCsrf(async (
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+  context?: unknown
+) => {
+  const { params } = context as { params: Promise<{ id: string }> };
   try {
     const { id } = await params;
     const body = await request.json();
@@ -184,4 +186,4 @@ export async function POST(
       { status: 500 }
     );
   }
-}
+});

@@ -2870,3 +2870,493 @@ This was preventing the entire Next.js server from starting.
 - Downloads API correctly requires authentication
 - Wallet API correctly requires authentication
 - Payment gateway status API responds with sandbox mode
+
+---
+Task ID: 5
+Agent: pwa-agent
+Task: Add PWA support with manifest and service worker
+
+Work Log:
+- Created `/public/manifest.json` with Marketo branding: name, short_name, description, start_url, display: standalone, theme_color: #d97706 (amber-600), orientation: portrait-primary, icons referencing /logo.svg for 192x192 and 512x512 sizes (both any and maskable purposes), categories: shopping & business
+- Created `/public/sw.js` service worker with three caching strategies: cache-first for static assets (CSS, JS, images, fonts), network-first for API calls (/api/*), stale-while-revalidate for same-origin pages; includes cache versioning (STATIC_CACHE, DYNAMIC_CACHE, API_CACHE), offline fallback to /offline.html, skipWaiting on install, clients.claim on activate, old cache cleanup on activate
+- Created `/public/offline.html` — Branded offline page with dark background, amber/gold gradient title "You're Offline", WiFi-off SVG icon, descriptive message, and "Try Again" button
+- Created `src/components/marketplace/shared/pwa-install-prompt.tsx` — Client component that listens for beforeinstallprompt event, shows a dismissible banner at the bottom of the screen with amber/gold theme, "Install" button triggers native install prompt, "Not now" button dismisses and stores timestamp in localStorage (7-day suppression), hides if already in standalone mode, auto-hides on appinstalled event
+- Created `src/components/providers/pwa-provider.tsx` — Client component that registers the service worker on mount, checks for updates every hour, detects standalone mode, tracks online/offline status, listens for beforeinstallprompt, exports usePwa() hook with isInstalled/isOnline/canInstall/promptInstall/registration, renders PwaInstallPrompt as child
+- Updated `src/app/layout.tsx` — Added Viewport export with themeColor #d97706, added manifest: "/manifest.json" to metadata, added appleWebApp metadata (capable, statusBarStyle, title), added <link rel="manifest">, <meta name="theme-color">, <meta name="apple-mobile-web-app-capable">, <meta name="apple-mobile-web-app-status-bar-style">, <link rel="apple-touch-icon"> in <head>, wrapped children in PwaProvider
+- Ran lint: 0 new errors, 3 pre-existing warnings in unrelated files
+- Dev server running successfully
+
+Stage Summary:
+- PWA manifest, service worker, and offline page created in /public/
+- Service worker implements cache-first (static), network-first (API), stale-while-revalidate (pages)
+- Install prompt banner with 7-day dismissal persistence and amber/gold theme
+- PwaProvider registers SW, tracks online/offline state, provides usePwa() hook
+- Layout updated with all PWA meta tags and provider wrapper
+- App is now installable as a PWA on supported browsers
+
+---
+Task ID: 1
+Agent: skeleton-agent
+Task: Add loading skeletons to data-heavy pages
+
+Work Log:
+- Read worklog.md and existing skeleton component (src/components/ui/skeleton.tsx)
+- Read all key data-heavy components: search-page, product-detail, seller-dashboard, seller-overview, seller-analytics, buyer-overview, admin-dashboard, order-tracking-page, seller-wallet, shop-view, review-section
+- Found existing basic skeleton at src/components/marketplace/shared/loading-skeleton.tsx (ProductCardSkeleton, ShopCardSkeleton, TableRowSkeleton, DashboardCardSkeleton, DetailPageSkeleton)
+- Created new comprehensive loading-skeletons.tsx at src/components/marketplace/shared/loading-skeletons.tsx with 12 new skeleton components:
+  - ProductCardSkeleton (image, type badges, title, rating, price, shop name)
+  - ProductGridSkeleton (8 ProductCardSkeleton in responsive grid)
+  - SearchPageSkeleton (sidebar filters + product grid + pagination)
+  - ProductDetailSkeleton (image gallery + info + reviews with rating summary)
+  - DashboardSkeleton (stat cards + charts + recent orders table)
+  - OrderListSkeleton (multiple order rows with status badges)
+  - WalletSkeleton (balance cards + earnings chart + transactions + withdrawal form)
+  - AdminSkeleton (6 stat cards + payment stats + charts + recent activity)
+  - ReviewListSkeleton (review cards with avatars, ratings, text)
+  - ChartSkeleton (animated chart placeholder with period toggle)
+  - TableSkeleton (configurable rows and columns)
+  - ShopViewSkeleton (banner + header + tabs + product grid)
+  - StatCardSkeleton (single stat card)
+- Integrated skeletons into 7 data-heavy page components:
+  - Search page: Replaced bare aspect-square skeleton grid with ProductGridSkeleton for products and detailed gig card skeletons for gigs
+  - Product detail: Replaced basic 5-skeleton layout with full ProductDetailSkeleton (gallery, info, reviews, seller card)
+  - Seller dashboard: Replaced spinner loader with DashboardSkeleton in proper layout container
+  - Seller overview: Replaced 4 gray box cards with DashboardSkeleton (stat cards + charts + order rows)
+  - Buyer overview: Replaced 4 gray box cards with DashboardSkeleton
+  - Admin dashboard: Replaced 6 simple skeleton rectangles with full AdminSkeleton
+  - Order tracking: Replaced 3 simple muted rectangles with detailed timeline + order items + totals skeleton
+  - Wallet: Replaced 4 gray cards + single chart skeleton with full WalletSkeleton
+- All skeletons use the existing shadcn/ui Skeleton component with animate-pulse, dark mode compatible classes, and amber/gold theme accents
+- Lint: 0 errors, 3 pre-existing warnings (unrelated)
+- Dev server: Running cleanly on port 3000
+
+Stage Summary:
+- Created src/components/marketplace/shared/loading-skeletons.tsx with 13 exportable skeleton components
+- Integrated into 8 page components replacing basic loading spinners and gray boxes
+- Skeletons match actual content layouts for seamless transition from loading to loaded state
+- All skeleton components are reusable and composable (e.g., ProductGridSkeleton uses ProductCardSkeleton)
+- Dark mode compatible throughout with proper muted/foreground color classes
+
+---
+Task ID: 7
+Agent: security-agent
+Task: Security hardening - rate limiting and CSRF
+
+Work Log:
+- Reviewed existing security files: rate-limit.ts, csrf.ts, auth-middleware.ts, with-csrf.ts, use-csrf.ts, session.ts
+- Verified all 5 auth routes already had rate limiting and CSRF protection
+- Enhanced rate limiter with new presets: loginRateLimit (5/15min), registerRateLimit (3/hour)
+- Added progressive delay for failed login attempts: exponential backoff after 3 failures (1s, 2s, 4s, etc., capped at 60s)
+- Added IP + User-Agent fingerprinting functions: getRequestFingerprint(), getFingerprintedRateLimitKey()
+- Updated login route to use loginRateLimit preset, fingerprinted rate limiting, progressive delay, and 30-minute lockout (enhanced from 15)
+- Updated register route to use registerRateLimit preset with fingerprinted rate limiting
+- Added CSRF protection (withCsrf wrapper) to 14 routes that were missing it:
+  - orders/[id] (PUT, PATCH)
+  - payments/verify (POST)
+  - users/[id] (PATCH)
+  - notifications (POST, PUT, DELETE)
+  - addresses (POST)
+  - addresses/[id] (PUT, DELETE)
+  - social/stories (POST)
+  - social/follow (POST)
+  - returns/[id] (PUT)
+  - returns/[id]/process-refund (POST)
+  - disputes/[id] (PUT)
+  - disputes/[id]/messages (POST)
+  - disputes/[id]/resolve (POST)
+  - disputes/[id]/evidence (POST)
+  - disputes/[id]/escalate (POST)
+  - messages (POST)
+  - notifications/preferences (PUT)
+- Created src/middleware.ts (Next.js middleware) with security headers:
+  - X-Content-Type-Options: nosniff
+  - X-Frame-Options: DENY
+  - X-XSS-Protection: 1; mode=block
+  - Referrer-Policy: strict-origin-when-cross-origin
+  - Permissions-Policy: camera=(), microphone=(), geolocation=()
+  - Content-Security-Policy (allows self, inline scripts/styles for Next.js, Supabase images)
+
+Stage Summary:
+- Rate limiter now has 5 presets: auth (10/15min), api (60/min), passwordReset (5/15min), login (5/15min), register (3/hour)
+- Progressive delay on failed logins slows brute-force attacks exponentially
+- IP+User-Agent fingerprinting makes rate limiting harder to bypass via IP rotation
+- Account lockout extended from 15 to 30 minutes after 5 failed attempts
+- CSRF protection added to all critical state-changing endpoints (14 routes)
+- Security headers middleware protects all routes with CSP, XSS protection, framing prevention, etc.
+- All changes pass lint (0 errors)
+
+---
+Task ID: 6
+Agent: darkmode-agent
+Task: Dark mode polish audit and fixes
+
+Work Log:
+- Read globals.css to understand CSS variable setup: dark mode uses `.dark` class with oklch colors, card bg = oklch(0.17), border = oklch(0.25)
+- Searched entire codebase for common dark mode anti-patterns: `bg-white` without `dark:bg-*`, `text-gray-900` without `dark:text-gray-100`, `border-gray-200` without `dark:border-gray-700`, `bg-gray-50` without dark variant
+- Identified 50+ files with dark mode issues across all component categories
+- Fixed messages page (worst offender): 30+ targeted fixes including bg-white→dark:bg-gray-900, border-gray-100→dark:border-gray-800, text-gray-900→dark:text-gray-100, bg-gray-50→dark:bg-gray-800, message bubbles, input fields, conversation list, avatar fallbacks, and context panels
+- Fixed seller analytics: tooltip containers bg-white→dark:bg-gray-800, stat labels text-gray-900→dark:text-gray-100 (5 tooltips + stats)
+- Fixed seller overview: all text-gray-900→dark:text-gray-100, border-gray-100→dark:border-gray-700, hover states
+- Fixed seller orders: text-gray-900→dark:text-gray-100, bg-white→dark:bg-gray-800, bg-gray-50→dark:bg-gray-800/50, border-gray-200→dark:border-gray-700
+- Fixed seller products: text-gray-900→dark:text-gray-100, table container bg-white→dark:bg-gray-800, tag input/select dropdowns, dashed borders, status badges
+- Fixed seller gigs: same patterns as seller products, plus table rows with hover states
+- Fixed seller coupons: text-gray-900→dark:text-gray-100, borders, inactive badges, dashed empty states
+- Fixed seller messages: border-r→dark:border-gray-800, bg-gray-50→dark:bg-gray-800/50, message bubbles, unread indicators
+- Fixed seller reviews, QA, shop settings, bulk upload, flash sales: text-gray-900→dark:text-gray-100 throughout
+- Fixed seller variant manager: border-gray-100→dark:border-gray-700, bg-gray-50→dark:bg-gray-800/50
+- Fixed buyer overview: text-gray-900→dark:text-gray-100, border-gray-100→dark:border-gray-700, hover states
+- Fixed buyer orders: text-gray-900→dark:text-gray-100, bg-gray-50→dark:bg-gray-800/50, refunded badge, status colors
+- Fixed buyer payments: text-gray-900→dark:text-gray-100, borders, status badges, detail panels
+- Fixed buyer favorites/wishlists/wishlist-page: text-gray-900→dark:text-gray-100, dashed empty states, borders
+- Fixed buyer messages: same patterns as seller messages
+- Fixed product card type badges: bg-amber-100→dark:bg-amber-900/50, text-amber-700→dark:text-amber-300, same for orange variant
+- Fixed product card variant badge: bg-amber-50→dark:bg-amber-950/40, border/text dark variants
+- Fixed cart drawer: variant label text-amber-600→dark:text-amber-400
+- Fixed header: gold-gradient buttons text-white→dark:text-gray-900 (signup buttons, cart badge), logout hover red-50→dark:red-950/30
+- Fixed hero section: gold-gradient button text-white→dark:text-gray-900
+- Fixed CTA section: white button on gold bg→dark:bg-gray-900 dark:text-amber-400
+- Fixed auth modal: gradient buttons text-white→dark:text-gray-900
+- Fixed gigs browse: search button bg-white→dark:bg-gray-800, bottom badge dark variant
+- Fixed search page: text-gray-900→dark:text-gray-100 throughout
+- Fixed gig detail/shop view/product detail: text-gray-900→dark:text-gray-100 throughout
+- Fixed verification page, trust badge, tier card: text-gray-900→dark:text-gray-100, borders
+- Fixed review section: text-gray-900→dark:text-gray-100, carousel dots dark variants
+- Fixed product QA: text-gray-900→dark:text-gray-100
+- Fixed variant selector: text-gray-900→dark:text-gray-100
+- Fixed dispute center/detail pages: text-gray-900→dark:text-gray-100, bg-gray-50→dark:bg-gray-800/50, borders
+- Fixed admin components: reports bg-white, verifications textarea, categories badge, transactions stats
+- Fixed shipment tracker: step indicators bg-white→dark:bg-gray-800
+- Fixed payment settings/info/checkout/order-payment-status: text-gray-900→dark:text-gray-100
+- Fixed notifications page, order tracking, returns pages: text-gray-900→dark:text-gray-100
+- Fixed profile user-profile, social components: text-gray-900→dark:text-gray-100
+- Fixed browse-by-type section: button text explicitly dark:text-gray-900
+- Fixed wishlist button: bg-white/80→dark:bg-gray-900/80
+- Fixed share-shop-url: hover text dark variant
+- Fixed activity feed: bg-gray-50→dark:bg-gray-800
+- Fixed 2FA setup: QR code container bg-white→dark:bg-gray-800
+
+Stage Summary:
+- 0 lint errors, 3 pre-existing warnings (unchanged)
+- Added 95 dark:text-gray-100, 77 dark:bg-gray-800, 43 dark:border-gray-700, 7 dark:bg-gray-900 across 50+ component files
+- Fixed all major dark mode visibility issues: text-gray-900 on dark backgrounds, white containers without dark bg, light borders invisible in dark mode, amber/gold badges without dark variants
+- Key patterns fixed: bg-white→dark:bg-gray-900 for panels, bg-gray-50→dark:bg-gray-800/50 for sections, text-gray-900→dark:text-gray-100 for all headings/values, border-gray-200→dark:border-gray-700 for borders, gold-gradient buttons→dark:text-gray-900 for button text on amber backgrounds
+
+---
+Task ID: 2
+Agent: search-agent
+Task: Enhanced search with advanced filters
+
+Work Log:
+- Read worklog.md and existing search page component, API route, and types
+- Updated SearchFilters type in `src/types/index.ts` to add new filter fields: sellerVerified, onSale, minDiscount, dateAdded, and new DateAddedFilter type
+- Created `src/components/ui/range-slider.tsx` — A custom dual-thumb range slider with amber/gold theming, tooltips on hover/drag, and gradient track between thumbs
+- Rewrote `src/app/api/search/route.ts` to support all new filter parameters (sellerVerified, onSale, minDiscount, dateAdded, location, delivery) with proper Prisma query building
+- Completely rewrote `src/components/marketplace/search/search-page.tsx` with enhanced price range (dual-thumb slider), visual star-rating filter, region-grouped location filter with flag emojis, seller verification toggle, discount/on-sale filter, shipping filter, date added filter, and color-coded active filter tags bar
+- All new components use amber/gold theme and support dark mode
+- 0 new lint errors introduced
+
+Stage Summary:
+- Created 1 new UI component: `src/components/ui/range-slider.tsx`
+- Updated 1 type file: `src/types/index.ts` (added DateAddedFilter type and 4 new SearchFilters fields)
+- Rewrote 1 API route: `src/app/api/search/route.ts` (6 new filter parameters)
+- Rewrote 1 major component: `src/components/marketplace/search/search-page.tsx` (comprehensive filter enhancement)
+
+---
+
+## Task 4 — Migrate WebSocket to Supabase Realtime for Vercel (Agent: realtime-agent)
+
+### Summary
+Added Supabase Realtime as a Vercel-compatible alternative to the existing Socket.io microservices for real-time chat and notifications. Implemented a strategy pattern that automatically selects the best transport (Supabase Realtime on Vercel, Socket.io on local dev, REST polling as fallback). All Socket.io microservices remain intact for local development.
+
+### Changes Made
+
+#### 1. Realtime Strategy Module (`src/lib/realtime-strategy.ts`) — NEW
+- **`getRealtimeStrategy()`** — Synchronous strategy detection
+  - Vercel + Supabase configured → `'supabase'`
+  - Local (localhost) → `'socketio'`
+  - Neither → `'polling'`
+- **`getRealtimeStrategyAsync()`** — Async strategy detection that probes Socket.io health endpoints
+- **`resetRealtimeStrategy()`** — Reset cached strategy (useful after env changes or HMR)
+- Strategy is cached after first detection to avoid repeated checks
+- Exported `RealtimeStrategy` type: `'supabase' | 'socketio' | 'polling'`
+
+#### 2. Supabase Realtime Manager (`src/lib/supabase-realtime.ts`) — NEW
+- **`SupabaseRealtimeManager`** class (singleton pattern) with:
+  - `subscribeToChat(conversationId, onMessage)` — Listens for INSERT events on Message table via Postgres Changes
+  - `subscribeToNotifications(userId, onNotification)` — Listens for INSERT events on Notification table via Postgres Changes
+  - `subscribeToTyping(conversationId, onTyping)` — Uses Supabase Broadcast for ephemeral typing indicators
+  - `subscribeToPresence(conversationId, userId, onPresenceChange)` — Uses Supabase Presence for online status tracking
+  - `emitTyping(conversationId, event)` — Broadcasts typing events
+  - `updatePresence(conversationId, data)` — Updates user's presence data
+  - `unsubscribe(channelName)` — Leave a specific channel
+  - `unsubscribeAll()` — Clean up all subscriptions
+  - `getActiveChannels()` — Debug helper
+- Uses environment variables `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` with fallback to hardcoded values from `supabase.ts`
+- Exported types: `ChatMessage`, `NotificationPayload`, `TypingEvent`, `PresenceState`
+
+#### 3. Supabase Chat Hook (`src/hooks/use-supabase-chat.ts`) — NEW
+- Drop-in replacement for `useChatSocket` with identical interface
+- Uses Supabase Realtime Manager for:
+  - New message events via Postgres Changes (INSERT on Message table)
+  - Typing indicators via Broadcast
+  - Online presence via Presence
+- Auto-clears typing state after 3 seconds of no new typing events
+- `sendMessage()` is a no-op in Supabase mode — messages sent via REST API trigger Postgres Changes automatically
+- `markRead()` is a no-op — handled through REST API
+- `socket` property returns `null` (no Socket.io socket in Supabase mode)
+- Added `_strategy` debug property
+
+#### 4. Supabase Notifications Hook (`src/hooks/use-supabase-notifications.tsx`) — NEW
+- Drop-in replacement for `useRealtimeNotifications` with identical interface
+- Uses Supabase Realtime Manager for:
+  - New notification events via Postgres Changes (INSERT on Notification table)
+- Maps Supabase `NotificationPayload` to app `Notification` type
+- Same toast notification UI as Socket.io version (category icons, click-to-navigate)
+- Same 60-second polling fallback for unread count
+- Added `_strategy` debug property
+
+#### 5. Updated Chat Hook (`src/hooks/use-chat-socket.ts`) — MODIFIED
+- Strategy-aware: checks `getRealtimeStrategy()` on mount via `useMemo`
+- If `'socketio'`: Uses existing Socket.io code (unchanged)
+- If `'supabase'`: Uses `SupabaseRealtimeManager` directly (inline Supabase logic)
+- If `'polling'`: No-op actions, messages fetched via REST
+- All three code paths coexist in the same hook — no conditional hook calls
+- Socket.io singleton and all Socket.io effects guarded by `strategy !== 'socketio'` early returns
+- Supabase refs (manager, active conversations, typing timeouts) added for Supabase path
+- `_strategy` debug property exposed in return value
+- Backward compatible — existing Socket.io consumers work unchanged on local dev
+
+#### 6. Updated Notifications Hook (`src/hooks/use-realtime-notifications.tsx`) — MODIFIED
+- Strategy-aware: checks `getRealtimeStrategy()` on mount via `useMemo`
+- If `'socketio'`: Uses existing Socket.io code (unchanged)
+- If `'supabase'`: Uses `SupabaseRealtimeManager` directly (inline Supabase logic)
+- If `'polling'`: Relies on 60-second polling fallback
+- All three code paths coexist in the same hook — no conditional hook calls
+- Socket.io effects guarded by `strategy !== 'socketio'` early returns
+- Supabase subscription effect guarded by `strategy !== 'supabase'` early return
+- `_strategy` debug property exposed in return value
+- Backward compatible — existing Socket.io consumers work unchanged on local dev
+
+#### 7. SQL Setup Script (`scripts/enable-realtime.sql`) — NEW
+- `ALTER PUBLICATION supabase_realtime ADD TABLE "Message"` — Enable Realtime on Message table
+- `ALTER PUBLICATION supabase_realtime ADD TABLE "Notification"` — Enable Realtime on Notification table
+- Includes optional RLS policy examples for secure access
+- Includes verification query to confirm setup
+- Comprehensive comments explaining prerequisites and post-setup steps
+
+### Key Design Decisions
+
+1. **Strategy pattern over conditional imports**: The hooks check the strategy at runtime, allowing all code paths to coexist without conditional hook calls (which violate React's rules of hooks).
+
+2. **Inline Supabase logic in existing hooks**: Rather than switching between two different hook implementations (which would require conditional hook calls), the strategy-aware logic is embedded directly in the existing hooks.
+
+3. **Separate Supabase-specific hooks**: `use-supabase-chat.ts` and `use-supabase-notifications.tsx` exist as standalone hooks that can be used directly by consumers who know they want Supabase Realtime exclusively.
+
+4. **Singleton SupabaseRealtimeManager**: Ensures only one Supabase client instance is created, with channel reuse across different subscription calls.
+
+5. **Postgres Changes for persistent data, Broadcast for ephemeral data**: New messages and notifications use Postgres Changes (INSERT events) since they persist in the database. Typing indicators use Broadcast since they're ephemeral.
+
+6. **Graceful degradation**: If Supabase Realtime fails to initialize, the system falls back to REST polling. The 60-second unread count polling always runs as a safety net.
+
+### Lint Results
+- 0 errors in new/modified files
+- 3 pre-existing warnings (unrelated to this task)
+- Dev server running successfully on port 3000
+
+---
+
+Task ID: 8
+Agent: carrier-agent
+Task: Order tracking with TCS/Leopards carrier integration
+
+Work Log:
+- Read worklog.md, Prisma schema, existing shipping API routes, order tracking page, shipment tracker component, types
+- Verified Prisma Shipment model already has carrier, trackingNumber, trackingUrl, estimatedDelivery fields — no schema changes needed
+- Created src/lib/pakistan-cities.ts — 60+ Pakistani cities with TCS and Leopards city codes, province info, helper functions
+- Created src/lib/carriers/types.ts — CarrierProvider interface, ShipmentRequest, ShipmentResponse, TrackingResponse, CancelResponse, TrackingEvent types
+- Created src/lib/carriers/tcs.ts — Full TCS carrier integration with sandbox/mock mode, live API integration with retry logic
+- Created src/lib/carriers/leopards.ts — Full Leopards Courier integration with sandbox/mock mode, live API integration with retry logic
+- Created src/lib/carriers/index.ts — Carrier abstraction layer with getCarrier(), getAvailableCarriers(), getCarrierProviders(), getDefaultCarrier(), plus Self-Delivery provider
+- Created src/app/api/shipping/carriers/route.ts — GET endpoint to list available carriers
+- Created src/app/api/shipping/book/route.ts — POST endpoint to book a shipment with a carrier (calls carrier API, creates Shipment record, updates Order)
+- Created src/app/api/shipping/track/[trackingNumber]/route.ts — GET endpoint for live tracking with 5-minute cache, auto-syncs carrier status to DB
+- Created src/app/api/shipping/cancel-shipment/route.ts — POST endpoint to cancel a shipment (calls carrier API + updates DB)
+- Created src/components/marketplace/shipping/book-shipment-dialog.tsx — Carrier selection dialog with TCS/Leopards/Self-delivery options
+- Created src/components/marketplace/shipping/live-tracking-section.tsx — Live tracking timeline with carrier data, history, cancel button
+- Enhanced order-tracking-page.tsx with Book Shipment button, LiveTrackingSection integration, Track Package button for buyers
+
+Stage Summary:
+- Full TCS and Leopards Courier carrier integration with sandbox/mock mode for development
+- Carrier abstraction layer with 3 providers: TCS, Leopards, Self-Delivery
+- 4 new API routes: /shipping/carriers, /shipping/book, /shipping/track/[trackingNumber], /shipping/cancel-shipment
+- 2 new UI components: BookShipmentDialog, LiveTrackingSection
+- Enhanced order tracking page with carrier booking and live tracking features
+- Pakistan cities database with 60+ cities and carrier-specific city codes
+- Lint passes with 0 errors (3 pre-existing warnings unrelated to this task)
+- Dev server running successfully on port 3000
+
+---
+Task ID: 3
+Agent: analytics-agent
+Task: Enhanced seller analytics dashboard with charts
+
+Work Log:
+- Read existing seller-analytics.tsx, API route, and dashboard route to understand current state
+- Enhanced `/api/analytics/seller/route.ts` with 7 new data endpoints: conversion funnel, revenue forecast, hourly sales, day-of-week analysis, customer retention, AOV trend, sales heatmap, and auto-generated insights
+- Extended daily revenue data from 30 to 90 days
+- Added linear regression function for revenue forecasting (3 months projection)
+- Created new dynamic Recharts components: RechartsForecastChart (ComposedChart), RechartsRadarChart, RechartsAOVChart
+- Built SalesHeatmap component with calendar-style layout (GitHub contribution graph style), amber intensity levels, click-to-select day details
+- Built ConversionFunnel component with animated horizontal bars, amber gradient (light→dark), rates & drop-off percentages
+- Built InsightCard component for auto-generated insights (positive/negative/info types)
+- Built DateRangePicker component with 4 options: 7D, 30D, 90D, 12M
+- Added CSV export functionality on Revenue, Orders, AOV, and Top Products charts
+- Enhanced Top Products table with Conversion Rate column and color-coded badges
+- Added Customer Retention visualization (donut chart + stat cards)
+- Added Key Insights section at the top with 3-5 auto-generated insight cards
+- Updated all chart colors to amber/gold palette (#d97706, #f59e0b, #fbbf24)
+- Ensured full dark mode support across all new components
+- Fixed TypeScript errors: typed arrays in API route, forecast chart rendering, tooltip type compatibility
+- All files pass ESLint cleanly
+
+Stage Summary:
+- API route now returns 7 additional data sets (conversion funnel, revenue forecast, hourly sales, day-of-week analysis, customer retention, AOV trend, heatmap data, insights)
+- 7 new chart/visualization components added to the seller analytics page
+- Full interactivity: date range picker, CSV export, heatmap click-to-select, animated funnel
+- Key Insights section auto-generates 3-5 data-driven insight cards
+- All charts use amber/gold color palette with dark mode support
+- Zero new lint errors introduced
+---
+Task ID: 1
+Agent: skeleton-agent
+Task: Add loading skeletons to data-heavy pages
+
+Work Log:
+- Created src/components/marketplace/shared/loading-skeletons.tsx with 13 skeleton components
+- Integrated skeletons into 8 page components (search, product detail, seller/buyer dashboard, admin, order tracking, wallet)
+- All skeletons use animate-pulse with dark mode support
+
+Stage Summary:
+- 13 reusable skeleton components created (ProductCardSkeleton, ProductGridSkeleton, SearchPageSkeleton, ProductDetailSkeleton, DashboardSkeleton, OrderListSkeleton, WalletSkeleton, AdminSkeleton, ReviewListSkeleton, ChartSkeleton, TableSkeleton, ShopViewSkeleton, StatCardSkeleton)
+- Integrated into 8 data-heavy page components
+
+---
+Task ID: 2
+Agent: search-agent
+Task: Enhanced search with advanced filters
+
+Work Log:
+- Created src/components/ui/range-slider.tsx — dual-thumb range slider with amber gradient
+- Enhanced search API with new filter params (sellerVerified, onSale, minDiscount, dateAdded)
+- Updated search-page.tsx with all new filters and active filter tags bar
+
+Stage Summary:
+- Price range: dual-thumb slider with tooltips + preset buttons
+- Rating filter: visual star rows with count badges
+- Location filter: region-grouped selector with search and multi-select
+- New filters: Seller Verification toggle, Discount filter, Date Added filter
+- Active filter tags bar with color-coded removable chips
+
+---
+Task ID: 3
+Agent: analytics-agent
+Task: Enhanced seller analytics dashboard
+
+Work Log:
+- Extended analytics API with 7 new data endpoints (conversion funnel, revenue forecast, hourly sales, day of week, customer retention, AOV trend, sales heatmap)
+- Created 8 new chart components (Sales Heatmap, Revenue Forecast, Conversion Funnel, Peak Hours, Day of Week, AOV Trend, Customer Retention, Top Products Comparison)
+- Added CSV export and Key Insights section
+
+Stage Summary:
+- 8 new chart types with amber/gold theme
+- Auto-generated key insights cards
+- Date range picker (7D/30D/90D/12M) for all charts
+- CSV export for revenue, orders, AOV, and top products data
+
+---
+Task ID: 4
+Agent: realtime-agent
+Task: Migrate to Supabase Realtime for Vercel
+
+Work Log:
+- Created src/lib/realtime-strategy.ts — environment detection (Vercel vs local)
+- Created src/lib/supabase-realtime.ts — Supabase Realtime manager
+- Created src/hooks/use-supabase-chat.ts and use-supabase-notifications.tsx
+- Updated existing hooks to use strategy pattern (Socket.io local, Supabase on Vercel)
+- Created scripts/enable-realtime.sql for Supabase setup
+
+Stage Summary:
+- Supabase Realtime used on Vercel, Socket.io on local, polling as fallback
+- No breaking changes to existing Socket.io functionality
+- Proper cleanup and channel management
+
+---
+Task ID: 5
+Agent: pwa-agent
+Task: Add PWA support with manifest and service worker
+
+Work Log:
+- Created public/manifest.json, public/sw.js, public/offline.html
+- Created src/components/marketplace/shared/pwa-install-prompt.tsx
+- Created src/components/providers/pwa-provider.tsx
+- Updated layout.tsx with PWA metadata and PwaProvider wrapper
+
+Stage Summary:
+- PWA manifest with amber theme color (#d97706)
+- Service worker with cache-first (static), network-first (API), stale-while-revalidate (pages)
+- Install prompt banner with 7-day dismissal
+- Offline fallback page
+
+---
+Task ID: 6
+Agent: darkmode-agent
+Task: Dark mode polish audit and fixes
+
+Work Log:
+- Audited 50+ files for dark mode issues
+- Fixed 95 text-gray-900 without dark variant instances
+- Fixed 77 bg-white without dark variant instances
+- Fixed 43 border issues
+- Fixed amber/gold badge dark mode variants
+
+Stage Summary:
+- 200+ dark mode fixes across all component areas
+- Messages, seller/buyer dashboards, product cards, landing page, auth, search, admin all polished
+- Amber buttons now have dark:text-gray-900 for readability
+
+---
+Task ID: 7
+Agent: security-agent
+Task: Security hardening - rate limiting and CSRF
+
+Work Log:
+- Enhanced rate-limit.ts with new presets (login: 5/15min, register: 3/hour) and progressive delay
+- Updated login and register routes with stricter rate limiting
+- Added CSRF protection to 14 additional state-changing API routes
+- Created src/proxy.ts with security headers (X-Content-Type-Options, X-Frame-Options, CSP, etc.)
+- Extended account lockout from 15 to 30 minutes
+
+Stage Summary:
+- Progressive delay on failed login attempts (1s → 2s → 4s → ... capped at 60s)
+- IP + User-Agent fingerprinting for rate limiting
+- 14 additional routes protected with CSRF
+- Security headers: nosniff, DENY frame, XSS protection, CSP, Permissions-Policy
+
+---
+Task ID: 8
+Agent: carrier-agent
+Task: Order tracking with TCS/Leopards carrier integration
+
+Work Log:
+- Created src/lib/carriers/ with types.ts, tcs.ts, leopards.ts, index.ts
+- Created src/lib/pakistan-cities.ts with 60+ cities
+- Created 4 new API routes (carriers, book, track, cancel-shipment)
+- Created BookShipmentDialog and LiveTrackingSection UI components
+- Enhanced order tracking page with carrier integration
+
+Stage Summary:
+- TCS and Leopards Courier integration with sandbox/mock mode
+- Carrier abstraction layer (CarrierProvider interface)
+- Book shipment dialog for sellers
+- Live tracking section with carrier status timeline
+- 60+ Pakistani cities with carrier-specific city codes

@@ -349,7 +349,7 @@ export function VariantManager({
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="rounded-lg border border-gray-100 p-4 bg-gray-50/50 space-y-3"
+                  className="rounded-lg border border-gray-100 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800/50/50 space-y-3"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex-1">

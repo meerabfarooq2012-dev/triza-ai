@@ -248,7 +248,7 @@ export function Header() {
             >
               <ShoppingCart className="h-4.5 w-4.5" />
               {cart.length > 0 && (
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] font-bold gold-gradient text-white border-0">
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] font-bold gold-gradient text-white dark:text-gray-900 border-0">
                   {cart.length > 99 ? '99+' : cart.length}
                 </Badge>
               )}
@@ -449,7 +449,7 @@ export function Header() {
                 <Button
                   size="sm"
                   onClick={() => handleNavClick('auth', { mode: 'register' })}
-                  className="gold-gradient hover:opacity-90 text-white border-0"
+                  className="gold-gradient hover:opacity-90 text-white dark:text-gray-900 border-0"
                 >
                   {t('common.signup')}
                 </Button>
@@ -759,7 +759,7 @@ export function Header() {
 
                   <Button
                     variant="ghost"
-                    className="w-full justify-start gap-3 text-red-600 hover:text-red-600 hover:bg-red-50"
+                    className="w-full justify-start gap-3 text-red-600 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
                     onClick={() => { logout(); setMobileMenuOpen(false) }}
                   >
                     <LogOut className="h-4.5 w-4.5" />
@@ -776,7 +776,7 @@ export function Header() {
                     {t('common.login')}
                   </Button>
                   <Button
-                    className="w-full gold-gradient hover:opacity-90 text-white border-0"
+                    className="w-full gold-gradient hover:opacity-90 text-white dark:text-gray-900 border-0"
                     onClick={() => handleNavClick('auth', { mode: 'register' })}
                   >
                     {t('common.signup')}

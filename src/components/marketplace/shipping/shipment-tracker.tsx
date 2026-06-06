@@ -344,8 +344,8 @@ export function ShipmentTracker({ orderId, isSeller }: ShipmentTrackerProps) {
                           isCompleted
                             ? 'bg-amber-600 border-amber-600 text-white'
                             : isCurrent
-                              ? 'bg-white border-amber-400 text-amber-600'
-                              : 'bg-white border-muted text-muted-foreground'
+                              ? 'bg-white dark:bg-gray-800 border-amber-400 text-amber-600 dark:text-amber-400'
+                              : 'bg-white dark:bg-gray-800 border-muted text-muted-foreground'
                         }`}
                       >
                         <Icon className="h-5 w-5" />
@@ -376,8 +376,8 @@ export function ShipmentTracker({ orderId, isSeller }: ShipmentTrackerProps) {
                           isCompleted
                             ? 'bg-amber-600 border-amber-600 text-white'
                             : isCurrent
-                              ? 'bg-white border-amber-400 text-amber-600'
-                              : 'bg-white border-muted text-muted-foreground'
+                              ? 'bg-white dark:bg-gray-800 border-amber-400 text-amber-600 dark:text-amber-400'
+                              : 'bg-white dark:bg-gray-800 border-muted text-muted-foreground'
                         }`}
                       >
                         <Icon className="h-4 w-4" />

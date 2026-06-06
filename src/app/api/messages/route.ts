@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { withCsrf } from '@/lib/with-csrf';
 
 // GET /api/messages?userId=string&otherUserId=string
 // Fetch messages between two users (backward compatible)
@@ -56,7 +57,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/messages
 // Send a message and create/update the conversation
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
   try {
     const body = await request.json();
     const { senderId, receiverId, content, productId, gigId, messageType } = body;
@@ -141,4 +142,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

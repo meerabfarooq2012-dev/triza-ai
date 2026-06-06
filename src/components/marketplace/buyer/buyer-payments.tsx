@@ -77,7 +77,7 @@ const PAYMENT_STATUS_CONFIG: Record<
   },
   refunded: {
     label: 'Refunded',
-    color: 'bg-gray-100 text-gray-800 border-gray-200',
+    color: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-700',
     dotColor: 'bg-gray-500',
     icon: <RotateCcw className="h-3.5 w-3.5" />,
   },
@@ -494,7 +494,7 @@ export function BuyerPayments() {
                             <CreditCard className="h-5 w-5 text-amber-600" />
                           </div>
                           <div>
-                            <p className="font-semibold text-gray-900">
+                            <p className="font-semibold text-gray-900 dark:text-gray-100">
                               Payment #{payment.id.slice(-8)}
                             </p>
                             <p className="text-xs text-gray-500">
@@ -530,7 +530,7 @@ export function BuyerPayments() {
                       </div>
 
                       {/* Progress Timeline */}
-                      <div className="mt-4 rounded-lg border border-gray-100 bg-gray-50/50 p-4">
+                      <div className="mt-4 rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50/50 p-4">
                         <PaymentTimeline
                           paymentStatus={payment.status}
                           escrowStatus={payment.escrowStatus}
@@ -551,7 +551,7 @@ export function BuyerPayments() {
                           <Separator orientation="vertical" className="h-4" />
                           <div className="flex items-center gap-1">
                             <DollarSign className="h-3.5 w-3.5 text-gray-400" />
-                            <span className="font-bold text-gray-900">
+                            <span className="font-bold text-gray-900 dark:text-gray-100">
                               ${(payment.amount ?? 0).toFixed(2)}
                             </span>
                           </div>
@@ -672,7 +672,7 @@ export function BuyerPayments() {
               </div>
 
               {/* Timeline in Detail */}
-              <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
+              <div className="rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50/50 p-4">
                 <PaymentTimeline
                   paymentStatus={selectedPayment.status}
                   escrowStatus={selectedPayment.escrowStatus}
@@ -681,7 +681,7 @@ export function BuyerPayments() {
 
               {/* Payment Details */}
               <div className="space-y-3 rounded-lg border p-4">
-                <h4 className="text-sm font-semibold text-gray-900">Payment Details</h4>
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Payment Details</h4>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Payment ID</span>
@@ -747,8 +747,8 @@ export function BuyerPayments() {
               </div>
 
               {/* Amount Breakdown */}
-              <div className="space-y-2 rounded-lg bg-gray-50 p-4">
-                <h4 className="text-sm font-semibold text-gray-900">Amount Breakdown</h4>
+              <div className="space-y-2 rounded-lg bg-gray-50 dark:bg-gray-800/50 p-4">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Amount Breakdown</h4>
                 <div className="space-y-1.5">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Total Amount</span>
@@ -784,7 +784,7 @@ export function BuyerPayments() {
                     )}
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                       {(selectedPayment.seller as Record<string, unknown>).name as string}
                     </p>
                     <p className="text-xs text-gray-500">Seller</p>

@@ -6,6 +6,7 @@ import { Store, Settings, Loader2, AlertCircle, Star } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { DashboardSkeleton } from '@/components/marketplace/shared/loading-skeletons'
 import { SellerOverview } from './seller-overview'
 import { SellerTierCard } from '@/components/marketplace/verification/seller-tier-card'
 import { SellerProducts } from './seller-products'
@@ -143,10 +144,9 @@ export function SellerDashboard() {
   // Loading state while checking for shop
   if (shopLoading) {
     return (
-      <div className="min-h-screen bg-muted/30 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-200 border-t-amber-600" />
-          <p className="text-sm text-muted-foreground">Loading your dashboard...</p>
+      <div className="min-h-screen bg-muted/30">
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          <DashboardSkeleton cardCount={4} />
         </div>
       </div>
     )

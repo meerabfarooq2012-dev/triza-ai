@@ -766,10 +766,10 @@ export function SellerGigs() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 py-16"
+          className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 py-16"
         >
           <Briefcase className="mb-4 h-16 w-16 text-gray-300" />
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             No gigs yet
           </h3>
           <p className="mt-1 text-sm text-gray-500">
@@ -786,7 +786,7 @@ export function SellerGigs() {
       ) : (
         <>
           {/* Desktop Table */}
-          <div className="hidden overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm md:block">
+          <div className="hidden overflow-hidden rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -810,7 +810,7 @@ export function SellerGigs() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="group border-b border-gray-50 transition-colors hover:bg-gray-50/50"
+                        className="group border-b border-gray-50 dark:border-gray-800 transition-colors hover:bg-gray-50/50 dark:hover:bg-gray-800/50"
                       >
                         <TableCell>
                           <div className="flex items-center gap-3">
@@ -828,7 +828,7 @@ export function SellerGigs() {
                               )}
                             </div>
                             <div className="min-w-0">
-                              <p className="max-w-[200px] truncate text-sm font-medium text-gray-900">
+                              <p className="max-w-[200px] truncate text-sm font-medium text-gray-900 dark:text-gray-100">
                                 {gig.title}
                               </p>
                               {gig.isFeatured && (
@@ -848,7 +848,7 @@ export function SellerGigs() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm font-semibold text-gray-900">
+                          <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                             ${(startingPrice ?? 0).toFixed(2)}
                           </span>
                         </TableCell>
@@ -954,7 +954,7 @@ export function SellerGigs() {
                             )}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-semibold text-gray-900">
+                            <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
                               {gig.title}
                             </p>
                             <div className="mt-1 flex flex-wrap items-center gap-2">

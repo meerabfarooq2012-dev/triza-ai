@@ -23,7 +23,7 @@ interface SellerTrustBadgeProps {
 const TRUST_LEVEL_CONFIG: Record<string, { color: string; bg: string; label: string }> = {
   none: { color: '#9ca3af', bg: 'bg-gray-100 text-gray-600', label: 'Unverified' },
   bronze: { color: '#cd7f32', bg: 'bg-amber-50 text-amber-700 border-amber-200', label: 'Bronze' },
-  silver: { color: '#c0c0c0', bg: 'bg-gray-50 text-gray-600 border-gray-300', label: 'Silver' },
+  silver: { color: '#c0c0c0', bg: 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600', label: 'Silver' },
   gold: { color: '#ffd700', bg: 'bg-yellow-50 text-yellow-700 border-yellow-200', label: 'Gold' },
   platinum: { color: '#e5e4e2', bg: 'bg-slate-50 text-slate-700 border-slate-200', label: 'Platinum' },
 }

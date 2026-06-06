@@ -191,10 +191,10 @@ export function SellerOrders() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 py-16"
+          className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 py-16"
         >
           <Package className="mb-4 h-16 w-16 text-gray-300" />
-          <h3 className="text-lg font-semibold text-gray-900">No orders found</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">No orders found</h3>
           <p className="mt-1 text-sm text-gray-500">
             {statusFilter !== 'all'
               ? `You don't have any ${statusFilter} orders`
@@ -224,7 +224,7 @@ export function SellerOrders() {
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-semibold text-gray-900">
+                          <p className="font-semibold text-gray-900 dark:text-gray-100">
                             Order #{order.id.slice(-8)}
                           </p>
                           <p className="text-xs text-gray-500">
@@ -266,9 +266,9 @@ export function SellerOrders() {
                         return (
                           <div
                             key={item.id}
-                            className="flex items-center gap-3 rounded-lg bg-gray-50 p-3"
+                            className="flex items-center gap-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 p-3"
                           >
-                            <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-white">
+                            <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-white dark:bg-gray-800">
                               {productImages[0] ? (
                                 <img
                                   src={productImages[0]}
@@ -282,14 +282,14 @@ export function SellerOrders() {
                               )}
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-medium text-gray-900">
+                              <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
                                 {item.product?.name || 'Product'}
                               </p>
                               <p className="text-xs text-gray-500">
                                 Qty: {item.quantity} × ${(item.price ?? 0).toFixed(2)}
                               </p>
                             </div>
-                            <p className="text-sm font-semibold text-gray-900">
+                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                               ${((item.price ?? 0) * (item.quantity ?? 1)).toFixed(2)}
                             </p>
                           </div>
@@ -302,7 +302,7 @@ export function SellerOrders() {
                       <div className="flex items-center gap-4 text-sm">
                         <span className="text-gray-500">
                           Total:{' '}
-                          <span className="font-bold text-gray-900">
+                          <span className="font-bold text-gray-900 dark:text-gray-100">
                             ${(order.totalAmount ?? 0).toFixed(2)}
                           </span>
                         </span>
@@ -441,9 +441,9 @@ export function SellerOrders() {
                 {selectedOrder.items?.map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-center gap-3 rounded-lg bg-gray-50 p-3"
+                    className="flex items-center gap-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 p-3"
                   >
-                    <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-white">
+                    <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-white dark:bg-gray-800">
                       <Package className="h-5 w-5 text-gray-300" />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -478,7 +478,7 @@ export function SellerOrders() {
               )}
 
               {/* Totals */}
-              <div className="space-y-1 rounded-lg bg-gray-50 p-3">
+              <div className="space-y-1 rounded-lg bg-gray-50 dark:bg-gray-800/50 p-3">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Subtotal</span>
                   <span>${(selectedOrder.totalAmount ?? 0).toFixed(2)}</span>

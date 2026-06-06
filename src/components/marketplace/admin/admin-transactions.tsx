@@ -385,7 +385,7 @@ export function AdminTransactions() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-500">{stat.label}</p>
-                    <p className="mt-1 text-2xl font-bold text-gray-900">{stat.value}</p>
+                    <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{stat.value}</p>
                   </div>
                   <div className={`rounded-xl p-3 ${stat.bgColor}`}>
                     <stat.icon className={`h-6 w-6 ${stat.textColor}`} />

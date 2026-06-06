@@ -53,6 +53,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { WalletSkeleton } from '@/components/marketplace/shared/loading-skeletons'
 import { EmptyState } from '@/components/marketplace/shared/empty-state'
 import { toast } from 'sonner'
 import type {
@@ -377,24 +378,7 @@ export function SellerWallet() {
   }
 
   if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-6">
-                <Skeleton className="h-20 rounded" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        <Card>
-          <CardContent className="p-6">
-            <Skeleton className="h-64 rounded" />
-          </CardContent>
-        </Card>
-      </div>
-    )
+    return <WalletSkeleton />
   }
 
   if (error) {
@@ -469,7 +453,7 @@ export function SellerWallet() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-500">{stat.label}</p>
-                    <p className="mt-1 text-2xl font-bold text-gray-900">{stat.value}</p>
+                    <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{stat.value}</p>
                   </div>
                   <div className={`rounded-xl p-3 ${stat.bgColor}`}>
                     <stat.icon className={`h-6 w-6 ${stat.textColor}`} />

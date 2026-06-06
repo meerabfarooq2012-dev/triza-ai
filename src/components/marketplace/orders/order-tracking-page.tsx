@@ -32,6 +32,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Select,
   SelectContent,
@@ -47,6 +48,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { OrderListSkeleton } from '@/components/marketplace/shared/loading-skeletons'
 import {
   ORDER_STATUS_LABELS,
   ORDER_STATUS_COLORS,
@@ -54,6 +56,8 @@ import {
 } from '@/lib/constants'
 import type { Order, OrderStatus, OrderStatusLog, Payment, EscrowStatus } from '@/types'
 import { ShipmentTracker } from '@/components/marketplace/shipping/shipment-tracker'
+import { BookShipmentDialog } from '@/components/marketplace/shipping/book-shipment-dialog'
+import { LiveTrackingSection } from '@/components/marketplace/shipping/live-tracking-section'
 import { toast } from 'sonner'
 import { api } from '@/lib/api'
 
@@ -345,7 +349,7 @@ const PAYMENT_STATUS_BADGE: Record<string, { label: string; color: string }> = {
   completed: { label: 'Payment Completed', color: 'bg-amber-100 text-amber-800 border-amber-200' },
   paid: { label: 'Paid', color: 'bg-amber-100 text-amber-800 border-amber-200' },
   failed: { label: 'Payment Failed', color: 'bg-red-100 text-red-800 border-red-200' },
-  refunded: { label: 'Refunded', color: 'bg-gray-100 text-gray-800 border-gray-200' },
+  refunded: { label: 'Refunded', color: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-700' },
 }
 
 const ESCROW_STATUS_BADGE: Record<string, { label: string; color: string }> = {
@@ -367,6 +371,8 @@ export default function OrderTrackingPage() {
   const [updatingStatus, setUpdatingStatus] = useState(false)
   const [confirmingDelivery, setConfirmingDelivery] = useState(false)
   const [downloadingInvoice, setDownloadingInvoice] = useState(false)
+  const [showBookShipment, setShowBookShipment] = useState(false)
+  const [showLiveTracking, setShowLiveTracking] = useState(false)
 
   const isSeller = activeRole === 'seller'
   const isBuyer = activeRole === 'buyer'
@@ -517,14 +523,74 @@ export default function OrderTrackingPage() {
     }
   }
 
+  // Determine carrier slug from order
+  const carrierSlug = (() => {
+    const c = (order as Order | null)?.carrier
+    if (c === 'tcs') return 'tcs'
+    if (c === 'leopard' || c === 'leopards') return 'leopards'
+    if (c === 'self') return 'self'
+    return null
+  })()
+
+  // Determine if order has physical items
+  const hasPhysicalItems = order?.items?.some((item) => item.type === 'physical') ?? false
+
+  // Determine if shipment can be booked
+  const canBookShipment = isSeller && hasPhysicalItems &&
+    (order?.status === 'pending' || order?.status === 'processing') &&
+    !order?.shipment
+
   // ----- Loading State -----
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 w-48 bg-muted rounded-lg" />
-          <div className="h-64 bg-muted rounded-xl" />
-          <div className="h-48 bg-muted rounded-xl" />
+        <div className="space-y-6">
+          {/* Header skeleton */}
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-9 w-9" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-7 w-48" />
+              <Skeleton className="h-4 w-64" />
+            </div>
+            <Skeleton className="h-6 w-24 rounded-full" />
+          </div>
+          {/* Timeline skeleton */}
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-6">
+              <div className="hidden md:grid md:grid-cols-4 gap-4">
+                {Array.from({ length: 4 }, (_, i) => (
+                  <div key={i} className="flex flex-col items-center text-center">
+                    <Skeleton className="h-12 w-12 rounded-full mb-3" />
+                    <Skeleton className="h-4 w-20 mb-1" />
+                    <Skeleton className="h-3 w-28" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+          {/* Order items skeleton */}
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-6 space-y-3">
+              <Skeleton className="h-5 w-28 mb-2" />
+              {Array.from({ length: 2 }, (_, i) => (
+                <div key={i} className="flex items-center gap-4 p-3 rounded-xl bg-muted/50">
+                  <Skeleton className="h-16 w-16 rounded-lg" />
+                  <div className="flex-1 space-y-1.5">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                  <Skeleton className="h-4 w-16" />
+                </div>
+              ))}
+              <Skeleton className="h-px w-full my-3" />
+              <div className="space-y-2">
+                <div className="flex justify-between"><Skeleton className="h-4 w-16" /><Skeleton className="h-4 w-16" /></div>
+                <div className="flex justify-between"><Skeleton className="h-4 w-20" /><Skeleton className="h-4 w-14" /></div>
+                <Skeleton className="h-px w-full" />
+                <div className="flex justify-between"><Skeleton className="h-5 w-12" /><Skeleton className="h-6 w-20" /></div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     )
@@ -970,8 +1036,57 @@ export default function OrderTrackingPage() {
             </Card>
           )}
 
+          {/* Book Shipment Button for Sellers */}
+          {canBookShipment && (
+            <Card className="border-0 shadow-sm border-l-4 border-l-amber-500">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <Truck className="h-5 w-5 text-amber-600" />
+                      Book a Carrier Shipment
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Ship via TCS, Leopards Courier, or deliver yourself
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => setShowBookShipment(true)}
+                    className="gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
+                  >
+                    <Truck className="h-4 w-4" />
+                    Book Shipment
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Shipment Tracker - Rich visual timeline with carrier management */}
           <ShipmentTracker orderId={order.id} isSeller={isSeller} />
+
+          {/* Live Carrier Tracking */}
+          {(order.trackingNo || order.shipment?.trackingNumber) && (
+            <LiveTrackingSection
+              trackingNumber={order.trackingNo || order.shipment?.trackingNumber || null}
+              carrierSlug={carrierSlug}
+              isSeller={isSeller}
+              orderId={order.id}
+              onRefresh={fetchOrder}
+            />
+          )}
+
+          {/* Track Package button for buyers */}
+          {isBuyer && order.trackingNo && !showLiveTracking && (
+            <Button
+              variant="outline"
+              className="w-full gap-2 border-amber-300 text-amber-600 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-400"
+              onClick={() => setShowLiveTracking(true)}
+            >
+              <MapPin className="h-4 w-4" />
+              Track Package Live
+            </Button>
+          )}
 
           {/* Digital Downloads Section */}
           {isBuyer && order.items?.some((item) => item.type === 'digital') && (
@@ -1282,6 +1397,15 @@ export default function OrderTrackingPage() {
           )}
         </div>
       </div>
+
+      {/* ---- Book Shipment Dialog ---- */}
+      <BookShipmentDialog
+        open={showBookShipment}
+        onOpenChange={setShowBookShipment}
+        orderId={order.id}
+        shippingCity={order.shippingCity}
+        onBooked={fetchOrder}
+      />
 
       {/* ---- Status Update Confirmation Dialog ---- */}
       <Dialog open={!!statusToUpdate} onOpenChange={() => setStatusToUpdate(null)}>

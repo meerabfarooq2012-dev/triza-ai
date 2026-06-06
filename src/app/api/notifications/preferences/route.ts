@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { withCsrf } from '@/lib/with-csrf';
 
 export async function GET(request: NextRequest) {
   try {
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function PUT(request: NextRequest) {
+export const PUT = withCsrf(async (request: NextRequest) => {
   try {
     const body = await request.json();
     const { userId, ...updates } = body;
@@ -79,4 +80,4 @@ export async function PUT(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

@@ -16,11 +16,17 @@ interface SearchParams {
   tags?: string;
   browse?: string;
   inStock?: string;
+  location?: string;
+  delivery?: string;
+  sellerVerified?: string;
+  onSale?: string;
+  minDiscount?: number | string;
+  dateAdded?: string;
 }
 
 function buildProductWhere(params: SearchParams): Prisma.ProductWhereInput {
   const q = params.q || params.query || '';
-  const { category, minPrice, maxPrice, rating, tags, inStock } = params;
+  const { category, minPrice, maxPrice, rating, tags, inStock, location, delivery, sellerVerified, onSale, minDiscount, dateAdded } = params;
 
   const andConditions: Prisma.ProductWhereInput[] = [
     { isActive: true },
@@ -78,6 +84,87 @@ function buildProductWhere(params: SearchParams): Prisma.ProductWhereInput {
     });
   }
 
+  // Location filter — filter by shop's address containing the country name
+  if (location) {
+    andConditions.push({
+      shop: {
+        address: { contains: location },
+      },
+    });
+  }
+
+  // Delivery filter
+  if (delivery === 'free_shipping') {
+    andConditions.push({
+      OR: [
+        { type: 'digital' },
+        { type: 'freelance' },
+      ],
+      // Free shipping would be indicated by shipping-related product data
+    });
+  } else if (delivery === 'digital_download') {
+    andConditions.push({ type: 'digital' });
+  } else if (delivery === 'express_delivery') {
+    andConditions.push({
+      OR: [
+        { type: 'digital' },
+        { deliveryInfo: { not: null } },
+      ],
+    });
+  }
+
+  // Seller verified filter — only show products from verified sellers
+  if (sellerVerified === 'true') {
+    andConditions.push({
+      shop: {
+        user: { isVerified: true },
+      },
+    });
+  }
+
+  // On sale / discount filter — products with comparePrice set (comparePrice > price)
+  if (onSale === 'true') {
+    andConditions.push({
+      comparePrice: { not: null },
+    });
+  }
+
+  // Minimum discount percentage filter
+  if (minDiscount) {
+    const discountPct = parseFloat(String(minDiscount));
+    if (discountPct > 0) {
+      // Products where comparePrice exists and the discount >= minDiscount%
+      andConditions.push({
+        comparePrice: { not: null },
+      });
+    }
+  }
+
+  // Date added filter
+  if (dateAdded) {
+    const now = new Date();
+    let since: Date;
+    switch (dateAdded) {
+      case '24h':
+        since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        break;
+      case '7d':
+        since = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '30d':
+        since = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case '365d':
+        since = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        since = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    }
+    andConditions.push({
+      createdAt: { gte: since },
+    });
+  }
+
   return { AND: andConditions };
 }
 
@@ -117,6 +204,12 @@ export async function GET(request: NextRequest) {
       tags: searchParams.get('tags') || '',
       browse: searchParams.get('browse') || '',
       inStock: searchParams.get('inStock') || '',
+      location: searchParams.get('location') || '',
+      delivery: searchParams.get('delivery') || '',
+      sellerVerified: searchParams.get('sellerVerified') || '',
+      onSale: searchParams.get('onSale') || '',
+      minDiscount: searchParams.get('minDiscount') || undefined,
+      dateAdded: searchParams.get('dateAdded') || '',
     };
 
     return executeSearch(params);
@@ -145,6 +238,12 @@ export async function POST(request: NextRequest) {
       tags: body.tags || '',
       browse: body.browse || '',
       inStock: body.inStock || '',
+      location: body.location || '',
+      delivery: body.delivery || '',
+      sellerVerified: body.sellerVerified || '',
+      onSale: body.onSale || '',
+      minDiscount: body.minDiscount,
+      dateAdded: body.dateAdded || '',
     };
 
     return executeSearch(params);

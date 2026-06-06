@@ -387,7 +387,7 @@ function CountryMultiSelect({
     <div ref={dropdownRef} className="relative">
       {/* Selected countries display + trigger */}
       <div
-        className="min-h-[42px] flex flex-wrap gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 cursor-text"
+        className="min-h-[42px] flex flex-wrap gap-1 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 cursor-text"
         onClick={() => {
           setDropdownOpen(!dropdownOpen)
           setSearch('')
@@ -428,7 +428,7 @@ function CountryMultiSelect({
 
       {/* Dropdown */}
       {dropdownOpen && (
-        <div className="absolute z-50 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-64 overflow-hidden">
+        <div className="absolute z-50 mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg max-h-64 overflow-hidden">
           {/* Search + Actions */}
           <div className="border-b border-gray-100 p-2">
             <Input
@@ -859,10 +859,10 @@ export function SellerProducts() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 py-16"
+          className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 py-16"
         >
           <Package className="mb-4 h-16 w-16 text-gray-300" />
-          <h3 className="text-lg font-semibold text-gray-900">No products yet</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">No products yet</h3>
           <p className="mt-1 text-sm text-gray-500">
             Add your first product to start selling
           </p>
@@ -877,7 +877,7 @@ export function SellerProducts() {
       ) : (
         <>
           {/* Desktop Table */}
-          <div className="hidden overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm md:block">
+          <div className="hidden overflow-hidden rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -904,7 +904,7 @@ export function SellerProducts() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="group border-b border-gray-50 transition-colors hover:bg-gray-50/50"
+                        className="group border-b border-gray-50 dark:border-gray-800 transition-colors hover:bg-gray-50/50 dark:hover:bg-gray-800/50"
                       >
                         <TableCell>
                           <div className="flex items-center gap-3">
@@ -946,7 +946,7 @@ export function SellerProducts() {
                         </TableCell>
                         <TableCell>
                           <div>
-                            <span className="text-sm font-semibold text-gray-900">
+                            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                               ${(product.price ?? 0).toFixed(2)}
                             </span>
                             {product.comparePrice && (
@@ -972,7 +972,7 @@ export function SellerProducts() {
                             className={
                               product.isActive
                                 ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                : 'bg-gray-50 text-gray-500 border-gray-200'
+                                : 'bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700'
                             }
                           >
                             {product.isActive ? 'Active' : 'Inactive'}
@@ -1060,7 +1060,7 @@ export function SellerProducts() {
                             )}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-semibold text-gray-900">
+                            <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
                               {product.name}
                             </p>
                             <div className="mt-1 flex flex-wrap items-center gap-2">

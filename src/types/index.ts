@@ -667,6 +667,7 @@ export interface PaginatedResponse<T> {
 }
 
 export type DeliveryFilterType = 'free_shipping' | 'digital_download' | 'express_delivery'
+export type DateAddedFilter = '24h' | '7d' | '30d' | '365d'
 
 export interface SearchFilters {
   query?: string
@@ -679,6 +680,10 @@ export interface SearchFilters {
   inStock?: boolean
   location?: string
   delivery?: DeliveryFilterType
+  sellerVerified?: boolean
+  onSale?: boolean
+  minDiscount?: number
+  dateAdded?: DateAddedFilter
   sortBy?: 'price_asc' | 'price_desc' | 'newest' | 'popular' | 'rating'
   page?: number
   limit?: number

@@ -1123,7 +1123,7 @@ export function PaymentSettingsPage({ userId, userRole }: PaymentSettingsPagePro
 
       {/* Security Footer */}
       <motion.div variants={itemVariants}>
-        <div className="rounded-lg bg-gray-50 border border-gray-200 p-4">
+        <div className="rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center gap-2 mb-2">
             <ShieldCheck className="h-4 w-4 text-gray-500" />
             <span className="text-sm font-medium text-gray-700">Security & Privacy</span>

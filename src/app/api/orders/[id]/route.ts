@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { notifyOrderStatusUpdate } from '@/lib/notifications';
 import { createDownloadLink } from '@/lib/digital-download';
+import { withCsrf } from '@/lib/with-csrf';
 
 export async function GET(
   request: NextRequest,
@@ -81,11 +82,12 @@ export async function GET(
   }
 }
 
-export async function PUT(
+const handleOrderUpdate = withCsrf(async (
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+  context?: unknown
+) => {
   try {
+    const { params } = context as { params: Promise<{ id: string }> };
     const { id } = await params;
     const body = await request.json();
     const { userId, status, paymentStatus, trackingNo } = body;
@@ -257,12 +259,9 @@ export async function PUT(
       { status: 500 }
     );
   }
-}
+});
+
+export const PUT = handleOrderUpdate;
 
 // PATCH — alias for PUT (components use PATCH method)
-export async function PATCH(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
-  return PUT(request, context);
-}
+export const PATCH = handleOrderUpdate;

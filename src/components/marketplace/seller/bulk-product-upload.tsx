@@ -303,7 +303,7 @@ export function BulkProductUpload() {
             <FileSpreadsheet className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Bulk Product Upload</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Bulk Product Upload</h2>
             <p className="text-sm text-gray-500">Import or export products via CSV</p>
           </div>
         </div>
@@ -384,7 +384,7 @@ export function BulkProductUpload() {
                     <FileSpreadsheet className="h-5 w-5 text-yellow-600" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-gray-900">{fileName}</p>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{fileName}</p>
                     <p className="text-xs text-gray-500">
                       {parsedData.length} rows • {validRows.length} valid • {invalidRows.length} with errors
                     </p>
@@ -463,7 +463,7 @@ export function BulkProductUpload() {
                           <AlertCircle className="h-5 w-5 text-amber-600" />
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-gray-900">
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                             {importResult.imported} imported, {importResult.errors.length} error{importResult.errors.length !== 1 ? 's' : ''}
                           </p>
                         </div>
@@ -565,7 +565,7 @@ export function BulkProductUpload() {
       )}
 
       {/* Info card at the bottom */}
-      <Card className="border-0 shadow-sm bg-gray-50/80">
+      <Card className="border-0 shadow-sm bg-gray-50 dark:bg-gray-800/80/80">
         <CardContent className="p-4">
           <h4 className="text-sm font-semibold text-gray-700 mb-2">CSV Format Guide</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-500">

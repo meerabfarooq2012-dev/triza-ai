@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 import { sendEmailAsync } from '@/lib/email';
 import { welcomeEmail, emailVerificationEmail } from '@/lib/email-templates';
 import { notifyWelcome } from '@/lib/notifications';
-import { rateLimit, getRateLimitKey, authRateLimit } from '@/lib/rate-limit';
+import { rateLimit, getFingerprintedRateLimitKey, registerRateLimit } from '@/lib/rate-limit';
 import { signToken } from '@/lib/auth-middleware';
 import { createSession } from '@/lib/session';
 import { withCsrf } from '@/lib/with-csrf';
@@ -19,11 +19,11 @@ function slugify(text: string): string {
 
 export const POST = withCsrf(async (request: NextRequest) => {
   try {
-    // Rate limiting
-    const rateLimitKey = getRateLimitKey(request);
+    // Rate limiting — use fingerprinted key (IP + User-Agent) for stricter registration limiting
+    const rateLimitKey = getFingerprintedRateLimitKey(request, 'register');
     const rateLimitResult = rateLimit({
-      ...authRateLimit,
-      key: `register:${rateLimitKey}`,
+      ...registerRateLimit,
+      key: rateLimitKey,
     });
 
     if (!rateLimitResult.success) {

@@ -694,7 +694,7 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
                               key={item.id}
                               className="flex items-center gap-3 rounded-lg bg-muted/50 p-3"
                             >
-                              <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-white border">
+                              <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-white dark:bg-gray-800 border dark:border-gray-700">
                                 {productImages[0] ? (
                                   <img
                                     src={productImages[0]}
@@ -928,7 +928,7 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
                           key={ev.id}
                           className="rounded-lg border bg-muted/20 p-3 flex items-start gap-3 group"
                         >
-                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-white border overflow-hidden">
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-white dark:bg-gray-800 border dark:border-gray-700 overflow-hidden">
                             {ev.type === 'image' || ev.type === 'screenshot' ? (
                               <img
                                 src={ev.fileUrl}
@@ -1203,7 +1203,7 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
                 )}
 
                 {dispute.status === 'closed' && (
-                  <div className="rounded-lg bg-gray-50 border border-gray-200 p-3 flex items-start gap-2">
+                  <div className="rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 p-3 flex items-start gap-2">
                     <XCircle className="h-4 w-4 text-gray-500 mt-0.5 shrink-0" />
                     <div>
                       <p className="text-xs text-gray-700 font-semibold">Dispute Closed</p>
@@ -1352,7 +1352,7 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
               Closing a dispute is permanent and cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <div className="rounded-lg bg-gray-50 border border-gray-200 p-3 flex items-start gap-2">
+          <div className="rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 p-3 flex items-start gap-2">
             <AlertTriangle className="h-4 w-4 text-gray-600 mt-0.5 shrink-0" />
             <p className="text-xs text-gray-700">
               This will close the dispute without a resolution. Both parties will be notified.

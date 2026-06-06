@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { createNotification } from '@/lib/notifications';
+import { withCsrf } from '@/lib/with-csrf';
 
 // GET /api/returns/[id] — Get single return request
 export async function GET(
@@ -90,10 +91,11 @@ export async function GET(
 }
 
 // PUT /api/returns/[id] — Update return request (approve, reject, cancel, mark processing)
-export async function PUT(
+export const PUT = withCsrf(async (
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+  context?: unknown
+) => {
+  const { params } = context as { params: Promise<{ id: string }> };
   try {
     const { id } = await params;
     const body = await request.json();
@@ -484,4 +486,4 @@ export async function PUT(
       { status: 500 }
     );
   }
-}
+});

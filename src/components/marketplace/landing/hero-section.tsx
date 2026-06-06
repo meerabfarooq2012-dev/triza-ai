@@ -61,7 +61,7 @@ export function HeroSection() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
             <Button
               size="lg"
-              className="gold-gradient hover:opacity-90 text-white shadow-xl shadow-amber-500/25 px-8 text-base transition-opacity duration-300"
+              className="gold-gradient hover:opacity-90 text-white dark:text-gray-900 shadow-xl shadow-amber-500/25 px-8 text-base transition-opacity duration-300"
               onClick={() => setCurrentView('auth', { tab: 'register' })}
             >
               {t('landing.startSelling')}

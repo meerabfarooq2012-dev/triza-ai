@@ -286,8 +286,8 @@ function PhotoLightbox({
                   onClick={() => setCurrentIndex(idx)}
                   className={`w-2.5 h-2.5 rounded-full transition-all ${
                     idx === currentIndex
-                      ? 'bg-white w-6'
-                      : 'bg-white/50 hover:bg-white/80'
+                      ? 'bg-white dark:bg-gray-600 w-6'
+                      : 'bg-white/50 dark:bg-gray-500/50 hover:bg-white/80 dark:hover:bg-gray-500/80'
                   }`}
                 />
               ))}

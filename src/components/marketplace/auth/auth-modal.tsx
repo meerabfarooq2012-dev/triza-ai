@@ -641,7 +641,7 @@ export function AuthModal() {
 
                 <Button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white shadow-lg"
+                  className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white dark:text-gray-900 shadow-lg"
                   disabled={isLoading}
                   size="lg"
                 >
@@ -700,7 +700,7 @@ export function AuthModal() {
                     <Button
                       type="button"
                       onClick={() => { setTab('login'); setError(''); setTouchedFields({}); setForgotSuccess(false) }}
-                      className="bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white shadow-lg"
+                      className="bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white dark:text-gray-900 shadow-lg"
                       size="lg"
                     >
                       <ArrowLeft className="h-4 w-4 mr-2" />
@@ -729,7 +729,7 @@ export function AuthModal() {
 
                     <Button
                       type="submit"
-                      className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white shadow-lg"
+                      className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white dark:text-gray-900 shadow-lg"
                       disabled={isLoading}
                       size="lg"
                     >
@@ -1042,7 +1042,7 @@ export function AuthModal() {
 
                 <Button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white shadow-lg"
+                  className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white dark:text-gray-900 shadow-lg"
                   disabled={isLoading}
                   size="lg"
                 >

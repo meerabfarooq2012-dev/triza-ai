@@ -313,7 +313,7 @@ export function BuyerWishlists() {
             </Button>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold text-gray-900">{selectedWishlist.name}</h2>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{selectedWishlist.name}</h2>
                 <Badge variant={selectedWishlist.isPublic ? 'default' : 'secondary'} className={cn('text-xs', selectedWishlist.isPublic ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600')}>
                   {selectedWishlist.isPublic ? <Globe className="mr-1 h-3 w-3" /> : <Lock className="mr-1 h-3 w-3" />}
                   {selectedWishlist.isPublic ? 'Public' : 'Private'}
@@ -365,7 +365,7 @@ export function BuyerWishlists() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 py-16"
+            className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 py-16"
           >
             <div className="rounded-full bg-gray-100 p-4 mb-4">
               <Package className="h-10 w-10 text-gray-300" />
@@ -519,7 +519,7 @@ export function BuyerWishlists() {
             <ListChecks className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-gray-900">My Wishlists</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">My Wishlists</h2>
             <p className="text-sm text-gray-500">
               {wishlists.length} list{wishlists.length !== 1 ? 's' : ''}
             </p>
@@ -547,7 +547,7 @@ export function BuyerWishlists() {
           <div className="rounded-full bg-amber-100 p-4 mb-4">
             <ListChecks className="h-10 w-10 text-amber-400" />
           </div>
-          <h3 className="text-xl font-bold text-gray-900">No wishlists yet</h3>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">No wishlists yet</h3>
           <p className="mt-2 max-w-sm text-center text-sm text-gray-500">
             Create wishlists to organize products you love. Share them with friends or keep them private.
           </p>
@@ -643,7 +643,7 @@ export function BuyerWishlists() {
                           <div className="mt-2 space-y-0.5">
                             {previewProducts.slice(0, 3).map((product, i) => (
                               <p key={i} className="text-xs text-gray-600 truncate">
-                                {product.name} — <span className="font-semibold text-gray-900">${(product.price ?? 0).toFixed(2)}</span>
+                                {product.name} — <span className="font-semibold text-gray-900 dark:text-gray-100">${(product.price ?? 0).toFixed(2)}</span>
                               </p>
                             ))}
                             {totalItems > 3 && (
@@ -665,7 +665,7 @@ export function BuyerWishlists() {
 
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-2xl font-bold text-gray-900">
+                        <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                           {wishlist._count?.items ?? 0}
                         </p>
                         <p className="text-xs text-gray-500">items</p>

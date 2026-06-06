@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { withCsrf } from '@/lib/with-csrf';
 
 // GET /api/disputes/[id] — Get dispute detail
 export async function GET(
@@ -85,10 +86,11 @@ export async function GET(
 }
 
 // PUT /api/disputes/[id] — Update dispute (add seller response, change status, etc.)
-export async function PUT(
+export const PUT = withCsrf(async (
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+  context?: unknown
+) => {
+  const { params } = context as { params: Promise<{ id: string }> };
   try {
     const { id } = await params;
     const body = await request.json();
@@ -487,4 +489,4 @@ export async function PUT(
       { status: 500 }
     );
   }
-}
+});

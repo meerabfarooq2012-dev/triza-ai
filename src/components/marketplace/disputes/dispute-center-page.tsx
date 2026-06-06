@@ -109,7 +109,7 @@ const CATEGORY_CONFIG: Record<DisputeCategory, { label: string; color: string }>
   payment_issue: { label: 'Payment Issue', color: 'bg-amber-100 text-amber-700 border-amber-200' },
   shipping_issue: { label: 'Shipping Issue', color: 'bg-sky-100 text-sky-700 border-sky-200' },
   communication_issue: { label: 'Communication Issue', color: 'bg-amber-100 text-amber-700 border-amber-200' },
-  other: { label: 'Other', color: 'bg-gray-100 text-gray-700 border-gray-200' },
+  other: { label: 'Other', color: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700' },
 }
 
 const REASON_LABELS: Record<string, string> = {
@@ -129,7 +129,7 @@ const REASON_COLORS: Record<string, string> = {
   defective_item: 'bg-amber-100 text-amber-700 border-amber-200',
   wrong_item_received: 'bg-sky-100 text-sky-700 border-sky-200',
   unauthorized_charge: 'bg-red-100 text-red-700 border-red-200',
-  other: 'bg-gray-100 text-gray-700 border-gray-200',
+  other: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700',
 }
 
 const FILTER_TABS: { value: string; label: string }[] = [
@@ -347,7 +347,7 @@ export function DisputeCenterPage({ userId, isSeller }: DisputeCenterPageProps) 
             <motion.div key={stat.label} variants={itemVariants}>
               <Card className={`border ${stat.borderColor} ${stat.bgColor}`}>
                 <CardContent className="p-4 flex items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/70">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/70 dark:bg-gray-800/70">
                     <StatIcon className={`h-5 w-5 ${stat.color}`} />
                   </div>
                   <div>

@@ -10,7 +10,9 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: [
     'localhost',
     '127.0.0.1',
+    '0.0.0.0',
     '21.0.15.82',
+    '21.0.13.77',
   ],
 
   // Required for Prisma + PostgreSQL on Vercel serverless

@@ -378,7 +378,7 @@ export function SellerCoupons() {
             <Ticket className="h-5 w-5 text-amber-600" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Coupons & Promo Codes</h1>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Coupons & Promo Codes</h1>
             <p className="text-sm text-gray-500">Create and manage discount codes for your shop</p>
           </div>
         </div>
@@ -409,7 +409,7 @@ export function SellerCoupons() {
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Total Coupons</p>
-                  <p className="text-lg font-bold text-gray-900">{stats.total}</p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{stats.total}</p>
                 </div>
               </div>
             </CardContent>
@@ -424,7 +424,7 @@ export function SellerCoupons() {
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Active</p>
-                  <p className="text-lg font-bold text-gray-900">{stats.active}</p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{stats.active}</p>
                 </div>
               </div>
             </CardContent>
@@ -439,7 +439,7 @@ export function SellerCoupons() {
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Redemptions</p>
-                  <p className="text-lg font-bold text-gray-900">{stats.totalRedemptions}</p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{stats.totalRedemptions}</p>
                 </div>
               </div>
             </CardContent>
@@ -454,7 +454,7 @@ export function SellerCoupons() {
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Total Savings</p>
-                  <p className="text-lg font-bold text-gray-900">${stats.totalSavings.toFixed(2)}</p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-gray-100">${stats.totalSavings.toFixed(2)}</p>
                 </div>
               </div>
             </CardContent>
@@ -484,12 +484,12 @@ export function SellerCoupons() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 py-16"
+          className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 py-16"
         >
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50 mb-4">
             <Ticket className="h-8 w-8 text-amber-300" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900">No coupons yet</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">No coupons yet</h3>
           <p className="mt-1 text-sm text-gray-500 max-w-sm text-center">
             Create your first coupon to attract more buyers and boost sales
           </p>
@@ -548,7 +548,7 @@ export function SellerCoupons() {
                           </div>
 
                           {/* Value display */}
-                          <p className="text-lg font-bold text-gray-900">
+                          <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
                             {formatValue(coupon)}
                           </p>
 
@@ -701,7 +701,7 @@ export function SellerCoupons() {
                             : t === 'fixed'
                               ? 'border-amber-400 bg-amber-50 text-amber-700'
                               : 'border-sky-400 bg-sky-50 text-sky-700'
-                          : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
+                          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600'
                       }`}
                     >
                       <Icon className="h-5 w-5" />
@@ -876,7 +876,7 @@ export function SellerCoupons() {
             </div>
 
             {/* Active Toggle */}
-            <div className="flex items-center justify-between rounded-lg border border-gray-200 p-3">
+            <div className="flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 p-3">
               <div>
                 <Label htmlFor="coupon-active" className="cursor-pointer">Active</Label>
                 <p className="text-xs text-gray-500">Enable this coupon for buyers to use</p>

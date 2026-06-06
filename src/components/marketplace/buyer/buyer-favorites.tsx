@@ -236,7 +236,7 @@ export function BuyerFavorites() {
         <div className="rounded-full bg-amber-100 p-4 mb-4">
           <Heart className="h-10 w-10 text-amber-400" />
         </div>
-        <h3 className="text-xl font-bold text-gray-900">Your wishlist is empty</h3>
+        <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Your wishlist is empty</h3>
         <p className="mt-2 max-w-sm text-center text-sm text-gray-500">
           Start adding products you love by tapping the heart icon on any product. They&apos;ll
           appear here so you can find them easily later.
@@ -263,7 +263,7 @@ export function BuyerFavorites() {
               <Heart className="h-5 w-5 text-white fill-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">My Wishlist</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">My Wishlist</h2>
               <p className="text-sm text-gray-500">
                 {favorites.length} item{favorites.length !== 1 ? 's' : ''}
               </p>
@@ -274,7 +274,7 @@ export function BuyerFavorites() {
           </div>
         </div>
 
-        <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 py-16">
+        <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 py-16">
           <Package className="mb-3 h-10 w-10 text-gray-300" />
           <p className="text-sm text-gray-500">
             No {filterType} products in your wishlist
@@ -302,7 +302,7 @@ export function BuyerFavorites() {
               <Heart className="h-5 w-5 text-white fill-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">My Wishlist</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">My Wishlist</h2>
               <p className="text-sm text-gray-500">
                 {favorites.length} item{favorites.length !== 1 ? 's' : ''}
               </p>

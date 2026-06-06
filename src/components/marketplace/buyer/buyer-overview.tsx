@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { DashboardSkeleton } from '@/components/marketplace/shared/loading-skeletons'
 import { RecentlyViewedSection } from '@/components/marketplace/shared/recently-viewed-section'
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/lib/constants'
 import type { Order, BuyerDashboardStats } from '@/types'
@@ -84,19 +85,7 @@ export function BuyerOverview() {
   }, [currentUser])
 
   if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-6">
-                <div className="h-20 rounded bg-gray-200" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    )
+    return <DashboardSkeleton cardCount={4} />
   }
 
   const statCards = [
@@ -150,7 +139,7 @@ export function BuyerOverview() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-500">{stat.label}</p>
-                    <p className="mt-1 text-2xl font-bold text-gray-900">{stat.value}</p>
+                    <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{stat.value}</p>
                   </div>
                   <div className={`rounded-xl p-3 ${stat.bgColor}`}>
                     <stat.icon className={`h-6 w-6 ${stat.textColor}`} />
@@ -203,14 +192,14 @@ export function BuyerOverview() {
                   {stats.recentOrders.map((order) => (
                     <div
                       key={order.id}
-                      className="flex items-center justify-between rounded-lg border border-gray-100 p-3 transition-colors hover:bg-gray-50"
+                      className="flex items-center justify-between rounded-lg border border-gray-100 dark:border-gray-700 p-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50"
                     >
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">
                           <Package className="h-5 w-5 text-gray-500" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-gray-900">
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                             #{order.id.slice(-8)}
                           </p>
                           <p className="text-xs text-gray-500">
@@ -225,7 +214,7 @@ export function BuyerOverview() {
                         >
                           {ORDER_STATUS_LABELS[order.status]}
                         </Badge>
-                        <span className="text-sm font-semibold text-gray-900">
+                        <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                           ${(order.totalAmount ?? 0).toFixed(2)}
                         </span>
                       </div>

@@ -692,7 +692,7 @@ export default function AdminVerifications() {
                         value={rejectionReason}
                         onChange={(e) => setRejectionReason(e.target.value)}
                         rows={3}
-                        className="bg-white"
+                        className="bg-white dark:bg-gray-800"
                       />
                       <p className="text-xs text-muted-foreground mt-2">
                         The seller will receive this reason via notification.

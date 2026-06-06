@@ -335,7 +335,7 @@ export function GigsBrowse() {
               />
               <Button
                 onClick={handleSearch}
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-white text-amber-700 hover:bg-amber-50 h-9 px-4 rounded-lg font-semibold"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/40 h-9 px-4 rounded-lg font-semibold"
               >
                 Search
               </Button>
@@ -705,7 +705,7 @@ export function GigsBrowse() {
                           )}
                           {/* Category badge on image */}
                           {gig.category && (
-                            <Badge className="absolute bottom-2 left-2 text-[10px] gap-1 bg-white/90 text-gray-800 border-0 backdrop-blur-sm shadow-sm">
+                            <Badge className="absolute bottom-2 left-2 text-[10px] gap-1 bg-white/90 dark:bg-gray-800/90 text-gray-800 dark:text-gray-200 border-0 backdrop-blur-sm shadow-sm">
                               {categoryIconMap[gig.category.icon || ''] || <Briefcase size={8} />}
                               {gig.category.name}
                             </Badge>

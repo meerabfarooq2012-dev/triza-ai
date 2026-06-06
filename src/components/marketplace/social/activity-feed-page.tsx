@@ -92,7 +92,7 @@ function parseImages(raw: string | string[]): string[] {
 function ActivityCard({ activity }: { activity: ActivityType }) {
   const { setCurrentView } = useMarketplaceStore()
   const Icon = ACTIVITY_ICONS[activity.type] || Store
-  const colorClass = ACTIVITY_COLORS[activity.type] || 'text-gray-600 bg-gray-50'
+  const colorClass = ACTIVITY_COLORS[activity.type] || 'text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800'
   const borderClass = ACTIVITY_BORDER[activity.type] || 'border-l-gray-500'
   const productImages = activity.product?.images ? parseImages(activity.product.images) : []
 

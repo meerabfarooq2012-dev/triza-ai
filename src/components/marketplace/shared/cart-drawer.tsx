@@ -131,7 +131,7 @@ function CartItemRow({
       <div className="flex-1 min-w-0">
         <h4 className="text-sm font-medium truncate">{item.name}</h4>
         {item.variantLabel && (
-          <p className="text-xs text-amber-600 font-medium truncate">{item.variantLabel}</p>
+          <p className="text-xs text-amber-600 dark:text-amber-400 font-medium truncate">{item.variantLabel}</p>
         )}
         <p className="text-xs text-muted-foreground">{item.shopName}</p>
         <div className="flex items-center justify-between mt-1.5">

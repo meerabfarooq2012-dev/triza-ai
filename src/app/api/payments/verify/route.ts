@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { withCsrf } from '@/lib/with-csrf';
 
 // In-memory rate limiter for verification attempts
 const verifyAttempts = new Map<string, { count: number; resetAt: number }>();
@@ -23,7 +24,7 @@ function checkVerifyRateLimit(paymentId: string): boolean {
   return true;
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
   try {
     const body = await request.json();
     const { paymentId, verificationToken, buyerId } = body;
@@ -176,4 +177,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

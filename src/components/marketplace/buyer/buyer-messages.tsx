@@ -440,7 +440,7 @@ export function BuyerMessages() {
     return (
       <Card className="overflow-hidden border-0 shadow-sm">
         <div className="grid h-[600px] grid-cols-1 md:grid-cols-3">
-          <div className="border-r border-gray-100 bg-gray-50/50 p-4 space-y-3">
+          <div className="border-r border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 p-4 space-y-3">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3">
                 <Skeleton className="h-10 w-10 rounded-full" />
@@ -461,9 +461,9 @@ export function BuyerMessages() {
       <div className="grid h-[600px] grid-cols-1 md:grid-cols-3">
         {/* Conversation List */}
         {showConversationList && (
-          <div className="border-r border-gray-100 bg-gray-50/50 flex flex-col">
+          <div className="border-r border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col">
             <div className="border-b border-gray-100 p-4">
-              <h3 className="font-semibold text-gray-900">Messages</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100">Messages</h3>
               <p className="text-xs text-gray-500 mt-0.5">Chat with sellers</p>
             </div>
             <ScrollArea className="flex-1">
@@ -498,7 +498,7 @@ export function BuyerMessages() {
                           </Avatar>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center justify-between">
-                              <p className={`truncate text-sm ${hasUnread ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>
+                              <p className={`truncate text-sm ${hasUnread ? 'font-semibold text-gray-900 dark:text-gray-100' : 'font-medium text-gray-700 dark:text-gray-300'}`}>
                                 {conv.otherUser.name}
                               </p>
                               <span className="text-[11px] text-gray-400 whitespace-nowrap ml-2">
@@ -570,7 +570,7 @@ export function BuyerMessages() {
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                       {selectedConversation.otherUser.name}
                     </p>
                     <p className="text-xs text-amber-600">Seller</p>
@@ -604,7 +604,7 @@ export function BuyerMessages() {
                               className={`max-w-[75%] rounded-2xl px-4 py-2.5 ${
                                 isMine
                                   ? 'bg-amber-600 text-gray-900'
-                                  : 'bg-gray-100 text-gray-900'
+                                  : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
                               }`}
                             >
                               <p className="text-sm">{msg.content}</p>
@@ -683,7 +683,7 @@ export function BuyerMessages() {
             ) : (
               <div className="flex flex-1 flex-col items-center justify-center text-center">
                 <MessageSquare className="mb-3 h-12 w-12 text-gray-300" />
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                   Select a conversation
                 </p>
                 <p className="mt-1 text-xs text-gray-500">

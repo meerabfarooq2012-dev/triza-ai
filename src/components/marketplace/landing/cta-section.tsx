@@ -50,7 +50,7 @@ export function CTASection() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button
               size="lg"
-              className="bg-white text-amber-700 hover:bg-white/90 shadow-xl px-8 text-base font-semibold"
+              className="bg-white dark:bg-gray-900 text-amber-700 dark:text-amber-400 hover:bg-white/90 dark:hover:bg-gray-800 shadow-xl px-8 text-base font-semibold"
               onClick={() => setCurrentView('auth', { tab: 'register' })}
             >
               <Sparkles className="mr-2 h-4 w-4" />

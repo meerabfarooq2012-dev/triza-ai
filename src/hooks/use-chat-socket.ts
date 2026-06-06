@@ -1,8 +1,15 @@
 'use client'
 
-import { useEffect, useRef, useCallback, useState } from 'react'
+import { useEffect, useRef, useCallback, useState, useMemo } from 'react'
 import { io, Socket } from 'socket.io-client'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { getRealtimeStrategy, type RealtimeStrategy } from '@/lib/realtime-strategy'
+import {
+  SupabaseRealtimeManager,
+  type ChatMessage as SupabaseChatMessage,
+  type TypingEvent,
+  type PresenceState,
+} from '@/lib/supabase-realtime'
 
 // =============================================================================
 // Types
@@ -25,7 +32,7 @@ type MessagesReadHandler = (data: { conversationId: string; userId: string }) =>
 type UserPresenceHandler = (data: { conversationId: string; userId: string }) => void
 
 // =============================================================================
-// Singleton socket instance for chat
+// Singleton socket instance for chat (Socket.io — used for local dev)
 // =============================================================================
 
 let chatSocket: Socket | null = null
@@ -86,11 +93,18 @@ function getChatSocket(): Socket | null {
 }
 
 // =============================================================================
-// useChatSocket Hook
+// useChatSocket Hook — Strategy-aware
 // =============================================================================
 
 export function useChatSocket() {
   const { currentUser } = useMarketplaceStore()
+
+  // Determine the realtime strategy once
+  const strategy = useMemo<RealtimeStrategy>(() => {
+    if (typeof window === 'undefined') return 'polling'
+    return getRealtimeStrategy()
+  }, [])
+
   const [isConnected, setIsConnected] = useState(false)
   const [typingUsers, setTypingUsers] = useState<Map<string, string[]>>(new Map())
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set())
@@ -101,8 +115,39 @@ export function useChatSocket() {
   const userJoinedHandlersRef = useRef<Set<UserPresenceHandler>>(new Set())
   const userLeftHandlersRef = useRef<Set<UserPresenceHandler>>(new Set())
 
-  // ── Register user with socket when they log in ────────────────────────
+  // ── Supabase-specific refs ──────────────────────────────────────────
+  const supabaseManagerRef = useRef<SupabaseRealtimeManager | null>(null)
+  const activeConversationsRef = useRef<Set<string>>(new Set())
+  const typingTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
+
+  // Initialize Supabase manager if strategy is 'supabase'
   useEffect(() => {
+    if (strategy !== 'supabase') return
+
+    try {
+      const manager = SupabaseRealtimeManager.getInstance()
+      supabaseManagerRef.current = manager
+      queueMicrotask(() => setIsConnected(true))
+      console.log('[ChatSocket] Using Supabase Realtime strategy')
+    } catch (err) {
+      console.warn('[ChatSocket] Supabase Realtime init failed, falling back to polling:', err)
+      queueMicrotask(() => setIsConnected(false))
+    }
+
+    return () => {
+      if (supabaseManagerRef.current) {
+        supabaseManagerRef.current.unsubscribeAll()
+        supabaseManagerRef.current = null
+      }
+      setIsConnected(false)
+    }
+  }, [strategy])
+
+  // ── SOCKET.IO PATH ─────────────────────────────────────────────────
+
+  // Register user with socket when they log in
+  useEffect(() => {
+    if (strategy !== 'socketio') return
     if (!currentUser) {
       registeredRef.current = false
       return
@@ -116,7 +161,6 @@ export function useChatSocket() {
     }
 
     const registerUser = () => {
-      // Register by joining a user-specific room so we can track online status
       socket.emit('register-user', { userId: currentUser.id })
       registeredRef.current = true
       console.log('[ChatSocket] User registered:', currentUser.id)
@@ -131,17 +175,18 @@ export function useChatSocket() {
     return () => {
       socket.off('connect', registerUser)
     }
-  }, [currentUser])
+  }, [currentUser, strategy])
 
-  // ── Track connection state ────────────────────────────────────────────
+  // Track Socket.io connection state
   useEffect(() => {
+    if (strategy !== 'socketio') return
+
     const socket = getChatSocket()
     if (!socket) return
 
     const handleConnect = () => setIsConnected(true)
     const handleDisconnect = () => setIsConnected(false)
 
-    // Set initial state using a microtask to avoid synchronous setState in effect
     queueMicrotask(() => setIsConnected(socket.connected))
 
     socket.on('connect', handleConnect)
@@ -151,10 +196,12 @@ export function useChatSocket() {
       socket.off('connect', handleConnect)
       socket.off('disconnect', handleDisconnect)
     }
-  }, [])
+  }, [strategy])
 
-  // ── Listen for typing events ──────────────────────────────────────────
+  // Listen for Socket.io typing events
   useEffect(() => {
+    if (strategy !== 'socketio') return
+
     const socket = getChatSocket()
     if (!socket) return
 
@@ -167,7 +214,6 @@ export function useChatSocket() {
       userId: string
       userName: string
     }) => {
-      // Don't show typing for current user
       if (currentUser && userId === currentUser.id) return
 
       setTypingUsers((prev) => {
@@ -191,10 +237,8 @@ export function useChatSocket() {
 
       setTypingUsers((prev) => {
         const next = new Map(prev)
-        // Remove the user from the typing list for this conversation
         const existing = next.get(conversationId) || []
         if (existing.length > 0) {
-          // Since we track by userName, remove all entries (simple approach)
           next.set(conversationId, existing.slice(0, -1))
           if (next.get(conversationId)?.length === 0) {
             next.delete(conversationId)
@@ -211,10 +255,12 @@ export function useChatSocket() {
       socket.off('user-typing', handleUserTyping)
       socket.off('user-stop-typing', handleUserStopTyping)
     }
-  }, [currentUser])
+  }, [currentUser, strategy])
 
-  // ── Listen for user presence events ───────────────────────────────────
+  // Listen for Socket.io user presence events
   useEffect(() => {
+    if (strategy !== 'socketio') return
+
     const socket = getChatSocket()
     if (!socket) return
 
@@ -237,10 +283,12 @@ export function useChatSocket() {
       socket.off('user-joined', handleUserJoined)
       socket.off('user-left', handleUserLeft)
     }
-  }, [])
+  }, [strategy])
 
-  // ── Relay new-message events to registered handlers ───────────────────
+  // Relay Socket.io new-message events to registered handlers
   useEffect(() => {
+    if (strategy !== 'socketio') return
+
     const socket = getChatSocket()
     if (!socket) return
 
@@ -271,10 +319,11 @@ export function useChatSocket() {
       socket.off('user-joined', handleUserJoinedPresence)
       socket.off('user-left', handleUserLeftPresence)
     }
-  }, [])
+  }, [strategy])
 
-  // ── Cleanup on unmount ────────────────────────────────────────────────
+  // Socket.io cleanup on unmount
   useEffect(() => {
+    if (strategy !== 'socketio') return
     return () => {
       if (chatSocket && !useMarketplaceStore.getState().isAuthenticated) {
         chatSocket.disconnect()
@@ -282,96 +331,274 @@ export function useChatSocket() {
         chatSocketConnected = false
       }
     }
+  }, [strategy])
+
+  // ── SUPABASE REALTIME PATH ─────────────────────────────────────────
+
+  const subscribeSupabaseConversation = useCallback(
+    (conversationId: string) => {
+      const manager = supabaseManagerRef.current
+      if (!manager || !currentUser) return
+
+      if (activeConversationsRef.current.has(conversationId)) return
+
+      // Subscribe to new messages via Postgres Changes
+      manager.subscribeToChat(conversationId, (message) => {
+        messageHandlersRef.current.forEach((handler) => handler(message as ChatMessage))
+      })
+
+      // Subscribe to typing indicators via Broadcast
+      manager.subscribeToTyping(conversationId, (event: TypingEvent) => {
+        if (currentUser && event.userId === currentUser.id) return
+
+        if (event.isTyping) {
+          setTypingUsers((prev) => {
+            const next = new Map(prev)
+            const existing = next.get(conversationId) || []
+            if (!existing.includes(event.userName)) {
+              next.set(conversationId, [...existing, event.userName])
+            }
+            return next
+          })
+
+          const existingTimeout = typingTimeoutsRef.current.get(conversationId)
+          if (existingTimeout) clearTimeout(existingTimeout)
+
+          typingTimeoutsRef.current.set(
+            conversationId,
+            setTimeout(() => {
+              setTypingUsers((prev) => {
+                const next = new Map(prev)
+                next.delete(conversationId)
+                return next
+              })
+              typingTimeoutsRef.current.delete(conversationId)
+            }, 3000)
+          )
+        } else {
+          setTypingUsers((prev) => {
+            const next = new Map(prev)
+            const existing = next.get(conversationId) || []
+            const filtered = existing.filter((name) => name !== event.userName)
+            if (filtered.length === 0) {
+              next.delete(conversationId)
+            } else {
+              next.set(conversationId, filtered)
+            }
+            return next
+          })
+        }
+      })
+
+      // Subscribe to presence for online status
+      manager.subscribeToPresence(
+        conversationId,
+        currentUser.id,
+        (state: PresenceState) => {
+          const online = new Set<string>()
+          for (const [, presences] of Object.entries(state)) {
+            for (const p of presences) {
+              online.add(p.userId)
+            }
+          }
+          setOnlineUsers(online)
+        }
+      )
+
+      manager.updatePresence(conversationId, { userName: currentUser.name })
+      activeConversationsRef.current.add(conversationId)
+    },
+    [currentUser]
+  )
+
+  const unsubscribeSupabaseConversation = useCallback(async (conversationId: string) => {
+    const manager = supabaseManagerRef.current
+    if (!manager) return
+
+    await manager.unsubscribe(`chat:${conversationId}`)
+    await manager.unsubscribe(`typing:${conversationId}`)
+    await manager.unsubscribe(`presence:${conversationId}`)
+
+    activeConversationsRef.current.delete(conversationId)
+
+    setTypingUsers((prev) => {
+      const next = new Map(prev)
+      next.delete(conversationId)
+      return next
+    })
+
+    const timeout = typingTimeoutsRef.current.get(conversationId)
+    if (timeout) {
+      clearTimeout(timeout)
+      typingTimeoutsRef.current.delete(conversationId)
+    }
   }, [])
 
-  // ── Action methods ────────────────────────────────────────────────────
+  // Cleanup typing timeouts on unmount (Supabase path)
+  useEffect(() => {
+    if (strategy !== 'supabase') return
+    return () => {
+      for (const timeout of typingTimeoutsRef.current.values()) {
+        clearTimeout(timeout)
+      }
+      typingTimeoutsRef.current.clear()
+    }
+  }, [strategy])
+
+  // ── Action methods — Strategy-aware ─────────────────────────────────
 
   const joinConversation = useCallback(
     (conversationId: string) => {
-      const socket = getChatSocket()
-      if (!socket || !currentUser) return
+      if (!currentUser) return
 
-      socket.emit('join-conversation', {
-        conversationId,
-        userId: currentUser.id,
-      })
+      if (strategy === 'supabase') {
+        subscribeSupabaseConversation(conversationId)
+        return
+      }
+
+      if (strategy === 'socketio') {
+        const socket = getChatSocket()
+        if (!socket) return
+
+        socket.emit('join-conversation', {
+          conversationId,
+          userId: currentUser.id,
+        })
+        return
+      }
+
+      // polling: no-op (messages fetched via REST)
     },
-    [currentUser]
+    [currentUser, strategy, subscribeSupabaseConversation]
   )
 
   const leaveConversation = useCallback(
     (conversationId: string) => {
-      const socket = getChatSocket()
-      if (!socket || !currentUser) return
+      if (strategy === 'supabase') {
+        unsubscribeSupabaseConversation(conversationId)
+        return
+      }
 
-      socket.emit('leave-conversation', {
-        conversationId,
-      })
+      if (strategy === 'socketio') {
+        const socket = getChatSocket()
+        if (!socket || !currentUser) return
 
-      // Clear typing state for this conversation
-      setTypingUsers((prev) => {
-        const next = new Map(prev)
-        next.delete(conversationId)
-        return next
-      })
+        socket.emit('leave-conversation', {
+          conversationId,
+        })
+
+        setTypingUsers((prev) => {
+          const next = new Map(prev)
+          next.delete(conversationId)
+          return next
+        })
+        return
+      }
+
+      // polling: no-op
     },
-    [currentUser]
+    [currentUser, strategy, unsubscribeSupabaseConversation]
   )
 
   const sendMessage = useCallback(
     (conversationId: string, message: ChatMessage) => {
-      const socket = getChatSocket()
-      if (!socket) return
+      if (strategy === 'socketio') {
+        const socket = getChatSocket()
+        if (!socket) return
 
-      socket.emit('send-message', {
-        conversationId,
-        message,
-      })
+        socket.emit('send-message', {
+          conversationId,
+          message,
+        })
+      }
+      // For Supabase & polling: messages are sent via REST API,
+      // and new rows trigger Postgres Changes events automatically
     },
-    []
+    [strategy]
   )
 
   const emitTyping = useCallback(
     (conversationId: string) => {
-      const socket = getChatSocket()
-      if (!socket || !currentUser) return
+      if (!currentUser) return
 
-      socket.emit('typing', {
-        conversationId,
-        userId: currentUser.id,
-        userName: currentUser.name,
-      })
+      if (strategy === 'supabase') {
+        const manager = supabaseManagerRef.current
+        if (!manager) return
+        manager.emitTyping(conversationId, {
+          conversationId,
+          userId: currentUser.id,
+          userName: currentUser.name,
+          isTyping: true,
+        })
+        return
+      }
+
+      if (strategy === 'socketio') {
+        const socket = getChatSocket()
+        if (!socket) return
+
+        socket.emit('typing', {
+          conversationId,
+          userId: currentUser.id,
+          userName: currentUser.name,
+        })
+        return
+      }
     },
-    [currentUser]
+    [currentUser, strategy]
   )
 
   const emitStopTyping = useCallback(
     (conversationId: string) => {
-      const socket = getChatSocket()
-      if (!socket || !currentUser) return
+      if (!currentUser) return
 
-      socket.emit('stop-typing', {
-        conversationId,
-        userId: currentUser.id,
-      })
+      if (strategy === 'supabase') {
+        const manager = supabaseManagerRef.current
+        if (!manager) return
+        manager.emitTyping(conversationId, {
+          conversationId,
+          userId: currentUser.id,
+          userName: currentUser.name,
+          isTyping: false,
+        })
+        return
+      }
+
+      if (strategy === 'socketio') {
+        const socket = getChatSocket()
+        if (!socket) return
+
+        socket.emit('stop-typing', {
+          conversationId,
+          userId: currentUser.id,
+        })
+        return
+      }
     },
-    [currentUser]
+    [currentUser, strategy]
   )
 
   const markRead = useCallback(
     (conversationId: string) => {
-      const socket = getChatSocket()
-      if (!socket || !currentUser) return
+      if (!currentUser) return
 
-      socket.emit('mark-read', {
-        conversationId,
-        userId: currentUser.id,
-      })
+      if (strategy === 'socketio') {
+        const socket = getChatSocket()
+        if (!socket) return
+
+        socket.emit('mark-read', {
+          conversationId,
+          userId: currentUser.id,
+        })
+        return
+      }
+
+      // For Supabase & polling: mark-read is handled via REST API
     },
-    [currentUser]
+    [currentUser, strategy]
   )
 
-  // ── Register handler methods ──────────────────────────────────────────
+  // ── Register handler methods ────────────────────────────────────────
 
   const onNewMessage = useCallback((handler: NewMessageHandler) => {
     messageHandlersRef.current.add(handler)
@@ -387,10 +614,10 @@ export function useChatSocket() {
     }
   }, [])
 
-  // ── Return hook API ───────────────────────────────────────────────────
+  // ── Return hook API ─────────────────────────────────────────────────
 
   return {
-    socket: getChatSocket(),
+    socket: strategy === 'socketio' ? getChatSocket() : null,
     isConnected,
     typingUsers,
     onlineUsers,
@@ -402,5 +629,7 @@ export function useChatSocket() {
     markRead,
     onNewMessage,
     onMessagesRead,
+    // Expose strategy for debugging
+    _strategy: strategy,
   }
 }

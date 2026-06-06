@@ -195,7 +195,7 @@ export function TwoFactorSetup({ open, onOpenChange, userId }: TwoFactorSetupPro
               <div className="space-y-6">
                 {/* QR Code */}
                 <div className="flex justify-center">
-                  <div className="rounded-xl border-2 border-dashed border-amber-300 dark:border-amber-700 p-3 bg-white">
+                  <div className="rounded-xl border-2 border-dashed border-amber-300 dark:border-amber-700 p-3 bg-white dark:bg-gray-800">
                     {qrCodeUrl ? (
                       <img
                         src={qrCodeUrl}
