@@ -2800,3 +2800,73 @@ Connected the existing client-side Zustand cart with the server-side cart API, e
 - **Preserve local-only items**: If a guest added items to cart, then logged in, those local items are kept alongside server items
 - **Cart preserved on logout**: Guest users retain their cart in localStorage; server cart takes priority on next login
 - **Fire-and-forget sync**: `syncCartToServer` never blocks the UI — errors are logged but don't disrupt the user experience
+
+---
+
+## Task: 4 Remaining LOW Priority Items Verification
+
+**Date:** 2025-06-06
+**Agent:** main
+
+### Summary
+Verified all 4 remaining LOW priority items from the original audit. All were already fully implemented by previous agents. Fixed a critical route conflict that was preventing the Next.js server from starting.
+
+### Items Verified
+
+#### LOW 7: Review Sorting — ✅ ALREADY IMPLEMENTED
+- API (`/api/reviews`) supports `sort` parameter with values: `newest`, `highest`, `lowest`, `helpful`
+- Frontend has `Select` dropdown with 4 sort options (Most Recent, Highest Rating, Lowest Rating, Most Helpful)
+- Sort state is properly passed to API calls via `buildFilterParams()`
+- Filter chips (All, 5★-1★, With Photos, Verified Only) also work with sort
+
+#### LOW 8: Digital Download Flow — ✅ ALREADY IMPLEMENTED
+- `digital-download.ts` library with token generation, validation, count increment
+- API routes: `/api/downloads` (list), `/api/downloads/[id]` (download), `/api/downloads/create` (create), `/api/downloads/order/[orderId]` (order downloads)
+- `MyDownloads` component with active/expired sections, download progress, request new link
+- `BuyerDownloads` component wired into buyer dashboard Downloads tab
+- Order delivery auto-creates download links for digital products (in `/api/orders/[id]`)
+- Download tokens: 30-day expiry, max 5 downloads, Supabase signed URL support
+
+#### LOW 9: Seller Payout Processing — ✅ ALREADY IMPLEMENTED
+- Withdrawal API: POST `/api/withdrawals` (create), PUT `/api/withdrawals/[id]` (admin approve/reject/complete/cancel)
+- Seller wallet component with: Available Balance, Pending Escrow, Lifetime Earnings, Total Withdrawn
+- Withdrawal form with 5 methods: Easypaisa, JazzCash, Payoneer, Wise, Bank Transfer
+- Admin approval flow: pending → approved → completed (or rejected/cancelled)
+- Fee calculation: 2% or PKR 50 (whichever is greater)
+- Min withdrawal: PKR 500, Max 3 pending withdrawals
+- Email + notification on approval/rejection/completion
+
+#### LOW 10: Real Payment Gateway — ✅ ALREADY IMPLEMENTED
+- Easypaisa integration: OAuth2 token caching, HMAC-SHA256 signature, payment initiation + verification + callback verification
+- JazzCash integration: HMAC-SHA256 secure hash, paisa amount format, form-encoded POST, HTML redirect handling
+- Sandbox mode (default): Simulated payments with 90% success rate, auto-confirmation after 5-10s
+- Live mode: Automatic when `PAYMENT_GATEWAY_MODE=live` and credentials are set in env vars
+- Callback endpoint handles both POST (webhook) and GET (redirect) callbacks
+- Gateway status endpoint: `/api/payments/status?checkGateway=true`
+
+### Bug Fix: Route Conflict in Downloads API
+**Problem:** Two dynamic route directories at the same level with different slug names:
+- `src/app/api/downloads/[id]/route.ts`
+- `src/app/api/downloads/[token]/route.ts`
+
+Next.js error: "You cannot use different slug names for the same dynamic path ('id' !== 'token')"
+
+This was preventing the entire Next.js server from starting.
+
+**Fix:** Merged both routes into a single `src/app/api/downloads/[id]/route.ts` that:
+1. Checks if the ID looks like a 64-char hex download token → uses token-based validation
+2. Otherwise, if `userId` query param is provided → uses ID + userId verification
+3. Falls back to token-based validation for non-standard tokens
+4. Removed the `src/app/api/downloads/[token]/` directory entirely
+
+### Lint Results
+- 0 errors, 3 pre-existing warnings (unrelated)
+- All modified files pass ESLint cleanly
+
+### Verification
+- Dev server starts successfully (confirmed: `GET / 200`)
+- Landing page renders: "Marketo - Your Marketplace, Your Way"
+- Review API responds to sort parameter
+- Downloads API correctly requires authentication
+- Wallet API correctly requires authentication
+- Payment gateway status API responds with sandbox mode
