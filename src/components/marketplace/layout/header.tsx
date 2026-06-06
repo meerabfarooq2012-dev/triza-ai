@@ -59,7 +59,6 @@ import type { ViewMode } from '@/types'
 import { NotificationBell } from '@/components/marketplace/notifications/notification-bell'
 import { ThemeToggle } from '@/components/marketplace/layout/theme-toggle'
 import { SearchAutocomplete } from '@/components/marketplace/search/search-autocomplete'
-import { LanguageSwitcher } from '@/components/marketplace/shared/language-switcher'
 import { usePwa } from '@/components/providers/pwa-provider'
 
 export function Header() {
@@ -295,9 +294,6 @@ export function Header() {
 
             {/* Theme Toggle */}
             <ThemeToggle />
-
-            {/* Language Switcher */}
-            <LanguageSwitcher variant="default" />
 
             {/* User Menu */}
             {isAuthenticated && currentUser ? (
@@ -581,12 +577,6 @@ export function Header() {
               <div className="flex items-center justify-between px-3 py-2">
                 <span className="text-sm text-muted-foreground">{t('nav.theme')}</span>
                 <ThemeToggle />
-              </div>
-
-              {/* Language Switcher (mobile) */}
-              <div className="flex items-center justify-between px-3 py-2">
-                <span className="text-sm text-muted-foreground">{t('language.title') || 'Language'}</span>
-                <LanguageSwitcher variant="compact" />
               </div>
 
               {/* Auth buttons (mobile) */}
