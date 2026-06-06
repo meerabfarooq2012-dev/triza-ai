@@ -178,7 +178,7 @@ export function CookieConsent() {
           <div className="mt-4 space-y-1 px-4">
             {/* Essential Cookies - Always on */}
             <div className="flex items-start gap-3 rounded-lg p-3 hover:bg-muted/50 transition-colors">
-              <div className="shrink-0 flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
+              <div className="shrink-0 flex h-9 w-9 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400">
                 <Shield className="h-4 w-4" />
               </div>
               <div className="flex-1 min-w-0">

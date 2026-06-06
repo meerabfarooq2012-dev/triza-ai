@@ -23,14 +23,14 @@ export function CommissionSection() {
             transition={{ duration: 0.7 }}
             className="text-center lg:text-left"
           >
-            <div className="inline-flex items-center gap-2 rounded-full bg-emerald-100 dark:bg-emerald-950/50 px-4 py-1.5 mb-6 text-sm text-emerald-700 dark:text-emerald-300 font-medium">
+            <div className="inline-flex items-center gap-2 rounded-full bg-amber-100 dark:bg-amber-950/50 px-4 py-1.5 mb-6 text-sm text-amber-700 dark:text-amber-300 font-medium">
               <Wallet className="h-3.5 w-3.5" />
               Lowest Commission in the Market
             </div>
 
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 leading-tight">
               You Keep{' '}
-              <span className="bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-amber-500 to-yellow-500 bg-clip-text text-transparent">
                 90%
               </span>
               <br />
@@ -47,7 +47,7 @@ export function CommissionSection() {
 
             <Button
               size="lg"
-              className="bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-700 hover:to-teal-600 text-white shadow-xl shadow-emerald-500/25 px-8 text-base"
+              className="bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-700 hover:to-yellow-600 text-white shadow-xl shadow-amber-500/25 px-8 text-base"
               onClick={() => setCurrentView('auth', { tab: 'register' })}
             >
               Start Earning More
@@ -73,10 +73,10 @@ export function CommissionSection() {
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500" />
+                    <div className="h-3 w-3 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500" />
                     <span className="font-semibold text-sm">Marketo</span>
                   </div>
-                  <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">You keep 90%</span>
+                  <span className="text-sm font-bold text-amber-600 dark:text-amber-400">You keep 90%</span>
                 </div>
                 <div className="h-12 rounded-xl bg-muted/50 overflow-hidden relative">
                   <motion.div
@@ -84,7 +84,7 @@ export function CommissionSection() {
                     whileInView={{ width: '90%' }}
                     viewport={{ once: true }}
                     transition={{ duration: 1.2, ease: 'easeOut', delay: 0.3 }}
-                    className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-xl flex items-center justify-end pr-3"
+                    className="h-full bg-gradient-to-r from-amber-500 to-yellow-400 rounded-xl flex items-center justify-end pr-3"
                   >
                     <span className="text-white font-bold text-sm">90% Yours</span>
                   </motion.div>
@@ -119,12 +119,12 @@ export function CommissionSection() {
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: 0.8 }}
-                className="mt-6 p-4 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border border-emerald-200 dark:border-emerald-800 text-center"
+                className="mt-6 p-4 rounded-xl bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/30 dark:to-yellow-950/30 border border-amber-200 dark:border-amber-800 text-center"
               >
-                <p className="text-emerald-700 dark:text-emerald-300 font-bold text-lg">
+                <p className="text-amber-700 dark:text-amber-300 font-bold text-lg">
                   Earn up to 20% more per sale!
                 </p>
-                <p className="text-emerald-600/70 dark:text-emerald-400/70 text-sm mt-1">
+                <p className="text-amber-600/70 dark:text-amber-400/70 text-sm mt-1">
                   On a $100 sale, you keep $90 instead of $75 elsewhere
                 </p>
               </motion.div>
@@ -141,8 +141,8 @@ export function CommissionSection() {
           className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6"
         >
           <div className="flex items-center gap-3 p-4 rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-sm border border-border/30">
-            <div className="flex-shrink-0 h-10 w-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/50 flex items-center justify-center">
-              <Percent className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+            <div className="flex-shrink-0 h-10 w-10 rounded-xl bg-amber-100 dark:bg-amber-950/50 flex items-center justify-center">
+              <Percent className="h-5 w-5 text-amber-600 dark:text-amber-400" />
             </div>
             <div>
               <p className="font-semibold text-sm">Flat 10% Fee</p>

@@ -125,7 +125,7 @@ export function AdminShops() {
   const getVerificationBadge = (status: string) => {
     switch (status) {
       case 'verified':
-        return <Badge className="text-xs bg-green-100 text-green-800 border-0"><ShieldCheck size={10} className="mr-1" />Verified</Badge>
+        return <Badge className="text-xs bg-amber-100 text-amber-800 border-0"><ShieldCheck size={10} className="mr-1" />Verified</Badge>
       case 'pending':
         return <Badge className="text-xs bg-yellow-100 text-yellow-800 border-0">Pending</Badge>
       case 'under_review':
@@ -246,7 +246,7 @@ export function AdminShops() {
                         variant="outline"
                         className={`text-xs ${
                           shop.isApproved
-                            ? 'bg-green-100 text-green-800'
+                            ? 'bg-amber-100 text-amber-800'
                             : 'bg-yellow-100 text-yellow-800'
                         }`}
                       >
@@ -269,7 +269,7 @@ export function AdminShops() {
                             <>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => handleApproveShop(shop.id)}>
-                                <CheckCircle size={14} className="mr-2 text-green-600" />
+                                <CheckCircle size={14} className="mr-2 text-amber-600" />
                                 Approve Shop
                               </DropdownMenuItem>
                             </>

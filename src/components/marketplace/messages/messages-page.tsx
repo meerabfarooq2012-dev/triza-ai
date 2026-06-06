@@ -173,17 +173,17 @@ function TypingIndicator({ userName }: { userName: string }) {
       <span className="text-xs text-muted-foreground">{userName} is typing</span>
       <div className="flex gap-0.5">
         <motion.span
-          className="h-1.5 w-1.5 rounded-full bg-emerald-500"
+          className="h-1.5 w-1.5 rounded-full bg-amber-500"
           animate={{ y: [0, -4, 0] }}
           transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
         />
         <motion.span
-          className="h-1.5 w-1.5 rounded-full bg-emerald-500"
+          className="h-1.5 w-1.5 rounded-full bg-amber-500"
           animate={{ y: [0, -4, 0] }}
           transition={{ duration: 0.6, repeat: Infinity, delay: 0.15 }}
         />
         <motion.span
-          className="h-1.5 w-1.5 rounded-full bg-emerald-500"
+          className="h-1.5 w-1.5 rounded-full bg-amber-500"
           animate={{ y: [0, -4, 0] }}
           transition={{ duration: 0.6, repeat: Infinity, delay: 0.3 }}
         />
@@ -647,7 +647,7 @@ export function MessagesPage() {
           Log in to chat with sellers, buyers, and manage your conversations.
         </p>
         <Button
-          className="mt-6 bg-emerald-600 hover:bg-emerald-700"
+          className="mt-6 bg-amber-600 hover:bg-amber-700"
           onClick={() => setCurrentView('auth')}
         >
           Sign In
@@ -667,7 +667,7 @@ export function MessagesPage() {
         {/* Page Header */}
         <div className="flex items-center justify-between mb-4 md:mb-6">
           <div className="flex items-center gap-3">
-            <div className="hidden sm:flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600">
+            <div className="hidden sm:flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-yellow-600">
               <MessageSquare className="h-5 w-5 text-white" />
             </div>
             <div>
@@ -738,7 +738,7 @@ export function MessagesPage() {
                           whileTap={{ scale: 0.99 }}
                           className={`w-full text-left px-3 py-3 transition-colors ${
                             isSelected
-                              ? 'bg-emerald-50 border-l-2 border-emerald-500'
+                              ? 'bg-amber-50 border-l-2 border-amber-500'
                               : 'border-l-2 border-transparent hover:bg-gray-50'
                           }`}
                           onClick={() => handleSelectConversation(conv)}
@@ -751,13 +751,13 @@ export function MessagesPage() {
                                   src={conv.otherUser.avatar || undefined}
                                   alt={conv.otherUser.name}
                                 />
-                                <AvatarFallback className="bg-emerald-100 text-emerald-700 text-sm font-medium">
+                                <AvatarFallback className="bg-amber-100 text-amber-700 text-sm font-medium">
                                   {conv.otherUser.name.slice(0, 2).toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>
                               {/* Online indicator */}
                               {onlineUsers.has(conv.otherUser.id) && (
-                                <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 border-2 border-white" />
+                                <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-amber-500 border-2 border-white" />
                               )}
                             </div>
 
@@ -786,7 +786,7 @@ export function MessagesPage() {
                                   {conv.lastMessagePreview || 'No messages yet'}
                                 </p>
                                 {hasUnread && (
-                                  <Badge className="h-5 min-w-[20px] justify-center bg-emerald-600 text-[10px] text-white shrink-0">
+                                  <Badge className="h-5 min-w-[20px] justify-center bg-amber-600 text-[10px] text-white shrink-0">
                                     {conv.unreadCount}
                                   </Badge>
                                 )}
@@ -797,7 +797,7 @@ export function MessagesPage() {
                                 <div className="mt-1.5">
                                   <Badge
                                     variant="outline"
-                                    className="text-[10px] h-5 gap-1 text-emerald-700 border-emerald-200 bg-emerald-50/50"
+                                    className="text-[10px] h-5 gap-1 text-amber-700 border-amber-200 bg-amber-50/50"
                                   >
                                     {conv.product ? (
                                       <>
@@ -855,19 +855,19 @@ export function MessagesPage() {
                             src={selectedConversation.otherUser.avatar || undefined}
                             alt={selectedConversation.otherUser.name}
                           />
-                          <AvatarFallback className="bg-emerald-100 text-emerald-700 text-xs font-medium">
+                          <AvatarFallback className="bg-amber-100 text-amber-700 text-xs font-medium">
                             {selectedConversation.otherUser.name.slice(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         {onlineUsers.has(selectedConversation.otherUser.id) && (
-                          <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-white" />
+                          <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-amber-500 border-2 border-white" />
                         )}
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-gray-900">
                           {selectedConversation.otherUser.name}
                         </p>
-                        <p className="text-xs text-emerald-600">
+                        <p className="text-xs text-amber-600">
                           {onlineUsers.has(selectedConversation.otherUser.id)
                             ? 'Online'
                             : 'Offline'}
@@ -925,7 +925,7 @@ export function MessagesPage() {
                           <p className="text-xs font-medium text-gray-900 truncate">
                             {selectedConversation.product?.name || selectedConversation.gig?.title}
                           </p>
-                          <p className="text-xs text-emerald-600 font-semibold mt-0.5">
+                          <p className="text-xs text-amber-600 font-semibold mt-0.5">
                             $
                             {selectedConversation.product
                               ? (selectedConversation.product.price ?? 0).toFixed(2)
@@ -939,7 +939,7 @@ export function MessagesPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-xs text-emerald-600 hover:text-emerald-700 h-8 gap-1"
+                          className="text-xs text-amber-600 hover:text-amber-700 h-8 gap-1"
                           onClick={() => {
                             if (selectedConversation.product) {
                               setCurrentView('product-detail', {
@@ -978,8 +978,8 @@ export function MessagesPage() {
                       </div>
                     ) : messages.length === 0 ? (
                       <div className="flex flex-col items-center justify-center h-full px-4">
-                        <div className="h-16 w-16 rounded-full bg-emerald-50 flex items-center justify-center mb-3">
-                          <MessageSquare className="h-8 w-8 text-emerald-400" />
+                        <div className="h-16 w-16 rounded-full bg-amber-50 flex items-center justify-center mb-3">
+                          <MessageSquare className="h-8 w-8 text-amber-400" />
                         </div>
                         <p className="text-sm font-medium text-gray-900">No messages yet</p>
                         <p className="text-xs text-muted-foreground mt-1">
@@ -1031,7 +1031,7 @@ export function MessagesPage() {
                                           <AvatarImage
                                             src={msg.sender?.avatar || selectedConversation.otherUser.avatar || undefined}
                                           />
-                                          <AvatarFallback className="bg-emerald-100 text-emerald-700 text-[10px]">
+                                          <AvatarFallback className="bg-amber-100 text-amber-700 text-[10px]">
                                             {(msg.sender?.name || selectedConversation.otherUser.name)
                                               .slice(0, 2)
                                               .toUpperCase()}
@@ -1043,7 +1043,7 @@ export function MessagesPage() {
                                         <div
                                           className={`rounded-2xl px-3.5 py-2.5 ${
                                             isMine
-                                              ? 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-br-md'
+                                              ? 'bg-gradient-to-br from-amber-500 to-yellow-600 text-white rounded-br-md'
                                               : 'bg-gray-100 text-gray-900 rounded-bl-md'
                                           }`}
                                         >
@@ -1060,7 +1060,7 @@ export function MessagesPage() {
                                             {formatMessageTime(msg.createdAt)}
                                           </span>
                                           {isMine && msg.isRead && (
-                                            <span className="text-[10px] text-emerald-500">✓✓</span>
+                                            <span className="text-[10px] text-amber-500">✓✓</span>
                                           )}
                                           {isMine && !msg.isRead && (
                                             <span className="text-[10px] text-muted-foreground">✓</span>
@@ -1081,7 +1081,7 @@ export function MessagesPage() {
                             <div className="flex justify-start mb-1">
                               <div className="flex items-end gap-2">
                                 <Avatar className="h-7 w-7 shrink-0">
-                                  <AvatarFallback className="bg-emerald-100 text-emerald-700 text-[10px]">
+                                  <AvatarFallback className="bg-amber-100 text-amber-700 text-[10px]">
                                     {typingUser.userName.slice(0, 2).toUpperCase()}
                                   </AvatarFallback>
                                 </Avatar>
@@ -1124,7 +1124,7 @@ export function MessagesPage() {
                       <Button
                         onClick={handleSendMessage}
                         disabled={!newMessage.trim() || sendingMessage}
-                        className="h-10 w-10 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 shrink-0 shadow-sm"
+                        className="h-10 w-10 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 shrink-0 shadow-sm"
                         size="icon"
                       >
                         <Send className="h-4 w-4" />
@@ -1138,8 +1138,8 @@ export function MessagesPage() {
               ) : (
                 /* Empty State - No conversation selected */
                 <div className="flex-1 flex flex-col items-center justify-center px-4">
-                  <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 flex items-center justify-center mb-4">
-                    <MessageSquare className="h-10 w-10 text-emerald-400" />
+                  <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-amber-50 to-yellow-50 flex items-center justify-center mb-4">
+                    <MessageSquare className="h-10 w-10 text-amber-400" />
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-1">
                     Select a conversation
@@ -1197,7 +1197,7 @@ export function MessagesPage() {
                     <h4 className="font-semibold text-gray-900 text-sm line-clamp-2">
                       {selectedConversation.product?.name || selectedConversation.gig?.title}
                     </h4>
-                    <p className="text-lg font-bold text-emerald-600 mt-1">
+                    <p className="text-lg font-bold text-amber-600 mt-1">
                       {selectedConversation.product
                         ? `$${(selectedConversation.product.price ?? 0).toFixed(2)}`
                         : parseGigBasePrice(selectedConversation.gig?.packages ?? null)
@@ -1210,7 +1210,7 @@ export function MessagesPage() {
 
                   {/* View Details Button */}
                   <Button
-                    className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 shadow-sm"
+                    className="w-full bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 shadow-sm"
                     onClick={() => {
                       if (selectedConversation.product) {
                         setCurrentView('product-detail', {
@@ -1235,7 +1235,7 @@ export function MessagesPage() {
                           src={selectedConversation.otherUser.avatar || undefined}
                           alt={selectedConversation.otherUser.name}
                         />
-                        <AvatarFallback className="bg-emerald-100 text-emerald-700 text-sm">
+                        <AvatarFallback className="bg-amber-100 text-amber-700 text-sm">
                           {selectedConversation.otherUser.name.slice(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
@@ -1255,7 +1255,7 @@ export function MessagesPage() {
                     </p>
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-xs text-gray-600">
-                        <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0" />
+                        <ShieldCheck className="h-4 w-4 text-amber-500 shrink-0" />
                         <span>Secure messaging</span>
                       </div>
                       <div className="flex items-center gap-2 text-xs text-gray-600">

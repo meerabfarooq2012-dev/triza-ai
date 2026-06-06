@@ -219,7 +219,7 @@ export function SellerOrders() {
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
                           <AvatarImage src={order.buyer?.avatar || undefined} />
-                          <AvatarFallback className="bg-emerald-100 text-emerald-700 text-xs">
+                          <AvatarFallback className="bg-amber-100 text-amber-700 text-xs">
                             {order.buyer?.name?.slice(0, 2).toUpperCase() || '??'}
                           </AvatarFallback>
                         </Avatar>
@@ -334,7 +334,7 @@ export function SellerOrders() {
                           variant="outline"
                           size="sm"
                           onClick={() => setCurrentView('order-tracking', { orderId: order.id })}
-                          className="gap-1.5 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 border-emerald-200"
+                          className="gap-1.5 text-amber-600 hover:bg-amber-50 hover:text-amber-700 border-amber-200"
                         >
                           <Eye className="h-3.5 w-3.5" />
                           Manage
@@ -407,7 +407,7 @@ export function SellerOrders() {
               <div className="flex items-center gap-3">
                 <Avatar className="h-10 w-10">
                   <AvatarImage src={selectedOrder.buyer?.avatar || undefined} />
-                  <AvatarFallback className="bg-emerald-100 text-emerald-700">
+                  <AvatarFallback className="bg-amber-100 text-amber-700">
                     {selectedOrder.buyer?.name?.slice(0, 2).toUpperCase() || '??'}
                   </AvatarFallback>
                 </Avatar>
@@ -489,7 +489,7 @@ export function SellerOrders() {
                 </div>
                 <div className="flex justify-between font-semibold">
                   <span>Your Earnings</span>
-                  <span className="text-emerald-600">
+                  <span className="text-amber-600">
                     ${((selectedOrder.totalAmount ?? 0) - (selectedOrder.platformFee ?? 0)).toFixed(2)}
                   </span>
                 </div>

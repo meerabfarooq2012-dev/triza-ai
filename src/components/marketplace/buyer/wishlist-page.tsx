@@ -105,7 +105,7 @@ const COLLECTION_COLORS = [
 const typeBadgeStyles: Record<string, string> = {
   digital: 'bg-violet-100 text-violet-700',
   physical: 'bg-orange-100 text-orange-700',
-  freelance: 'bg-emerald-100 text-emerald-700',
+  freelance: 'bg-amber-100 text-amber-700',
 }
 
 // ---------------------------------------------------------------------------
@@ -210,7 +210,7 @@ function CollectionFormDialog({
                   className={cn(
                     'flex h-10 w-10 items-center justify-center rounded-lg border-2 transition-all',
                     icon === ic.value
-                      ? 'border-emerald-500 bg-emerald-50'
+                      ? 'border-amber-500 bg-amber-50'
                       : 'border-gray-200 hover:border-gray-300'
                   )}
                 >
@@ -241,7 +241,7 @@ function CollectionFormDialog({
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button
-            className="bg-emerald-600 hover:bg-emerald-700"
+            className="bg-amber-600 hover:bg-amber-700"
             onClick={onConfirm}
             disabled={confirmDisabled}
           >
@@ -323,7 +323,7 @@ function WishlistItemCard({
 
           {/* Price drop badge */}
           {priceDrop && priceDrop > 0 && (
-            <Badge className="absolute right-2 top-2 gap-1 text-[10px] font-medium bg-emerald-100 text-emerald-700 border-0">
+            <Badge className="absolute right-2 top-2 gap-1 text-[10px] font-medium bg-amber-100 text-amber-700 border-0">
               <ArrowDown className="h-3 w-3" />
               {priceDrop}% ↓
             </Badge>
@@ -342,7 +342,7 @@ function WishlistItemCard({
         <CardContent className="p-4 space-y-2.5">
           {/* Name */}
           <h3
-            className="line-clamp-1 cursor-pointer text-sm font-semibold text-gray-900 hover:text-emerald-600 transition-colors"
+            className="line-clamp-1 cursor-pointer text-sm font-semibold text-gray-900 hover:text-amber-600 transition-colors"
             onClick={() => onItemClick(item)}
           >
             {name}
@@ -366,7 +366,7 @@ function WishlistItemCard({
           {/* Price drop indicator */}
           {priceDrop && priceDrop > 0 && (
             <div className="flex items-center gap-1.5">
-              <Badge className="gap-1 text-[10px] bg-emerald-100 text-emerald-700 border-0 font-medium">
+              <Badge className="gap-1 text-[10px] bg-amber-100 text-amber-700 border-0 font-medium">
                 <ArrowDown className="h-3 w-3" />
                 Price dropped {priceDrop}%!
               </Badge>
@@ -396,7 +396,7 @@ function WishlistItemCard({
               onClick={() => onToggleNotify(item, 'notifyPriceDrop')}
               className={cn(
                 'flex items-center gap-1 text-xs transition-colors',
-                item.notifyPriceDrop ? 'text-emerald-600' : 'text-gray-400 hover:text-gray-600'
+                item.notifyPriceDrop ? 'text-amber-600' : 'text-gray-400 hover:text-gray-600'
               )}
               title={item.notifyPriceDrop ? 'Price drop alerts on' : 'Price drop alerts off'}
             >
@@ -412,7 +412,7 @@ function WishlistItemCard({
                 onClick={() => onToggleNotify(item, 'notifyRestock')}
                 className={cn(
                   'flex items-center gap-1 text-xs transition-colors',
-                  item.notifyRestock ? 'text-emerald-600' : 'text-gray-400 hover:text-gray-600'
+                  item.notifyRestock ? 'text-amber-600' : 'text-gray-400 hover:text-gray-600'
                 )}
                 title={item.notifyRestock ? 'Restock alerts on' : 'Restock alerts off'}
               >
@@ -437,7 +437,7 @@ function WishlistItemCard({
               <Button
                 size="sm"
                 variant="outline"
-                className="h-8 gap-1.5 text-xs flex-1 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300"
+                className="h-8 gap-1.5 text-xs flex-1 hover:bg-amber-50 hover:text-amber-700 hover:border-amber-300"
                 onClick={() => onAddToCart(item)}
               >
                 <ShoppingCart className="h-3 w-3" />
@@ -447,7 +447,7 @@ function WishlistItemCard({
               <Button
                 size="sm"
                 variant="outline"
-                className="h-8 gap-1.5 text-xs flex-1 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300"
+                className="h-8 gap-1.5 text-xs flex-1 hover:bg-amber-50 hover:text-amber-700 hover:border-amber-300"
                 onClick={() => onItemClick(item)}
               >
                 <ExternalLink className="h-3 w-3" />
@@ -571,7 +571,7 @@ function CollectionsSidebarContent({
         className={cn(
           'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all',
           !activeCollectionId
-            ? 'bg-emerald-50 text-emerald-700'
+            ? 'bg-amber-50 text-amber-700'
             : 'text-gray-600 hover:bg-gray-50'
         )}
       >
@@ -588,7 +588,7 @@ function CollectionsSidebarContent({
             className={cn(
               'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all',
               activeCollectionId === col.id
-                ? 'bg-emerald-50 text-emerald-700 font-medium'
+                ? 'bg-amber-50 text-amber-700 font-medium'
                 : 'text-gray-600 hover:bg-gray-50'
             )}
           >
@@ -655,7 +655,7 @@ function CollectionsSidebarContent({
         className={cn(
           'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all',
           activeCollectionId === '__uncategorized__'
-            ? 'bg-emerald-50 text-emerald-700 font-medium'
+            ? 'bg-amber-50 text-amber-700 font-medium'
             : 'text-gray-600 hover:bg-gray-50'
         )}
       >
@@ -669,7 +669,7 @@ function CollectionsSidebarContent({
       {/* Create collection button */}
       <Dialog open={createCollectionOpen} onOpenChange={onCreateCollectionOpenChange}>
         <DialogTrigger asChild>
-          <button className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-emerald-600 hover:bg-emerald-50 transition-all">
+          <button className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-amber-600 hover:bg-amber-50 transition-all">
             <FolderPlus className="h-4 w-4" />
             <span>New Collection</span>
           </button>
@@ -701,7 +701,7 @@ function CollectionsSidebarContent({
                     className={cn(
                       'flex h-10 w-10 items-center justify-center rounded-lg border-2 transition-all',
                       newCollectionIcon === ic.value
-                        ? 'border-emerald-500 bg-emerald-50'
+                        ? 'border-amber-500 bg-amber-50'
                         : 'border-gray-200 hover:border-gray-300'
                     )}
                   >
@@ -734,7 +734,7 @@ function CollectionsSidebarContent({
               Cancel
             </Button>
             <Button
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-amber-600 hover:bg-amber-700"
               onClick={onCreateCollection}
               disabled={!newCollectionName.trim()}
             >
@@ -1046,16 +1046,16 @@ export function WishlistPage() {
         animate={{ opacity: 1, y: 0 }}
         className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6"
       >
-        <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-emerald-200 bg-gradient-to-b from-emerald-50/50 to-transparent py-20">
-          <div className="rounded-full bg-emerald-100 p-5 mb-4">
-            <Heart className="h-12 w-12 text-emerald-400" />
+        <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-amber-200 bg-gradient-to-b from-amber-50/50 to-transparent py-20">
+          <div className="rounded-full bg-amber-100 p-5 mb-4">
+            <Heart className="h-12 w-12 text-amber-400" />
           </div>
           <h3 className="text-2xl font-bold text-gray-900">Your Wishlist is Empty</h3>
           <p className="mt-2 max-w-sm text-center text-sm text-gray-500">
             Start adding products and gigs you love by tapping the heart icon. They&apos;ll appear here so you can track prices and find them easily.
           </p>
           <Button
-            className="mt-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg shadow-emerald-200"
+            className="mt-6 bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-700 hover:to-yellow-700 text-white shadow-lg shadow-amber-200"
             onClick={() => setCurrentView('search')}
           >
             <Search className="mr-2 h-4 w-4" />
@@ -1099,7 +1099,7 @@ export function WishlistPage() {
       {/* Page header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 p-2.5 shadow-lg shadow-emerald-200">
+          <div className="rounded-xl bg-gradient-to-br from-amber-500 to-yellow-600 p-2.5 shadow-lg shadow-amber-200">
             <Heart className="h-5 w-5 text-white fill-white" />
           </div>
           <div>
@@ -1112,7 +1112,7 @@ export function WishlistPage() {
               {activeCollectionId === '__uncategorized__' && ' in Uncategorized'}
             </p>
           </div>
-          <Badge className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-0">
+          <Badge className="bg-gradient-to-r from-amber-600 to-yellow-600 text-white border-0">
             {totalItemCount}
           </Badge>
         </div>
@@ -1185,7 +1185,7 @@ export function WishlistPage() {
               className={cn(
                 'rounded-full px-3 py-1.5 text-xs font-medium transition-all whitespace-nowrap',
                 filterType === key
-                  ? 'bg-emerald-100 text-emerald-700 shadow-sm'
+                  ? 'bg-amber-100 text-amber-700 shadow-sm'
                   : 'bg-muted text-muted-foreground hover:bg-muted/80'
               )}
             >

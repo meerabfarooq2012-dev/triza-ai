@@ -299,7 +299,7 @@ export function BulkProductUpload() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 p-2.5 shadow-lg shadow-teal-200">
+          <div className="rounded-xl bg-gradient-to-br from-yellow-500 to-amber-600 p-2.5 shadow-lg shadow-yellow-200">
             <FileSpreadsheet className="h-5 w-5 text-white" />
           </div>
           <div>
@@ -333,8 +333,8 @@ export function BulkProductUpload() {
                 className={cn(
                   'relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed py-16 transition-all cursor-pointer',
                   dragOver
-                    ? 'border-teal-400 bg-teal-50/50'
-                    : 'border-gray-200 hover:border-teal-300 hover:bg-gray-50/50'
+                    ? 'border-yellow-400 bg-yellow-50/50'
+                    : 'border-gray-200 hover:border-yellow-300 hover:bg-gray-50/50'
                 )}
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
@@ -343,11 +343,11 @@ export function BulkProductUpload() {
               >
                 <div className={cn(
                   'rounded-full p-4 mb-4 transition-colors',
-                  dragOver ? 'bg-teal-100' : 'bg-gray-100'
+                  dragOver ? 'bg-yellow-100' : 'bg-gray-100'
                 )}>
                   <Upload className={cn(
                     'h-8 w-8 transition-colors',
-                    dragOver ? 'text-teal-600' : 'text-gray-400'
+                    dragOver ? 'text-yellow-600' : 'text-gray-400'
                   )} />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-700">
@@ -380,8 +380,8 @@ export function BulkProductUpload() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="rounded-lg bg-teal-100 p-2">
-                    <FileSpreadsheet className="h-5 w-5 text-teal-600" />
+                  <div className="rounded-lg bg-yellow-100 p-2">
+                    <FileSpreadsheet className="h-5 w-5 text-yellow-600" />
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-gray-900">{fileName}</p>
@@ -404,7 +404,7 @@ export function BulkProductUpload() {
                       </Button>
                       <Button
                         size="sm"
-                        className="bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white"
+                        className="bg-gradient-to-r from-yellow-600 to-amber-600 hover:from-yellow-700 hover:to-amber-700 text-white"
                         onClick={handleImport}
                         disabled={importing || validRows.length === 0}
                       >
@@ -444,14 +444,14 @@ export function BulkProductUpload() {
                 <div className="flex items-start gap-4">
                   {importResult.errors.length === 0 ? (
                     <div className="flex items-start gap-3 w-full">
-                      <div className="rounded-full bg-emerald-100 p-2 shrink-0">
-                        <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                      <div className="rounded-full bg-amber-100 p-2 shrink-0">
+                        <CheckCircle2 className="h-5 w-5 text-amber-600" />
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-emerald-800">
+                        <p className="text-sm font-semibold text-amber-800">
                           All {importResult.imported} products imported successfully!
                         </p>
-                        <p className="text-xs text-emerald-600 mt-1">
+                        <p className="text-xs text-amber-600 mt-1">
                           You can now view and manage these products in your shop.
                         </p>
                       </div>
@@ -539,7 +539,7 @@ export function BulkProductUpload() {
                           </TableCell>
                           <TableCell>
                             {row.errors.length === 0 ? (
-                              <Badge className="bg-emerald-100 text-emerald-700 text-[10px]">Valid</Badge>
+                              <Badge className="bg-amber-100 text-amber-700 text-[10px]">Valid</Badge>
                             ) : (
                               <Badge variant="destructive" className="text-[10px]">
                                 {row.errors.length} error{row.errors.length > 1 ? 's' : ''}

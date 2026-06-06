@@ -30,7 +30,7 @@ const typeIconMap: Record<ProductType, React.ReactNode> = {
 const typeBadgeVariant: Record<ProductType, string> = {
   digital: 'bg-amber-100 text-amber-700 hover:bg-amber-100',
   physical: 'bg-orange-100 text-orange-700 hover:bg-orange-100',
-  freelance: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100',
+  freelance: 'bg-amber-100 text-amber-700 hover:bg-amber-100',
 }
 
 export function ProductCard({ product, className }: ProductCardProps) {
@@ -200,7 +200,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
               </>
             )}
             {product.hasVariants && (
-              <Badge variant="outline" className="text-[10px] gap-0.5 bg-emerald-50 text-emerald-700 border-emerald-200">
+              <Badge variant="outline" className="text-[10px] gap-0.5 bg-amber-50 text-amber-700 border-amber-200">
                 <Layers className="h-2.5 w-2.5" />
                 Options
               </Badge>
@@ -220,7 +220,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
           {/* Q&A indicator */}
           {product._count?.questions != null && product._count.questions > 0 && (
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <MessageCircleQuestion size={12} className="text-emerald-500" />
+              <MessageCircleQuestion size={12} className="text-amber-500" />
               <span>{product._count.questions} question{product._count.questions !== 1 ? 's' : ''}</span>
             </div>
           )}

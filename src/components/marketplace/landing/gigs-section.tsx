@@ -33,15 +33,15 @@ const gigHighlights = [
     icon: <Code className="h-8 w-8" />,
     title: 'Web Development',
     description: 'Website design & full-stack development',
-    color: 'from-emerald-500 to-teal-600',
-    bgLight: 'bg-emerald-50',
+    color: 'from-amber-500 to-yellow-600',
+    bgLight: 'bg-amber-50',
   },
   {
     icon: <Smartphone className="h-8 w-8" />,
     title: 'App Development',
     description: 'iOS, Android & cross-platform apps',
-    color: 'from-green-500 to-emerald-600',
-    bgLight: 'bg-green-50',
+    color: 'from-amber-500 to-amber-600',
+    bgLight: 'bg-amber-50',
   },
   {
     icon: <Film className="h-8 w-8" />,
@@ -61,8 +61,8 @@ const gigHighlights = [
     icon: <FileText className="h-8 w-8" />,
     title: 'Content Writing',
     description: 'Blog posts, articles & web content',
-    color: 'from-cyan-500 to-blue-600',
-    bgLight: 'bg-cyan-50',
+    color: 'from-orange-500 to-blue-600',
+    bgLight: 'bg-orange-50',
   },
   {
     icon: <Megaphone className="h-8 w-8" />,
@@ -89,17 +89,17 @@ const gigHighlights = [
 
 const benefits = [
   {
-    icon: <ShieldCheck className="h-5 w-5 text-emerald-600" />,
+    icon: <ShieldCheck className="h-5 w-5 text-amber-600" />,
     title: 'Secure Payments',
     desc: 'Your payment is held safely until the work is delivered',
   },
   {
-    icon: <Clock className="h-5 w-5 text-emerald-600" />,
+    icon: <Clock className="h-5 w-5 text-amber-600" />,
     title: 'On-Time Delivery',
     desc: 'Clear delivery timelines with every package',
   },
   {
-    icon: <DollarSign className="h-5 w-5 text-emerald-600" />,
+    icon: <DollarSign className="h-5 w-5 text-amber-600" />,
     title: 'Flexible Pricing',
     desc: 'Choose from Basic, Standard, or Premium packages',
   },
@@ -109,7 +109,7 @@ export function GigsSection() {
   const { setCurrentView } = useMarketplaceStore()
 
   return (
-    <section className="py-20 sm:py-28 bg-gradient-to-b from-emerald-50/50 via-white to-white dark:from-emerald-950/20 dark:via-background dark:to-background">
+    <section className="py-20 sm:py-28 bg-gradient-to-b from-amber-50/50 via-white to-white dark:from-amber-950/20 dark:via-background dark:to-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div
@@ -119,13 +119,13 @@ export function GigsSection() {
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <div className="inline-flex items-center gap-2 rounded-full bg-emerald-100 dark:bg-emerald-950/50 px-4 py-1.5 mb-4 text-sm text-emerald-700 dark:text-emerald-300 font-medium">
+          <div className="inline-flex items-center gap-2 rounded-full bg-amber-100 dark:bg-amber-950/50 px-4 py-1.5 mb-4 text-sm text-amber-700 dark:text-amber-300 font-medium">
             <Briefcase className="h-3.5 w-3.5" />
             Freelance Services
           </div>
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">
             Hire Top Freelancers,{' '}
-            <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-amber-600 to-yellow-600 bg-clip-text text-transparent">
               Get Work Done
             </span>
           </h2>
@@ -154,7 +154,7 @@ export function GigsSection() {
                       {item.icon}
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-emerald-600 transition-colors">
+                      <h3 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-amber-600 transition-colors">
                         {item.title}
                       </h3>
                       <p className="text-sm text-muted-foreground mt-1">
@@ -180,7 +180,7 @@ export function GigsSection() {
               transition={{ duration: 0.4, delay: i * 0.1 }}
               className="flex items-start gap-3"
             >
-              <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/30 p-2 flex-shrink-0">
+              <div className="rounded-lg bg-amber-50 dark:bg-amber-950/30 p-2 flex-shrink-0">
                 {benefit.icon}
               </div>
               <div>
@@ -195,7 +195,7 @@ export function GigsSection() {
         <div className="text-center">
           <Button
             size="lg"
-            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-xl shadow-emerald-500/25 px-8"
+            className="bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-700 hover:to-yellow-700 text-white shadow-xl shadow-amber-500/25 px-8"
             onClick={() => setCurrentView('gigs-browse')}
           >
             Explore All Freelance Services

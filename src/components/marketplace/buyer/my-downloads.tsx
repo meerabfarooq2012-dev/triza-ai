@@ -101,11 +101,11 @@ function DownloadCard({ download, onDownload }: { download: DownloadItem; onDown
     return {
       icon: CheckCircle2,
       label: 'Available',
-      color: 'text-emerald-600',
+      color: 'text-amber-600',
       bgColor: 'bg-background',
       borderColor: 'border-border',
       badgeVariant: 'outline' as const,
-      badgeColor: 'text-emerald-600 border-emerald-300',
+      badgeColor: 'text-amber-600 border-amber-300',
     }
   })()
 
@@ -193,7 +193,7 @@ function DownloadCard({ download, onDownload }: { download: DownloadItem; onDown
                         ? 'bg-red-400'
                         : download.downloadCount / download.maxDownloads > 0.6
                           ? 'bg-amber-500'
-                          : 'bg-emerald-500'
+                          : 'bg-amber-500'
                     }`}
                     style={{
                       width: `${Math.min((download.downloadCount / download.maxDownloads) * 100, 100)}%`,

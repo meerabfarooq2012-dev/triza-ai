@@ -255,7 +255,7 @@ export function SessionManager() {
                             {session.isCurrentSession && (
                               <Badge
                                 variant="secondary"
-                                className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300 border-0 text-[10px] px-1.5 py-0"
+                                className="bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300 border-0 text-[10px] px-1.5 py-0"
                               >
                                 Current Session
                               </Badge>

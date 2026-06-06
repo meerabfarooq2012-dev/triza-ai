@@ -238,7 +238,7 @@ export function AdminDataExport() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Audit Logged</span>
-                  <Badge className="bg-emerald-100 text-emerald-700 border-0 text-xs">Yes</Badge>
+                  <Badge className="bg-amber-100 text-amber-700 border-0 text-xs">Yes</Badge>
                 </div>
               </div>
             </CardContent>

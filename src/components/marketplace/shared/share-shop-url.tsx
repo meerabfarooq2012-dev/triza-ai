@@ -60,7 +60,7 @@ export function ShareShopUrl({ url, title, description, shareText }: ShareShopUr
   }, [shareUrls])
 
   const socialButtons = [
-    { key: 'whatsapp' as const, label: 'WhatsApp', icon: MessageCircle, color: 'hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-950' },
+    { key: 'whatsapp' as const, label: 'WhatsApp', icon: MessageCircle, color: 'hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-950' },
     { key: 'facebook' as const, label: 'Facebook', icon: Facebook, color: 'hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950' },
     { key: 'twitter' as const, label: 'X / Twitter', icon: Twitter, color: 'hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800' },
     { key: 'linkedin' as const, label: 'LinkedIn', icon: Linkedin, color: 'hover:bg-sky-50 hover:text-sky-600 dark:hover:bg-sky-950' },

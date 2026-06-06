@@ -228,7 +228,7 @@ export function TwoFactorSetup({ open, onOpenChange, userId }: TwoFactorSetupPro
                       onClick={() => handleCopy(secretKey, 'secret')}
                     >
                       {copiedField === 'secret' ? (
-                        <Check className="h-3.5 w-3.5 text-green-500" />
+                        <Check className="h-3.5 w-3.5 text-amber-500" />
                       ) : (
                         <Copy className="h-3.5 w-3.5" />
                       )}
@@ -333,8 +333,8 @@ export function TwoFactorSetup({ open, onOpenChange, userId }: TwoFactorSetupPro
         {step === 'backup-codes' && (
           <>
             <DialogHeader className="text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-950/50 mb-2">
-                <Check className="h-6 w-6 text-green-600" />
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-950/50 mb-2">
+                <Check className="h-6 w-6 text-amber-600" />
               </div>
               <DialogTitle className="text-xl">Backup Codes</DialogTitle>
               <DialogDescription>
@@ -377,7 +377,7 @@ export function TwoFactorSetup({ open, onOpenChange, userId }: TwoFactorSetupPro
                 className="w-full"
               >
                 {copiedField === 'code' ? (
-                  <Check className="h-4 w-4 mr-2 text-green-500" />
+                  <Check className="h-4 w-4 mr-2 text-amber-500" />
                 ) : (
                   <Copy className="h-4 w-4 mr-2" />
                 )}

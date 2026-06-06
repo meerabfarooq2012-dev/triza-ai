@@ -90,7 +90,7 @@ const RechartsAreaChart = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex h-[350px] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-600" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-200 border-t-amber-600" />
       </div>
     ),
   },
@@ -162,7 +162,7 @@ const RechartsBarChart = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex h-[300px] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-600" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-200 border-t-amber-600" />
       </div>
     ),
   },
@@ -216,7 +216,7 @@ const RechartsPieChart = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex h-[220px] items-center justify-center">
-        <div className="h-6 w-6 animate-spin rounded-full border-3 border-emerald-200 border-t-emerald-600" />
+        <div className="h-6 w-6 animate-spin rounded-full border-3 border-amber-200 border-t-amber-600" />
       </div>
     ),
   },
@@ -611,9 +611,9 @@ export function SellerAnalytics() {
       label: 'Total Revenue',
       value: formatCurrency(summary.totalRevenue),
       icon: DollarSign,
-      bgColor: 'bg-emerald-50 dark:bg-emerald-950/50',
-      textColor: 'text-emerald-600 dark:text-emerald-400',
-      gradient: 'from-emerald-500 to-teal-600',
+      bgColor: 'bg-amber-50 dark:bg-amber-950/50',
+      textColor: 'text-amber-600 dark:text-amber-400',
+      gradient: 'from-amber-500 to-yellow-600',
       change: summary.monthlyRevenueChange,
       changeLabel: 'vs last month',
     },
@@ -652,9 +652,9 @@ export function SellerAnalytics() {
       label: 'Conversion Rate',
       value: conversionRate !== null ? `${conversionRate}%` : 'N/A',
       icon: TrendingUp,
-      bgColor: 'bg-teal-50 dark:bg-teal-950/50',
-      textColor: 'text-teal-600 dark:text-teal-400',
-      gradient: 'from-teal-500 to-emerald-600',
+      bgColor: 'bg-yellow-50 dark:bg-yellow-950/50',
+      textColor: 'text-yellow-600 dark:text-yellow-400',
+      gradient: 'from-yellow-500 to-amber-600',
       change: null,
       changeLabel: '',
     },
@@ -706,13 +706,13 @@ export function SellerAnalytics() {
                     {stat.change !== null && (
                       <div className="mt-1.5 flex items-center gap-1">
                         {stat.change >= 0 ? (
-                          <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
+                          <TrendingUp className="h-3.5 w-3.5 text-amber-500" />
                         ) : (
                           <TrendingDown className="h-3.5 w-3.5 text-red-500" />
                         )}
                         <span
                           className={`text-xs font-medium ${
-                            stat.change >= 0 ? 'text-emerald-600' : 'text-red-600'
+                            stat.change >= 0 ? 'text-amber-600' : 'text-red-600'
                           }`}
                         >
                           {stat.change >= 0 ? '+' : ''}
@@ -758,7 +758,7 @@ export function SellerAnalytics() {
                   size="sm"
                   className={`h-7 px-3 text-xs font-medium ${
                     timePeriod === period
-                      ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                      ? 'bg-amber-600 text-gray-900 hover:bg-amber-700'
                       : 'text-gray-500 hover:text-gray-700'
                   }`}
                   onClick={() => setTimePeriod(period)}
@@ -801,7 +801,7 @@ export function SellerAnalytics() {
                   size="sm"
                   className={`h-7 px-3 text-xs font-medium ${
                     timePeriod === period
-                      ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                      ? 'bg-amber-600 text-gray-900 hover:bg-amber-700'
                       : 'text-gray-500 hover:text-gray-700'
                   }`}
                   onClick={() => setTimePeriod(period)}
@@ -1002,7 +1002,7 @@ export function SellerAnalytics() {
         <Card className="border-0 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-lg font-semibold">Top Products</CardTitle>
-            <Button variant="ghost" size="sm" className="gap-1 text-emerald-600 hover:text-emerald-700">
+            <Button variant="ghost" size="sm" className="gap-1 text-amber-600 hover:text-amber-700">
               View All <ArrowRight className="h-4 w-4" />
             </Button>
           </CardHeader>
@@ -1091,7 +1091,7 @@ export function SellerAnalytics() {
           <Card className="h-full border-0 shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-                <Users className="h-5 w-5 text-emerald-600" />
+                <Users className="h-5 w-5 text-amber-600" />
                 Top Customers
               </CardTitle>
             </CardHeader>
@@ -1118,7 +1118,7 @@ export function SellerAnalytics() {
                         {customer.avatar ? (
                           <AvatarImage src={customer.avatar} alt={customer.name} />
                         ) : null}
-                        <AvatarFallback className="bg-emerald-100 text-sm font-medium text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400">
+                        <AvatarFallback className="bg-amber-100 text-sm font-medium text-amber-700 dark:bg-amber-900/50 dark:text-amber-400">
                           {customer.name.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>

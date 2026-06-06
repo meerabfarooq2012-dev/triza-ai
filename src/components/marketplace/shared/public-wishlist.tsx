@@ -166,7 +166,7 @@ export function PublicWishlist({ slug }: PublicWishlistProps) {
               <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
                 {wishlist.name}
               </h1>
-              <Badge className="bg-emerald-100 text-emerald-700 gap-1">
+              <Badge className="bg-amber-100 text-amber-700 gap-1">
                 <Globe className="h-3 w-3" />
                 Public
               </Badge>

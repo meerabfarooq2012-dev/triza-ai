@@ -264,7 +264,7 @@ export function Header() {
               >
                 <MessageSquare className="h-4.5 w-4.5" />
                 {unreadMessages > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] font-bold bg-emerald-500 text-white border-0">
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] font-bold bg-amber-500 text-gray-900 border-0">
                     {unreadMessages > 99 ? '99+' : unreadMessages}
                   </Badge>
                 )}
@@ -350,7 +350,7 @@ export function Header() {
                       <MessageSquare className="mr-2 h-4 w-4" />
                       {t('common.messages')}
                       {unreadMessages > 0 && (
-                        <Badge className="ml-auto h-5 px-1.5 text-[10px] bg-emerald-500 text-white border-0">
+                        <Badge className="ml-auto h-5 px-1.5 text-[10px] bg-amber-500 text-gray-900 border-0">
                           {unreadMessages}
                         </Badge>
                       )}
@@ -632,7 +632,7 @@ export function Header() {
                     <MessageSquare className="h-4.5 w-4.5" />
                     {t('common.messages')}
                     {unreadMessages > 0 && (
-                      <Badge className="ml-auto h-5 px-1.5 text-[10px] bg-emerald-500 text-white border-0">
+                      <Badge className="ml-auto h-5 px-1.5 text-[10px] bg-amber-500 text-gray-900 border-0">
                         {unreadMessages}
                       </Badge>
                     )}

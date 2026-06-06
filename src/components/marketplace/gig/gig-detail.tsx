@@ -71,14 +71,14 @@ function PackageCard({
       transition={{ duration: 0.2 }}
       className={`relative rounded-xl border-2 transition-all cursor-pointer ${
         isSelected
-          ? 'border-emerald-500 shadow-lg shadow-emerald-500/10'
-          : 'border-border hover:border-emerald-300'
+          ? 'border-amber-500 shadow-lg shadow-amber-500/10'
+          : 'border-border hover:border-amber-300'
       }`}
       onClick={onSelect}
     >
       {pkg.isPopular && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-          <Badge className="bg-emerald-500 text-white px-3 py-0.5 text-xs font-semibold">
+          <Badge className="bg-amber-500 text-gray-900 px-3 py-0.5 text-xs font-semibold">
             <Award size={12} className="mr-1" />
             Most Popular
           </Badge>
@@ -109,7 +109,7 @@ function PackageCard({
         <ul className="space-y-2 mb-5">
           {pkg.features.map((feature, idx) => (
             <li key={idx} className="flex items-start gap-2 text-sm">
-              <CheckCircle size={14} className="text-emerald-500 mt-0.5 flex-shrink-0" />
+              <CheckCircle size={14} className="text-amber-500 mt-0.5 flex-shrink-0" />
               <span>{feature}</span>
             </li>
           ))}
@@ -119,8 +119,8 @@ function PackageCard({
         <Button
           className={`w-full ${
             isSelected
-              ? 'bg-emerald-500 hover:bg-emerald-600 text-white'
-              : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-300 dark:hover:bg-emerald-900'
+              ? 'bg-amber-500 hover:bg-amber-600 text-gray-900'
+              : 'bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-950 dark:text-amber-300 dark:hover:bg-amber-900'
           }`}
           variant={isSelected ? 'default' : 'outline'}
         >
@@ -140,7 +140,7 @@ function FAQItem({ faq, isOpen, onToggle }: { faq: GigFAQ; isOpen: boolean; onTo
     <div className="border-b last:border-b-0">
       <button
         onClick={onToggle}
-        className="flex items-center justify-between w-full py-4 text-left text-sm font-medium hover:text-emerald-600 transition-colors"
+        className="flex items-center justify-between w-full py-4 text-left text-sm font-medium hover:text-amber-600 transition-colors"
       >
         <span>{faq.question}</span>
         {isOpen ? (
@@ -351,7 +351,7 @@ export default function GigDetail() {
             </Badge>
           )}
           {gig.isFeatured && (
-            <Badge className="bg-amber-500 text-white gap-1">
+            <Badge className="bg-amber-500 text-gray-900 gap-1">
               <Award size={12} />
               Featured
             </Badge>
@@ -384,11 +384,11 @@ export default function GigDetail() {
                   </AvatarFallback>
                 )}
               </Avatar>
-              <span className="font-medium text-sm group-hover:text-emerald-600 transition-colors">
+              <span className="font-medium text-sm group-hover:text-amber-600 transition-colors">
                 {gig.shop.name}
               </span>
               {gig.shop.user?.isVerified && (
-                <CheckCircle size={14} className="text-emerald-500" />
+                <CheckCircle size={14} className="text-amber-500" />
               )}
             </button>
           )}
@@ -484,7 +484,7 @@ export default function GigDetail() {
                     onClick={() => setSelectedImage(index)}
                     className={`flex-shrink-0 w-16 h-12 sm:w-20 sm:h-14 rounded-lg overflow-hidden border-2 transition-all ${
                       selectedImage === index
-                        ? 'border-emerald-500 ring-2 ring-emerald-500/20'
+                        ? 'border-amber-500 ring-2 ring-amber-500/20'
                         : 'border-transparent hover:border-muted-foreground/30'
                     }`}
                   >
@@ -507,7 +507,7 @@ export default function GigDetail() {
                     onClick={() => setSelectedImage(index)}
                     className={`w-2 h-2 rounded-full transition-all ${
                       selectedImage === index
-                        ? 'bg-emerald-500 w-4'
+                        ? 'bg-amber-500 w-4'
                         : 'bg-muted-foreground/30'
                     }`}
                   />
@@ -642,12 +642,12 @@ export default function GigDetail() {
               {selectedPkg && (
                 <>
                   {/* Header */}
-                  <div className="bg-emerald-500 p-4 text-white">
+                  <div className="bg-amber-500 p-4 text-white">
                     <div className="flex items-center justify-between">
                       <h3 className="font-bold text-lg">{selectedPkg.name}</h3>
                       <span className="text-2xl font-bold">${(selectedPkg.price ?? 0).toFixed(2)}</span>
                     </div>
-                    <div className="flex items-center gap-1.5 text-emerald-100 text-sm mt-1">
+                    <div className="flex items-center gap-1.5 text-amber-100 text-sm mt-1">
                       <Clock size={14} />
                       <span>{selectedPkg.deliveryDays} day{selectedPkg.deliveryDays !== 1 ? 's' : ''} delivery</span>
                     </div>
@@ -659,7 +659,7 @@ export default function GigDetail() {
                     <ul className="space-y-2 mb-5">
                       {selectedPkg.features.map((feature, idx) => (
                         <li key={idx} className="flex items-start gap-2 text-sm">
-                          <CheckCircle size={14} className="text-emerald-500 mt-0.5 flex-shrink-0" />
+                          <CheckCircle size={14} className="text-amber-500 mt-0.5 flex-shrink-0" />
                           <span>{feature}</span>
                         </li>
                       ))}
@@ -667,7 +667,7 @@ export default function GigDetail() {
 
                     {/* Continue button */}
                     <Button
-                      className="w-full bg-emerald-500 hover:bg-emerald-600 text-white text-base py-5"
+                      className="w-full bg-amber-500 hover:bg-amber-600 text-gray-900 text-base py-5"
                       onClick={handleAddToCart}
                     >
                       <ShoppingCart size={18} className="mr-2" />
@@ -735,15 +735,15 @@ export default function GigDetail() {
             {/* Trust badges */}
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <ShieldCheck size={14} className="text-emerald-500" />
+                <ShieldCheck size={14} className="text-amber-500" />
                 <span>Secure Payment</span>
               </div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <CheckCircle size={14} className="text-emerald-500" />
+                <CheckCircle size={14} className="text-amber-500" />
                 <span>Quality Guaranteed</span>
               </div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <ShieldCheck size={14} className="text-emerald-500" />
+                <ShieldCheck size={14} className="text-amber-500" />
                 <span>Seller Verified</span>
               </div>
             </div>
@@ -761,7 +761,7 @@ export default function GigDetail() {
               <>
                 <p className="text-sm font-medium truncate">{selectedPkg.name}</p>
                 <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold text-emerald-600">
+                  <span className="text-lg font-bold text-amber-600">
                     ${(selectedPkg.price ?? 0).toFixed(2)}
                   </span>
                   <span className="text-xs text-muted-foreground flex items-center gap-1">
@@ -773,7 +773,7 @@ export default function GigDetail() {
             )}
           </div>
           <Button
-            className="bg-emerald-500 hover:bg-emerald-600 text-white px-6"
+            className="bg-amber-500 hover:bg-amber-600 text-gray-900 px-6"
             onClick={handleAddToCart}
           >
             <ShoppingCart size={16} className="mr-1.5" />

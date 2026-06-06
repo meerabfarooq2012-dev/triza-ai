@@ -320,7 +320,7 @@ function Badge({ type }: { type: string }) {
     },
     physical: {
       label: 'Physical',
-      className: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400',
+      className: 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400',
     },
     freelance: {
       label: 'Service',

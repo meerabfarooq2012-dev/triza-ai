@@ -83,10 +83,10 @@ const STATUS_CONFIG: Record<DisputeStatus, {
   },
   resolved: {
     label: 'Resolved',
-    color: 'text-emerald-700',
-    bgColor: 'bg-emerald-50',
-    borderColor: 'border-emerald-200',
-    leftBorder: 'border-l-emerald-400',
+    color: 'text-amber-700',
+    bgColor: 'bg-amber-50',
+    borderColor: 'border-amber-200',
+    leftBorder: 'border-l-amber-400',
   },
   closed: {
     label: 'Closed',
@@ -294,9 +294,9 @@ export function DisputeCenterPage({ userId, isSeller }: DisputeCenterPageProps) 
       label: 'Resolved',
       count: statusCounts['resolved'] || 0,
       icon: Scale,
-      color: 'text-emerald-600',
-      bgColor: 'bg-emerald-50',
-      borderColor: 'border-emerald-200',
+      color: 'text-amber-600',
+      bgColor: 'bg-amber-50',
+      borderColor: 'border-amber-200',
     },
   ]
 
@@ -315,7 +315,7 @@ export function DisputeCenterPage({ userId, isSeller }: DisputeCenterPageProps) 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-            <Scale className="h-6 w-6 text-emerald-600" />
+            <Scale className="h-6 w-6 text-amber-600" />
             {isSeller ? 'Disputes Against You' : 'Dispute Center'}
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
@@ -325,7 +325,7 @@ export function DisputeCenterPage({ userId, isSeller }: DisputeCenterPageProps) 
         {!isSeller && (
           <Button
             size="sm"
-            className="bg-emerald-600 hover:bg-emerald-700 w-fit"
+            className="bg-amber-600 hover:bg-amber-700 w-fit"
             onClick={() => setFileDialogOpen(true)}
           >
             <Scale className="h-4 w-4 mr-1.5" />
@@ -442,7 +442,7 @@ export function DisputeCenterPage({ userId, isSeller }: DisputeCenterPageProps) 
                 {!isSeller && tab.value === 'all' && !searchQuery && (
                   <Button
                     size="sm"
-                    className="bg-emerald-600 hover:bg-emerald-700 mt-4"
+                    className="bg-amber-600 hover:bg-amber-700 mt-4"
                     onClick={() => setFileDialogOpen(true)}
                   >
                     <Scale className="h-4 w-4 mr-1.5" />
@@ -519,7 +519,7 @@ export function DisputeCenterPage({ userId, isSeller }: DisputeCenterPageProps) 
                                 <div className="flex items-center gap-1.5">
                                   <Avatar className="h-5 w-5">
                                     <AvatarImage src={dispute.user?.avatar || undefined} />
-                                    <AvatarFallback className="text-[8px] bg-emerald-100 text-emerald-700">
+                                    <AvatarFallback className="text-[8px] bg-amber-100 text-amber-700">
                                       {(dispute.user?.name || 'U').charAt(0).toUpperCase()}
                                     </AvatarFallback>
                                   </Avatar>
@@ -547,7 +547,7 @@ export function DisputeCenterPage({ userId, isSeller }: DisputeCenterPageProps) 
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="h-7 w-7 p-0 text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50"
+                                  className="h-7 w-7 p-0 text-muted-foreground hover:text-amber-600 hover:bg-amber-50"
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     handleViewDetail(dispute.id)

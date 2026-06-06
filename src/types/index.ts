@@ -1686,7 +1686,7 @@ export const VERIFICATION_STATUS_LABELS: Record<string, { label: string; color: 
   none: { label: 'Not Verified', color: 'text-gray-500', bgColor: 'bg-gray-100' },
   pending: { label: 'Pending Review', color: 'text-amber-600', bgColor: 'bg-amber-50' },
   under_review: { label: 'Under Review', color: 'text-blue-600', bgColor: 'bg-blue-50' },
-  approved: { label: 'Verified', color: 'text-emerald-600', bgColor: 'bg-emerald-50' },
+  approved: { label: 'Verified', color: 'text-amber-600', bgColor: 'bg-amber-50' },
   rejected: { label: 'Rejected', color: 'text-red-600', bgColor: 'bg-red-50' },
   expired: { label: 'Expired', color: 'text-orange-600', bgColor: 'bg-orange-50' },
 }

@@ -310,7 +310,7 @@ export default function AdminSettings() {
               </div>
               <div className="flex items-center gap-2">
                 {taxEnabled && (
-                  <Badge className="text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                  <Badge className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300">
                     Active
                   </Badge>
                 )}

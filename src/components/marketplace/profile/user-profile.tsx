@@ -286,7 +286,7 @@ export function UserProfile() {
                       {USER_ROLE_LABELS[currentUser.role]}
                     </Badge>
                     {currentUser.isVerified && (
-                      <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300 border-0">
+                      <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300 border-0">
                         <ShieldCheck className="h-3 w-3 mr-1" />
                         Verified
                       </Badge>
@@ -517,7 +517,7 @@ export function UserProfile() {
                   <div className="flex items-start gap-3 p-3 rounded-lg border bg-muted/30">
                     {currentUser.emailVerified ? (
                       <>
-                        <CheckCircle2 className="h-5 w-5 text-emerald-500 dark:text-emerald-400 shrink-0 mt-0.5" />
+                        <CheckCircle2 className="h-5 w-5 text-amber-500 dark:text-amber-400 shrink-0 mt-0.5" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium">Email Verified</p>
                           <p className="text-xs text-muted-foreground">{currentUser.email}</p>
@@ -550,7 +550,7 @@ export function UserProfile() {
                   <div className="flex items-start gap-3 p-3 rounded-lg border bg-muted/30">
                     {currentUser.isActive ? (
                       <>
-                        <CheckCircle2 className="h-5 w-5 text-emerald-500 dark:text-emerald-400 shrink-0 mt-0.5" />
+                        <CheckCircle2 className="h-5 w-5 text-amber-500 dark:text-amber-400 shrink-0 mt-0.5" />
                         <div>
                           <p className="text-sm font-medium">Account Active</p>
                           <p className="text-xs text-muted-foreground">Your account is in good standing.</p>
@@ -571,7 +571,7 @@ export function UserProfile() {
                   <div className="flex items-start gap-3 p-3 rounded-lg border bg-muted/30">
                     {currentUser.isVerified ? (
                       <>
-                        <ShieldCheck className="h-5 w-5 text-emerald-500 dark:text-emerald-400 shrink-0 mt-0.5" />
+                        <ShieldCheck className="h-5 w-5 text-amber-500 dark:text-amber-400 shrink-0 mt-0.5" />
                         <div>
                           <p className="text-sm font-medium">Identity Verified</p>
                           <p className="text-xs text-muted-foreground">Your identity has been confirmed.</p>

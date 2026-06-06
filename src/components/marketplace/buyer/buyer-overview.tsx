@@ -104,9 +104,9 @@ export function BuyerOverview() {
       label: 'Total Orders',
       value: stats?.totalOrders || 0,
       icon: ShoppingCart,
-      color: 'from-emerald-500 to-teal-600',
-      bgColor: 'bg-emerald-50',
-      textColor: 'text-emerald-600',
+      color: 'from-amber-500 to-yellow-600',
+      bgColor: 'bg-amber-50',
+      textColor: 'text-amber-600',
     },
     {
       label: 'Active Orders',
@@ -179,7 +179,7 @@ export function BuyerOverview() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setCurrentView('buyer-dashboard', { tab: 'orders' })}
-                className="text-emerald-600 hover:text-emerald-700"
+                className="text-amber-600 hover:text-amber-700"
               >
                 View All
               </Button>
@@ -245,7 +245,7 @@ export function BuyerOverview() {
             </CardHeader>
             <CardContent className="space-y-3">
               <Button
-                className="w-full justify-start gap-3 bg-emerald-600 hover:bg-emerald-700"
+                className="w-full justify-start gap-3 bg-amber-600 hover:bg-amber-700"
                 onClick={() => setCurrentView('search')}
               >
                 <Store className="h-4 w-4" />

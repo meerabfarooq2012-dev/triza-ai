@@ -60,7 +60,7 @@ const PAYMENT_STATUS_CONFIG: Record<
   },
   completed: {
     label: 'Completed',
-    color: 'bg-green-100 text-green-800 border-green-200',
+    color: 'bg-amber-100 text-amber-800 border-amber-200',
     icon: <CheckCircle2 className="h-3.5 w-3.5" />,
   },
   failed: {
@@ -92,7 +92,7 @@ const ESCROW_STATUS_CONFIG: Record<
   },
   released: {
     label: 'Released to Seller',
-    color: 'bg-emerald-100 text-emerald-800',
+    color: 'bg-amber-100 text-amber-800',
     icon: <Unlock className="h-4 w-4" />,
     description: 'Payment has been released to the seller',
   },
@@ -167,7 +167,7 @@ export function OrderPaymentStatus({
       <Card className="border-0 shadow-sm overflow-hidden">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-semibold flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5 text-emerald-600" />
+            <ShieldCheck className="h-5 w-5 text-amber-600" />
             Payment Details
           </CardTitle>
         </CardHeader>
@@ -214,7 +214,7 @@ export function OrderPaymentStatus({
                 <span>Platform Fee (10%)</span>
                 <span>-${(platformFee ?? 0).toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-sm text-emerald-600">
+              <div className="flex justify-between text-sm text-amber-600">
                 <span>Seller Payout (90%)</span>
                 <span>+${(sellerPayout ?? 0).toFixed(2)}</span>
               </div>
@@ -243,9 +243,9 @@ export function OrderPaymentStatus({
           )}
 
           {escrowStatus === 'released' && (
-            <div className="flex items-start gap-2 rounded-lg bg-emerald-50 border border-emerald-200 p-3">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600 mt-0.5 flex-shrink-0" />
-              <div className="text-xs text-emerald-700 space-y-1">
+            <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 p-3">
+              <CheckCircle2 className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div className="text-xs text-amber-700 space-y-1">
                 <p className="font-medium">Payment released</p>
                 {isSeller && (
                   <p>The payment has been added to your available wallet balance.</p>
@@ -300,7 +300,7 @@ export function OrderPaymentStatus({
                   </p>
                   <p>
                     The seller will receive{' '}
-                    <span className="font-semibold text-emerald-600">${(sellerPayout ?? 0).toFixed(2)}</span>{' '}
+                    <span className="font-semibold text-amber-600">${(sellerPayout ?? 0).toFixed(2)}</span>{' '}
                     (after 10% platform fee).
                   </p>
                   <div className="pt-2">
@@ -321,7 +321,7 @@ export function OrderPaymentStatus({
                 <Button
                   onClick={handleConfirmDelivery}
                   disabled={confirmingDelivery || confirmText !== 'CONFIRM'}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  className="bg-amber-600 hover:bg-amber-700 text-gray-900"
                 >
                   {confirmingDelivery ? (
                     <>

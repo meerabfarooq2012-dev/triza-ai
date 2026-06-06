@@ -329,7 +329,7 @@ export function SellerFlashSales() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-amber-600" />
       </div>
     )
   }
@@ -347,7 +347,7 @@ export function SellerFlashSales() {
             Create time-limited deals to boost your sales
           </p>
         </div>
-        <Button onClick={openCreateDialog} className="gap-2 bg-emerald-600 hover:bg-emerald-700">
+        <Button onClick={openCreateDialog} className="gap-2 bg-amber-600 hover:bg-amber-700">
           <Plus size={16} />
           Create Flash Sale
         </Button>
@@ -357,7 +357,7 @@ export function SellerFlashSales() {
       <div className="grid grid-cols-3 gap-4">
         <Card className="p-4">
           <div className="text-center">
-            <p className="text-2xl font-bold text-emerald-600">{statusCounts.active}</p>
+            <p className="text-2xl font-bold text-amber-600">{statusCounts.active}</p>
             <p className="text-xs text-muted-foreground">Active</p>
           </div>
         </Card>
@@ -417,9 +417,9 @@ export function SellerFlashSales() {
                   <Badge
                     className={`absolute top-2 left-2 ${
                       status === 'active'
-                        ? 'bg-emerald-500 text-white'
+                        ? 'bg-amber-500 text-gray-900'
                         : status === 'upcoming'
-                          ? 'bg-amber-500 text-white'
+                          ? 'bg-amber-500 text-gray-900'
                           : 'bg-gray-500 text-white'
                     }`}
                   >
@@ -448,7 +448,7 @@ export function SellerFlashSales() {
 
                   {/* Prices */}
                   <div className="flex items-baseline gap-2">
-                    <span className="text-lg font-bold text-emerald-600">
+                    <span className="text-lg font-bold text-amber-600">
                       ${sale.salePrice.toFixed(2)}
                     </span>
                     <span className="text-sm text-muted-foreground line-through">
@@ -505,7 +505,7 @@ export function SellerFlashSales() {
                       onClick={() => handleToggleActive(sale)}
                     >
                       {sale.isActive ? (
-                        <ToggleRight size={14} className="text-emerald-600" />
+                        <ToggleRight size={14} className="text-amber-600" />
                       ) : (
                         <ToggleLeft size={14} className="text-muted-foreground" />
                       )}
@@ -614,7 +614,7 @@ export function SellerFlashSales() {
                   onChange={(e) => setFormSalePrice(e.target.value)}
                 />
                 {selectedProduct && formSalePrice && (
-                  <p className="text-xs text-emerald-600">
+                  <p className="text-xs text-amber-600">
                     {Math.round(((selectedProduct.price - parseFloat(formSalePrice)) / selectedProduct.price) * 100)}% off
                   </p>
                 )}
@@ -704,7 +704,7 @@ export function SellerFlashSales() {
             <Button
               onClick={handleSave}
               disabled={saving}
-              className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+              className="gap-2 bg-amber-600 hover:bg-amber-700"
             >
               {saving && <Loader2 size={14} className="animate-spin" />}
               {editingSale ? 'Update' : 'Create'} Flash Sale

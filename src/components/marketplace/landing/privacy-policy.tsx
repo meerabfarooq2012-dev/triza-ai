@@ -25,7 +25,7 @@ const sections = [
     title: 'Data Protection',
     content:
       'We use secure systems, encryption, and protected databases to keep your data safe. Only authorized systems and administrators have access to necessary information.',
-    gradient: 'from-emerald-500 to-teal-600',
+    gradient: 'from-amber-500 to-yellow-600',
   },
   {
     icon: <Share2 className="h-5 w-5" />,
@@ -39,7 +39,7 @@ const sections = [
     title: 'Your Rights',
     content:
       'You can update or delete your account information at any time through your profile settings.',
-    gradient: 'from-cyan-500 to-sky-600',
+    gradient: 'from-orange-500 to-sky-600',
   },
   {
     icon: <Cookie className="h-5 w-5" />,
@@ -150,13 +150,13 @@ export function PrivacyPolicy() {
             <div className="space-y-5">
               {/* Essential */}
               <div className="flex items-start gap-3">
-                <div className="shrink-0 flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 mt-0.5">
+                <div className="shrink-0 flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 mt-0.5">
                   <Shield className="h-4 w-4" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="text-sm font-semibold">Essential Cookies</h3>
-                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400">Always Active</span>
+                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400">Always Active</span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                     These cookies are strictly necessary for the website to function. They enable core features such as authentication (session tokens), shopping cart persistence, security (CSRF protection), and page navigation. You cannot opt out of essential cookies.

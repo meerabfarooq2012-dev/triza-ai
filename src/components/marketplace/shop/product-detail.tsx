@@ -630,12 +630,12 @@ export default function ProductDetail() {
                 <span>
                   {product.hasVariants && selectedVariantId
                     ? effectiveStock > 0
-                      ? <span className="text-green-600 font-medium">{effectiveStock} in stock</span>
+                      ? <span className="text-amber-600 font-medium">{effectiveStock} in stock</span>
                       : <span className="text-red-600 font-medium">Out of stock</span>
                     : product.hasVariants
-                      ? <span className="text-emerald-600 font-medium">Select options for stock</span>
+                      ? <span className="text-amber-600 font-medium">Select options for stock</span>
                       : product.stock > 0
-                        ? <span className="text-green-600 font-medium">{product.stock} in stock</span>
+                        ? <span className="text-amber-600 font-medium">{product.stock} in stock</span>
                         : <span className="text-red-600 font-medium">Out of stock</span>
                   }
                 </span>
@@ -658,7 +658,7 @@ export default function ProductDetail() {
               )}
               <div className="flex items-center gap-2 text-sm">
                 <Zap size={16} className="text-yellow-500" />
-                <span className="text-green-600 font-medium">
+                <span className="text-amber-600 font-medium">
                   Instant delivery after purchase
                 </span>
               </div>
@@ -928,22 +928,22 @@ export default function ProductDetail() {
           {/* Trust badges */}
           <div className="grid grid-cols-2 gap-3">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <ShieldCheck size={14} className="text-green-500" />
+              <ShieldCheck size={14} className="text-amber-500" />
               <span>Secure Payment</span>
             </div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <CheckCircle size={14} className="text-green-500" />
+              <CheckCircle size={14} className="text-amber-500" />
               <span>Quality Guaranteed</span>
             </div>
             {product.type === 'physical' && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Truck size={14} className="text-green-500" />
+                <Truck size={14} className="text-amber-500" />
                 <span>Fast Shipping</span>
               </div>
             )}
             {product.type === 'digital' && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Download size={14} className="text-green-500" />
+                <Download size={14} className="text-amber-500" />
                 <span>Instant Download</span>
               </div>
             )}

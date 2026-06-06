@@ -249,7 +249,7 @@ function ImageUploader({ images, onImagesChange, maxImages = 5, label = 'Images'
 
       {/* Drop zone */}
       <div
-        className={`relative flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50/50 px-4 py-6 transition-colors hover:border-emerald-300 hover:bg-emerald-50/30 ${uploading ? 'pointer-events-none' : ''}`}
+        className={`relative flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50/50 px-4 py-6 transition-colors hover:border-amber-300 hover:bg-amber-50/30 ${uploading ? 'pointer-events-none' : ''}`}
         onClick={() => !uploading && fileInputRef.current?.click()}
         onDragOver={(e) => {
           e.preventDefault()
@@ -266,8 +266,8 @@ function ImageUploader({ images, onImagesChange, maxImages = 5, label = 'Images'
       >
         {uploading ? (
           <div className="flex flex-col items-center gap-2">
-            <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
-            <p className="text-sm font-medium text-emerald-600">Uploading...</p>
+            <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+            <p className="text-sm font-medium text-amber-600">Uploading...</p>
           </div>
         ) : (
           <>
@@ -304,7 +304,7 @@ function ImageUploader({ images, onImagesChange, maxImages = 5, label = 'Images'
               />
               {/* Cloud badge */}
               {isCloudImage(img) && (
-                <span className="absolute bottom-0.5 left-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-white">
+                <span className="absolute bottom-0.5 left-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-gray-900">
                   <Cloud className="h-2.5 w-2.5" />
                 </span>
               )}
@@ -743,7 +743,7 @@ export function SellerGigs() {
           </Select>
         </div>
         <Button
-          className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+          className="gap-2 bg-amber-600 hover:bg-amber-700"
           onClick={handleOpenAdd}
         >
           <Plus className="h-4 w-4" />
@@ -776,7 +776,7 @@ export function SellerGigs() {
             Create your first gig to start offering services
           </p>
           <Button
-            className="mt-4 gap-2 bg-emerald-600 hover:bg-emerald-700"
+            className="mt-4 gap-2 bg-amber-600 hover:bg-amber-700"
             onClick={handleOpenAdd}
           >
             <Plus className="h-4 w-4" />
@@ -877,7 +877,7 @@ export function SellerGigs() {
                             variant="outline"
                             className={
                               gig.isActive
-                                ? 'border-green-200 bg-green-50 text-green-700'
+                                ? 'border-amber-200 bg-amber-50 text-amber-700'
                                 : 'border-gray-200 bg-gray-50 text-gray-500'
                             }
                           >
@@ -903,7 +903,7 @@ export function SellerGigs() {
                               {gig.isActive ? (
                                 <PowerOff className="h-4 w-4 text-amber-500" />
                               ) : (
-                                <Power className="h-4 w-4 text-green-500" />
+                                <Power className="h-4 w-4 text-amber-500" />
                               )}
                             </Button>
                             <Button
@@ -968,7 +968,7 @@ export function SellerGigs() {
                                 variant="outline"
                                 className={
                                   gig.isActive
-                                    ? 'bg-green-50 text-[10px] text-green-700'
+                                    ? 'bg-amber-50 text-[10px] text-amber-700'
                                     : 'bg-gray-50 text-[10px] text-gray-500'
                                 }
                               >
@@ -977,7 +977,7 @@ export function SellerGigs() {
                             </div>
                             <div className="mt-2 flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <span className="text-sm font-bold text-emerald-600">
+                                <span className="text-sm font-bold text-amber-600">
                                   ${(startingPrice ?? 0).toFixed(2)}
                                 </span>
                                 <div className="flex items-center gap-0.5">
@@ -1007,7 +1007,7 @@ export function SellerGigs() {
                                   {gig.isActive ? (
                                     <PowerOff className="h-3.5 w-3.5 text-amber-500" />
                                   ) : (
-                                    <Power className="h-3.5 w-3.5 text-green-500" />
+                                    <Power className="h-3.5 w-3.5 text-amber-500" />
                                   )}
                                 </Button>
                                 <Button
@@ -1135,7 +1135,7 @@ export function SellerGigs() {
                 </div>
 
                 {/* Arrow indicator */}
-                <div className={`flex-shrink-0 transition-colors duration-200 ${formData.categoryId ? 'text-emerald-500' : 'text-gray-300'}`}>
+                <div className={`flex-shrink-0 transition-colors duration-200 ${formData.categoryId ? 'text-amber-500' : 'text-gray-300'}`}>
                   <ChevronRight className="h-4 w-4" />
                 </div>
 
@@ -1204,20 +1204,20 @@ export function SellerGigs() {
 
               {/* Selected category breadcrumb */}
               {formData.categoryId && (
-                <div className="flex items-center gap-1.5 rounded-md bg-emerald-50 px-3 py-1.5 text-xs">
-                  <span className="font-medium text-emerald-700">
+                <div className="flex items-center gap-1.5 rounded-md bg-amber-50 px-3 py-1.5 text-xs">
+                  <span className="font-medium text-amber-700">
                     {allCategories.find((c) => c.id === formData.categoryId)?.name}
                   </span>
                   {formData.subcategoryId && (
                     <>
-                      <ChevronRight className="h-3 w-3 text-emerald-400" />
-                      <span className="font-medium text-emerald-600">
+                      <ChevronRight className="h-3 w-3 text-amber-400" />
+                      <span className="font-medium text-amber-600">
                         {availableSubcategories.find((s) => s.id === formData.subcategoryId)?.name}
                       </span>
                     </>
                   )}
                   {!formData.subcategoryId && availableSubcategories.length > 0 && (
-                    <span className="text-emerald-500 italic">— pick a subcategory for better visibility</span>
+                    <span className="text-amber-500 italic">— pick a subcategory for better visibility</span>
                   )}
                 </div>
               )}
@@ -1302,11 +1302,11 @@ export function SellerGigs() {
                     {/* Package header */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-100">
                           {pkg.isPopular ? (
-                            <Crown className="h-3.5 w-3.5 text-emerald-600" />
+                            <Crown className="h-3.5 w-3.5 text-amber-600" />
                           ) : (
-                            <PackageIcon className="h-3.5 w-3.5 text-emerald-600" />
+                            <PackageIcon className="h-3.5 w-3.5 text-amber-600" />
                           )}
                         </div>
                         <Select
@@ -1425,7 +1425,7 @@ export function SellerGigs() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-6 gap-1 text-xs text-emerald-600 hover:text-emerald-700"
+                          className="h-6 gap-1 text-xs text-amber-600 hover:text-amber-700"
                           onClick={() => addPackageFeature(pkgIndex)}
                         >
                           <Plus className="h-3 w-3" />
@@ -1555,7 +1555,7 @@ export function SellerGigs() {
               Cancel
             </Button>
             <Button
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-amber-600 hover:bg-amber-700"
               onClick={handleSubmit}
               disabled={
                 submitting ||

@@ -487,14 +487,14 @@ export function SellerMessages() {
                       <button
                         key={conv.id}
                         className={`w-full rounded-lg p-3 text-left transition-colors ${
-                          isSelected ? 'bg-emerald-50' : 'hover:bg-gray-100'
+                          isSelected ? 'bg-amber-50' : 'hover:bg-gray-100'
                         }`}
                         onClick={() => handleSelectConversation(conv)}
                       >
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10">
                             <AvatarImage src={conv.otherUser.avatar || undefined} />
-                            <AvatarFallback className="bg-emerald-100 text-emerald-700">
+                            <AvatarFallback className="bg-amber-100 text-amber-700">
                               {conv.otherUser.name.slice(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
@@ -512,14 +512,14 @@ export function SellerMessages() {
                                 {conv.lastMessagePreview || 'No messages yet'}
                               </p>
                               {hasUnread && (
-                                <Badge className="ml-2 h-5 min-w-[20px] justify-center bg-emerald-600 text-[10px] text-white shrink-0">
+                                <Badge className="ml-2 h-5 min-w-[20px] justify-center bg-amber-600 text-[10px] text-white shrink-0">
                                   {conv.unreadCount}
                                 </Badge>
                               )}
                             </div>
                             {/* Product/Gig context */}
                             {(conv.product || conv.gig) && (
-                              <Badge variant="outline" className="mt-1 text-[10px] h-5 gap-1 text-emerald-700 border-emerald-200 bg-emerald-50/50">
+                              <Badge variant="outline" className="mt-1 text-[10px] h-5 gap-1 text-amber-700 border-amber-200 bg-amber-50/50">
                                 {conv.product ? (
                                   <><Package className="h-3 w-3" />{conv.product.name}</>
                                 ) : conv.gig ? (
@@ -567,7 +567,7 @@ export function SellerMessages() {
                   )}
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={selectedConversation.otherUser.avatar || undefined} />
-                    <AvatarFallback className="bg-emerald-100 text-emerald-700 text-xs">
+                    <AvatarFallback className="bg-amber-100 text-amber-700 text-xs">
                       {selectedConversation.otherUser.name.slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
@@ -580,7 +580,7 @@ export function SellerMessages() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-xs text-emerald-600 hover:text-emerald-700"
+                    className="text-xs text-amber-600 hover:text-amber-700"
                     onClick={() => setCurrentView('messages', {
                       conversationId: selectedConversation.id,
                     })}
@@ -605,17 +605,17 @@ export function SellerMessages() {
                             <div
                               className={`max-w-[75%] rounded-2xl px-4 py-2.5 ${
                                 isMine
-                                  ? 'bg-emerald-600 text-white'
+                                  ? 'bg-amber-600 text-gray-900'
                                   : 'bg-gray-100 text-gray-900'
                               }`}
                             >
                               <p className="text-sm">{msg.content}</p>
                               <div className="flex items-center gap-1 mt-1">
-                                <p className={`text-[10px] ${isMine ? 'text-emerald-200' : 'text-gray-400'}`}>
+                                <p className={`text-[10px] ${isMine ? 'text-amber-200' : 'text-gray-400'}`}>
                                   {formatRelativeTime(msg.createdAt)}
                                 </p>
                                 {isMine && (
-                                  <span className={`text-[10px] ${msg.isRead ? 'text-emerald-200' : 'text-emerald-300/60'}`}>
+                                  <span className={`text-[10px] ${msg.isRead ? 'text-amber-200' : 'text-amber-300/60'}`}>
                                     {msg.isRead ? '✓✓' : '✓'}
                                   </span>
                                 )}
@@ -674,7 +674,7 @@ export function SellerMessages() {
                     <Button
                       type="submit"
                       size="icon"
-                      className="bg-emerald-600 hover:bg-emerald-700"
+                      className="bg-amber-600 hover:bg-amber-700"
                       disabled={!newMessage.trim() || sendingMessage}
                     >
                       <Send className="h-4 w-4" />

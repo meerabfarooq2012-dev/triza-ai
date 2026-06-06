@@ -208,7 +208,7 @@ export function StoryBar() {
                 <span className="text-[9px] text-amber-600 font-medium">🏷️ Deal</span>
               )}
               {latestStory?.type === 'product_highlight' && (
-                <span className="text-[9px] text-emerald-600 font-medium">⭐ New</span>
+                <span className="text-[9px] text-amber-600 font-medium">⭐ New</span>
               )}
             </motion.button>
           )

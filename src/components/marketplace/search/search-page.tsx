@@ -155,7 +155,7 @@ function ProductCard({
             </div>
           )}
           {product.isFeatured && (
-            <Badge className="absolute top-2 left-2 text-xs bg-amber-500 text-white">
+            <Badge className="absolute top-2 left-2 text-xs bg-amber-500 text-gray-900">
               Featured
             </Badge>
           )}
@@ -284,13 +284,13 @@ function CategoryTree({
                 onClick={() => onSelect(cat.slug)}
                 className={`flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-sm transition-all duration-150 ${
                   isSelected
-                    ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-medium shadow-sm'
+                    ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 font-medium shadow-sm'
                     : isChildSelected
-                      ? 'bg-emerald-50/50 text-emerald-600 font-medium'
+                      ? 'bg-amber-50/50 text-amber-600 font-medium'
                       : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground'
                 }`}
               >
-                <span className="flex-shrink-0 text-emerald-600">
+                <span className="flex-shrink-0 text-amber-600">
                   <Briefcase size={14} />
                 </span>
                 <span className="flex-1 truncate">{cat.name}</span>
@@ -304,7 +304,7 @@ function CategoryTree({
                 <button
                   onClick={() => onToggleExpand(cat.slug)}
                   className={`flex-shrink-0 p-1.5 rounded-md hover:bg-muted/50 transition-colors ${
-                    expanded ? 'text-emerald-600' : 'text-muted-foreground'
+                    expanded ? 'text-amber-600' : 'text-muted-foreground'
                   }`}
                 >
                   <ChevronDown
@@ -329,7 +329,7 @@ function CategoryTree({
                     onClick={() => onSelect(cat.slug)}
                     className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs transition-colors ${
                       isSelected
-                        ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-medium'
+                        ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 font-medium'
                         : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                     }`}
                   >
@@ -345,7 +345,7 @@ function CategoryTree({
                           onClick={() => onSelect(child.slug)}
                           className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs transition-colors flex items-center justify-between gap-2 ${
                             selectedSlug === child.slug
-                              ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-medium'
+                              ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 font-medium'
                               : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                           }`}
                         >
@@ -594,7 +594,7 @@ function FilterSidebar({
         <div className="flex items-center gap-2">
           <h3 className="font-bold text-lg">Filters</h3>
           {activeFilterCount > 0 && (
-            <Badge variant="secondary" className="text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+            <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300">
               {activeFilterCount}
             </Badge>
           )}
@@ -635,7 +635,7 @@ function FilterSidebar({
           <Button
             variant="ghost"
             size="sm"
-            className={`h-7 text-xs ${!filters.category ? 'text-emerald-600 font-semibold' : ''}`}
+            className={`h-7 text-xs ${!filters.category ? 'text-amber-600 font-semibold' : ''}`}
             onClick={() => handleCategorySelect(undefined)}
           >
             <LayoutGrid className="h-3.5 w-3.5 mr-1" />
@@ -685,8 +685,8 @@ function FilterSidebar({
               onClick={() => handlePriceRangeChange(preset.min, preset.max)}
               className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
                 activePricePresetIdx === idx
-                  ? 'bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800'
-                  : 'bg-background text-muted-foreground border-border hover:border-emerald-300 hover:text-foreground'
+                  ? 'bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800'
+                  : 'bg-background text-muted-foreground border-border hover:border-amber-300 hover:text-foreground'
               }`}
             >
               {preset.label}
@@ -930,8 +930,8 @@ function QuickFilterChips({
         onClick={() => onFilterChange('inStock', filters.inStock ? undefined : true)}
         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200 ${
           filters.inStock
-            ? 'bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800'
-            : 'bg-background text-muted-foreground border-border hover:border-emerald-300 hover:text-foreground'
+            ? 'bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800'
+            : 'bg-background text-muted-foreground border-border hover:border-amber-300 hover:text-foreground'
         }`}
       >
         <CheckCircle2 size={14} />
@@ -1238,7 +1238,7 @@ export default function SearchPage() {
               <Button variant="outline" size="icon" className="md:hidden relative">
                 <Filter size={18} />
                 {activeFilterCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 text-gray-900 text-[10px] font-bold rounded-full flex items-center justify-center">
                     {activeFilterCount}
                   </span>
                 )}
@@ -1263,7 +1263,7 @@ export default function SearchPage() {
                   <Button className="w-full gap-2">
                     Apply Filters
                     {activeFilterCount > 0 && (
-                      <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 ml-1">
+                      <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 ml-1">
                         {activeFilterCount}
                       </Badge>
                     )}
@@ -1438,22 +1438,22 @@ export default function SearchPage() {
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                             />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-emerald-50">
-                              <Briefcase size={32} className="text-emerald-300" />
+                            <div className="w-full h-full flex items-center justify-center bg-amber-50">
+                              <Briefcase size={32} className="text-amber-300" />
                             </div>
                           )}
                           {gig.isFeatured && (
-                            <Badge className="absolute top-2 left-2 text-xs bg-amber-500 text-white">
+                            <Badge className="absolute top-2 left-2 text-xs bg-amber-500 text-gray-900">
                               Featured
                             </Badge>
                           )}
-                          <Badge className="absolute top-2 right-2 text-xs gap-1 bg-emerald-500 text-white">
+                          <Badge className="absolute top-2 right-2 text-xs gap-1 bg-amber-500 text-gray-900">
                             <Briefcase size={10} />
                             Gig
                           </Badge>
                         </div>
                         <CardContent className="p-4">
-                          <h3 className="font-semibold text-sm line-clamp-2 mb-1 group-hover:text-emerald-600 transition-colors">
+                          <h3 className="font-semibold text-sm line-clamp-2 mb-1 group-hover:text-amber-600 transition-colors">
                             {gig.title}
                           </h3>
                           {gig.shop && (

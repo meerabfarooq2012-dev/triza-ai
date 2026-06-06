@@ -234,17 +234,17 @@ export function SellerOverview() {
       label: 'Total Products',
       value: stats?.totalProducts || 0,
       icon: Package,
-      bgColor: 'bg-emerald-50',
-      textColor: 'text-emerald-600',
-      gradient: 'from-emerald-500 to-teal-600',
+      bgColor: 'bg-amber-50',
+      textColor: 'text-amber-600',
+      gradient: 'from-amber-500 to-yellow-600',
     },
     {
       label: 'Active Gigs',
       value: stats?.totalGigs || 0,
       icon: Briefcase,
-      bgColor: 'bg-cyan-50',
-      textColor: 'text-cyan-600',
-      gradient: 'from-cyan-500 to-blue-600',
+      bgColor: 'bg-orange-50',
+      textColor: 'text-orange-600',
+      gradient: 'from-orange-500 to-blue-600',
     },
     {
       label: 'Total Orders',
@@ -343,7 +343,7 @@ export function SellerOverview() {
                   <span
                     className={`flex items-center gap-0.5 font-medium ${
                       stats.weeklyRevenueChange >= 0
-                        ? 'text-emerald-600'
+                        ? 'text-amber-600'
                         : 'text-red-600'
                     }`}
                   >
@@ -399,7 +399,7 @@ export function SellerOverview() {
                   <span
                     className={`flex items-center gap-0.5 font-medium ${
                       stats.weeklyOrderChange >= 0
-                        ? 'text-emerald-600'
+                        ? 'text-amber-600'
                         : 'text-red-600'
                     }`}
                   >
@@ -479,7 +479,7 @@ export function SellerOverview() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-emerald-600 hover:text-emerald-700"
+                className="text-amber-600 hover:text-amber-700"
                 onClick={() => {
                   // Navigate to orders tab within seller dashboard
                 }}
@@ -601,7 +601,7 @@ export function SellerOverview() {
             <CardHeader className="pb-4">
               <CardTitle className="text-lg font-semibold">
                 <span className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-emerald-600" />
+                  <TrendingUp className="h-5 w-5 text-amber-600" />
                   Top Products
                 </span>
               </CardTitle>
@@ -662,7 +662,7 @@ export function SellerOverview() {
             <CardHeader className="pb-4">
               <CardTitle className="text-lg font-semibold">
                 <span className="flex items-center gap-2">
-                  <Briefcase className="h-5 w-5 text-cyan-600" />
+                  <Briefcase className="h-5 w-5 text-orange-600" />
                   Top Gigs
                 </span>
               </CardTitle>

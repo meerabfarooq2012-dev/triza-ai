@@ -220,7 +220,7 @@ function AddressForm({
                   type="button"
                   variant={label === preset ? 'default' : 'outline'}
                   size="sm"
-                  className={`h-9 px-2.5 ${label === preset ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
+                  className={`h-9 px-2.5 ${label === preset ? 'bg-amber-600 hover:bg-amber-700' : ''}`}
                   onClick={() => setLabel(preset)}
                 >
                   <Icon className="h-3.5 w-3.5 mr-1" />
@@ -343,7 +343,7 @@ function AddressForm({
           id="addr-default"
           checked={isDefault}
           onCheckedChange={(checked) => setIsDefault(checked === true)}
-          className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+          className="data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600"
         />
         <Label htmlFor="addr-default" className="text-sm cursor-pointer">
           Set as default delivery address
@@ -356,7 +356,7 @@ function AddressForm({
           Cancel
         </Button>
         <Button
-          className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+          className="flex-1 bg-amber-600 hover:bg-amber-700"
           onClick={handleSave}
           disabled={saving}
         >
@@ -402,17 +402,17 @@ function AddressCard({
 
   return (
     <motion.div variants={itemVariants} layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
-      <Card className={`border-0 shadow-sm transition-shadow hover:shadow-md ${addr.isDefault ? 'ring-2 ring-emerald-200' : ''}`}>
+      <Card className={`border-0 shadow-sm transition-shadow hover:shadow-md ${addr.isDefault ? 'ring-2 ring-amber-200' : ''}`}>
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
             {/* Icon */}
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50">
               {labelIsWarehouse ? (
-                <Warehouse className="h-5 w-5 text-emerald-600" />
+                <Warehouse className="h-5 w-5 text-amber-600" />
               ) : labelIsOffice ? (
-                <Building2 className="h-5 w-5 text-emerald-600" />
+                <Building2 className="h-5 w-5 text-amber-600" />
               ) : (
-                <Home className="h-5 w-5 text-emerald-600" />
+                <Home className="h-5 w-5 text-amber-600" />
               )}
             </div>
 
@@ -424,8 +424,8 @@ function AddressCard({
                   {countryName}
                 </Badge>
                 {addr.isDefault && (
-                  <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 text-[10px] px-1.5 py-0 shrink-0">
-                    <Star className="h-2.5 w-2.5 mr-0.5 fill-emerald-600 text-emerald-600" />
+                  <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 text-[10px] px-1.5 py-0 shrink-0">
+                    <Star className="h-2.5 w-2.5 mr-0.5 fill-amber-600 text-amber-600" />
                     Default
                   </Badge>
                 )}
@@ -457,7 +457,7 @@ function AddressCard({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 px-2.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                  className="h-8 px-2.5 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
                   onClick={() => onSelect(addr)}
                   title="Use this address"
                 >
@@ -493,7 +493,7 @@ function AddressCard({
                 </Button>
               ) : (
                 <div className="h-8 w-8 flex items-center justify-center">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  <CheckCircle2 className="h-4 w-4 text-amber-600" />
                 </div>
               )}
 
@@ -647,7 +647,7 @@ export function AddressBook({ userId, onSelectAddress }: AddressBookProps) {
       <motion.div variants={itemVariants} className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold flex items-center gap-2">
-            <MapPin className="h-5 w-5 text-emerald-600" />
+            <MapPin className="h-5 w-5 text-amber-600" />
             Delivery Addresses
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
@@ -656,7 +656,7 @@ export function AddressBook({ userId, onSelectAddress }: AddressBookProps) {
         </div>
         <Button
           size="sm"
-          className="bg-emerald-600 hover:bg-emerald-700"
+          className="bg-amber-600 hover:bg-amber-700"
           onClick={() => {
             setEditingItem(null)
             setShowFormDialog(true)
@@ -682,8 +682,8 @@ export function AddressBook({ userId, onSelectAddress }: AddressBookProps) {
         {addresses.length === 0 && !error ? (
           <motion.div variants={itemVariants} className="text-center py-12">
             <div className="flex justify-center mb-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50">
-                <MapPin className="h-8 w-8 text-emerald-400" />
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-50">
+                <MapPin className="h-8 w-8 text-amber-400" />
               </div>
             </div>
             <h3 className="text-lg font-semibold mb-1">No saved addresses</h3>
@@ -692,7 +692,7 @@ export function AddressBook({ userId, onSelectAddress }: AddressBookProps) {
             </p>
             <Button
               size="sm"
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-amber-600 hover:bg-amber-700"
               onClick={() => {
                 setEditingItem(null)
                 setShowFormDialog(true)
@@ -731,7 +731,7 @@ export function AddressBook({ userId, onSelectAddress }: AddressBookProps) {
         <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              {editingItem ? <Edit2 className="h-5 w-5 text-emerald-600" /> : <Plus className="h-5 w-5 text-emerald-600" />}
+              {editingItem ? <Edit2 className="h-5 w-5 text-amber-600" /> : <Plus className="h-5 w-5 text-amber-600" />}
               {editingItem ? 'Edit Address' : 'Add New Address'}
             </DialogTitle>
             <DialogDescription>

@@ -55,8 +55,8 @@ function CategoryIcon({ category, size = 20 }: { category: string; size?: number
   const props = { size }
   switch (category) {
     case 'order': return <ShoppingCart {...props} className="text-amber-500" />
-    case 'payment': return <CreditCard {...props} className="text-emerald-500" />
-    case 'message': return <MessageSquare {...props} className="text-cyan-500" />
+    case 'payment': return <CreditCard {...props} className="text-amber-500" />
+    case 'message': return <MessageSquare {...props} className="text-orange-500" />
     case 'review': return <Star {...props} className="text-amber-500" />
     case 'shop': return <Store {...props} className="text-amber-500" />
     case 'promotion': return <Tag {...props} className="text-orange-500" />

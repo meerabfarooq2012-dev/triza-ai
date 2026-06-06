@@ -109,7 +109,7 @@ function LoadingDots() {
       {[0, 1, 2].map((i) => (
         <motion.span
           key={i}
-          className="inline-block size-2 rounded-full bg-emerald-500"
+          className="inline-block size-2 rounded-full bg-amber-500"
           animate={{ y: [0, -6, 0] }}
           transition={{
             duration: 0.6,
@@ -143,7 +143,7 @@ function CategorySelector({
           onClick={() => onSelect(selected === cat.value ? null : cat.value)}
           className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-all ${
             selected === cat.value
-              ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-300 dark:bg-emerald-900/40 dark:text-emerald-300 dark:ring-emerald-700'
+              ? 'bg-amber-100 text-amber-700 ring-1 ring-amber-300 dark:bg-amber-900/40 dark:text-amber-300 dark:ring-amber-700'
               : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
           }`}
         >
@@ -182,7 +182,7 @@ function MessageBubble({ message }: { message: FeedbackMessage }) {
         <div
           className={`relative px-3.5 py-2.5 text-sm leading-relaxed ${
             isUser
-              ? 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-2xl rounded-br-md'
+              ? 'bg-gradient-to-br from-amber-500 to-yellow-600 text-white rounded-2xl rounded-br-md'
               : 'bg-muted/80 text-foreground rounded-2xl rounded-bl-md dark:bg-muted/50'
           }`}
         >
@@ -475,7 +475,7 @@ export function FeedbackWidget() {
             {/* Pulse ring */}
             {!hasPulsed && (
               <motion.div
-                className="absolute inset-0 rounded-full bg-emerald-500"
+                className="absolute inset-0 rounded-full bg-amber-500"
                 animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
                 transition={{ duration: 1.5, repeat: Infinity, ease: 'easeOut' }}
               />
@@ -489,7 +489,7 @@ export function FeedbackWidget() {
 
             <button
               onClick={handleOpen}
-              className="group relative flex size-14 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg transition-transform duration-200 hover:scale-110 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2"
+              className="group relative flex size-14 items-center justify-center rounded-full bg-gradient-to-br from-amber-500 to-yellow-600 shadow-lg transition-transform duration-200 hover:scale-110 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2"
               aria-label="Help & Feedback"
             >
               <MessageSquare className="size-6 text-white transition-transform group-hover:rotate-12" />
@@ -528,7 +528,7 @@ export function FeedbackWidget() {
             {/* ============================ */}
             {/* Header                       */}
             {/* ============================ */}
-            <div className="relative flex-shrink-0 bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-3.5">
+            <div className="relative flex-shrink-0 bg-gradient-to-r from-amber-600 to-yellow-600 px-4 py-3.5">
               {/* Decorative subtle pattern */}
               <div className="absolute inset-0 opacity-10">
                 <div
@@ -549,10 +549,10 @@ export function FeedbackWidget() {
                   <h3 className="text-sm font-semibold text-white">Marketo Support</h3>
                   <div className="flex items-center gap-1.5">
                     <span className="relative flex size-2">
-                      <span className="absolute inline-flex size-full animate-ping rounded-full bg-green-300 opacity-75" />
-                      <span className="relative inline-flex size-2 rounded-full bg-green-400" />
+                      <span className="absolute inline-flex size-full animate-ping rounded-full bg-amber-300 opacity-75" />
+                      <span className="relative inline-flex size-2 rounded-full bg-amber-400" />
                     </span>
-                    <span className="text-[11px] font-medium text-emerald-100">
+                    <span className="text-[11px] font-medium text-amber-100">
                       Online \u00B7 Ask questions or share feedback
                     </span>
                   </div>
@@ -596,7 +596,7 @@ export function FeedbackWidget() {
                         {[0, 1, 2].map((i) => (
                           <motion.div
                             key={i}
-                            className="size-2.5 rounded-full bg-emerald-400"
+                            className="size-2.5 rounded-full bg-amber-400"
                             animate={{ opacity: [0.3, 1, 0.3] }}
                             transition={{
                               duration: 0.8,
@@ -673,7 +673,7 @@ export function FeedbackWidget() {
                     placeholder="Type a message..."
                     disabled={isSending}
                     rows={1}
-                    className="min-h-[40px] max-h-[100px] resize-none rounded-xl border-border/60 bg-muted/30 pr-3 text-sm focus-visible:ring-emerald-400/40"
+                    className="min-h-[40px] max-h-[100px] resize-none rounded-xl border-border/60 bg-muted/30 pr-3 text-sm focus-visible:ring-amber-400/40"
                   />
                   {/* Character count */}
                   {inputValue.length > CHAR_LIMIT * 0.8 && (
@@ -693,7 +693,7 @@ export function FeedbackWidget() {
                   onClick={handleSend}
                   disabled={isSending || !inputValue.trim()}
                   size="icon"
-                  className="size-10 flex-shrink-0 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-md hover:from-emerald-600 hover:to-teal-700 hover:shadow-lg disabled:opacity-50 disabled:shadow-none"
+                  className="size-10 flex-shrink-0 rounded-xl bg-gradient-to-br from-amber-500 to-yellow-600 shadow-md hover:from-amber-600 hover:to-yellow-700 hover:shadow-lg disabled:opacity-50 disabled:shadow-none"
                   aria-label="Send message"
                 >
                   <Send className="size-4 text-white" />

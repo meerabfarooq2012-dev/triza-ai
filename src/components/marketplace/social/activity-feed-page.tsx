@@ -50,23 +50,23 @@ const ACTIVITY_ICONS: Record<string, React.ElementType> = {
 }
 
 const ACTIVITY_COLORS: Record<string, string> = {
-  new_product: 'text-emerald-600 bg-emerald-50',
+  new_product: 'text-amber-600 bg-amber-50',
   new_review: 'text-amber-600 bg-amber-50',
   shop_update: 'text-blue-600 bg-blue-50',
   sale_milestone: 'text-amber-600 bg-amber-50',
-  restock: 'text-teal-600 bg-teal-50',
+  restock: 'text-yellow-600 bg-yellow-50',
   promotion: 'text-amber-600 bg-amber-50',
-  story: 'text-indigo-600 bg-indigo-50',
+  story: 'text-yellow-600 bg-yellow-50',
 }
 
 const ACTIVITY_BORDER: Record<string, string> = {
-  new_product: 'border-l-emerald-500',
+  new_product: 'border-l-amber-500',
   new_review: 'border-l-amber-500',
   shop_update: 'border-l-blue-500',
   sale_milestone: 'border-l-amber-500',
-  restock: 'border-l-teal-500',
+  restock: 'border-l-yellow-500',
   promotion: 'border-l-amber-500',
-  story: 'border-l-indigo-500',
+  story: 'border-l-yellow-500',
 }
 
 function timeAgo(dateStr: string): string {
@@ -153,7 +153,7 @@ function ActivityCard({ activity }: { activity: ActivityType }) {
                   )}
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium truncate">{activity.product.name}</p>
-                    <p className="text-xs text-emerald-600 font-semibold">
+                    <p className="text-xs text-amber-600 font-semibold">
                       ${activity.product.price?.toFixed(2)}
                     </p>
                   </div>
@@ -223,7 +223,7 @@ function SuggestedShops({ userId }: { userId: string }) {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold flex items-center gap-1.5">
-          <Store className="h-4 w-4 text-emerald-600" />
+          <Store className="h-4 w-4 text-amber-600" />
           Suggested Shops
         </h3>
       </div>
@@ -296,7 +296,7 @@ function StoriesBar({ userId }: { userId: string }) {
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold flex items-center gap-1.5">
-            <Megaphone className="h-4 w-4 text-emerald-600" />
+            <Megaphone className="h-4 w-4 text-amber-600" />
             Stories
           </h3>
           {hasShop && (
@@ -320,9 +320,9 @@ function StoriesBar({ userId }: { userId: string }) {
               className="shrink-0 flex flex-col items-center gap-1"
             >
               <div className="relative">
-                <Avatar className="h-16 w-16 border-2 border-dashed border-emerald-400">
+                <Avatar className="h-16 w-16 border-2 border-dashed border-amber-400">
                   <AvatarImage src={currentUser.shop?.logo || currentUser.avatar || undefined} />
-                  <AvatarFallback className="bg-emerald-50 text-emerald-600">
+                  <AvatarFallback className="bg-amber-50 text-amber-600">
                     <Plus className="h-5 w-5" />
                   </AvatarFallback>
                 </Avatar>
@@ -353,7 +353,7 @@ function StoriesBar({ userId }: { userId: string }) {
                 }}
                 className="shrink-0 flex flex-col items-center gap-1"
               >
-                <div className="rounded-full p-[2px] bg-gradient-to-br from-emerald-400 to-teal-500">
+                <div className="rounded-full p-[2px] bg-gradient-to-br from-amber-400 to-yellow-500">
                   <Avatar className="h-[60px] w-[60px] border-2 border-background">
                     <AvatarImage src={group.shop?.logo || undefined} />
                     <AvatarFallback>{group.shop?.name?.charAt(0) || '?'}</AvatarFallback>
@@ -494,7 +494,7 @@ export function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-            <Rss className="h-6 w-6 text-emerald-600" />
+            <Rss className="h-6 w-6 text-amber-600" />
             Activity Feed
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
@@ -539,8 +539,8 @@ export function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
         <Card className="border-0 shadow-sm">
           <CardContent className="py-16 text-center">
             <div className="flex justify-center mb-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50">
-                <Rss className="h-8 w-8 text-emerald-400" />
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-50">
+                <Rss className="h-8 w-8 text-amber-400" />
               </div>
             </div>
             <h3 className="text-lg font-semibold mb-1">No activity yet</h3>
@@ -549,7 +549,7 @@ export function ActivityFeedPage({ userId }: ActivityFeedPageProps) {
             </p>
             <Button
               size="sm"
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-amber-600 hover:bg-amber-700"
               onClick={() => setCurrentView('search')}
             >
               <ChevronRight className="h-4 w-4 mr-1" />

@@ -53,10 +53,10 @@ import type { ReturnRequest, ReturnStatus, RefundMethod } from '@/types'
 const STATUS_CONFIG: Record<string, { label: string; color: string; bgColor: string }> = {
   requested: { label: 'Requested', color: 'text-amber-700', bgColor: 'bg-amber-50' },
   under_review: { label: 'Under Review', color: 'text-sky-700', bgColor: 'bg-sky-50' },
-  approved: { label: 'Approved', color: 'text-emerald-700', bgColor: 'bg-emerald-50' },
+  approved: { label: 'Approved', color: 'text-amber-700', bgColor: 'bg-amber-50' },
   rejected: { label: 'Rejected', color: 'text-red-700', bgColor: 'bg-red-50' },
   processing: { label: 'Processing', color: 'text-amber-700', bgColor: 'bg-amber-50' },
-  completed: { label: 'Completed', color: 'text-emerald-700', bgColor: 'bg-emerald-50' },
+  completed: { label: 'Completed', color: 'text-amber-700', bgColor: 'bg-amber-50' },
   cancelled: { label: 'Cancelled', color: 'text-gray-700', bgColor: 'bg-gray-50' },
 }
 
@@ -509,7 +509,7 @@ export default function AdminReturns() {
               Cancel
             </Button>
             <Button
-              className={adminResolution === 'approve' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'}
+              className={adminResolution === 'approve' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-red-600 hover:bg-red-700'}
               onClick={handleResolveEscalation}
               disabled={actionLoading}
             >

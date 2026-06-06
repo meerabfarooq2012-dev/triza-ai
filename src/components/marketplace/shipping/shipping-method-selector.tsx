@@ -37,10 +37,10 @@ interface ShippingMethodSelectorProps {
 // ---------------------------------------------------------------------------
 
 const METHOD_CONFIG: Record<string, { icon: React.ElementType; color: string; bgColor: string; label: string }> = {
-  standard: { icon: Truck, color: 'text-emerald-600', bgColor: 'bg-emerald-50', label: 'Standard' },
+  standard: { icon: Truck, color: 'text-amber-600', bgColor: 'bg-amber-50', label: 'Standard' },
   express: { icon: Zap, color: 'text-amber-600', bgColor: 'bg-amber-50', label: 'Express' },
   overnight: { icon: Clock, color: 'text-amber-600', bgColor: 'bg-amber-50', label: 'Overnight' },
-  pickup: { icon: Package, color: 'text-teal-600', bgColor: 'bg-teal-50', label: 'Pickup' },
+  pickup: { icon: Package, color: 'text-yellow-600', bgColor: 'bg-yellow-50', label: 'Pickup' },
 }
 
 // ---------------------------------------------------------------------------
@@ -206,7 +206,7 @@ export function ShippingMethodSelector({
       {/* Header */}
       <motion.div variants={itemVariants}>
         <h3 className="text-base font-semibold flex items-center gap-2">
-          <Truck className="h-5 w-5 text-emerald-600" />
+          <Truck className="h-5 w-5 text-amber-600" />
           Shipping Method
         </h3>
         <p className="text-xs text-muted-foreground mt-0.5">
@@ -231,7 +231,7 @@ export function ShippingMethodSelector({
               <label
                 className={`flex items-start gap-3 rounded-xl border-2 p-4 cursor-pointer transition-all ${
                   isSelected
-                    ? 'border-emerald-400 bg-emerald-50/50 shadow-sm'
+                    ? 'border-amber-400 bg-amber-50/50 shadow-sm'
                     : 'border-transparent bg-card shadow-sm hover:border-muted-foreground/20 hover:shadow-md'
                 }`}
               >
@@ -250,7 +250,7 @@ export function ShippingMethodSelector({
                       {config.label}
                     </Badge>
                     {isFree && (
-                      <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 text-[10px] px-1.5 py-0">
+                      <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 text-[10px] px-1.5 py-0">
                         <Gift className="h-2.5 w-2.5 mr-0.5" />
                         Free
                       </Badge>
@@ -284,7 +284,7 @@ export function ShippingMethodSelector({
                       <span className="text-sm line-through text-muted-foreground">
                         Rs. {rate.price.toLocaleString()}
                       </span>
-                      <Badge className="bg-emerald-600 text-white text-[10px] px-1.5 py-0.5">FREE</Badge>
+                      <Badge className="bg-amber-600 text-gray-900 text-[10px] px-1.5 py-0.5">FREE</Badge>
                     </div>
                   ) : (
                     <span className="text-sm font-bold">Rs. {rate.price.toLocaleString()}</span>
@@ -303,9 +303,9 @@ export function ShippingMethodSelector({
         const isFree = selected.freeAbove !== null && orderTotal >= selected.freeAbove
         return (
           <motion.div variants={itemVariants}>
-            <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-              <p className="text-xs text-emerald-800">
+            <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-amber-600 shrink-0" />
+              <p className="text-xs text-amber-800">
                 <span className="font-semibold">{selected.name}</span>
                 {' — '}
                 Est. delivery: {selected.estimatedDate}

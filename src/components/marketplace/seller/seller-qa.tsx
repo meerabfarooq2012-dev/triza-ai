@@ -231,7 +231,7 @@ export function SellerQA() {
                         <div className="flex items-start gap-2">
                           <div className="flex-shrink-0 mt-0.5">
                             {question.isAnswered ? (
-                              <CheckCircle2 size={16} className="text-emerald-500" />
+                              <CheckCircle2 size={16} className="text-amber-500" />
                             ) : (
                               <Circle size={16} className="text-amber-500" />
                             )}
@@ -288,7 +288,7 @@ export function SellerQA() {
                                     </Avatar>
                                     <span className="text-xs font-medium">{answer.user?.name || 'Anonymous'}</span>
                                     {answer.isSellerAnswer && (
-                                      <Badge className="text-[10px] px-1.5 py-0 bg-emerald-600 text-white hover:bg-emerald-600">
+                                      <Badge className="text-[10px] px-1.5 py-0 bg-amber-600 text-gray-900 hover:bg-amber-600">
                                         Seller
                                       </Badge>
                                     )}

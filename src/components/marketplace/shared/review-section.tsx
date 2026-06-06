@@ -221,7 +221,7 @@ function RatingSummary({
             onClick={() => onStarFilter(activeFilter === star ? null : star)}
             className={`flex items-center gap-2 text-sm w-full group rounded-md px-1 py-0.5 transition-colors ${
               activeFilter === star
-                ? 'bg-emerald-50 dark:bg-emerald-950/30'
+                ? 'bg-amber-50 dark:bg-amber-950/30'
                 : 'hover:bg-muted/50'
             }`}
           >
@@ -397,7 +397,7 @@ function ReviewCard({
               {review.user?.avatar ? (
                 <AvatarImage src={review.user.avatar} alt={review.user?.name || ''} />
               ) : (
-                <AvatarFallback className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
+                <AvatarFallback className="bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
                   {review.user?.name?.[0] || 'U'}
                 </AvatarFallback>
               )}
@@ -412,7 +412,7 @@ function ReviewCard({
                   {review.isVerified && (
                     <Badge
                       variant="secondary"
-                      className="text-xs gap-1 bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
+                      className="text-xs gap-1 bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
                     >
                       <ShieldCheck size={10} />
                       Verified Purchase
@@ -483,14 +483,14 @@ function ReviewCard({
                   disabled={isHelped || helpfulLoading === review.id}
                   className={`flex items-center gap-1.5 text-xs transition-colors ${
                     isHelped
-                      ? 'text-emerald-600 dark:text-emerald-400'
+                      ? 'text-amber-600 dark:text-amber-400'
                       : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   {helpfulLoading === review.id ? (
                     <Loader2 size={14} className="animate-spin" />
                   ) : (
-                    <ThumbsUp size={14} className={isHelped ? 'fill-emerald-500' : ''} />
+                    <ThumbsUp size={14} className={isHelped ? 'fill-amber-500' : ''} />
                   )}
                   Helpful{review.helpfulCount ? ` (${review.helpfulCount})` : ''}
                 </button>
@@ -578,7 +578,7 @@ function ReviewCard({
                           size="sm"
                           onClick={handleSubmitReply}
                           disabled={!replyText.trim() || replying}
-                          className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+                          className="gap-1.5 bg-amber-600 hover:bg-amber-700 text-gray-900"
                         >
                           {replying ? (
                             <Loader2 size={14} className="animate-spin" />
@@ -747,7 +747,7 @@ function WriteReviewForm({
     <div>
       <Button
         onClick={() => setIsOpen(!isOpen)}
-        className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+        className="gap-2 bg-amber-600 hover:bg-amber-700 text-gray-900"
       >
         <Star size={16} className="fill-current" />
         Write a Review
@@ -869,7 +869,7 @@ function WriteReviewForm({
                             className="w-16 h-16 object-cover rounded-lg border border-border"
                           />
                           {url.startsWith('http') && (
-                            <span className="absolute bottom-0.5 left-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 text-white">
+                            <span className="absolute bottom-0.5 left-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-500 text-gray-900">
                               <Cloud className="h-2 w-2" />
                             </span>
                           )}
@@ -886,9 +886,9 @@ function WriteReviewForm({
                 </div>
 
                 {/* Verified purchase notice */}
-                <div className="flex items-center gap-2 p-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
-                  <CheckCircle size={14} className="text-emerald-600 flex-shrink-0" />
-                  <p className="text-xs text-emerald-700 dark:text-emerald-400">
+                <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                  <CheckCircle size={14} className="text-amber-600 flex-shrink-0" />
+                  <p className="text-xs text-amber-700 dark:text-amber-400">
                     ✓ Your review may be marked as &quot;Verified Purchase&quot; if you bought this item.
                   </p>
                 </div>
@@ -910,7 +910,7 @@ function WriteReviewForm({
                   <Button
                     onClick={handleSubmit}
                     disabled={!comment.trim() || submitting}
-                    className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+                    className="gap-2 bg-amber-600 hover:bg-amber-700 text-gray-900"
                   >
                     {submitting && <Loader2 size={14} className="animate-spin" />}
                     {submitting ? 'Submitting...' : 'Submit Review'}
@@ -1055,7 +1055,7 @@ function EditReviewForm({
   }
 
   return (
-    <Card className="p-6 border-0 shadow-sm border-l-4 border-l-emerald-500">
+    <Card className="p-6 border-0 shadow-sm border-l-4 border-l-amber-500">
       <h3 className="font-bold text-lg mb-4">Edit Review</h3>
       <div className="space-y-4">
         {/* Star rating */}
@@ -1162,7 +1162,7 @@ function EditReviewForm({
                     className="w-16 h-16 object-cover rounded-lg border border-border"
                   />
                   {url.startsWith('http') && (
-                    <span className="absolute bottom-0.5 left-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 text-white">
+                    <span className="absolute bottom-0.5 left-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-500 text-gray-900">
                       <Cloud className="h-2 w-2" />
                     </span>
                   )}
@@ -1195,7 +1195,7 @@ function EditReviewForm({
           <Button
             onClick={handleSubmit}
             disabled={!comment.trim() || submitting}
-            className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+            className="gap-2 bg-amber-600 hover:bg-amber-700 text-gray-900"
           >
             {submitting && <Loader2 size={14} className="animate-spin" />}
             {submitting ? 'Saving...' : 'Save Changes'}
@@ -1286,7 +1286,7 @@ function EmptyReviewState({ onWriteReview }: { onWriteReview?: () => void }) {
       {onWriteReview && (
         <Button
           onClick={onWriteReview}
-          className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+          className="gap-2 bg-amber-600 hover:bg-amber-700 text-gray-900"
         >
           <Star size={16} className="fill-current" />
           Write the First Review
@@ -1630,7 +1630,7 @@ export function ReviewSection({
               {activeFilter !== 'all' && (
                 <button
                   onClick={() => handleFilterChip('all')}
-                  className="ml-2 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 underline"
+                  className="ml-2 text-amber-600 hover:text-amber-700 dark:text-amber-400 underline"
                 >
                   Clear filter
                 </button>
@@ -1661,7 +1661,7 @@ export function ReviewSection({
                 onClick={() => handleFilterChip(chip.value)}
                 className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border ${
                   activeFilter === chip.value
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-700'
+                    ? 'bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-700'
                     : 'bg-background text-muted-foreground border-border hover:bg-muted hover:text-foreground'
                 }`}
               >

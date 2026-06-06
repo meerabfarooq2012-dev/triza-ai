@@ -74,7 +74,7 @@ function MiniStarRating({ rating }: { rating: number }) {
 const typeColorMap: Record<ProductType, string> = {
   digital: 'bg-amber-100 text-amber-700',
   physical: 'bg-orange-100 text-orange-700',
-  freelance: 'bg-emerald-100 text-emerald-700',
+  freelance: 'bg-amber-100 text-amber-700',
 }
 
 const typeIconMap: Record<ProductType, React.ReactNode> = {
@@ -505,7 +505,7 @@ export function BuyerFavorites() {
                           <span
                             className={cn(
                               'text-xs font-medium',
-                              inStock ? 'text-emerald-600' : 'text-red-500'
+                              inStock ? 'text-amber-600' : 'text-red-500'
                             )}
                           >
                             {inStock ? 'In Stock' : 'Out of Stock'}

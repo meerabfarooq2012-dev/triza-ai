@@ -171,7 +171,7 @@ export function VariantSelector({
                 {option.name}:
               </span>
               {selectedValue && (
-                <span className="text-sm text-emerald-600 font-medium">
+                <span className="text-sm text-amber-600 font-medium">
                   {selectedValue.value}
                 </span>
               )}
@@ -195,10 +195,10 @@ export function VariantSelector({
                         className={`
                           rounded-full px-4 h-8 text-sm font-medium transition-all
                           ${isSelected
-                            ? 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700 hover:text-white hover:border-emerald-700'
+                            ? 'bg-amber-600 text-gray-900 border-amber-600 hover:bg-amber-700 hover:text-white hover:border-amber-700'
                             : wouldBeUnavailable
                               ? 'opacity-40 cursor-not-allowed border-dashed'
-                              : 'hover:border-emerald-300 hover:text-emerald-700'
+                              : 'hover:border-amber-300 hover:text-amber-700'
                           }
                         `}
                         onClick={() => handleSelectValue(option.id, value.id)}
@@ -231,7 +231,7 @@ export function VariantSelector({
               {priceAdjustment !== 0 && (
                 <>
                   <span className="text-muted-foreground">+</span>
-                  <span className={priceAdjustment > 0 ? 'text-emerald-600' : 'text-red-500'}>
+                  <span className={priceAdjustment > 0 ? 'text-amber-600' : 'text-red-500'}>
                     {priceAdjustment > 0 ? '+' : ''}${priceAdjustment.toFixed(2)} adjustment
                   </span>
                 </>
@@ -239,7 +239,7 @@ export function VariantSelector({
             </div>
             <div className="flex items-center gap-2 text-sm font-semibold">
               <span>Total:</span>
-              <span className="text-lg text-emerald-600">${effectivePrice.toFixed(2)}</span>
+              <span className="text-lg text-amber-600">${effectivePrice.toFixed(2)}</span>
             </div>
           </motion.div>
         ) : !allOptionsSelected ? (
@@ -264,7 +264,7 @@ export function VariantSelector({
           className="flex items-center gap-2"
         >
           {matchedVariant.stock > 0 ? (
-            <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
               {matchedVariant.stock} in stock
             </Badge>
           ) : (

@@ -98,7 +98,7 @@ function DownloadStatusBadge({ download }: { download: DownloadItem }) {
     )
   }
   return (
-    <Badge variant="outline" className="text-[10px] gap-1 text-emerald-600 border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-400">
+    <Badge variant="outline" className="text-[10px] gap-1 text-amber-600 border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-400">
       <CheckCircle2 className="h-3 w-3" />
       Active
     </Badge>
@@ -146,7 +146,7 @@ function DownloadCard({
     ? 'bg-red-500'
     : progressPercent > 60
       ? 'bg-amber-500'
-      : 'bg-emerald-500'
+      : 'bg-amber-500'
 
   return (
     <motion.div

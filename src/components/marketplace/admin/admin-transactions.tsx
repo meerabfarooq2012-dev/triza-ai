@@ -68,7 +68,7 @@ const itemVariants = {
 const PAYMENT_STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-800' },
   processing: { label: 'Processing', color: 'bg-blue-100 text-blue-800' },
-  completed: { label: 'Completed', color: 'bg-green-100 text-green-800' },
+  completed: { label: 'Completed', color: 'bg-amber-100 text-amber-800' },
   escrow: { label: 'In Escrow', color: 'bg-amber-100 text-amber-800' },
   failed: { label: 'Failed', color: 'bg-red-100 text-red-800' },
   refunded: { label: 'Refunded', color: 'bg-gray-100 text-gray-800' },
@@ -76,16 +76,16 @@ const PAYMENT_STATUS_CONFIG: Record<string, { label: string; color: string }> = 
 
 const ESCROW_STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   held: { label: 'Held', color: 'bg-amber-100 text-amber-800' },
-  released: { label: 'Released', color: 'bg-emerald-100 text-emerald-800' },
+  released: { label: 'Released', color: 'bg-amber-100 text-amber-800' },
   refunded: { label: 'Refunded', color: 'bg-amber-100 text-amber-800' },
 }
 
 const WITHDRAWAL_STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-800' },
   processing: { label: 'Processing', color: 'bg-blue-100 text-blue-800' },
-  approved: { label: 'Approved', color: 'bg-emerald-100 text-emerald-800' },
+  approved: { label: 'Approved', color: 'bg-amber-100 text-amber-800' },
   rejected: { label: 'Rejected', color: 'bg-red-100 text-red-800' },
-  completed: { label: 'Completed', color: 'bg-green-100 text-green-800' },
+  completed: { label: 'Completed', color: 'bg-amber-100 text-amber-800' },
 }
 
 type PaymentTabFilter = 'all' | 'pending' | 'processing' | 'escrow' | 'completed' | 'failed' | 'refunded'
@@ -347,9 +347,9 @@ export function AdminTransactions() {
       label: 'Commission Earned',
       value: `$${totalCommissionEarned.toFixed(2)}`,
       icon: DollarSign,
-      bgColor: 'bg-emerald-50',
-      textColor: 'text-emerald-600',
-      gradient: 'from-emerald-500 to-teal-600',
+      bgColor: 'bg-amber-50',
+      textColor: 'text-amber-600',
+      gradient: 'from-amber-500 to-yellow-600',
     },
     {
       label: 'Pending Withdrawals',
@@ -365,7 +365,7 @@ export function AdminTransactions() {
       icon: CreditCard,
       bgColor: 'bg-blue-50',
       textColor: 'text-blue-600',
-      gradient: 'from-blue-500 to-cyan-600',
+      gradient: 'from-blue-500 to-orange-600',
     },
   ]
 
@@ -440,7 +440,7 @@ export function AdminTransactions() {
                           key={filter}
                           variant={paymentFilter === filter ? 'default' : 'outline'}
                           size="sm"
-                          className={`h-7 text-xs px-2.5 ${paymentFilter === filter ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
+                          className={`h-7 text-xs px-2.5 ${paymentFilter === filter ? 'bg-amber-600 hover:bg-amber-700' : ''}`}
                           onClick={() => setPaymentFilter(filter)}
                         >
                           {filter.charAt(0).toUpperCase() + filter.slice(1)}
@@ -527,7 +527,7 @@ export function AdminTransactions() {
                                 <TableCell className="text-right text-sm text-amber-600">
                                   ${(payment.platformFee ?? 0).toFixed(2)}
                                 </TableCell>
-                                <TableCell className="text-right text-sm text-emerald-600">
+                                <TableCell className="text-right text-sm text-amber-600">
                                   ${(payment.sellerPayout ?? 0).toFixed(2)}
                                 </TableCell>
                                 <TableCell>
@@ -636,7 +636,7 @@ export function AdminTransactions() {
                                             <Button
                                               size="sm"
                                               variant="outline"
-                                              className="h-8 text-xs text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 border-emerald-200"
+                                              className="h-8 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200"
                                               onClick={(e) => {
                                                 e.stopPropagation()
                                                 openReleaseDialog(payment.id)
@@ -701,7 +701,7 @@ export function AdminTransactions() {
                         key={filter}
                         variant={withdrawalFilter === filter ? 'default' : 'outline'}
                         size="sm"
-                        className={`h-7 text-xs px-2.5 ${withdrawalFilter === filter ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
+                        className={`h-7 text-xs px-2.5 ${withdrawalFilter === filter ? 'bg-amber-600 hover:bg-amber-700' : ''}`}
                         onClick={() => setWithdrawalFilter(filter)}
                       >
                         {filter.charAt(0).toUpperCase() + filter.slice(1)}
@@ -771,7 +771,7 @@ export function AdminTransactions() {
                                 <TableCell className="text-right text-sm text-amber-600">
                                   ${(w.fee ?? 0).toFixed(2)}
                                 </TableCell>
-                                <TableCell className="text-right text-sm text-emerald-600">
+                                <TableCell className="text-right text-sm text-amber-600">
                                   ${(w.netAmount ?? 0).toFixed(2)}
                                 </TableCell>
                                 <TableCell>
@@ -803,7 +803,7 @@ export function AdminTransactions() {
                                       <Button
                                         size="sm"
                                         variant="outline"
-                                        className="h-7 px-2 text-xs text-emerald-600 hover:text-emerald-700"
+                                        className="h-7 px-2 text-xs text-amber-600 hover:text-amber-700"
                                         onClick={() => handleWithdrawalAction(w.id, 'approve')}
                                         disabled={isProcessing}
                                       >
@@ -985,7 +985,7 @@ export function AdminTransactions() {
       <Dialog open={releaseDialogOpen} onOpenChange={setReleaseDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-emerald-600">
+            <DialogTitle className="flex items-center gap-2 text-amber-600">
               <Unlock className="h-5 w-5" />
               Force Release Escrow
             </DialogTitle>
@@ -994,9 +994,9 @@ export function AdminTransactions() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3">
-              <p className="text-sm font-medium text-emerald-800">Payment ID</p>
-              <p className="text-xs text-emerald-600 font-mono">
+            <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
+              <p className="text-sm font-medium text-amber-800">Payment ID</p>
+              <p className="text-xs text-amber-600 font-mono">
                 {releasePaymentId || ''}
               </p>
             </div>
@@ -1022,7 +1022,7 @@ export function AdminTransactions() {
               Cancel
             </Button>
             <Button
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-amber-600 hover:bg-amber-700"
               onClick={handleForceReleaseEscrow}
               disabled={releaseSubmitting}
             >

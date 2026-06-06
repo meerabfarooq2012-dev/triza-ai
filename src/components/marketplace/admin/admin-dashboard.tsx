@@ -73,13 +73,13 @@ function StatCard({ title, value, icon, change, subtitle, accentColor = 'bg-prim
             {change !== undefined && (
               <div className="flex items-center gap-1 mt-1">
                 {change >= 0 ? (
-                  <ArrowUpRight size={14} className="text-green-500" />
+                  <ArrowUpRight size={14} className="text-amber-500" />
                 ) : (
                   <ArrowDownRight size={14} className="text-red-500" />
                 )}
                 <span
                   className={`text-xs font-medium ${
-                    change >= 0 ? 'text-green-500' : 'text-red-500'
+                    change >= 0 ? 'text-amber-500' : 'text-red-500'
                   }`}
                 >
                   {Math.abs(change)}%
@@ -275,7 +275,7 @@ export default function AdminDashboard() {
       {/* Payment Stats Section */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold flex items-center gap-2">
-          <DollarSign size={20} className="text-emerald-600" />
+          <DollarSign size={20} className="text-amber-600" />
           Payment Overview
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -302,7 +302,7 @@ export default function AdminDashboard() {
               value={`$${(paymentStats?.totalCommissionEarned ?? 0).toFixed(2)}`}
               icon={<DollarSign size={22} />}
               subtitle="10% platform fee"
-              accentColor="bg-emerald-50 text-emerald-600"
+              accentColor="bg-amber-50 text-amber-600"
             />
           </motion.div>
           <motion.div
@@ -327,7 +327,7 @@ export default function AdminDashboard() {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-xs text-muted-foreground">Payment Activity</p>
-                  <TrendingUp size={16} className="text-emerald-500" />
+                  <TrendingUp size={16} className="text-amber-500" />
                 </div>
                 {paymentActivity.length > 0 ? (
                   <div className="h-16">
@@ -372,7 +372,7 @@ export default function AdminDashboard() {
           <Card className="border-0 shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
-                <TrendingUp size={18} className="text-emerald-600" />
+                <TrendingUp size={18} className="text-amber-600" />
                 Revenue Overview
               </CardTitle>
             </CardHeader>
@@ -421,7 +421,7 @@ export default function AdminDashboard() {
           <Card className="border-0 shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
-                <DollarSign size={18} className="text-emerald-600" />
+                <DollarSign size={18} className="text-amber-600" />
                 Payment Activity (6 months)
               </CardTitle>
             </CardHeader>

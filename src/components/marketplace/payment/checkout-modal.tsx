@@ -63,9 +63,9 @@ const PAYMENT_METHODS: {
     name: 'Easypaisa',
     region: 'Local',
     flag: '🇵🇰',
-    color: 'text-emerald-700',
-    bgColor: 'bg-emerald-50',
-    borderColor: 'border-emerald-200 data-[state=checked]:border-emerald-500',
+    color: 'text-amber-700',
+    bgColor: 'bg-amber-50',
+    borderColor: 'border-amber-200 data-[state=checked]:border-amber-500',
     description: 'Mobile wallet payment',
   },
   {
@@ -103,9 +103,9 @@ const PAYMENT_METHODS: {
     name: 'Wise',
     region: 'International',
     flag: '🌍',
-    color: 'text-teal-700',
-    bgColor: 'bg-teal-50',
-    borderColor: 'border-teal-200 data-[state=checked]:border-teal-500',
+    color: 'text-yellow-700',
+    bgColor: 'bg-yellow-50',
+    borderColor: 'border-yellow-200 data-[state=checked]:border-yellow-500',
     description: 'International transfer',
   },
 ]
@@ -727,16 +727,16 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 <div
                   className={`flex items-center gap-1.5 text-xs font-medium ${
                     i <= currentStepIndex
-                      ? 'text-emerald-600'
+                      ? 'text-amber-600'
                       : 'text-muted-foreground'
                   }`}
                 >
                   <div
                     className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold ${
                       i < currentStepIndex
-                        ? 'bg-emerald-500 text-white'
+                        ? 'bg-amber-500 text-gray-900'
                         : i === currentStepIndex
-                          ? 'bg-emerald-100 text-emerald-700 ring-2 ring-emerald-500'
+                          ? 'bg-amber-100 text-amber-700 ring-2 ring-amber-500'
                           : 'bg-muted text-muted-foreground'
                     }`}
                   >
@@ -751,7 +751,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 {i < 4 && (
                   <div
                     className={`mx-2 h-px w-6 sm:w-12 ${
-                      i < currentStepIndex ? 'bg-emerald-400' : 'bg-muted'
+                      i < currentStepIndex ? 'bg-amber-400' : 'bg-muted'
                     }`}
                   />
                 )}
@@ -807,7 +807,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                           <p className="text-xs text-muted-foreground">
                             Qty: {item.quantity}
                             {item.variantLabel && (
-                              <span className="text-emerald-600 ml-1">&middot; {item.variantLabel}</span>
+                              <span className="text-amber-600 ml-1">&middot; {item.variantLabel}</span>
                             )}
                           </p>
                         </div>
@@ -836,13 +836,13 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                   Promo Code
                 </Label>
                 {appliedCoupon ? (
-                  <div className="flex items-center gap-2 rounded-lg border-2 border-emerald-200 bg-emerald-50 p-3">
-                    <Tag className="h-4 w-4 text-emerald-600 flex-shrink-0" />
+                  <div className="flex items-center gap-2 rounded-lg border-2 border-amber-200 bg-amber-50 p-3">
+                    <Tag className="h-4 w-4 text-amber-600 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-emerald-800 font-mono">
+                      <p className="text-sm font-bold text-amber-800 font-mono">
                         {appliedCoupon.coupon.code}
                       </p>
-                      <p className="text-xs text-emerald-600">
+                      <p className="text-xs text-amber-600">
                         {appliedCoupon.coupon.type === 'percentage'
                           ? `${appliedCoupon.coupon.value}% off`
                           : appliedCoupon.coupon.type === 'fixed'
@@ -852,13 +852,13 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-bold text-emerald-700">-${appliedCoupon.discountAmount.toFixed(2)}</p>
+                      <p className="text-sm font-bold text-amber-700">-${appliedCoupon.discountAmount.toFixed(2)}</p>
                     </div>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={handleRemoveCoupon}
-                      className="h-7 w-7 p-0 text-emerald-600 hover:text-red-600 hover:bg-red-50"
+                      className="h-7 w-7 p-0 text-amber-600 hover:text-red-600 hover:bg-red-50"
                     >
                       <X className="h-3.5 w-3.5" />
                     </Button>
@@ -908,7 +908,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                   <span>${(cartTotal ?? 0).toFixed(2)}</span>
                 </div>
                 {appliedCoupon && (
-                  <div className="flex justify-between text-sm text-emerald-600">
+                  <div className="flex justify-between text-sm text-amber-600">
                     <span className="flex items-center gap-1">
                       <Tag className="h-3 w-3" />
                       Coupon ({appliedCoupon.coupon.code})
@@ -920,7 +920,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                   <span className="text-muted-foreground">Platform Fee (10%)</span>
                   <span>${(platformFee ?? 0).toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-sm text-emerald-600">
+                <div className="flex justify-between text-sm text-amber-600">
                   <span>Seller Receives (90%)</span>
                   <span>${(sellerPayout ?? 0).toFixed(2)}</span>
                 </div>
@@ -942,7 +942,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                   </div>
                 )}
                 {hasPhysicalItems && shippingCost === 0 && shippingRates.length > 0 && (
-                  <div className="flex justify-between text-sm text-emerald-600">
+                  <div className="flex justify-between text-sm text-amber-600">
                     <span className="flex items-center gap-1">
                       <Truck className="h-3 w-3" />
                       Shipping
@@ -957,9 +957,9 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 </div>
               </div>
 
-              <div className="flex items-start gap-2 rounded-lg bg-emerald-50 border border-emerald-200 p-3">
-                <Info className="h-4 w-4 text-emerald-600 mt-0.5 flex-shrink-0" />
-                <p className="text-xs text-emerald-700">
+              <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 p-3">
+                <Info className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-amber-700">
                   90% of your payment goes directly to the seller. The 10% platform fee helps us
                   maintain the marketplace and provide buyer protection.
                 </p>
@@ -1022,7 +1022,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                               variant="outline"
                               className={`text-[10px] px-1.5 py-0 ${
                                 method.region === 'Local'
-                                  ? 'border-emerald-200 text-emerald-700'
+                                  ? 'border-amber-200 text-amber-700'
                                   : 'border-blue-200 text-blue-700'
                               }`}
                             >
@@ -1041,12 +1041,12 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                         <div
                           className={`absolute bottom-0 left-0 h-0.5 w-full ${
                             method.id === 'easypaisa'
-                              ? 'bg-emerald-500'
+                              ? 'bg-amber-500'
                               : method.id === 'jazzcash'
                                 ? 'bg-red-500'
                                 : method.id === 'payoneer'
                                   ? 'bg-blue-500'
-                                  : 'bg-teal-500'
+                                  : 'bg-yellow-500'
                           }`}
                         />
                       )}
@@ -1064,14 +1064,14 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
               </div>
 
               {/* Security verification checkbox */}
-              <div className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50/50 p-3">
+              <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50/50 p-3">
                 <Checkbox
                   id="payment-auth"
                   checked={paymentAuthConfirmed}
                   onCheckedChange={(checked) => setPaymentAuthConfirmed(checked === true)}
-                  className="mt-0.5 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+                  className="mt-0.5 data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600"
                 />
-                <label htmlFor="payment-auth" className="text-xs text-emerald-800 cursor-pointer leading-relaxed">
+                <label htmlFor="payment-auth" className="text-xs text-amber-800 cursor-pointer leading-relaxed">
                   I confirm this payment is authentic and I authorize Marketo to hold funds in escrow
                   until delivery is confirmed.
                 </label>
@@ -1126,26 +1126,26 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                           key={pm.id}
                           className={`flex items-center gap-3 rounded-lg border-2 p-3 cursor-pointer transition-all ${
                             isSelected
-                              ? 'border-emerald-400 bg-emerald-50/50 shadow-sm'
+                              ? 'border-amber-400 bg-amber-50/50 shadow-sm'
                               : isMethodMatch
-                                ? 'border-emerald-200 bg-emerald-50/20 hover:border-emerald-300'
+                                ? 'border-amber-200 bg-amber-50/20 hover:border-amber-300'
                                 : 'border-transparent bg-muted/30 hover:border-muted-foreground/20'
                           }`}
                           onClick={() => handleSelectSavedMethod(pm)}
                         >
                           <RadioGroupItem
                             checked={isSelected}
-                            className={isSelected ? 'text-emerald-600' : ''}
+                            className={isSelected ? 'text-amber-600' : ''}
                           />
                           <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${
-                            pm.method === 'easypaisa' ? 'bg-emerald-50' :
+                            pm.method === 'easypaisa' ? 'bg-amber-50' :
                             pm.method === 'jazzcash' ? 'bg-red-50' :
                             pm.method === 'card' ? 'bg-amber-50' :
                             pm.method === 'payoneer' ? 'bg-blue-50' :
-                            'bg-teal-50'
+                            'bg-yellow-50'
                           }`}>
                             {pm.method === 'easypaisa' || pm.method === 'jazzcash' ? (
-                              <Wallet className={`h-4 w-4 ${pm.method === 'easypaisa' ? 'text-emerald-600' : 'text-red-600'}`} />
+                              <Wallet className={`h-4 w-4 ${pm.method === 'easypaisa' ? 'text-amber-600' : 'text-red-600'}`} />
                             ) : pm.method === 'card' ? (
                               <CreditCard className="h-4 w-4 text-amber-600" />
                             ) : (
@@ -1182,7 +1182,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                     <label
                       className={`flex items-center gap-3 rounded-lg border-2 p-3 cursor-pointer transition-all ${
                         !useSavedMethod && !selectedSavedMethodId
-                          ? 'border-emerald-400 bg-emerald-50/50 shadow-sm'
+                          ? 'border-amber-400 bg-amber-50/50 shadow-sm'
                           : 'border-transparent bg-muted/30 hover:border-muted-foreground/20'
                       }`}
                       onClick={handleUseNewMethod}
@@ -1203,7 +1203,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 {paymentMethod === 'card' ? (
                   <CreditCard className="h-4 w-4 text-amber-600" />
                 ) : paymentMethod === 'easypaisa' ? (
-                  <Wallet className="h-4 w-4 text-emerald-600" />
+                  <Wallet className="h-4 w-4 text-amber-600" />
                 ) : paymentMethod === 'jazzcash' ? (
                   <Wallet className="h-4 w-4 text-red-600" />
                 ) : (
@@ -1213,7 +1213,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                   {PAYMENT_METHODS.find(m => m.id === paymentMethod)?.name || paymentMethod}
                 </span>
                 {useSavedMethod && selectedSavedMethodId && (
-                  <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 text-[10px] px-1.5 py-0">
+                  <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 text-[10px] px-1.5 py-0">
                     Saved
                   </Badge>
                 )}
@@ -1381,7 +1381,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                     id="save-payment"
                     checked={savePaymentInfo}
                     onCheckedChange={(checked) => setSavePaymentInfo(checked === true)}
-                    className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+                    className="data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600"
                   />
                   <label htmlFor="save-payment" className="text-xs text-muted-foreground cursor-pointer">
                     Save payment details for faster checkout next time
@@ -1542,7 +1542,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 </Label>
                 {shippingLoading ? (
                   <div className="flex items-center gap-2 p-4 rounded-lg bg-muted/30">
-                    <Loader2 className="h-4 w-4 animate-spin text-emerald-500" />
+                    <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
                     <span className="text-sm text-muted-foreground">Loading shipping options...</span>
                   </div>
                 ) : shippingRates.length === 0 ? (
@@ -1583,12 +1583,12 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                         // Pick icon based on method
                         const MethodIcon = isFree ? Gift : isExpress ? Zap : Truck
                         const iconColor = isFree
-                          ? 'text-emerald-600'
+                          ? 'text-amber-600'
                           : isExpress
                             ? 'text-amber-600'
                             : 'text-muted-foreground'
                         const iconBg = isFree
-                          ? 'bg-emerald-50'
+                          ? 'bg-amber-50'
                           : isExpress
                             ? 'bg-amber-50'
                             : 'bg-muted/50'
@@ -1598,7 +1598,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                             key={rate.id}
                             className={`flex items-start gap-3 rounded-lg border-2 p-3 cursor-pointer transition-all ${
                               isSelected
-                                ? 'border-emerald-400 bg-emerald-50/50'
+                                ? 'border-amber-400 bg-amber-50/50'
                                 : 'border-transparent bg-card shadow-sm hover:border-muted-foreground/20'
                             }`}
                           >
@@ -1615,7 +1615,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                                     isExpress
                                       ? 'border-amber-300 text-amber-700'
                                       : isFree
-                                        ? 'border-emerald-300 text-emerald-700'
+                                        ? 'border-amber-300 text-amber-700'
                                         : ''
                                   }`}
                                 >
@@ -1631,7 +1631,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                             </div>
                             <div className="text-right shrink-0 mt-0.5">
                               {isFree ? (
-                                <Badge className="bg-emerald-600 text-white text-[10px] px-2 py-0.5">FREE</Badge>
+                                <Badge className="bg-amber-600 text-gray-900 text-[10px] px-2 py-0.5">FREE</Badge>
                               ) : (
                                 <span className="text-sm font-bold">${rate.price.toFixed(2)}</span>
                               )}
@@ -1643,9 +1643,9 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                   </>
                 )}
                 {estimatedDelivery && selectedRateId && (
-                  <div className="flex items-center gap-2 rounded-lg bg-emerald-50 border border-emerald-200 p-2.5">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                    <p className="text-xs text-emerald-700">
+                  <div className="flex items-center gap-2 rounded-lg bg-amber-50 border border-amber-200 p-2.5">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                    <p className="text-xs text-amber-700">
                       Estimated delivery: <span className="font-semibold">{estimatedDelivery}</span>
                     </p>
                   </div>
@@ -1677,8 +1677,8 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
               className="p-6 flex flex-col items-center justify-center py-16 space-y-4"
             >
               <div className="relative">
-                <div className="h-16 w-16 rounded-full border-4 border-emerald-200 border-t-emerald-500 animate-spin" />
-                <CreditCard className="absolute inset-0 m-auto h-6 w-6 text-emerald-600" />
+                <div className="h-16 w-16 rounded-full border-4 border-amber-200 border-t-amber-500 animate-spin" />
+                <CreditCard className="absolute inset-0 m-auto h-6 w-6 text-amber-600" />
               </div>
               <div className="text-center">
                 <h3 className="font-semibold text-lg">Processing Payment</h3>
@@ -1699,16 +1699,16 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
               className="p-6 flex flex-col items-center py-10 space-y-5"
             >
               <div className="relative">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-100">
                   {paymentMethod === 'easypaisa' ? (
-                    <Wallet className="h-8 w-8 text-emerald-600" />
+                    <Wallet className="h-8 w-8 text-amber-600" />
                   ) : (
                     <Wallet className="h-8 w-8 text-red-600" />
                   )}
                 </div>
                 {pollingPayment && (
                   <div className="absolute -top-1 -right-1 h-6 w-6">
-                    <Loader2 className="h-6 w-6 animate-spin text-emerald-500" />
+                    <Loader2 className="h-6 w-6 animate-spin text-amber-500" />
                   </div>
                 )}
               </div>
@@ -1741,7 +1741,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
               <Card className="w-full p-4 bg-muted/30">
                 <div className="text-center space-y-1">
                   <p className="text-xs text-muted-foreground uppercase tracking-wider">Amount to Pay</p>
-                  <p className="text-3xl font-bold text-emerald-600">${(cartTotal ?? 0).toFixed(2)}</p>
+                  <p className="text-3xl font-bold text-amber-600">${(cartTotal ?? 0).toFixed(2)}</p>
                   <p className="text-xs text-muted-foreground">
                     via {paymentMethod === 'easypaisa' ? 'Easypaisa' : 'JazzCash'}
                   </p>
@@ -1750,7 +1750,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
 
               {/* Action button to open gateway / simulate payment */}
               <Button
-                className="w-full bg-emerald-600 hover:bg-emerald-700"
+                className="w-full bg-amber-600 hover:bg-amber-700"
                 size="lg"
                 onClick={async () => {
                   if (gatewayRedirectUrl) {
@@ -1785,9 +1785,9 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 )}
               </div>
 
-              <div className="flex items-start gap-2 rounded-lg bg-emerald-50 border border-emerald-200 p-3 w-full">
-                <ShieldCheck className="h-4 w-4 text-emerald-600 mt-0.5 flex-shrink-0" />
-                <p className="text-xs text-emerald-700">
+              <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 p-3 w-full">
+                <ShieldCheck className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-amber-700">
                   Your payment is protected by escrow. Funds will only be released to the seller after you confirm delivery.
                 </p>
               </div>
@@ -1806,9 +1806,9 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ type: 'spring', stiffness: 200, delay: 0.2 }}
-                className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100"
+                className="flex h-20 w-20 items-center justify-center rounded-full bg-amber-100"
               >
-                <CheckCircle2 className="h-10 w-10 text-emerald-600" />
+                <CheckCircle2 className="h-10 w-10 text-amber-600" />
               </motion.div>
 
               <div className="text-center space-y-1">
@@ -1878,9 +1878,9 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 </div>
               )}
 
-              <div className="flex items-center gap-2 rounded-lg bg-emerald-50 border border-emerald-200 p-2.5 w-full">
-                <ShieldCheck className="h-4 w-4 text-emerald-600 flex-shrink-0" />
-                <p className="text-xs text-emerald-700 font-medium">
+              <div className="flex items-center gap-2 rounded-lg bg-amber-50 border border-amber-200 p-2.5 w-full">
+                <ShieldCheck className="h-4 w-4 text-amber-600 flex-shrink-0" />
+                <p className="text-xs text-amber-700 font-medium">
                   Payment verified & secured with token authentication
                 </p>
               </div>

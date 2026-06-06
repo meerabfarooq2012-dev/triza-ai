@@ -158,8 +158,8 @@ export function CreateStoryDialog({
             storyType === 'promotion'
               ? 'bg-gradient-to-br from-amber-400 to-orange-500'
               : storyType === 'product_highlight'
-                ? 'bg-gradient-to-br from-emerald-400 to-teal-500'
-                : 'bg-gradient-to-br from-emerald-500 to-teal-600'
+                ? 'bg-gradient-to-br from-amber-400 to-yellow-500'
+                : 'bg-gradient-to-br from-amber-500 to-yellow-600'
           }`}
         >
           {imageUrl ? (
@@ -203,7 +203,7 @@ export function CreateStoryDialog({
                   onClick={() => handleTypeChange(type.value)}
                   className={`flex items-center gap-2 rounded-lg border p-3 text-left transition-all ${
                     storyType === type.value
-                      ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                      ? 'border-amber-500 bg-amber-50 text-amber-700'
                       : 'border-gray-200 hover:border-gray-300 text-gray-600'
                   }`}
                 >
@@ -389,7 +389,7 @@ export function CreateStoryDialog({
               Cancel
             </Button>
             <Button
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="flex-1 bg-amber-600 hover:bg-amber-700 text-gray-900"
               onClick={handleSubmit}
               disabled={loading || (!content.trim() && !imageUrl.trim())}
             >

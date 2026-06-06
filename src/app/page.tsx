@@ -378,7 +378,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
                     url.searchParams.set('_r', Date.now().toString())
                     window.location.replace(url.toString())
                   }}
-                  className="px-5 py-2.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm font-medium shadow-lg"
+                  className="px-5 py-2.5 bg-amber-600 text-gray-900 rounded-lg hover:bg-amber-700 text-sm font-medium shadow-lg"
                 >
                   Refresh Now
                 </button>
@@ -386,7 +386,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
                 <>
                   <button
                     onClick={() => this.setState({ hasError: false, error: null })}
-                    className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm"
+                    className="px-4 py-2 bg-amber-600 text-gray-900 rounded-lg hover:bg-amber-700 text-sm"
                   >
                     Try Again
                   </button>

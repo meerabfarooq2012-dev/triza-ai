@@ -203,7 +203,7 @@ export default function AdminUsers() {
                               <ShieldCheck size={14} className="text-primary" />
                             )}
                             {user.isVerified && (
-                              <UserCheck size={14} className="text-green-500" />
+                              <UserCheck size={14} className="text-amber-500" />
                             )}
                           </div>
                           <p className="text-xs text-muted-foreground">
@@ -222,7 +222,7 @@ export default function AdminUsers() {
                         variant={user.isActive ? 'default' : 'secondary'}
                         className={`text-xs ${
                           user.isActive
-                            ? 'bg-green-100 text-green-800 hover:bg-green-100'
+                            ? 'bg-amber-100 text-amber-800 hover:bg-amber-100'
                             : 'bg-red-100 text-red-800 hover:bg-red-100'
                         }`}
                       >

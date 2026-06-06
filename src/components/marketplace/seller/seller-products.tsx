@@ -229,7 +229,7 @@ function ImageUploader({ images, onImagesChange, maxImages = 5, label = 'Images'
 
       {/* Drop zone */}
       <div
-        className={`relative flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50/50 px-4 py-6 transition-colors hover:border-emerald-300 hover:bg-emerald-50/30 ${uploading ? 'pointer-events-none' : ''}`}
+        className={`relative flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50/50 px-4 py-6 transition-colors hover:border-amber-300 hover:bg-amber-50/30 ${uploading ? 'pointer-events-none' : ''}`}
         onClick={() => !uploading && fileInputRef.current?.click()}
         onDragOver={(e) => {
           e.preventDefault()
@@ -246,11 +246,11 @@ function ImageUploader({ images, onImagesChange, maxImages = 5, label = 'Images'
       >
         {uploading ? (
           <div className="flex flex-col items-center gap-2">
-            <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
-            <p className="text-sm font-medium text-emerald-600">Uploading... {uploadProgress}%</p>
+            <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+            <p className="text-sm font-medium text-amber-600">Uploading... {uploadProgress}%</p>
             <div className="w-32 h-1.5 bg-gray-200 rounded-full overflow-hidden">
               <div
-                className="h-full bg-emerald-500 rounded-full transition-all duration-300"
+                className="h-full bg-amber-500 rounded-full transition-all duration-300"
                 style={{ width: `${uploadProgress}%` }}
               />
             </div>
@@ -314,7 +314,7 @@ function ImageUploader({ images, onImagesChange, maxImages = 5, label = 'Images'
               />
               {/* Cloud badge */}
               {isCloudImage(img) && (
-                <span className="absolute bottom-0.5 left-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-white">
+                <span className="absolute bottom-0.5 left-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-gray-900">
                   <Cloud className="h-2.5 w-2.5" />
                 </span>
               )}
@@ -402,7 +402,7 @@ function CountryMultiSelect({
             <Badge
               key={code}
               variant="outline"
-              className="gap-1 text-xs bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+              className="gap-1 text-xs bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
             >
               {getCountryName(code)}
               <button
@@ -411,7 +411,7 @@ function CountryMultiSelect({
                   e.stopPropagation()
                   toggleCountry(code)
                 }}
-                className="ml-0.5 rounded-full hover:bg-emerald-200"
+                className="ml-0.5 rounded-full hover:bg-amber-200"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -443,7 +443,7 @@ function CountryMultiSelect({
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="h-6 text-xs text-emerald-600 hover:text-emerald-700"
+                className="h-6 text-xs text-amber-600 hover:text-amber-700"
                 onClick={(e) => {
                   e.stopPropagation()
                   selectAll()
@@ -480,7 +480,7 @@ function CountryMultiSelect({
                     key={country.code}
                     type="button"
                     className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50 transition-colors ${
-                      isSelected ? 'bg-emerald-50' : ''
+                      isSelected ? 'bg-amber-50' : ''
                     }`}
                     onClick={(e) => {
                       e.stopPropagation()
@@ -489,13 +489,13 @@ function CountryMultiSelect({
                   >
                     <span className="flex-shrink-0">
                       {isSelected ? (
-                        <Check className="h-4 w-4 text-emerald-600" />
+                        <Check className="h-4 w-4 text-amber-600" />
                       ) : (
                         <span className="inline-block h-4 w-4 rounded border border-gray-300" />
                       )}
                     </span>
                     <span className="text-base">{country.flag}</span>
-                    <span className={isSelected ? 'font-medium text-emerald-700' : 'text-gray-700'}>
+                    <span className={isSelected ? 'font-medium text-amber-700' : 'text-gray-700'}>
                       {country.name}
                     </span>
                     <span className="ml-auto text-xs text-gray-400">{country.code}</span>
@@ -835,7 +835,7 @@ export function SellerProducts() {
             Bulk Upload
           </Button>
           <Button
-            className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+            className="gap-2 bg-amber-600 hover:bg-amber-700"
             onClick={handleOpenAdd}
           >
             <Plus className="h-4 w-4" />
@@ -867,7 +867,7 @@ export function SellerProducts() {
             Add your first product to start selling
           </p>
           <Button
-            className="mt-4 gap-2 bg-emerald-600 hover:bg-emerald-700"
+            className="mt-4 gap-2 bg-amber-600 hover:bg-amber-700"
             onClick={handleOpenAdd}
           >
             <Plus className="h-4 w-4" />
@@ -931,7 +931,7 @@ export function SellerProducts() {
                                 </Badge>
                               )}
                               {product.hasVariants && (
-                                <Badge variant="outline" className="mt-0.5 text-[10px] text-emerald-600 border-emerald-200 gap-0.5">
+                                <Badge variant="outline" className="mt-0.5 text-[10px] text-amber-600 border-amber-200 gap-0.5">
                                   <Layers className="h-2.5 w-2.5" />
                                   Variants
                                 </Badge>
@@ -971,7 +971,7 @@ export function SellerProducts() {
                             variant="outline"
                             className={
                               product.isActive
-                                ? 'bg-green-50 text-green-700 border-green-200'
+                                ? 'bg-amber-50 text-amber-700 border-amber-200'
                                 : 'bg-gray-50 text-gray-500 border-gray-200'
                             }
                           >
@@ -987,7 +987,7 @@ export function SellerProducts() {
                               onClick={() => handleOpenVariants(product)}
                               title="Manage Variants"
                             >
-                              <Layers className="h-4 w-4 text-emerald-500" />
+                              <Layers className="h-4 w-4 text-amber-500" />
                             </Button>
                             <Button
                               variant="ghost"
@@ -1006,7 +1006,7 @@ export function SellerProducts() {
                               {product.isActive ? (
                                 <PowerOff className="h-4 w-4 text-amber-500" />
                               ) : (
-                                <Power className="h-4 w-4 text-green-500" />
+                                <Power className="h-4 w-4 text-amber-500" />
                               )}
                             </Button>
                             <Button
@@ -1071,21 +1071,21 @@ export function SellerProducts() {
                                 variant="outline"
                                 className={
                                   product.isActive
-                                    ? 'text-[10px] bg-green-50 text-green-700'
+                                    ? 'text-[10px] bg-amber-50 text-amber-700'
                                     : 'text-[10px] bg-gray-50 text-gray-500'
                                 }
                               >
                                 {product.isActive ? 'Active' : 'Inactive'}
                               </Badge>
                               {product.hasVariants && (
-                                <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-200 gap-0.5">
+                                <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200 gap-0.5">
                                   <Layers className="h-2.5 w-2.5" />
                                   Variants
                                 </Badge>
                               )}
                             </div>
                             <div className="mt-2 flex items-center justify-between">
-                              <span className="text-sm font-bold text-emerald-600">
+                              <span className="text-sm font-bold text-amber-600">
                                 ${(product.price ?? 0).toFixed(2)}
                               </span>
                               <div className="flex items-center gap-1">
@@ -1096,7 +1096,7 @@ export function SellerProducts() {
                                   onClick={() => handleOpenVariants(product)}
                                   title="Manage Variants"
                                 >
-                                  <Layers className="h-3.5 w-3.5 text-emerald-500" />
+                                  <Layers className="h-3.5 w-3.5 text-amber-500" />
                                 </Button>
                                 <Button
                                   variant="ghost"
@@ -1115,7 +1115,7 @@ export function SellerProducts() {
                                   {product.isActive ? (
                                     <PowerOff className="h-3.5 w-3.5 text-amber-500" />
                                   ) : (
-                                    <Power className="h-3.5 w-3.5 text-green-500" />
+                                    <Power className="h-3.5 w-3.5 text-amber-500" />
                                   )}
                                 </Button>
                                 <Button
@@ -1457,7 +1457,7 @@ export function SellerProducts() {
               Cancel
             </Button>
             <Button
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-amber-600 hover:bg-amber-700"
               onClick={handleSubmit}
               disabled={
                 submitting ||
@@ -1506,13 +1506,13 @@ export function SellerProducts() {
         <DialogContent className="max-h-[90vh] overflow-y-auto max-w-3xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Layers size={18} className="text-emerald-600" />
+              <Layers size={18} className="text-amber-600" />
               Manage Variants — {variantProduct?.name}
             </DialogTitle>
           </DialogHeader>
           {variantLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+              <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
             </div>
           ) : variantProduct ? (
             <VariantManager

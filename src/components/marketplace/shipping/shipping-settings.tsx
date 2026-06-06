@@ -185,9 +185,9 @@ function ZoneDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {isEditing ? (
-              <Pencil className="h-5 w-5 text-emerald-600" />
+              <Pencil className="h-5 w-5 text-amber-600" />
             ) : (
-              <Plus className="h-5 w-5 text-emerald-600" />
+              <Plus className="h-5 w-5 text-amber-600" />
             )}
             {isEditing ? 'Edit Zone' : 'Create Shipping Zone'}
           </DialogTitle>
@@ -218,7 +218,7 @@ function ZoneDialog({
                     id={`country-${c.code}`}
                     checked={selectedCountries.includes(c.code)}
                     onCheckedChange={() => toggleCountry(c.code)}
-                    className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+                    className="data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600"
                   />
                   <Label htmlFor={`country-${c.code}`} className="text-xs cursor-pointer">
                     {c.name} ({c.code})
@@ -237,7 +237,7 @@ function ZoneDialog({
             Cancel
           </Button>
           <Button
-            className="bg-emerald-600 hover:bg-emerald-700"
+            className="bg-amber-600 hover:bg-amber-700"
             onClick={handleSave}
             disabled={saving}
           >
@@ -356,9 +356,9 @@ function RateDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {isEditing ? (
-              <Pencil className="h-5 w-5 text-emerald-600" />
+              <Pencil className="h-5 w-5 text-amber-600" />
             ) : (
-              <Plus className="h-5 w-5 text-emerald-600" />
+              <Plus className="h-5 w-5 text-amber-600" />
             )}
             {isEditing ? 'Edit Rate' : 'Add Shipping Rate'}
           </DialogTitle>
@@ -464,9 +464,9 @@ function RateDialog({
           </div>
 
           {freeAbove && parseFloat(freeAbove) > 0 && (
-            <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 flex items-start gap-2">
-              <AlertCircle className="h-4 w-4 text-emerald-600 mt-0.5 shrink-0" />
-              <p className="text-xs text-emerald-700">
+            <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+              <p className="text-xs text-amber-700">
                 Free shipping will apply when order total exceeds{' '}
                 <span className="font-semibold">{parseFloat(freeAbove).toLocaleString()}</span>
               </p>
@@ -479,7 +479,7 @@ function RateDialog({
             Cancel
           </Button>
           <Button
-            className="bg-emerald-600 hover:bg-emerald-700"
+            className="bg-amber-600 hover:bg-amber-700"
             onClick={handleSave}
             disabled={saving}
           >
@@ -794,7 +794,7 @@ export function ShippingSettings({ shopId: propShopId, userId }: ShippingSetting
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-            <Truck className="h-6 w-6 text-emerald-600" />
+            <Truck className="h-6 w-6 text-amber-600" />
             Shipping Settings
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
@@ -803,7 +803,7 @@ export function ShippingSettings({ shopId: propShopId, userId }: ShippingSetting
         </div>
         <Button
           size="sm"
-          className="bg-emerald-600 hover:bg-emerald-700 w-fit"
+          className="bg-amber-600 hover:bg-amber-700 w-fit"
           onClick={() => {
             setEditingZone(null)
             setZoneDialogOpen(true)
@@ -816,14 +816,14 @@ export function ShippingSettings({ shopId: propShopId, userId }: ShippingSetting
 
       {/* Quick Stats */}
       <div className="grid grid-cols-3 gap-3 sm:gap-4">
-        <Card className="border-0 shadow-sm bg-gradient-to-br from-emerald-50 to-teal-50">
+        <Card className="border-0 shadow-sm bg-gradient-to-br from-amber-50 to-yellow-50">
           <CardContent className="p-4 sm:p-6 text-center">
-            <Globe className="h-5 w-5 text-emerald-600 mx-auto mb-1.5" />
-            <p className="text-2xl font-bold text-emerald-700">{zones.length}</p>
-            <p className="text-xs text-emerald-600 font-medium">Total Zones</p>
+            <Globe className="h-5 w-5 text-amber-600 mx-auto mb-1.5" />
+            <p className="text-2xl font-bold text-amber-700">{zones.length}</p>
+            <p className="text-xs text-amber-600 font-medium">Total Zones</p>
           </CardContent>
         </Card>
-        <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-50 to-indigo-50">
+        <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-50 to-yellow-50">
           <CardContent className="p-4 sm:p-6 text-center">
             <Package className="h-5 w-5 text-blue-600 mx-auto mb-1.5" />
             <p className="text-2xl font-bold text-blue-700">{totalRates}</p>
@@ -873,8 +873,8 @@ export function ShippingSettings({ shopId: propShopId, userId }: ShippingSetting
             <Card className="border-0 shadow-sm">
               <CardContent className="py-16 text-center">
                 <div className="flex justify-center mb-4">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50">
-                    <Globe className="h-8 w-8 text-emerald-400" />
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-50">
+                    <Globe className="h-8 w-8 text-amber-400" />
                   </div>
                 </div>
                 <h3 className="text-lg font-semibold mb-1">No shipping zones</h3>
@@ -883,7 +883,7 @@ export function ShippingSettings({ shopId: propShopId, userId }: ShippingSetting
                 </p>
                 <Button
                   size="sm"
-                  className="bg-emerald-600 hover:bg-emerald-700"
+                  className="bg-amber-600 hover:bg-amber-700"
                   onClick={() => {
                     setEditingZone(null)
                     setZoneDialogOpen(true)
@@ -910,12 +910,12 @@ export function ShippingSettings({ shopId: propShopId, userId }: ShippingSetting
                     <div className="flex items-start gap-3">
                       <div
                         className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
-                          zone.isActive ? 'bg-emerald-50' : 'bg-muted'
+                          zone.isActive ? 'bg-amber-50' : 'bg-muted'
                         }`}
                       >
                         <Globe
                           className={`h-5 w-5 ${
-                            zone.isActive ? 'text-emerald-600' : 'text-muted-foreground'
+                            zone.isActive ? 'text-amber-600' : 'text-muted-foreground'
                           }`}
                         />
                       </div>
@@ -975,7 +975,7 @@ export function ShippingSettings({ shopId: propShopId, userId }: ShippingSetting
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50"
+                          className="h-8 w-8 text-muted-foreground hover:text-amber-600 hover:bg-amber-50"
                           onClick={() => {
                             setEditingZone(zone)
                             setZoneDialogOpen(true)
@@ -1027,14 +1027,14 @@ export function ShippingSettings({ shopId: propShopId, userId }: ShippingSetting
                               >
                                 <div
                                   className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
-                                    rate.isActive ? 'bg-emerald-50' : 'bg-muted'
+                                    rate.isActive ? 'bg-amber-50' : 'bg-muted'
                                   }`}
                                 >
                                   {rate.method === 'pickup' ? (
                                     <Package
                                       className={`h-4 w-4 ${
                                         rate.isActive
-                                          ? 'text-emerald-600'
+                                          ? 'text-amber-600'
                                           : 'text-muted-foreground'
                                       }`}
                                     />
@@ -1042,7 +1042,7 @@ export function ShippingSettings({ shopId: propShopId, userId }: ShippingSetting
                                     <Truck
                                       className={`h-4 w-4 ${
                                         rate.isActive
-                                          ? 'text-emerald-600'
+                                          ? 'text-amber-600'
                                           : 'text-muted-foreground'
                                       }`}
                                     />
@@ -1076,7 +1076,7 @@ export function ShippingSettings({ shopId: propShopId, userId }: ShippingSetting
                                       {rate.price.toLocaleString()}
                                     </span>
                                     {rate.freeAbove && (
-                                      <span className="text-emerald-600 font-medium">
+                                      <span className="text-amber-600 font-medium">
                                         Free above {rate.freeAbove.toLocaleString()}
                                       </span>
                                     )}
@@ -1095,7 +1095,7 @@ export function ShippingSettings({ shopId: propShopId, userId }: ShippingSetting
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-7 w-7 text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50"
+                                    className="h-7 w-7 text-muted-foreground hover:text-amber-600 hover:bg-amber-50"
                                     onClick={() => openEditRate(rate)}
                                   >
                                     <Pencil className="h-3.5 w-3.5" />
@@ -1181,7 +1181,7 @@ export function ShippingSettings({ shopId: propShopId, userId }: ShippingSetting
                 {selectedZoneId && (
                   <Button
                     size="sm"
-                    className="bg-emerald-600 hover:bg-emerald-700 mt-auto"
+                    className="bg-amber-600 hover:bg-amber-700 mt-auto"
                     onClick={() => openAddRate(selectedZoneId)}
                   >
                     <Plus className="h-4 w-4 mr-1.5" />
@@ -1209,7 +1209,7 @@ export function ShippingSettings({ shopId: propShopId, userId }: ShippingSetting
           {selectedZoneId && selectedZoneRates.length === 0 && (
             <Card className="border-0 shadow-sm">
               <CardContent className="py-16 text-center">
-                <Package className="h-10 w-10 text-emerald-400 mx-auto mb-3" />
+                <Package className="h-10 w-10 text-amber-400 mx-auto mb-3" />
                 <h3 className="text-lg font-semibold mb-1">No rates for this zone</h3>
                 <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-4">
                   Add shipping rates to &quot;{selectedZone?.name}&quot; so buyers can see delivery
@@ -1217,7 +1217,7 @@ export function ShippingSettings({ shopId: propShopId, userId }: ShippingSetting
                 </p>
                 <Button
                   size="sm"
-                  className="bg-emerald-600 hover:bg-emerald-700"
+                  className="bg-amber-600 hover:bg-amber-700"
                   onClick={() => openAddRate(selectedZoneId)}
                 >
                   <Plus className="h-4 w-4 mr-1.5" />
@@ -1245,13 +1245,13 @@ export function ShippingSettings({ shopId: propShopId, userId }: ShippingSetting
                         {/* Icon */}
                         <div
                           className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${
-                            rate.isActive ? 'bg-emerald-50' : 'bg-muted'
+                            rate.isActive ? 'bg-amber-50' : 'bg-muted'
                           }`}
                         >
                           {rate.method === 'standard' && (
                             <Truck
                               className={`h-6 w-6 ${
-                                rate.isActive ? 'text-emerald-600' : 'text-muted-foreground'
+                                rate.isActive ? 'text-amber-600' : 'text-muted-foreground'
                               }`}
                             />
                           )}
@@ -1272,7 +1272,7 @@ export function ShippingSettings({ shopId: propShopId, userId }: ShippingSetting
                           {rate.method === 'pickup' && (
                             <Package
                               className={`h-6 w-6 ${
-                                rate.isActive ? 'text-teal-600' : 'text-muted-foreground'
+                                rate.isActive ? 'text-yellow-600' : 'text-muted-foreground'
                               }`}
                             />
                           )}
@@ -1307,7 +1307,7 @@ export function ShippingSettings({ shopId: propShopId, userId }: ShippingSetting
                               <span className="font-medium">{rate.price.toLocaleString()}</span>
                             </div>
                             {rate.freeAbove ? (
-                              <div className="flex items-center gap-1.5 text-sm text-emerald-600 font-medium">
+                              <div className="flex items-center gap-1.5 text-sm text-amber-600 font-medium">
                                 <DollarSign className="h-3.5 w-3.5" />
                                 Free above {rate.freeAbove.toLocaleString()}
                               </div>
@@ -1347,7 +1347,7 @@ export function ShippingSettings({ shopId: propShopId, userId }: ShippingSetting
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50"
+                            className="h-8 w-8 text-muted-foreground hover:text-amber-600 hover:bg-amber-50"
                             onClick={() => openEditRate(rate)}
                           >
                             <Pencil className="h-4 w-4" />

@@ -65,8 +65,8 @@ const PAYMENT_STATUS_CONFIG: Record<
   },
   completed: {
     label: 'Completed',
-    color: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-    dotColor: 'bg-emerald-500',
+    color: 'bg-amber-100 text-amber-800 border-amber-200',
+    dotColor: 'bg-amber-500',
     icon: <CheckCircle2 className="h-3.5 w-3.5" />,
   },
   failed: {
@@ -96,8 +96,8 @@ const ESCROW_STATUS_CONFIG: Record<
   },
   released: {
     label: 'Released',
-    color: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-    dotColor: 'bg-emerald-500',
+    color: 'bg-amber-100 text-amber-800 border-amber-200',
+    dotColor: 'bg-amber-500',
     icon: <Unlock className="h-3.5 w-3.5" />,
   },
   refunded: {
@@ -116,7 +116,7 @@ const PAYMENT_METHOD_CONFIG: Record<
   easypaisa: {
     label: 'Easypaisa',
     icon: <Wallet className="h-4 w-4" />,
-    color: 'text-green-600',
+    color: 'text-amber-600',
   },
   jazzcash: {
     label: 'JazzCash',
@@ -131,7 +131,7 @@ const PAYMENT_METHOD_CONFIG: Record<
   wise: {
     label: 'Wise',
     icon: <CreditCard className="h-4 w-4" />,
-    color: 'text-teal-600',
+    color: 'text-yellow-600',
   },
   card: {
     label: 'Card',
@@ -258,9 +258,9 @@ function PaymentTimeline({
             <div
               className={`flex h-7 w-7 items-center justify-center rounded-full border-2 transition-colors ${
                 step.status === 'completed'
-                  ? 'border-emerald-500 bg-emerald-500 text-white'
+                  ? 'border-amber-500 bg-amber-500 text-gray-900'
                   : step.status === 'current'
-                  ? 'border-amber-500 bg-amber-500 text-white'
+                  ? 'border-amber-500 bg-amber-500 text-gray-900'
                   : 'border-gray-200 bg-white text-gray-400'
               }`}
             >
@@ -275,7 +275,7 @@ function PaymentTimeline({
             <span
               className={`text-[10px] font-medium leading-tight text-center ${
                 step.status === 'completed'
-                  ? 'text-emerald-600'
+                  ? 'text-amber-600'
                   : step.status === 'current'
                   ? 'text-amber-600'
                   : 'text-gray-400'
@@ -287,7 +287,7 @@ function PaymentTimeline({
           {index < steps.length - 1 && (
             <div
               className={`h-0.5 flex-1 mx-1 rounded-full transition-colors ${
-                step.status === 'completed' ? 'bg-emerald-400' : 'bg-gray-200'
+                step.status === 'completed' ? 'bg-amber-400' : 'bg-gray-200'
               }`}
             />
           )}
@@ -490,8 +490,8 @@ export function BuyerPayments() {
                       {/* Payment Header */}
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50">
-                            <CreditCard className="h-5 w-5 text-emerald-600" />
+                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-50">
+                            <CreditCard className="h-5 w-5 text-amber-600" />
                           </div>
                           <div>
                             <p className="font-semibold text-gray-900">
@@ -572,7 +572,7 @@ export function BuyerPayments() {
                           {canConfirmDelivery(payment) && (
                             <Button
                               size="sm"
-                              className="bg-emerald-600 hover:bg-emerald-700"
+                              className="bg-amber-600 hover:bg-amber-700"
                               disabled={confirmingDelivery === payment.id}
                               onClick={() => handleConfirmDelivery(payment.id)}
                             >
@@ -636,7 +636,7 @@ export function BuyerPayments() {
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5 text-emerald-600" />
+              <ShieldCheck className="h-5 w-5 text-amber-600" />
               Payment #{selectedPayment?.id.slice(-8)}
             </DialogTitle>
           </DialogHeader>
@@ -758,7 +758,7 @@ export function BuyerPayments() {
                     <span>Platform Fee (10%)</span>
                     <span>-${(selectedPayment.platformFee ?? 0).toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-sm text-emerald-600">
+                  <div className="flex justify-between text-sm text-amber-600">
                     <span>Seller Payout (90%)</span>
                     <span>+${(selectedPayment.sellerPayout ?? 0).toFixed(2)}</span>
                   </div>
@@ -795,15 +795,15 @@ export function BuyerPayments() {
               {/* Confirm Delivery Button */}
               {canConfirmDelivery(selectedPayment) && (
                 <div className="space-y-3">
-                  <div className="flex items-start gap-2 rounded-lg bg-emerald-50 border border-emerald-200 p-3">
-                    <ShieldCheck className="h-4 w-4 text-emerald-600 mt-0.5 flex-shrink-0" />
-                    <p className="text-xs text-emerald-700">
+                  <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 p-3">
+                    <ShieldCheck className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                    <p className="text-xs text-amber-700">
                       Your order has been {(selectedPayment.order as Record<string, unknown>)?.status as string}. Confirm
                       delivery to release the payment from escrow to the seller.
                     </p>
                   </div>
                   <Button
-                    className="w-full bg-emerald-600 hover:bg-emerald-700"
+                    className="w-full bg-amber-600 hover:bg-amber-700"
                     disabled={confirmingDelivery === selectedPayment.id}
                     onClick={() => handleConfirmDelivery(selectedPayment.id)}
                   >
@@ -823,19 +823,19 @@ export function BuyerPayments() {
 
       {/* Link to payment settings */}
       {currentUser && (
-        <div className="rounded-lg bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 p-4">
+        <div className="rounded-lg bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <CreditCard className="h-5 w-5 text-emerald-600" />
+              <CreditCard className="h-5 w-5 text-amber-600" />
               <div>
-                <p className="text-sm font-medium text-emerald-900">Manage Payment Methods</p>
-                <p className="text-xs text-emerald-700">Add or update your saved debit cards, wallets, and payment details</p>
+                <p className="text-sm font-medium text-amber-900">Manage Payment Methods</p>
+                <p className="text-xs text-amber-700">Add or update your saved debit cards, wallets, and payment details</p>
               </div>
             </div>
             <Button
               size="sm"
               variant="outline"
-              className="border-emerald-300 text-emerald-700 hover:bg-emerald-100"
+              className="border-amber-300 text-amber-700 hover:bg-amber-100"
               onClick={() => {
                 const store = useMarketplaceStore.getState()
                 store.setCurrentView('buyer-dashboard', { tab: 'payment-settings' })

@@ -28,7 +28,7 @@ const sections = [
     title: 'Buying and Selling',
     content:
       'Sellers are responsible for the accuracy of their listings, products, and services. Buyers agree to pay for orders they place. Marketo is not responsible for disputes between users but may help in resolving them.',
-    gradient: 'from-emerald-500 to-teal-600',
+    gradient: 'from-amber-500 to-yellow-600',
   },
   {
     icon: <Briefcase className="h-5 w-5" />,
@@ -44,7 +44,7 @@ const sections = [
     title: 'Payments',
     content:
       'All payments must be made through the platform\'s approved payment methods. Unauthorized transactions or fraud are strictly prohibited.',
-    gradient: 'from-cyan-500 to-sky-600',
+    gradient: 'from-orange-500 to-sky-600',
   },
   {
     icon: <Ban className="h-5 w-5" />,

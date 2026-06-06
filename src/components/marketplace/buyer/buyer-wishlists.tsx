@@ -314,7 +314,7 @@ export function BuyerWishlists() {
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-bold text-gray-900">{selectedWishlist.name}</h2>
-                <Badge variant={selectedWishlist.isPublic ? 'default' : 'secondary'} className={cn('text-xs', selectedWishlist.isPublic ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600')}>
+                <Badge variant={selectedWishlist.isPublic ? 'default' : 'secondary'} className={cn('text-xs', selectedWishlist.isPublic ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600')}>
                   {selectedWishlist.isPublic ? <Globe className="mr-1 h-3 w-3" /> : <Lock className="mr-1 h-3 w-3" />}
                   {selectedWishlist.isPublic ? 'Public' : 'Private'}
                 </Badge>
@@ -492,7 +492,7 @@ export function BuyerWishlists() {
                   onCheckedChange={setEditIsPublic}
                 />
                 <Label htmlFor="edit-public" className="flex items-center gap-2">
-                  {editIsPublic ? <Globe className="h-4 w-4 text-emerald-600" /> : <Lock className="h-4 w-4 text-gray-400" />}
+                  {editIsPublic ? <Globe className="h-4 w-4 text-amber-600" /> : <Lock className="h-4 w-4 text-gray-400" />}
                   {editIsPublic ? 'Public — anyone with the link can view' : 'Private — only you can view'}
                 </Label>
               </div>
@@ -582,7 +582,7 @@ export function BuyerWishlists() {
                         variant={wishlist.isPublic ? 'default' : 'secondary'}
                         className={cn(
                           'text-[10px] ml-2 shrink-0',
-                          wishlist.isPublic ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'
+                          wishlist.isPublic ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600'
                         )}
                       >
                         {wishlist.isPublic ? <Globe className="mr-1 h-3 w-3" /> : <Lock className="mr-1 h-3 w-3" />}
@@ -726,7 +726,7 @@ export function BuyerWishlists() {
                 onCheckedChange={setNewIsPublic}
               />
               <Label htmlFor="wishlist-public" className="flex items-center gap-2">
-                {newIsPublic ? <Globe className="h-4 w-4 text-emerald-600" /> : <Lock className="h-4 w-4 text-gray-400" />}
+                {newIsPublic ? <Globe className="h-4 w-4 text-amber-600" /> : <Lock className="h-4 w-4 text-gray-400" />}
                 {newIsPublic ? 'Public — anyone with the link can view' : 'Private — only you can view'}
               </Label>
             </div>

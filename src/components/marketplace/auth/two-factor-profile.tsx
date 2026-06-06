@@ -126,11 +126,11 @@ export function TwoFactorProfile({ userId, twoFactorEnabled }: TwoFactorProfileP
           ) : (
             <div className="space-y-4">
               <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-950/50">
-                  <ShieldCheck className="h-6 w-6 text-green-600" />
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-950/50">
+                  <ShieldCheck className="h-6 w-6 text-amber-600" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-green-700 dark:text-green-400">
+                  <h3 className="text-lg font-semibold text-amber-700 dark:text-amber-400">
                     Two-Factor Authentication is enabled
                   </h3>
                   <p className="text-sm text-muted-foreground mt-1">
@@ -249,8 +249,8 @@ export function TwoFactorProfile({ userId, twoFactorEnabled }: TwoFactorProfileP
           ) : (
             <>
               <DialogHeader className="text-center">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-950/50 mb-2">
-                  <ShieldCheck className="h-6 w-6 text-green-600" />
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-950/50 mb-2">
+                  <ShieldCheck className="h-6 w-6 text-amber-600" />
                 </div>
                 <DialogTitle className="text-xl">New Backup Codes</DialogTitle>
                 <DialogDescription>

@@ -222,7 +222,7 @@ export function FlashDealsSection() {
 
                   {/* Prices */}
                   <div className="flex items-baseline gap-2">
-                    <span className="text-xl font-bold text-emerald-600">
+                    <span className="text-xl font-bold text-amber-600">
                       ${deal.salePrice.toFixed(2)}
                     </span>
                     <span className="text-sm text-muted-foreground line-through">
@@ -247,7 +247,7 @@ export function FlashDealsSection() {
                   {/* View Deal Button */}
                   <Button
                     size="sm"
-                    className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700"
+                    className="w-full gap-2 bg-amber-600 hover:bg-amber-700"
                     onClick={(e) => {
                       e.stopPropagation()
                       if (deal.productId) {

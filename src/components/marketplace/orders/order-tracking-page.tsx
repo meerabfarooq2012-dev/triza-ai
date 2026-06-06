@@ -257,7 +257,7 @@ function DigitalDownloadsSection({ orderId, userId }: { orderId: string; userId:
                     <div className="mt-1.5 h-1 w-full max-w-[200px] rounded-full bg-muted overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all ${
-                          dl.isExhausted ? 'bg-red-400' : dl.downloadCount / dl.maxDownloads > 0.6 ? 'bg-amber-500' : 'bg-emerald-500'
+                          dl.isExhausted ? 'bg-red-400' : dl.downloadCount / dl.maxDownloads > 0.6 ? 'bg-amber-500' : 'bg-amber-500'
                         }`}
                         style={{ width: `${Math.min((dl.downloadCount / dl.maxDownloads) * 100, 100)}%` }}
                       />
@@ -328,7 +328,7 @@ const STATUS_HISTORY_COLORS: Record<string, string> = {
   pending: 'text-yellow-600 bg-yellow-100 dark:bg-yellow-950/50',
   processing: 'text-blue-600 bg-blue-100 dark:bg-blue-950/50',
   shipped: 'text-amber-600 bg-amber-100 dark:bg-amber-950/50',
-  delivered: 'text-emerald-600 bg-emerald-100 dark:bg-emerald-950/50',
+  delivered: 'text-amber-600 bg-amber-100 dark:bg-amber-950/50',
   cancelled: 'text-red-600 bg-red-100 dark:bg-red-950/50',
   refunded: 'text-gray-600 bg-gray-100 dark:bg-gray-950/50',
 }
@@ -342,15 +342,15 @@ function getStepIndex(status: OrderStatus): number {
 const PAYMENT_STATUS_BADGE: Record<string, { label: string; color: string }> = {
   pending: { label: 'Payment Pending', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
   processing: { label: 'Processing', color: 'bg-blue-100 text-blue-800 border-blue-200' },
-  completed: { label: 'Payment Completed', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-  paid: { label: 'Paid', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+  completed: { label: 'Payment Completed', color: 'bg-amber-100 text-amber-800 border-amber-200' },
+  paid: { label: 'Paid', color: 'bg-amber-100 text-amber-800 border-amber-200' },
   failed: { label: 'Payment Failed', color: 'bg-red-100 text-red-800 border-red-200' },
   refunded: { label: 'Refunded', color: 'bg-gray-100 text-gray-800 border-gray-200' },
 }
 
 const ESCROW_STATUS_BADGE: Record<string, { label: string; color: string }> = {
   held: { label: 'Held in Escrow', color: 'bg-amber-100 text-amber-800 border-amber-200' },
-  released: { label: 'Released to Seller', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+  released: { label: 'Released to Seller', color: 'bg-amber-100 text-amber-800 border-amber-200' },
   refunded: { label: 'Refunded', color: 'bg-amber-100 text-amber-800 border-amber-200' },
 }
 
@@ -649,7 +649,7 @@ export default function OrderTrackingPage() {
               <div className="absolute top-6 left-6 right-6 h-0.5 bg-muted hidden md:block" />
               {/* Active progress line */}
               <div
-                className="absolute top-6 left-6 h-0.5 bg-emerald-500 transition-all duration-700 hidden md:block"
+                className="absolute top-6 left-6 h-0.5 bg-amber-500 transition-all duration-700 hidden md:block"
                 style={{
                   width: currentStepIndex >= 0
                     ? `${(currentStepIndex / (TIMELINE_STEPS.length - 1)) * (100 - 8)}%`
@@ -678,8 +678,8 @@ export default function OrderTrackingPage() {
                         className={`relative z-10 flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all duration-500 ${
                           isCompleted
                             ? isCurrent
-                              ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/30'
-                              : 'bg-emerald-500 border-emerald-500 text-white'
+                              ? 'bg-amber-500 border-amber-500 text-white shadow-lg shadow-amber-500/30'
+                              : 'bg-amber-500 border-amber-500 text-white'
                             : 'bg-background border-muted-foreground/30 text-muted-foreground'
                         }`}
                       >
@@ -710,7 +710,7 @@ export default function OrderTrackingPage() {
                           animate={{ scale: 1 }}
                           className="mt-2"
                         >
-                          <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 text-xs">
+                          <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 text-xs">
                             Current
                           </Badge>
                         </motion.div>
@@ -738,8 +738,8 @@ export default function OrderTrackingPage() {
                           className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-500 flex-shrink-0 ${
                             isCompleted
                               ? isCurrent
-                                ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/30'
-                                : 'bg-emerald-500 border-emerald-500 text-white'
+                                ? 'bg-amber-500 border-amber-500 text-white shadow-lg shadow-amber-500/30'
+                                : 'bg-amber-500 border-amber-500 text-white'
                               : 'bg-background border-muted-foreground/30 text-muted-foreground'
                           }`}
                         >
@@ -753,7 +753,7 @@ export default function OrderTrackingPage() {
                           <div
                             className={`w-0.5 h-8 transition-all duration-500 ${
                               isCompleted && currentStepIndex > index
-                                ? 'bg-emerald-500'
+                                ? 'bg-amber-500'
                                 : 'bg-muted'
                             }`}
                           />
@@ -764,7 +764,7 @@ export default function OrderTrackingPage() {
                         <h4 className={`text-sm font-semibold ${isCompleted ? 'text-foreground' : 'text-muted-foreground'}`}>
                           {step.label}
                           {isCurrent && (
-                            <Badge className="ml-2 bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 text-[10px] px-1.5 py-0">
+                            <Badge className="ml-2 bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 text-[10px] px-1.5 py-0">
                               Current
                             </Badge>
                           )}
@@ -804,10 +804,10 @@ export default function OrderTrackingPage() {
 
       {/* ---- Seller Actions ---- */}
       {isSeller && nextStatuses.length > 0 && (
-        <Card className="border-0 shadow-sm mb-6 border-l-4 border-l-emerald-500">
+        <Card className="border-0 shadow-sm mb-6 border-l-4 border-l-amber-500">
           <CardContent className="p-6">
             <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <Package className="h-5 w-5 text-emerald-600" />
+              <Package className="h-5 w-5 text-amber-600" />
               Manage Order
             </h3>
 
@@ -841,7 +841,7 @@ export default function OrderTrackingPage() {
                 <Button
                   key={next.value}
                   onClick={() => setStatusToUpdate(next.value)}
-                  className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+                  className="gap-2 bg-amber-600 hover:bg-amber-700"
                 >
                   {next.value === 'processing' && <Package className="h-4 w-4" />}
                   {next.value === 'shipped' && <Truck className="h-4 w-4" />}
@@ -945,13 +945,13 @@ export default function OrderTrackingPage() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-6">
                 <h3 className="font-semibold mb-3 flex items-center gap-2">
-                  <Truck className="h-5 w-5 text-emerald-600" />
+                  <Truck className="h-5 w-5 text-amber-600" />
                   Tracking Information
                 </h3>
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
                   <div className="flex-1">
-                    <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Tracking Number</p>
-                    <p className="font-mono font-bold text-emerald-800 dark:text-emerald-200">{order.trackingNo}</p>
+                    <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">Tracking Number</p>
+                    <p className="font-mono font-bold text-amber-800 dark:text-amber-200">{order.trackingNo}</p>
                   </div>
                   <Button
                     variant="outline"
@@ -985,7 +985,7 @@ export default function OrderTrackingPage() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-6">
                 <h3 className="font-semibold mb-4 flex items-center gap-2">
-                  <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                  <ShieldCheck className="h-5 w-5 text-amber-600" />
                   Payment Status
                 </h3>
 
@@ -1019,7 +1019,7 @@ export default function OrderTrackingPage() {
                     <span>Platform Fee (10%)</span>
                     <span>-${(paymentData.platformFee ?? 0).toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-sm text-emerald-600">
+                  <div className="flex justify-between text-sm text-amber-600">
                     <span>Seller Payout (90%)</span>
                     <span>+${(paymentData.sellerPayout ?? 0).toFixed(2)}</span>
                   </div>
@@ -1048,19 +1048,19 @@ export default function OrderTrackingPage() {
                 {/* Confirm delivery button for buyer */}
                 {canConfirmDelivery && (
                   <div className="space-y-3">
-                    <div className="flex items-start gap-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 p-4">
-                      <PackageCheck className="h-5 w-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                    <div className="flex items-start gap-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-4">
+                      <PackageCheck className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                        <p className="text-sm font-medium text-amber-700 dark:text-amber-300">
                           Your order has been {order.status}
                         </p>
-                        <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">
+                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
                           Confirm delivery to release the payment from escrow to the seller.
                         </p>
                       </div>
                     </div>
                     <Button
-                      className="w-full bg-emerald-600 hover:bg-emerald-700 gap-2"
+                      className="w-full bg-amber-600 hover:bg-amber-700 gap-2"
                       disabled={confirmingDelivery}
                       onClick={handleConfirmDelivery}
                     >
@@ -1097,7 +1097,7 @@ export default function OrderTrackingPage() {
                   >
                     #{order.id.slice(-8)}
                     {copied === 'orderId' ? (
-                      <Check className="h-3 w-3 text-emerald-500" />
+                      <Check className="h-3 w-3 text-amber-500" />
                     ) : (
                       <Copy className="h-3 w-3" />
                     )}
@@ -1161,8 +1161,8 @@ export default function OrderTrackingPage() {
               )}
               </h3>
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center">
-                  <span className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
+                <div className="h-10 w-10 rounded-full bg-amber-100 dark:bg-amber-950 flex items-center justify-center">
+                  <span className="text-sm font-bold text-amber-700 dark:text-amber-300">
                     {isBuyer
                       ? order.seller?.name?.slice(0, 2).toUpperCase() || '??'
                       : order.buyer?.name?.slice(0, 2).toUpperCase() || '??'
@@ -1220,7 +1220,7 @@ export default function OrderTrackingPage() {
                               {ORDER_STATUS_LABELS[log.status as OrderStatus] || log.status}
                             </p>
                             {isLatest && (
-                              <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 text-[10px] px-1.5 py-0">
+                              <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 text-[10px] px-1.5 py-0">
                                 Latest
                               </Badge>
                             )}
@@ -1313,7 +1313,7 @@ export default function OrderTrackingPage() {
             <Button
               onClick={handleUpdateStatus}
               disabled={updatingStatus}
-              className="bg-emerald-600 hover:bg-emerald-700 gap-2"
+              className="bg-amber-600 hover:bg-amber-700 gap-2"
             >
               {updatingStatus ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
