@@ -123,6 +123,25 @@ function runPrismaGenerate() {
   }
 }
 
+function runPrismaDbPush() {
+  // Only push schema on Vercel builds to keep database in sync
+  if (!IS_VERCEL) return
+
+  try {
+    console.log('📤 Pushing schema to database (Vercel build)...')
+    execSync('npx prisma db push --accept-data-loss', {
+      cwd: ROOT_DIR,
+      stdio: 'inherit',
+      timeout: 120000
+    })
+    console.log('✅ Database schema pushed successfully')
+  } catch (error) {
+    console.warn('⚠️  Failed to push schema to database:', error.message)
+    console.warn('   The app may still work if the schema is already up to date.')
+    // Don't exit — the build can still succeed if the schema was already pushed
+  }
+}
+
 // Main execution
 console.log('🔀 Database Switch Script')
 console.log('━'.repeat(40))
@@ -139,6 +158,7 @@ console.log('━'.repeat(40))
 
 switchSchema(dbType)
 runPrismaGenerate()
+runPrismaDbPush()
 
 console.log('━'.repeat(40))
 console.log(`🎉 Database configuration complete — using ${dbType.toUpperCase()}`)
