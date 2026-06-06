@@ -5,8 +5,11 @@ import { rateLimit, getRateLimitKey, apiRateLimit } from '@/lib/rate-limit';
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = await authenticateRequest(request);
-    if (!auth || !auth.isAdmin) {
+    const auth = authenticateRequest(request);
+    if (!auth) {
+      return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+    }
+    if (auth.role !== 'admin') {
       return NextResponse.json({ success: false, error: 'Admin access required' }, { status: 403 });
     }
 

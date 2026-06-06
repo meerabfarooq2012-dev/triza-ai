@@ -21,14 +21,11 @@ async function handler(request: NextRequest, context: { params: Promise<{ id: st
       );
     }
 
-    if (auth.role !== 'admin' && !auth.userId.startsWith('admin')) {
-      const user = await db.user.findUnique({ where: { id: auth.userId } });
-      if (!user?.isAdmin) {
-        return NextResponse.json(
-          { success: false, error: 'Admin access required' },
-          { status: 403 }
-        );
-      }
+    if (auth.role !== 'admin') {
+      return NextResponse.json(
+        { success: false, error: 'Admin access required' },
+        { status: 403 }
+      );
     }
 
     // Rate limit

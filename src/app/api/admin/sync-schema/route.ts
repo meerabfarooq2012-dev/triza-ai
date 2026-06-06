@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware'
+import { getSafeErrorMessage } from '@/lib/error-handler'
 
 /**
  * POST /api/admin/sync-schema
@@ -445,12 +447,13 @@ const MIGRATIONS: { name: string; sql: string }[] = [
 
 export async function POST(request: NextRequest) {
   try {
-    // Verify admin key
-    const body = await request.json().catch(() => ({}))
-    const key = body.key || request.nextUrl.searchParams.get('key')
-    
-    if (key !== 'marketo-sync-schema-2024') {
-      return NextResponse.json({ error: 'Invalid key' }, { status: 403 })
+    // Require JWT admin authentication
+    const auth = authenticateRequest(request)
+    if (!auth) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
+    if (auth.role !== 'admin') {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
     console.log('[sync-schema] Starting schema sync with raw SQL...')
@@ -468,7 +471,7 @@ export async function POST(request: NextRequest) {
           results.push({ name: migration.name, status: 'skipped' })
           console.log(`[sync-schema] ⏭ ${migration.name} (already exists)`)
         } else {
-          results.push({ name: migration.name, status: 'error', error: err.message })
+          results.push({ name: migration.name, status: 'error', error: getSafeErrorMessage(err) })
           console.error(`[sync-schema] ✗ ${migration.name}:`, err.message)
         }
       }
@@ -493,16 +496,19 @@ export async function POST(request: NextRequest) {
     console.error('[sync-schema] Error:', error.message)
     return NextResponse.json({ 
       success: false, 
-      error: error.message
+      error: getSafeErrorMessage(error)
     }, { status: 500 })
   }
 }
 
 export async function GET(request: NextRequest) {
-  const key = request.nextUrl.searchParams.get('key')
-  
-  if (key !== 'marketo-sync-schema-2024') {
-    return NextResponse.json({ error: 'Invalid key' }, { status: 403 })
+  // Require JWT admin authentication
+  const auth = authenticateRequest(request)
+  if (!auth) {
+    return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+  }
+  if (auth.role !== 'admin') {
+    return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
   }
 
   // Check current schema status
@@ -533,7 +539,7 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     return NextResponse.json({
       status: 'error',
-      error: error.message,
+      error: getSafeErrorMessage(error),
       env: process.env.NODE_ENV,
       databaseUrlSet: !!process.env.DATABASE_URL,
       migrationCount: MIGRATIONS.length

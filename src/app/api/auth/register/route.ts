@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { sendEmailAsync } from '@/lib/email';
+import { getSafeErrorMessage } from '@/lib/error-handler';
 import { welcomeEmail, emailVerificationEmail } from '@/lib/email-templates';
 import { notifyWelcome } from '@/lib/notifications';
 import { rateLimit, getFingerprintedRateLimitKey, registerRateLimit } from '@/lib/rate-limit';
@@ -10,6 +11,7 @@ import { createSession } from '@/lib/session';
 import { withCsrf } from '@/lib/with-csrf';
 import { randomBytes, createHash } from 'crypto';
 import { sanitizeString, normalizeEmail, isValidEmail, isStrongPassword } from '@/lib/sanitize';
+import { validateInput, registerSchema } from '@/lib/validation';
 
 function slugify(text: string): string {
   return text
@@ -40,20 +42,24 @@ export const POST = withCsrf(async (request: NextRequest) => {
     }
 
     const body = await request.json();
-    const { email: rawEmail, password, name: rawName, role = 'buyer', termsAccepted } = body;
 
-    // Normalize and sanitize inputs
-    const email = normalizeEmail(rawEmail || '');
-    const name = sanitizeString(rawName || '');
-
-    if (!email || !password || !name) {
+    // Validate input with Zod schema
+    const validation = validateInput(registerSchema, body);
+    if (!validation.success) {
       return NextResponse.json(
-        { success: false, error: 'Email, password, and name are required' },
+        { success: false, error: validation.error },
         { status: 400 }
       );
     }
 
-    // Validate email format
+    const { password, termsAccepted } = validation.data;
+    const role = validation.data.role || 'buyer';
+
+    // Normalize and sanitize inputs from validated data
+    const email = normalizeEmail(validation.data.email);
+    const name = sanitizeString(validation.data.name);
+
+    // Additional domain-specific email validation
     if (!isValidEmail(email)) {
       return NextResponse.json(
         { success: false, error: 'Please enter a valid email address' },
@@ -145,7 +151,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
     // Create a session record in the database (token is hashed, never stored raw)
     const userAgent = request.headers.get('user-agent') || undefined;
     const ipAddress =
-      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      request.headers.get('x-forwarded-for')?.split(',').map(s => s.trim()).slice(-1)[0] ||
       undefined;
 
     await createSession(user.id, token, userAgent, ipAddress).catch((err) => {
@@ -179,7 +185,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
   } catch (error) {
     console.error('Registration error:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to register user' },
+      { success: false, error: getSafeErrorMessage(error, 'Failed to register user') },
       { status: 500 }
     );
   }

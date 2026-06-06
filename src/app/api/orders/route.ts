@@ -5,6 +5,8 @@ import { notifyOrderCreated } from '@/lib/notifications';
 import { PLATFORM_FEE_PERCENT } from '@/lib/constants';
 import { withCsrf } from '@/lib/with-csrf';
 import { authenticateRequestWithSession } from '@/lib/auth-middleware';
+import { validateInput, orderCreateSchema } from '@/lib/validation';
+import { getSafeErrorMessage } from '@/lib/error-handler';
 
 export async function GET(request: NextRequest) {
   try {
@@ -107,7 +109,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('List orders error:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch orders' },
+      { success: false, error: getSafeErrorMessage(error, 'Failed to fetch orders') },
       { status: 500 }
     );
   }
@@ -208,6 +210,16 @@ export const POST = withCsrf(async (request: NextRequest) => {
     }
 
     const body = await request.json();
+
+    // Validate input with Zod schema
+    const validation = validateInput(orderCreateSchema, body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { success: false, error: validation.error },
+        { status: 400 }
+      );
+    }
+
     const {
       buyerId,
       items,
@@ -224,14 +236,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
       taxRate,
       taxAmount,
       notes,
-    } = body;
-
-    if (!buyerId || !items || !items.length) {
-      return NextResponse.json(
-        { success: false, error: 'buyerId and items are required' },
-        { status: 400 }
-      );
-    }
+    } = validation.data;
 
     // Verify the authenticated user matches the buyerId
     if (auth.userId !== buyerId) {
@@ -451,7 +456,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
   } catch (error) {
     console.error('Create order error:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to create order' },
+      { success: false, error: getSafeErrorMessage(error, 'Failed to create order') },
       { status: 500 }
     );
   }

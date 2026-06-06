@@ -1,20 +1,27 @@
 import { NextResponse } from 'next/server';
+import { authenticateRequest } from '@/lib/auth-middleware';
+import { getSafeErrorMessage } from '@/lib/error-handler';
 
 /**
  * Database Diagnostic Endpoint
  *
- * GET /api/db-diagnostic?key=marketo-setup-2024
+ * GET /api/db-diagnostic
  *
  * Tests the database connection and reports detailed diagnostics.
- * This helps identify connection issues on Vercel/Supabase.
+ * Requires JWT admin authentication.
  */
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const key = searchParams.get('key');
-
-  if (key !== 'marketo-setup-2024') {
+  // Require JWT admin authentication
+  const auth = authenticateRequest(request);
+  if (!auth) {
     return NextResponse.json(
-      { error: 'Invalid key. Use ?key=marketo-setup-2024' },
+      { error: 'Authentication required' },
+      { status: 401 }
+    );
+  }
+  if (auth.role !== 'admin') {
+    return NextResponse.json(
+      { error: 'Admin access required' },
       { status: 403 }
     );
   }
@@ -27,11 +34,11 @@ export async function GET(request: Request) {
 
   diagnostics.env = {
     DATABASE_URL_set: !!dbUrl,
-    DATABASE_URL_prefix: dbUrl ? dbUrl.substring(0, 30) + '...' : '(not set)',
+    DATABASE_URL_prefix: dbUrl ? dbUrl.substring(0, 15) + '***' : '(not set)',
     DATABASE_URL_is_postgresql: dbUrl.startsWith('postgresql://') || dbUrl.startsWith('postgres://'),
     DATABASE_URL_is_file: dbUrl.startsWith('file:'),
     DIRECT_URL_set: !!directUrl,
-    DIRECT_URL_prefix: directUrl ? directUrl.substring(0, 30) + '...' : '(not set)',
+    DIRECT_URL_prefix: directUrl ? directUrl.substring(0, 15) + '***' : '(not set)',
     NODE_ENV: process.env.NODE_ENV,
   };
 
@@ -39,12 +46,14 @@ export async function GET(request: Request) {
   if (dbUrl) {
     try {
       const url = new URL(dbUrl);
+      // Mask sensitive details - never expose full connection strings or passwords
       diagnostics.parsedUrl = {
         protocol: url.protocol,
         hostname: url.hostname,
         port: url.port || '(default)',
-        username: url.username,
+        username: url.username ? url.username.substring(0, 3) + '***' : '(empty)',
         pathname: url.pathname,
+        passwordSet: !!url.password,
         isPooler: url.hostname.includes('pooler'),
         isDirect: url.hostname.includes('db.'),
       };
@@ -94,7 +103,7 @@ export async function GET(request: Request) {
     const err = error as Error;
     diagnostics.connection = {
       status: 'FAILED',
-      error: err.message,
+      error: getSafeErrorMessage(err),
       errorName: err.name,
     };
 
@@ -110,6 +119,8 @@ export async function GET(request: Request) {
         try {
           const client = new Client({
             connectionString: dbUrl,
+            // WARNING: rejectUnauthorized: false disables TLS certificate verification.
+            // This is needed for some Supabase pooler connections but should be used with caution.
             ssl: { rejectUnauthorized: false },
             connectionTimeoutMillis: 5000,
           });
@@ -133,6 +144,7 @@ export async function GET(request: Request) {
         if (directUrl) {
           try {
             const client = new Client({
+              // WARNING: rejectUnauthorized: false disables TLS certificate verification
               connectionString: directUrl,
               ssl: { rejectUnauthorized: false },
               connectionTimeoutMillis: 5000,
@@ -159,6 +171,7 @@ export async function GET(request: Request) {
           try {
             const altUrl = dbUrl.replace(':6543', ':5432');
             const client = new Client({
+              // WARNING: rejectUnauthorized: false disables TLS certificate verification
               connectionString: altUrl,
               ssl: { rejectUnauthorized: false },
               connectionTimeoutMillis: 5000,
@@ -194,9 +207,9 @@ export async function GET(request: Request) {
           }
 
           if (projectRef) {
-            const directConnStr = `postgresql://postgres:${password}@db.${projectRef}.supabase.co:5432/postgres`;
             const client = new Client({
-              connectionString: directConnStr,
+              // WARNING: rejectUnauthorized: false disables TLS certificate verification
+              connectionString: `postgresql://postgres:${password}@db.${projectRef}.supabase.co:5432/postgres`,
               ssl: { rejectUnauthorized: false },
               connectionTimeoutMillis: 5000,
             });

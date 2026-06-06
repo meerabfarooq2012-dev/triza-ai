@@ -2,9 +2,21 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { rateLimit, apiRateLimit, getRateLimitKey } from '@/lib/rate-limit'
 import { createAuditLog } from '@/lib/audit-log'
+import { authenticateRequest } from '@/lib/auth-middleware'
+import { withCsrf } from '@/lib/with-csrf'
+import { getSafeErrorMessage } from '@/lib/error-handler'
 
 // GET /api/admin/settings — Get platform settings
 export async function GET(request: NextRequest) {
+  // Authenticate and verify admin role
+  const auth = authenticateRequest(request)
+  if (!auth) {
+    return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+  }
+  if (auth.role !== 'admin') {
+    return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+  }
+
   // Rate limit
   const rlKey = getRateLimitKey(request)
   const rl = rateLimit({ ...apiRateLimit, key: `admin-settings-get:${rlKey}` })
@@ -26,14 +38,23 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('[Admin Settings GET] Error:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch platform settings' },
+      { error: getSafeErrorMessage(error, 'Failed to fetch platform settings') },
       { status: 500 }
     )
   }
 }
 
 // PATCH /api/admin/settings — Update platform settings
-export async function PATCH(request: NextRequest) {
+export const PATCH = withCsrf(async (request: NextRequest) => {
+  // Authenticate and verify admin role
+  const auth = authenticateRequest(request)
+  if (!auth) {
+    return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+  }
+  if (auth.role !== 'admin') {
+    return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+  }
+
   // Rate limit
   const rlKey = getRateLimitKey(request)
   const rl = rateLimit({ ...apiRateLimit, key: `admin-settings-patch:${rlKey}` })
@@ -89,6 +110,7 @@ export async function PATCH(request: NextRequest) {
 
     // Audit log
     await createAuditLog({
+      userId: auth.userId,
       action: 'settings.update',
       entityType: 'settings',
       entityId: 'default',
@@ -101,8 +123,8 @@ export async function PATCH(request: NextRequest) {
   } catch (error) {
     console.error('[Admin Settings PATCH] Error:', error)
     return NextResponse.json(
-      { error: 'Failed to update platform settings' },
+      { error: getSafeErrorMessage(error, 'Failed to update platform settings') },
       { status: 500 }
     )
   }
-}
+})

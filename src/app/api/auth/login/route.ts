@@ -13,6 +13,8 @@ import { signToken } from '@/lib/auth-middleware';
 import { createSession } from '@/lib/session';
 import { withCsrf } from '@/lib/with-csrf';
 import { normalizeEmail } from '@/lib/sanitize';
+import { getSafeErrorMessage } from '@/lib/error-handler';
+import { validateInput, loginSchema } from '@/lib/validation';
 
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 30 * 60 * 1000; // 30 minutes (enhanced from 15)
@@ -47,15 +49,18 @@ export const POST = withCsrf(async (request: NextRequest) => {
     }
 
     const body = await request.json();
-    const { email: rawEmail, password } = body;
-    const email = normalizeEmail(rawEmail || '');
 
-    if (!email || !password) {
+    // Validate input with Zod schema
+    const validation = validateInput(loginSchema, body);
+    if (!validation.success) {
       return NextResponse.json(
-        { success: false, error: 'Email and password are required' },
+        { success: false, error: validation.error },
         { status: 400 }
       );
     }
+
+    const { password } = validation.data;
+    const email = normalizeEmail(validation.data.email);
 
     const user = await db.user.findUnique({
       where: { email },
@@ -172,7 +177,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
     // Create a session record in the database (token is hashed, never stored raw)
     const userAgent = request.headers.get('user-agent') || undefined;
     const ipAddress =
-      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      request.headers.get('x-forwarded-for')?.split(',').map(s => s.trim()).slice(-1)[0] ||
       undefined;
 
     await createSession(user.id, token, userAgent, ipAddress).catch((err) => {
@@ -190,7 +195,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to login' },
+      { success: false, error: getSafeErrorMessage(error, 'Failed to login') },
       { status: 500 }
     );
   }

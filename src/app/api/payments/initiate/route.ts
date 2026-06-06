@@ -7,6 +7,7 @@ import {
   getGatewayMode,
 } from '@/lib/payment-gateway';
 import { withCsrf } from '@/lib/with-csrf';
+import { getSafeErrorMessage } from '@/lib/error-handler';
 
 // =============================================================================
 // POST /api/payments/initiate
@@ -201,7 +202,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
   } catch (error) {
     console.error('Payment initiation error:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to initiate payment' },
+      { success: false, error: getSafeErrorMessage(error, 'Failed to initiate payment') },
       { status: 500 }
     );
   }

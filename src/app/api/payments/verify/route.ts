@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { withCsrf } from '@/lib/with-csrf';
+import { getSafeErrorMessage } from '@/lib/error-handler';
 
 // In-memory rate limiter for verification attempts
 const verifyAttempts = new Map<string, { count: number; resetAt: number }>();
@@ -173,7 +174,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
   } catch (error) {
     console.error('Verify payment error:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to verify payment' },
+      { success: false, error: getSafeErrorMessage(error, 'Failed to verify payment') },
       { status: 500 }
     );
   }

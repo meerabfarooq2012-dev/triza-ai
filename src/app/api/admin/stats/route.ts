@@ -1,21 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { authenticateRequest } from '@/lib/auth-middleware';
 import { db } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
-    const userId = request.nextUrl.searchParams.get('userId');
-
-    if (!userId) {
+    // Authenticate and verify admin role
+    const auth = authenticateRequest(request);
+    if (!auth) {
       return NextResponse.json(
-        { success: false, error: 'userId is required' },
-        { status: 400 }
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
       );
     }
-
-    const user = await db.user.findUnique({ where: { id: userId } });
-    if (!user || !user.isAdmin) {
+    if (auth.role !== 'admin') {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized - admin access required' },
+        { success: false, error: 'Admin access required' },
         { status: 403 }
       );
     }

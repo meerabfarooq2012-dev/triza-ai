@@ -68,27 +68,61 @@ export function rateLimit(options: {
 }
 
 /**
- * Extract a rate limit key from a Next.js Request object
- * Uses X-Forwarded-For IP or falls back to 'unknown'
+ * Extract the client IP from X-Forwarded-For, respecting trusted proxy count.
+ *
+ * X-Forwarded-For format: client, proxy1, proxy2, ...
+ * When behind a trusted reverse proxy, the RIGHTMOST IPs are set by trusted
+ * proxies and the leftmost is the (potentially spoofed) client value.
+ *
+ * With TRUSTED_PROXY_COUNT=1 (default), we trust the LAST entry (set by our
+ * reverse proxy), which is the real client IP.
+ *
+ * With TRUSTED_PROXY_COUNT=2 (e.g., CDN + load balancer), we trust the
+ * second-to-last entry, and so on.
+ */
+export function extractClientIp(request: Request): string {
+  const forwarded = request.headers.get('x-forwarded-for')
+  const trustedProxyCount = parseInt(
+    process.env.TRUSTED_PROXY_COUNT || '1',
+    10
+  )
+
+  if (forwarded) {
+    const ips = forwarded.split(',').map((ip) => ip.trim()).filter(Boolean)
+    if (ips.length > 0) {
+      // Pick the IP at position `ips.length - trustedProxyCount`.
+      // This is the IP that was set by the last trusted proxy.
+      const idx = Math.max(0, ips.length - trustedProxyCount)
+      const ip = ips[idx]
+      if (ip) return ip
+    }
+  }
+
+  // Fall back to Next.js request.ip (available when trustProxy is configured)
+  // or connection remote address
+  const nextReq = request as Request & { ip?: string }
+  if (nextReq.ip) return nextReq.ip
+
+  return 'unknown'
+}
+
+/**
+ * Extract a rate limit key from a Next.js Request object.
+ * Uses the client IP extracted with trusted proxy awareness.
  */
 export function getRateLimitKey(request: Request): string {
-  const forwarded = request.headers.get('x-forwarded-for')
-  if (forwarded) {
-    // X-Forwarded-For may contain multiple IPs; use the first one
-    const ip = forwarded.split(',')[0]?.trim()
-    if (ip) return `ip:${ip}`
-  }
-  return 'ip:unknown'
+  const ip = extractClientIp(request)
+  return `ip:${ip}`
 }
 
 /**
  * Generate a fingerprint from the request using IP + User-Agent.
  * This provides more accurate rate limiting by combining both identifiers,
  * making it harder for attackers to bypass rate limits by changing just IP or UA.
+ * Uses the same trusted-proxy-aware IP extraction as getRateLimitKey.
  */
 export function getRequestFingerprint(request: Request): string {
-  const forwarded = request.headers.get('x-forwarded-for')
-  const ip = forwarded ? forwarded.split(',')[0]?.trim() || 'unknown' : 'unknown'
+  const ip = extractClientIp(request)
   const userAgent = request.headers.get('user-agent') || 'unknown'
 
   // Combine IP and a truncated UA hash for a stable fingerprint

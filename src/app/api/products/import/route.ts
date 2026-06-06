@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { withCsrf } from '@/lib/with-csrf'
 
 // Simple CSV parser that handles basic quoting
 function parseCSV(text: string): string[][] {
@@ -59,7 +60,7 @@ function parseCSV(text: string): string[][] {
 }
 
 // POST /api/products/import — Import products from CSV
-export async function POST(req: NextRequest) {
+export const POST = withCsrf(async (req: NextRequest) => {
   try {
     const formData = await req.formData()
     const file = formData.get('file') as File | null
@@ -243,4 +244,4 @@ export async function POST(req: NextRequest) {
     console.error('Failed to import products:', error)
     return NextResponse.json({ success: false, error: 'Failed to import products' }, { status: 500 })
   }
-}
+})

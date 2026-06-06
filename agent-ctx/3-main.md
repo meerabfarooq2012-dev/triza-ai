@@ -1,32 +1,19 @@
-# Task 3 — Apply CSRF Protection to More API Routes
+# Task 3 — Security Fix: Add Authentication to Dangerous Endpoints
 
-**Agent:** main  
-**Status:** Completed  
-**Date:** 2025-03-04
+**Agent:** main
+**Status:** Completed
 
 ## Summary
-Extended CSRF protection to 12 additional API routes, created a new `/api/csrf-token` endpoint with non-HttpOnly cookies (double-submit pattern), rewrote the `useCsrf` hook with `useSyncExternalStore` for hydration safety and auto-refresh, and updated the API client to read CSRF tokens from cookies with fallback fetching.
-
-## Files Created
-- `src/app/api/csrf-token/route.ts` — New CSRF token endpoint (non-HttpOnly cookie, Lax SameSite, 24h max-age)
+Fixed 6 dangerous API endpoints that had weak or no authentication by adding JWT admin authentication, rate limiting, and masking sensitive data.
 
 ## Files Modified
-- `src/hooks/use-csrf.ts` — Rewritten with useSyncExternalStore, auto-refresh every 23h, fetches from /api/csrf-token
-- `src/lib/api.ts` — Added readCsrfCookie(), withCsrfHeaders(); updated direct fetch calls (upload, avatar, deleteAccount) to include CSRF headers
-- `src/app/api/orders/route.ts` — POST wrapped with withCsrf
-- `src/app/api/products/route.ts` — POST wrapped with withCsrf
-- `src/app/api/products/[id]/route.ts` — PUT, PATCH, DELETE wrapped with withCsrf; extracted handleUpdateProduct
-- `src/app/api/shops/route.ts` — POST wrapped with withCsrf
-- `src/app/api/shops/[slug]/route.ts` — PUT, PATCH, DELETE wrapped with withCsrf; extracted handleUpdateShop; added PATCH handler
-- `src/app/api/withdrawals/route.ts` — POST wrapped with withCsrf
-- `src/app/api/disputes/route.ts` — POST wrapped with withCsrf
-- `src/app/api/returns/route.ts` — POST wrapped with withCsrf
-- `src/app/api/reviews/route.ts` — POST wrapped with withCsrf
-- `src/app/api/feedback/route.ts` — POST wrapped with withCsrf
-- `src/app/api/upload/route.ts` — POST wrapped with withCsrf
 
-## Skipped
-- `src/app/api/wallet/route.ts` — No POST handler exists (withdrawal POST is in /api/withdrawals)
+1. **`src/app/api/setup/admin/route.ts`** — Removed hardcoded password from response, added rate limiting (3/hour), kept key-based protection
+2. **`src/app/api/db-diagnostic/route.ts`** — Replaced key auth with JWT admin auth, masked sensitive connection details, added WARNING comments on ssl: { rejectUnauthorized: false }
+3. **`src/app/api/admin/sync-schema/route.ts`** — Added JWT admin auth to both GET/POST in addition to existing key protection
+4. **`src/app/api/email/send/route.ts`** — Added JWT admin auth + rate limiting (5/min) — was previously an open email relay
+5. **`src/app/api/categories/seed/route.ts`** — Added JWT admin auth — was previously completely unprotected
+6. **`src/app/api/categories/bulk-seed/route.ts`** — Replaced key-based auth with JWT admin auth
 
-## Lint
-- 0 errors, 1 pre-existing warning (unrelated)
+## Lint Results
+- 0 errors, 3 pre-existing warnings (unrelated to changes)

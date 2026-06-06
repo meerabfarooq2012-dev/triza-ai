@@ -1,29 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { authenticateRequest } from '@/lib/auth-middleware';
 import { db } from '@/lib/db';
 import { Prisma } from '@prisma/client';
 
 // GET /api/admin/withdrawals — List all withdrawals for admin review
 export async function GET(request: NextRequest) {
   try {
+    // Authenticate and verify admin role
+    const auth = authenticateRequest(request);
+    if (!auth) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    if (auth.role !== 'admin') {
+      return NextResponse.json(
+        { success: false, error: 'Admin access required' },
+        { status: 403 }
+      );
+    }
+
     const searchParams = request.nextUrl.searchParams;
-    const userId = searchParams.get('userId') || '';
     const status = searchParams.get('status') || '';
     const method = searchParams.get('method') || '';
     const search = searchParams.get('search') || '';
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '20', 10);
     const skip = (page - 1) * limit;
-
-    // Verify admin
-    if (userId) {
-      const user = await db.user.findUnique({ where: { id: userId } });
-      if (!user?.isAdmin) {
-        return NextResponse.json(
-          { success: false, error: 'Only admins can access this endpoint' },
-          { status: 403 }
-        );
-      }
-    }
 
     const where: Prisma.WithdrawalWhereInput = {};
 

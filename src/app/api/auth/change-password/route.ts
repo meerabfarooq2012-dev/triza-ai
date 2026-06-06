@@ -4,6 +4,8 @@ import bcrypt from 'bcryptjs';
 import { rateLimit, getRateLimitKey, authRateLimit } from '@/lib/rate-limit';
 import { authenticateRequestWithSession, signToken } from '@/lib/auth-middleware';
 import { withCsrf } from '@/lib/with-csrf';
+import { validateInput, changePasswordSchema } from '@/lib/validation';
+import { getSafeErrorMessage } from '@/lib/error-handler';
 
 export const POST = withCsrf(async (request: NextRequest) => {
   try {
@@ -36,27 +38,23 @@ export const POST = withCsrf(async (request: NextRequest) => {
     }
 
     const body = await request.json();
-    const { userId, currentPassword, newPassword } = body;
 
-    if (!userId || !currentPassword || !newPassword) {
+    // Validate input with Zod schema
+    const validation = validateInput(changePasswordSchema, body);
+    if (!validation.success) {
       return NextResponse.json(
-        { success: false, error: 'User ID, current password, and new password are required' },
+        { success: false, error: validation.error },
         { status: 400 }
       );
     }
+
+    const { userId, currentPassword, newPassword } = validation.data;
 
     // Ensure the authenticated user matches the requested userId
     if (auth.userId !== userId) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized: user ID mismatch' },
         { status: 403 }
-      );
-    }
-
-    if (newPassword.length < 6) {
-      return NextResponse.json(
-        { success: false, error: 'New password must be at least 6 characters' },
-        { status: 400 }
       );
     }
 
@@ -102,7 +100,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
   } catch (error) {
     console.error('Change password error:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to change password' },
+      { success: false, error: getSafeErrorMessage(error, 'Failed to change password') },
       { status: 500 }
     );
   }

@@ -1,12 +1,28 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { DIGITAL_CATEGORIES, PHYSICAL_CATEGORIES, GIG_CATEGORIES } from '@/lib/constants';
 import { rawSubcategories, toSlug as gigToSlug } from '@/lib/gig-subcategories';
 import { rawPhysicalSubcategories, toSlug as physicalToSlug } from '@/lib/physical-subcategories';
 import { rawDigitalSubcategories, toSlug as digitalToSlug } from '@/lib/digital-subcategories';
+import { authenticateRequest } from '@/lib/auth-middleware';
+import { withCsrf } from '@/lib/with-csrf';
 
-export async function POST() {
+export const POST = withCsrf(async (request: NextRequest) => {
   try {
+    // Require JWT admin authentication
+    const auth = authenticateRequest(request);
+    if (!auth) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    if (auth.role !== 'admin') {
+      return NextResponse.json(
+        { success: false, error: 'Admin access required' },
+        { status: 403 }
+      );
+    }
     let created = 0;
     let updated = 0;
 
@@ -254,4 +270,4 @@ export async function POST() {
       { status: 500 }
     );
   }
-}
+});

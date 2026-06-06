@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { withCsrf } from '@/lib/with-csrf';
 
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
   try {
     const body = await request.json();
     const { userId, name, slug, icon, description, sortOrder, isActive, parentId } = body;
@@ -85,4 +86,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

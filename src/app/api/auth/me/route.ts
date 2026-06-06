@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getSafeErrorMessage } from '@/lib/error-handler';
 
 export async function GET(request: NextRequest) {
   try {
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Get current user error:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to get user' },
+      { success: false, error: getSafeErrorMessage(error, 'Failed to get user') },
       { status: 500 }
     );
   }

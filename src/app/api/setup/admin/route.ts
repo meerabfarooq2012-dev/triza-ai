@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import bcrypt from 'bcryptjs';
+import { rateLimit, getRateLimitKey } from '@/lib/rate-limit';
 
 /**
  * Admin Setup Endpoint
@@ -12,12 +13,22 @@ import bcrypt from 'bcryptjs';
  */
 export async function GET(request: NextRequest) {
   try {
+    // Rate limit: max 3 attempts per hour
+    const rateLimitKey = getRateLimitKey(request);
+    const rl = rateLimit({ windowMs: 60 * 60 * 1000, maxRequests: 3, key: `setup-admin:${rateLimitKey}` });
+    if (!rl.success) {
+      return NextResponse.json(
+        { success: false, error: 'Too many setup attempts. Please try again later.' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetTime - Date.now()) / 1000)) } }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const setupKey = searchParams.get('key');
 
     if (setupKey !== 'marketo-setup-2024') {
       return NextResponse.json(
-        { success: false, error: 'Invalid setup key. Use ?key=marketo-setup-2024' },
+        { success: false, error: 'Invalid setup key' },
         { status: 403 }
       );
     }
@@ -64,6 +75,16 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: max 3 attempts per hour
+    const rateLimitKey = getRateLimitKey(request);
+    const rl = rateLimit({ windowMs: 60 * 60 * 1000, maxRequests: 3, key: `setup-admin:${rateLimitKey}` });
+    if (!rl.success) {
+      return NextResponse.json(
+        { success: false, error: 'Too many setup attempts. Please try again later.' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetTime - Date.now()) / 1000)) } }
+      );
+    }
+
     const body = await request.json();
     const { setupKey } = body;
 
@@ -128,11 +149,7 @@ async function setupAdmin() {
 
     return NextResponse.json({
       success: true,
-      message: '✅ Admin user fixed! You can now login.',
-      credentials: {
-        email: adminEmail,
-        password: adminPassword,
-      },
+      message: 'Admin account updated successfully',
     });
   }
 
@@ -178,10 +195,6 @@ async function setupAdmin() {
 
   return NextResponse.json({
     success: true,
-    message: '✅ Admin user created! You can now login.',
-    credentials: {
-      email: adminEmail,
-      password: adminPassword,
-    },
+    message: 'Admin account created successfully',
   });
 }

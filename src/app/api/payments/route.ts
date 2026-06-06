@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { PLATFORM_FEE_PERCENT } from '@/lib/constants';
+import { getSafeErrorMessage } from '@/lib/error-handler';
 
 export async function GET(request: NextRequest) {
   try {
@@ -101,7 +102,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('List payments error:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch payments' },
+      { success: false, error: getSafeErrorMessage(error, 'Failed to fetch payments') },
       { status: 500 }
     );
   }
@@ -319,7 +320,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Create payment error:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to create payment' },
+      { success: false, error: getSafeErrorMessage(error, 'Failed to create payment') },
       { status: 500 }
     );
   }
