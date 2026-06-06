@@ -2463,3 +2463,91 @@ Stage Summary:
 - Wallet and payment settings now accessible from main navigation
 - Admin Shops panel added for shop management
 - All features browser-verified with zero runtime errors
+
+---
+Task ID: fix-1
+Agent: subagent
+Task: Fix social links persistence in shop settings API
+
+Work Log:
+- Read the current PUT handler at `/home/z/my-project/src/app/api/shops/[slug]/route.ts` and identified the root cause: `socialLinks` was destructured into `updateData` but not included in `allowedFields`, so it was silently dropped during the field filtering loop.
+- Modified the destructuring to extract `socialLinks` separately from the request body: `const { userId, socialLinks, ...updateData } = body;`
+- Added social links persistence logic after the shop update: delete existing social links with `db.socialLink.deleteMany({ where: { shopId } })`, then create new ones with `db.socialLink.createMany()` using `userId`, `shopId`, `platform`, and `url` from each link in the array.
+- Added a re-fetch of the shop with `include: { socialLinks: true }` so the PUT response includes the persisted social links.
+- Verified the GET handler already includes `socialLinks: true` in its `include` — no changes needed there.
+- Ran `bun run lint` — 0 errors (3 pre-existing warnings unrelated to this change).
+- Checked dev server log — no compilation errors.
+
+Stage Summary:
+- Root cause: `socialLinks` was included in the request body but the `allowedFields` array in the PUT handler did not include it, so social link data was silently dropped on every save.
+- Fix: Extract `socialLinks` from the body separately, use `deleteMany` + `createMany` pattern to replace social links for the shop, and return the updated shop with social links included in the response.
+- The end-to-end flow now works: save shop settings → social links are persisted via `deleteMany`/`createMany` → fetch shop → social links returned in GET response.
+
+---
+Task ID: fix-2
+Agent: subagent
+Task: Fix mini-services auto-start with Next.js instrumentation
+
+Work Log:
+- Inspected mini-service setup: chat-service (port 3003) and notification-service (port 3004/3005) both exist with `bun --hot index.ts` dev scripts
+- Reviewed `mini-services/start-services.sh` — manual shell script that runs services in background, not auto-started with Next.js
+- Checked `next.config.ts` — `experimental.instrumentationHook` was NOT set; added it
+- Verified frontend hooks already use correct XTransformPort pattern: `io('/?XTransformPort=3003')` for chat, `io('/?XTransformPort=3004')` for notifications
+- Created `src/instrumentation.ts` with `register()` export that:
+  - Guards with `process.env.NEXT_RUNTIME !== 'nodejs'` check (skips Edge runtime)
+  - Spawns chat-service with `bun --hot index.ts` in its working directory
+  - Spawns notification-service with `bun --hot index.ts` in its working directory
+  - Pipes stdout/stderr to log files via `fs.createWriteStream` with append mode
+  - Handles process errors and exit events with logging
+  - Registers SIGTERM/SIGINT cleanup handlers to kill child processes and close log streams
+- Verified lint passes with 0 errors (3 pre-existing warnings only)
+- Confirmed dev server log shows no compilation errors
+- Verified mini-service processes are currently running on ports 3003, 3004, 3005
+
+Stage Summary:
+- Created `/home/z/my-project/src/instrumentation.ts` — Next.js instrumentation hook that auto-spawns chat-service and notification-service on server startup
+- Added `experimental.instrumentationHook: true` to `/home/z/my-project/next.config.ts`
+- Frontend hooks (`use-chat-socket.ts` and `use-realtime-notifications.tsx`) already use correct Caddy gateway pattern with XTransformPort query params — no changes needed
+- Mini-services will now auto-start when Next.js server starts, eliminating the need for manual `start-services.sh` execution
+
+---
+
+Task ID: fix-1
+Agent: main
+Task: Fix social links persistence in shop settings API
+
+Work Log:
+- Identified that `PUT /api/shops/[slug]` had `allowedFields` that didn't include `socialLinks`
+- Social links sent from `seller-shop-settings.tsx` were silently dropped on save
+- Fixed by extracting `socialLinks` separately from the request body destructuring
+- Added `db.socialLink.deleteMany()` + `db.socialLink.createMany()` pattern to replace social links
+- Enhanced PUT response to re-fetch shop with social links included
+- Verified lint passes with 0 errors
+
+Stage Summary:
+- Social links now persist correctly when sellers save shop settings
+- Shop PUT handler at `/api/shops/[slug]/route.ts` updated with social link CRUD
+- GET handler already included `socialLinks: true` in Prisma include
+
+---
+
+Task ID: fix-2
+Agent: main
+Task: Fix mini-services auto-start with Next.js instrumentation
+
+Work Log:
+- Created `src/instrumentation.ts` with `register()` export (Next.js convention)
+- Created `src/instrumentation.node.ts` with Node.js-specific service spawning logic
+- Uses port-checking (`net.createServer`) to avoid spawning duplicates
+- Spawns chat-service (port 3003) and notification-service (port 3004) with `bun --hot`
+- Logs to respective `log.txt` files in each mini-service folder
+- Added SIGTERM/SIGINT cleanup handlers for graceful shutdown
+- Removed `experimental.instrumentationHook` from next.config.ts (not needed in Next.js 16)
+- Verified mini-services auto-start when Next.js server starts
+- Frontend hooks already use correct `XTransformPort` query params for Caddy gateway
+
+Stage Summary:
+- Mini-services now auto-start with the Next.js server via instrumentation hook
+- Port-checking prevents duplicate service processes on restart
+- All 4 ports verified listening: 3000 (Next.js), 3003 (chat), 3004 (notifications), 3005 (HTTP push)
+- Server memory constraint noted: dev server uses ~1.5GB+ with Turbopack during first page compile

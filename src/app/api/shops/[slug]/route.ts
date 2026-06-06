@@ -71,7 +71,7 @@ async function handleUpdateShop(
     const { params } = context as { params: Promise<{ slug: string }> };
     const { slug } = await params;
     const body = await request.json();
-    const { userId, ...updateData } = body;
+    const { userId, socialLinks, ...updateData } = body;
 
     if (!userId) {
       return NextResponse.json(
@@ -117,11 +117,37 @@ async function handleUpdateShop(
       data,
     });
 
+    // Handle social links persistence
+    if (socialLinks !== undefined) {
+      // Delete existing social links for this shop
+      await db.socialLink.deleteMany({
+        where: { shopId: updatedShop.id },
+      });
+
+      // Create new social links if any provided
+      if (Array.isArray(socialLinks) && socialLinks.length > 0) {
+        await db.socialLink.createMany({
+          data: socialLinks.map((link: { platform: string; url: string }) => ({
+            userId,
+            shopId: updatedShop.id,
+            platform: link.platform,
+            url: link.url,
+          })),
+        });
+      }
+    }
+
+    // Fetch updated shop with social links to return
+    const shopWithLinks = await db.shop.findUnique({
+      where: { slug },
+      include: { socialLinks: true },
+    });
+
     return NextResponse.json({
       success: true,
       data: {
-        ...updatedShop,
-        customSections: JSON.parse(updatedShop.customSections || '[]'),
+        ...(shopWithLinks || updatedShop),
+        customSections: JSON.parse((shopWithLinks || updatedShop).customSections || '[]'),
       },
     });
   } catch (error) {
