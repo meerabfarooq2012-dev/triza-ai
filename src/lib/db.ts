@@ -1,3 +1,8 @@
+// =============================================================================
+// Marketo Database Client — Prisma Singleton
+// Safely initializes PrismaClient with error handling for Vercel serverless
+// =============================================================================
+
 import { PrismaClient } from '@prisma/client'
 
 const globalForPrisma = globalThis as unknown as {
@@ -11,9 +16,38 @@ const globalForPrisma = globalThis as unknown as {
 // If the database is unreachable, the error will surface on the first query,
 // not at import time. This is intentional: it allows API routes that don't
 // need the database (like /api/health) to work even when the DB is down.
-export const db = globalForPrisma.prisma ?? new PrismaClient({
-  log: ['error', 'warn'],
-})
+let db: PrismaClient
+
+try {
+  db = globalForPrisma.prisma ?? new PrismaClient({
+    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+  })
+} catch (error) {
+  // If PrismaClient initialization fails (unlikely but possible on Vercel),
+  // create a fallback that throws descriptive errors on first use.
+  // This prevents module-level crashes that cause HTML 500 error pages.
+  console.error('[db] Failed to initialize PrismaClient:', error)
+  db = new Proxy({} as PrismaClient, {
+    get(_target, prop) {
+      if (prop === '$queryRaw' || prop === '$executeRaw') {
+        return () => {
+          throw new Error(
+            'Database client failed to initialize. ' +
+            'Check that @prisma/client is generated and DATABASE_URL is set. ' +
+            'Original error: ' + (error instanceof Error ? error.message : String(error))
+          )
+        }
+      }
+      return () => {
+        throw new Error(
+          'Database client failed to initialize. ' +
+          'Check that @prisma/client is generated and DATABASE_URL is set. ' +
+          'Original error: ' + (error instanceof Error ? error.message : String(error))
+        )
+      }
+    }
+  })
+}
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db
 
@@ -22,3 +56,5 @@ if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db
 if (process.env.NODE_ENV === 'production') {
   globalForPrisma.prisma = db
 }
+
+export { db }

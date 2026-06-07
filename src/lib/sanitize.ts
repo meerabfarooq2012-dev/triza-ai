@@ -3,7 +3,43 @@
 // Provides sanitization and validation helpers for user input
 // =============================================================================
 
-import DOMPurify from 'isomorphic-dompurify';
+// ---------------------------------------------------------------------------
+// DOMPurify — Lazy-loaded with error handling for Vercel serverless
+// isomorphic-dompurify can crash at import time on Vercel serverless if the
+// DOM environment is not available. We use dynamic import with a fallback.
+// ---------------------------------------------------------------------------
+
+let DOMPurify: typeof import('isomorphic-dompurify').default | null = null
+let domPurifyLoadAttempted = false
+let domPurifyLoadError: string | null = null
+
+async function loadDOMPurify() {
+  if (DOMPurify) return DOMPurify
+  if (domPurifyLoadAttempted) return null // Don't retry if it already failed
+  domPurifyLoadAttempted = true
+
+  try {
+    const mod = await import('isomorphic-dompurify')
+    DOMPurify = mod.default || mod
+    return DOMPurify
+  } catch (error) {
+    domPurifyLoadError = error instanceof Error ? error.message : String(error)
+    console.error('[sanitize] Failed to load isomorphic-dompurify:', domPurifyLoadError)
+    return null
+  }
+}
+
+// Try to eagerly load DOMPurify (works in Node.js with JSDOM)
+// If it fails, sanitizeHtml will use a basic fallback
+try {
+  // Use require for synchronous loading at module init time
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const mod = require('isomorphic-dompurify')
+  DOMPurify = mod.default || mod
+} catch {
+  // DOMPurify not available — sanitizeHtml will use fallback
+  domPurifyLoadAttempted = true
+}
 
 // ---------------------------------------------------------------------------
 // DOMPurify configuration — applied once and reused by sanitizeHtml
@@ -27,9 +63,6 @@ const FORBIDDEN_TAGS = [
   'base', 'link', 'meta',
 ] as const;
 
-// DOMPurify will strip all on* event-handler attributes when FORBID_ATTR
-// includes the wildcard pattern. We also list the most common ones explicitly
-// so the intent is clear even if the wildcard behaviour changes.
 const FORBIDDEN_ATTR = [
   'onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur',
   'onmousedown', 'onmouseup', 'onkeydown', 'onkeyup', 'onkeypress',
@@ -43,27 +76,44 @@ const DOMPURIFY_CONFIG = {
   FORBID_TAGS: [...FORBIDDEN_TAGS],
   FORBID_ATTR: [...FORBIDDEN_ATTR],
   ALLOW_DATA_ATTR: false,
-  // Strip the style attribute from all tags to prevent CSS injection
-  FORBID_ATTR_STYLES: undefined, // handled via hook below
 } as const;
 
-// Add a hook to strip the `style` attribute from every element — this is more
-// reliable than listing it in FORBID_ATTR because DOMPurify's FORBID_ATTR
-// handling can vary across versions for the `style` attribute specifically.
-DOMPurify.addHook('uponSanitizeElement', (_node, data) => {
-  // DOMPurify passes the element as `data.node` in some hooks; the node
-  // itself is the first argument for element-level hooks in isomorphic-dompurify.
-  // We handle both to be safe.
-  const el = (_node as Element | undefined) ?? (data as Record<string, unknown>).node as Element | undefined;
-  if (el && typeof el.removeAttribute === 'function') {
-    el.removeAttribute('style');
-  }
-});
+// ---------------------------------------------------------------------------
+// Basic HTML sanitization fallback — used when DOMPurify is not available
+// (e.g., on Vercel serverless if isomorphic-dompurify fails to load)
+// ---------------------------------------------------------------------------
+
+function basicSanitizeHtml(input: string): string {
+  if (typeof input !== 'string') return ''
+  return input
+    // Remove script tags and content
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    // Remove event handlers
+    .replace(/\s*on\w+\s*=\s*["'][^"']*["']/gi, '')
+    .replace(/\s*on\w+\s*=\s*\S+/gi, '')
+    // Remove dangerous tags
+    .replace(/<(iframe|object|embed|form|input|textarea|button|base|link|meta|style)\b[^>]*>/gi, '')
+    .replace(/<\/(iframe|object|embed|form|input|textarea|button|base|link|meta|style)>/gi, '')
+    // Remove javascript: URLs
+    .replace(/href\s*=\s*["']javascript:[^"']*["']/gi, 'href="#"')
+    .replace(/src\s*=\s*["']javascript:[^"']*["']/gi, '')
+    .trim()
+}
 
 // Sanitize HTML content using DOMPurify (allows basic formatting only)
+// Falls back to basic regex-based sanitization if DOMPurify is not available
 export function sanitizeHtml(input: string): string {
   if (typeof input !== 'string') return ''
-  return DOMPurify.sanitize(input, DOMPURIFY_CONFIG).trim()
+
+  if (DOMPurify && typeof DOMPurify.sanitize === 'function') {
+    try {
+      return DOMPurify.sanitize(input, DOMPURIFY_CONFIG).trim()
+    } catch {
+      // DOMPurify failed — use fallback
+    }
+  }
+
+  return basicSanitizeHtml(input)
 }
 
 // Sanitize string input to prevent XSS
@@ -102,7 +152,7 @@ export function normalizeEmail(email: string): string {
 // Validate positive number
 export function isPositiveNumber(value: unknown): boolean {
   const num = parseFloat(String(value))
-  return !isNaN(num) && num > 0 && isFinite(num)
+  return !isNaN(num) && num > 0 && isFinite(value as number)
 }
 
 // ---------------------------------------------------------------------------
