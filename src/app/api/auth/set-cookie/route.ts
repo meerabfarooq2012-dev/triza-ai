@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { setAuthCookies } from '@/lib/auth-middleware'
-import { withCsrf } from '@/lib/with-csrf'
 
 /**
  * POST /api/auth/set-cookie
  * Sets httpOnly cookies for auth tokens.
  * Called by the frontend after login/register to store tokens securely.
  */
-export const POST = withCsrf(async (request: NextRequest) => {
+export const POST = async (request: NextRequest) => {
   try {
     const body = await request.json()
     const { token, refreshToken } = body
@@ -32,4 +31,4 @@ export const POST = withCsrf(async (request: NextRequest) => {
       { status: 500 }
     )
   }
-})
+}

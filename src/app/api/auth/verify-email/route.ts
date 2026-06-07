@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { rateLimit, getRateLimitKey, authRateLimit } from '@/lib/rate-limit';
-import { withCsrf } from '@/lib/with-csrf';
 import { createHash } from 'crypto';
 
-export const POST = withCsrf(async (request: NextRequest) => {
+export const POST = async (request: NextRequest) => {
   try {
     // Rate limiting
     const rateLimitKey = getRateLimitKey(request);
@@ -72,4 +71,4 @@ export const POST = withCsrf(async (request: NextRequest) => {
       { status: 500 }
     );
   }
-})
+}

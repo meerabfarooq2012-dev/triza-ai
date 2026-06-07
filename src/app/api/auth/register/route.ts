@@ -8,7 +8,6 @@ import { notifyWelcome } from '@/lib/notifications';
 import { rateLimit, getFingerprintedRateLimitKey, registerRateLimit } from '@/lib/rate-limit';
 import { signToken } from '@/lib/auth-middleware';
 import { createSession } from '@/lib/session';
-import { withCsrf } from '@/lib/with-csrf';
 import { randomBytes, createHash } from 'crypto';
 import { sanitizeString, normalizeEmail, isValidEmail, isStrongPassword } from '@/lib/sanitize';
 import { validateInput, registerSchema } from '@/lib/validation';
@@ -20,7 +19,10 @@ function slugify(text: string): string {
     .replace(/(^-|-$)/g, '');
 }
 
-export const POST = withCsrf(async (request: NextRequest) => {
+// NOTE: withCsrf is intentionally NOT used on the register endpoint.
+// Registration is an unauthenticated endpoint — CSRF protection is less critical here
+// because the user has no authenticated session to protect yet.
+export const POST = async (request: NextRequest) => {
   try {
     // Rate limiting — use fingerprinted key (IP + User-Agent) for stricter registration limiting
     const rateLimitKey = getFingerprintedRateLimitKey(request, 'register');
@@ -189,4 +191,4 @@ export const POST = withCsrf(async (request: NextRequest) => {
       { status: 500 }
     );
   }
-});
+};

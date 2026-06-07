@@ -11,7 +11,6 @@ import {
 } from '@/lib/rate-limit';
 import { signToken } from '@/lib/auth-middleware';
 import { createSession } from '@/lib/session';
-import { withCsrf } from '@/lib/with-csrf';
 import { normalizeEmail } from '@/lib/sanitize';
 import { getSafeErrorMessage } from '@/lib/error-handler';
 import { validateInput, loginSchema } from '@/lib/validation';
@@ -19,7 +18,12 @@ import { validateInput, loginSchema } from '@/lib/validation';
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 30 * 60 * 1000; // 30 minutes (enhanced from 15)
 
-export const POST = withCsrf(async (request: NextRequest) => {
+// NOTE: withCsrf is intentionally NOT used on the login endpoint.
+// Login is an unauthenticated endpoint — CSRF protection is less critical here
+// because the user has no authenticated session to protect yet.
+// Requiring CSRF on login can cause failures when the CSRF cookie isn't yet set
+// (e.g., first visit, incognito mode, or strict privacy settings).
+export const POST = async (request: NextRequest) => {
   try {
     // Rate limiting — use fingerprinted key (IP + User-Agent) for more accurate limiting
     const rateLimitKey = getFingerprintedRateLimitKey(request, 'login');
@@ -199,4 +203,4 @@ export const POST = withCsrf(async (request: NextRequest) => {
       { status: 500 }
     );
   }
-});
+};

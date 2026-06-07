@@ -7,7 +7,6 @@ import { welcomeEmail } from '@/lib/email-templates';
 import { signToken, signRefreshToken, setAuthCookies } from '@/lib/auth-middleware';
 import { createSession } from '@/lib/session';
 
-import { withCsrf } from '@/lib/with-csrf';
 function slugify(text: string): string {
   return text
     .toLowerCase()
@@ -23,7 +22,7 @@ interface GoogleUserInfo {
   email_verified?: boolean;
 }
 
-export const POST = withCsrf(async (request: NextRequest) => {
+export const POST = async (request: NextRequest) => {
   try {
     const body = await request.json();
     const { accessToken, role = 'buyer' } = body;
@@ -210,4 +209,4 @@ export const POST = withCsrf(async (request: NextRequest) => {
       { status: 500 }
     );
   }
-})
+}

@@ -15,11 +15,11 @@
  * @param error - The caught error (may be Error, string, or unknown)
  * @returns A string safe to include in an API JSON response
  */
-export function getSafeErrorMessage(error: unknown): string {
+export function getSafeErrorMessage(error: unknown, fallbackMessage?: string): string {
   if (process.env.NODE_ENV === 'production') {
-    return 'An internal error occurred. Please try again later.'
+    return fallbackMessage || 'An internal error occurred. Please try again later.'
   }
-  return error instanceof Error ? error.message : 'An unknown error occurred'
+  return error instanceof Error ? error.message : (fallbackMessage || 'An unknown error occurred')
 }
 
 /**

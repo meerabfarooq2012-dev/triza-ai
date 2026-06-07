@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyRefreshToken, signToken, signRefreshToken, setAuthCookies } from '@/lib/auth-middleware'
-import { withCsrf } from '@/lib/with-csrf'
 
-export const POST = withCsrf(async (request: NextRequest) => {
+export const POST = async (request: NextRequest) => {
   try {
     const body = await request.json()
     const { refreshToken } = body
@@ -48,4 +47,4 @@ export const POST = withCsrf(async (request: NextRequest) => {
       { status: 500 }
     )
   }
-})
+}
