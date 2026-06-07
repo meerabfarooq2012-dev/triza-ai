@@ -6,6 +6,7 @@
 
 import { NextResponse, type NextRequest } from 'next/server'
 import { jwtVerify } from 'jose'
+import { getCorsHeaders } from '@/lib/cors'
 
 // ---------------------------------------------------------------------------
 // JWT Configuration — must match the secret used by `jsonwebtoken` in
@@ -152,13 +153,19 @@ function buildSecurityHeaders(isDev: boolean): Record<string, string> {
 // ---------------------------------------------------------------------------
 
 function extractBearerToken(request: NextRequest): string | null {
+  // Try Authorization header first
   const authHeader = request.headers.get('authorization')
-  if (!authHeader) return null
+  if (authHeader?.startsWith('Bearer ')) {
+    return authHeader.substring(7)
+  }
 
-  const parts = authHeader.split(' ')
-  if (parts.length !== 2 || parts[0] !== 'Bearer') return null
+  // Fall back to httpOnly cookie
+  const cookieToken = request.cookies.get('auth-token')?.value
+  if (cookieToken) {
+    return cookieToken
+  }
 
-  return parts[1]
+  return null
 }
 
 // ---------------------------------------------------------------------------
@@ -171,7 +178,23 @@ export async function proxy(request: NextRequest) {
   const isApiRoute = pathname.startsWith('/api/')
 
   // -----------------------------------------------------------------------
-  // 1. Method Validation for API Routes
+  // 1. CORS for API routes
+  // -----------------------------------------------------------------------
+  if (isApiRoute) {
+    const requestOrigin = request.headers.get('origin')
+    const corsHeaders = getCorsHeaders(requestOrigin)
+
+    // Handle OPTIONS preflight requests
+    if (request.method === 'OPTIONS') {
+      return new NextResponse(null, {
+        status: 204,
+        headers: corsHeaders,
+      })
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // 2. Method Validation for API Routes
   // -----------------------------------------------------------------------
   if (isApiRoute && !ALLOWED_API_METHODS.has(request.method)) {
     return NextResponse.json(
@@ -181,7 +204,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // -----------------------------------------------------------------------
-  // 2. Request Size Limiting for API Routes
+  // 3. Request Size Limiting for API Routes
   // -----------------------------------------------------------------------
   if (isApiRoute && request.method !== 'GET' && request.method !== 'HEAD') {
     const contentLength = request.headers.get('content-length')
@@ -197,7 +220,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // -----------------------------------------------------------------------
-  // 3. Route Protection — Admin API Routes
+  // 4. Route Protection — Admin API Routes
   // -----------------------------------------------------------------------
   if (pathname.startsWith('/api/admin/')) {
     // Check whitelist — routes with their own key-based auth
@@ -206,6 +229,12 @@ export async function proxy(request: NextRequest) {
       const response = NextResponse.next()
       const secHeaders = buildSecurityHeaders(isDev)
       for (const [key, value] of Object.entries(secHeaders)) {
+        response.headers.set(key, value)
+      }
+      // Add CORS headers
+      const requestOrigin = request.headers.get('origin')
+      const corsHeaders = getCorsHeaders(requestOrigin)
+      for (const [key, value] of Object.entries(corsHeaders)) {
         response.headers.set(key, value)
       }
       return response
@@ -248,16 +277,34 @@ export async function proxy(request: NextRequest) {
       response.headers.set(key, value)
     }
 
+    // Add CORS headers
+    const requestOrigin = request.headers.get('origin')
+    const corsHeaders = getCorsHeaders(requestOrigin)
+    for (const [key, value] of Object.entries(corsHeaders)) {
+      response.headers.set(key, value)
+    }
+
     return response
   }
 
   // -----------------------------------------------------------------------
-  // 4. All Other Routes — Add Security Headers
+  // 5. All Other Routes — Add Security Headers + CORS
   // -----------------------------------------------------------------------
   const response = NextResponse.next()
+
+  // Add security headers to all responses
   const secHeaders = buildSecurityHeaders(isDev)
   for (const [key, value] of Object.entries(secHeaders)) {
     response.headers.set(key, value)
+  }
+
+  // Add CORS headers to API routes
+  if (isApiRoute) {
+    const requestOrigin = request.headers.get('origin')
+    const corsHeaders = getCorsHeaders(requestOrigin)
+    for (const [key, value] of Object.entries(corsHeaders)) {
+      response.headers.set(key, value)
+    }
   }
 
   return response
