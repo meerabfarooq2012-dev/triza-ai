@@ -118,14 +118,25 @@ function runPrismaGenerate() {
     })
     console.log('✅ Prisma client generated successfully')
   } catch (error) {
-    console.error('❌ Failed to run prisma generate:', error.message)
-    process.exit(1)
+    console.error('⚠️  Failed to run prisma generate:', error.message)
+    console.error('   Continuing build — prisma generate will be retried in the build command.')
+    // DON'T exit — let the build command's explicit `prisma generate` handle it
   }
 }
 
 function runPrismaDbPush() {
   // Only push schema on Vercel builds to keep database in sync
+  // SKIP during postinstall — only run during the actual build step
+  // to avoid double-running and potential timeout issues
+  const isBuildStep = process.env.VERCEL_BUILD_STEP === '1' ||
+    process.env.npm_lifecycle_event === 'vercel-build' ||
+    process.env.npm_lifecycle_event === 'build'
+
   if (!IS_VERCEL) return
+  if (!isBuildStep) {
+    console.log('⏭️  Skipping prisma db push in postinstall — will run during build step')
+    return
+  }
 
   try {
     console.log('📤 Pushing schema to database (Vercel build)...')
