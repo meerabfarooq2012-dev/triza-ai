@@ -18,7 +18,7 @@ const nextConfig: NextConfig = {
   // Required for Prisma + PostgreSQL on Vercel serverless
   // jsdom/isomorphic-dompurify need to be external because they use native modules
   // that can crash during bundling on Vercel
-  serverExternalPackages: ['@prisma/client', 'prisma', 'pg', 'bcryptjs', 'sharp', 'isomorphic-dompurify', 'jsdom'],
+  serverExternalPackages: ['@prisma/client', 'prisma', 'pg', 'bcryptjs', 'sharp', 'isomorphic-dompurify', 'jsdom', 'socket.io', 'socket.io-client'],
 
   images: {
     remotePatterns: [

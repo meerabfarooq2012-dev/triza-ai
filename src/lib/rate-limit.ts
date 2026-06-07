@@ -20,17 +20,32 @@ const limits = new Map<string, RateLimitEntry>()
 /** Map of fingerprint -> failed login attempt tracking for progressive delay */
 const failedLoginAttempts = new Map<string, FailedAttemptEntry>()
 
-// Clean up expired entries every 5 minutes
-setInterval(() => {
+/**
+ * Lazy cleanup — runs on each rateLimit() call instead of a persistent setInterval.
+ *
+ * IMPORTANT: We deliberately avoid module-level setInterval() because:
+ * 1. On Vercel serverless, setInterval keeps the event loop alive, causing
+ *    function timeouts (10s Hobby / 60s Pro) and 500/504 errors.
+ * 2. In-memory Maps are reset on every cold start anyway, so a background
+ *    timer provides no real benefit on serverless.
+ * 3. On long-running dev servers, the cleanup still runs frequently enough
+ *    because rateLimit() is called on every API request.
+ */
+let lastCleanup = 0
+const CLEANUP_INTERVAL_MS = 5 * 60 * 1000 // 5 minutes
+
+function cleanupIfNeeded() {
   const now = Date.now()
+  if (now - lastCleanup < CLEANUP_INTERVAL_MS) return
+  lastCleanup = now
+
   for (const [key, entry] of limits) {
     if (now > entry.resetTime) limits.delete(key)
   }
-  // Clean up stale failed login attempt entries (older than 1 hour)
   for (const [key, entry] of failedLoginAttempts) {
     if (now - entry.lastAttemptAt > 60 * 60 * 1000) failedLoginAttempts.delete(key)
   }
-}, 5 * 60 * 1000)
+}
 
 /**
  * Check if a request is within rate limits
@@ -46,6 +61,9 @@ export function rateLimit(options: {
     maxRequests = 10,
     key = 'global',
   } = options
+
+  // Lazy cleanup — remove expired entries periodically (replaces setInterval)
+  cleanupIfNeeded()
 
   const now = Date.now()
   const entry = limits.get(key)

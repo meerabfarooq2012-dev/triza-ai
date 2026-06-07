@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 
 /**
  * Custom 404 page — provides helpful debugging info for Vercel deployment issues.
@@ -9,15 +9,22 @@ export default function NotFound() {
   const [deployInfo, setDeployInfo] = useState<Record<string, unknown> | null>(null)
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    // Fetch deployment info to help debug
+  const fetchDeployInfo = useCallback(async () => {
     setLoading(true)
-    fetch('/api/deploy-info')
-      .then(res => res.json())
-      .then(data => setDeployInfo(data))
-      .catch(() => setDeployInfo(null))
-      .finally(() => setLoading(false))
+    try {
+      const res = await fetch('/api/deploy-info')
+      const data = await res.json()
+      setDeployInfo(data)
+    } catch {
+      setDeployInfo(null)
+    } finally {
+      setLoading(false)
+    }
   }, [])
+
+  useEffect(() => {
+    fetchDeployInfo()
+  }, [fetchDeployInfo])
 
   return (
     <div className="flex items-center justify-center min-h-screen p-4">
