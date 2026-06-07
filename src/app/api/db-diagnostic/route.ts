@@ -1,29 +1,35 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest } from '@/lib/auth-middleware';
 import { getSafeErrorMessage } from '@/lib/error-handler';
 
 /**
  * Database Diagnostic Endpoint
  *
- * GET /api/db-diagnostic
+ * GET /api/db-diagnostic                      → Requires JWT admin auth
+ * GET /api/db-diagnostic?key=marketo-setup-2024  → Accessible with setup key (for pre-setup debugging)
  *
  * Tests the database connection and reports detailed diagnostics.
- * Requires JWT admin authentication.
  */
-export async function GET(request: Request) {
-  // Require JWT admin authentication
-  const auth = authenticateRequest(request);
-  if (!auth) {
-    return NextResponse.json(
-      { error: 'Authentication required' },
-      { status: 401 }
-    );
-  }
-  if (auth.role !== 'admin') {
-    return NextResponse.json(
-      { error: 'Admin access required' },
-      { status: 403 }
-    );
+export async function GET(request: NextRequest) {
+  // Allow access via either JWT admin auth OR setup key
+  const { searchParams } = new URL(request.url);
+  const setupKey = searchParams.get('key');
+
+  if (setupKey !== 'marketo-setup-2024') {
+    // Fall back to JWT admin auth
+    const auth = authenticateRequest(request);
+    if (!auth) {
+      return NextResponse.json(
+        { error: 'Authentication required. Use ?key=marketo-setup-2024 or JWT admin auth.' },
+        { status: 401 }
+      );
+    }
+    if (auth.role !== 'admin' && auth.role !== 'both') {
+      return NextResponse.json(
+        { error: 'Admin access required' },
+        { status: 403 }
+      );
+    }
   }
 
   const diagnostics: Record<string, unknown> = {};
@@ -268,5 +274,13 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.json(diagnostics, { status: 200 });
+  // Use a custom JSON serializer to handle BigInt values from PostgreSQL
+  // (Prisma $queryRaw returns BigInt for integer columns in PostgreSQL)
+  const jsonSafeDiagnostics = JSON.parse(
+    JSON.stringify(diagnostics, (_, value) =>
+      typeof value === 'bigint' ? Number(value) : value
+    )
+  );
+
+  return NextResponse.json(jsonSafeDiagnostics, { status: 200 });
 }

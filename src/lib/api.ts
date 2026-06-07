@@ -101,13 +101,19 @@ async function getCsrfToken(): Promise<string | null> {
   csrfFetchPromise = (async () => {
     try {
       const response = await fetch('/api/csrf-token')
+      // Guard against HTML responses (e.g., Vercel error pages)
+      const contentType = response.headers.get('content-type') || ''
+      if (!contentType.includes('application/json')) {
+        console.warn('CSRF token endpoint returned non-JSON response:', contentType)
+        return null
+      }
       const data = await response.json()
       if (data.success && data.token) {
         cachedCsrfToken = data.token
         return cachedCsrfToken
       }
     } catch (error) {
-      console.error('Failed to fetch CSRF token:', error)
+      console.warn('Failed to fetch CSRF token:', error)
     } finally {
       csrfFetchPromise = null
     }

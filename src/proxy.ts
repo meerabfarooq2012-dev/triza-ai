@@ -19,7 +19,9 @@ const JWT_SECRET = process.env.JWT_SECRET ?? ''
 /** Admin routes that use their own key-based auth and should bypass JWT check */
 const ADMIN_AUTH_WHITELIST = new Set([
   '/api/admin/sync-schema',
-  '/api/admin/setup',
+  '/api/setup/admin',       // Setup endpoint at /api/setup/admin (NOT /api/admin/setup)
+  '/api/setup/sync-schema', // Schema sync at /api/setup/sync-schema
+  '/api/setup/categories',  // Category seeding at /api/setup/categories
 ])
 
 /** Allowed HTTP methods for API routes */
@@ -173,6 +175,33 @@ function extractBearerToken(request: NextRequest): string | null {
 // ---------------------------------------------------------------------------
 
 export async function proxy(request: NextRequest) {
+  try {
+    return await _proxyInner(request)
+  } catch (error) {
+    // CRITICAL: The proxy/middleware MUST never throw an unhandled error.
+    // On Vercel Edge Runtime, an unhandled error returns an HTML error page,
+    // which causes the client to see "Unexpected token '<'" when parsing JSON.
+    // Always return a JSON response so the client can handle errors gracefully.
+    console.error('[proxy] Unhandled error:', error)
+
+    // For API routes, return a JSON error response
+    const { pathname } = request.nextUrl
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json(
+        {
+          error: 'Internal server error in proxy middleware',
+          detail: error instanceof Error ? error.message : String(error),
+        },
+        { status: 500 }
+      )
+    }
+
+    // For page routes, let Next.js handle it (return next to render the page)
+    return NextResponse.next()
+  }
+}
+
+async function _proxyInner(request: NextRequest) {
   const { pathname } = request.nextUrl
   const isDev = process.env.NODE_ENV === 'development'
   const isApiRoute = pathname.startsWith('/api/')

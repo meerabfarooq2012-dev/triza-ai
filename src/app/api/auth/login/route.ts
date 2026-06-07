@@ -198,8 +198,31 @@ export const POST = async (request: NextRequest) => {
     });
   } catch (error) {
     console.error('Login error:', error);
+
+    // Provide helpful diagnostics for common Vercel deployment issues
+    const errMsg = error instanceof Error ? error.message : String(error);
+    const helpInfo: Record<string, string> = {};
+
+    if (errMsg.includes('P1001') || errMsg.includes('Can\'t reach database server')) {
+      helpInfo.issue = 'DATABASE_UNREACHABLE';
+      helpInfo.cause = 'The database server is not reachable. On Vercel, this usually means DATABASE_URL is wrong or Supabase is paused.';
+      helpInfo.fix = 'Visit /api/db-diagnostic?key=marketo-setup-2024 for detailed diagnostics.';
+    } else if (errMsg.includes('P1003') || errMsg.includes('does not exist')) {
+      helpInfo.issue = 'DATABASE_NOT_INITIALIZED';
+      helpInfo.cause = 'The database schema has not been pushed yet. Tables are missing.';
+      helpInfo.fix = 'Visit /api/setup/sync-schema?key=marketo-setup-2024 to push the schema, then /api/setup/admin?key=marketo-setup-2024 to create the admin.';
+    } else if (errMsg.includes('JWT_SECRET') || errMsg.includes('environment variable')) {
+      helpInfo.issue = 'MISSING_ENV_VAR';
+      helpInfo.cause = 'A required environment variable is not set on Vercel.';
+      helpInfo.fix = 'Go to Vercel → Settings → Environment Variables and add JWT_SECRET.';
+    }
+
     return NextResponse.json(
-      { success: false, error: getSafeErrorMessage(error, 'Failed to login') },
+      {
+        success: false,
+        error: getSafeErrorMessage(error, 'Failed to login'),
+        help: Object.keys(helpInfo).length > 0 ? helpInfo : undefined,
+      },
       { status: 500 }
     );
   }

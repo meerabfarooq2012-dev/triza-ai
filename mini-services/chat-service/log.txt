@@ -36,3 +36,5 @@
 [ChatService] Socket.io chat service running on port 3003
 [ChatService] Socket.io chat service running on port 3003
 [ChatService] Socket.io chat service running on port 3003
+[ChatService] Socket.io chat service running on port 3003
+[ChatService] Socket.io chat service running on port 3003
