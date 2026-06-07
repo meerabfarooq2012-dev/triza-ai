@@ -10,7 +10,7 @@ import type { Notification } from '@/types'
 let notifSocket: Socket | null = null
 let socketConnected = false
 
-function getNotificationSocket(): Socket | null {
+function getNotificationSocket(authToken?: string | null): Socket | null {
   if (typeof window === 'undefined') return null
 
   if (!notifSocket) {
@@ -20,6 +20,9 @@ function getNotificationSocket(): Socket | null {
       reconnection: true,
       reconnectionAttempts: 10,
       reconnectionDelay: 2000,
+      auth: {
+        token: authToken || undefined,
+      },
     })
 
     notifSocket.on('connect', () => {
@@ -31,13 +34,17 @@ function getNotificationSocket(): Socket | null {
       socketConnected = false
       console.log('[Notifications] Socket disconnected')
     })
+
+    notifSocket.on('connect_error', (err) => {
+      console.warn('[Notifications] Connection error:', err.message)
+    })
   }
 
   return notifSocket
 }
 
 export function useRealtimeNotifications() {
-  const { currentUser, setUnreadNotifications } = useMarketplaceStore()
+  const { currentUser, authToken, setUnreadNotifications } = useMarketplaceStore()
   const [latestNotification, setLatestNotification] = useState<Notification | null>(null)
   const registeredRef = useRef(false)
 
@@ -48,8 +55,13 @@ export function useRealtimeNotifications() {
       return
     }
 
-    const socket = getNotificationSocket()
+    const socket = getNotificationSocket(authToken)
     if (!socket) return
+
+    // Update auth token on the socket if it changed
+    if (socket.auth && typeof socket.auth === 'object') {
+      (socket.auth as Record<string, unknown>).token = authToken || undefined
+    }
 
     if (!socket.connected) {
       socket.connect()

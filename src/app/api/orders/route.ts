@@ -5,10 +5,22 @@ import { sendEmailAsync } from '@/lib/email';
 import { orderConfirmationBuyerEmail, newOrderSellerEmail } from '@/lib/email-templates';
 import { notifyOrderCreated } from '@/lib/notifications';
 import { PLATFORM_FEE_PERCENT } from '@/lib/constants';
+import { rateLimit, getRateLimitKey, orderRateLimit } from '@/lib/rate-limit';
 import { withCsrf } from '@/lib/with-csrf';
 import { authenticateRequestWithSession } from '@/lib/auth-middleware';
+import { validateInput, orderCreateSchema } from '@/lib/validation';
 
 export async function GET(request: NextRequest) {
+  // Rate limiting
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...orderRateLimit, key: `orders:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get('userId') || '';
@@ -199,6 +211,16 @@ async function resolveItem(
 // ---------------------------------------------------------------------------
 
 export const POST = withCsrf(async (request: NextRequest) => {
+  // Rate limiting
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...orderRateLimit, key: `orders:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
   try {
     // Authenticate the request (with session validation)
     const auth = await authenticateRequestWithSession(request);
@@ -210,6 +232,15 @@ export const POST = withCsrf(async (request: NextRequest) => {
     }
 
     const body = await request.json();
+
+    // Validate input with Zod
+    const validation = validateInput(orderCreateSchema, body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { success: false, error: validation.error },
+        { status: 400 }
+      );
+    }
     const {
       buyerId,
       items,
@@ -226,14 +257,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
       taxRate,
       taxAmount,
       notes,
-    } = body;
-
-    if (!buyerId || !items || !items.length) {
-      return NextResponse.json(
-        { success: false, error: 'buyerId and items are required' },
-        { status: 400 }
-      );
-    }
+    } = validation.data;
 
     // Verify the authenticated user matches the buyerId
     if (auth.userId !== buyerId) {

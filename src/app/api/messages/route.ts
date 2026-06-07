@@ -1,9 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware';
+import { rateLimit, getRateLimitKey, messageRateLimit } from '@/lib/rate-limit';
 
+import { withCsrf } from '@/lib/with-csrf';
+import { validateInput, messageSendSchema } from '@/lib/validation';
 // GET /api/messages?userId=string&otherUserId=string
 // Fetch messages between two users (backward compatible)
 export async function GET(request: NextRequest) {
+  // Rate limiting
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...messageRateLimit, key: `messages:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get('userId') || '';
@@ -56,17 +70,34 @@ export async function GET(request: NextRequest) {
 
 // POST /api/messages
 // Send a message and create/update the conversation
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
+  // Rate limiting
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...messageRateLimit, key: `messages:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  const userId = auth.userId;
   try {
     const body = await request.json();
-    const { senderId, receiverId, content, productId, gigId, messageType } = body;
 
-    if (!senderId || !receiverId || !content) {
+    // Validate input with Zod
+    const validation = validateInput(messageSendSchema, body);
+    if (!validation.success) {
       return NextResponse.json(
-        { success: false, error: 'senderId, receiverId, and content are required' },
+        { success: false, error: validation.error },
         { status: 400 }
       );
     }
+    const { senderId, receiverId, content, productId, gigId, messageType } = validation.data;
 
     // Sort participant IDs alphabetically so participant1Id < participant2Id
     const [participant1Id, participant2Id] =
@@ -141,4 +172,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { createNotification } from '@/lib/notifications';
-
+import { authenticateRequest } from '@/lib/auth-middleware';
+import { withCsrf } from '@/lib/with-csrf';
 // GET /api/returns/[id] — Get single return request
 export async function GET(
   request: NextRequest,
@@ -90,15 +91,16 @@ export async function GET(
 }
 
 // PUT /api/returns/[id] — Update return request (approve, reject, cancel, mark processing)
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const PUT = withCsrf(async (request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
   try {
     const { id } = await params;
     const body = await request.json();
     const {
-      userId,
       action,
       refundAmount,
       refundMethod,
@@ -106,10 +108,11 @@ export async function PUT(
       adminNote,
       resolution,
     } = body;
+    const userId = auth.userId;
 
-    if (!userId || !action) {
+    if (!action) {
       return NextResponse.json(
-        { success: false, error: 'userId and action are required' },
+        { success: false, error: 'action is required' },
         { status: 400 }
       );
     }
@@ -139,9 +142,7 @@ export async function PUT(
 
     const isSeller = returnRequest.order.sellerId === userId;
     const isBuyer = returnRequest.order.buyerId === userId;
-    // Check admin status from database
-    const requestingUser = await db.user.findUnique({ where: { id: userId } });
-    const isAdmin = requestingUser?.isAdmin === true;
+    const isAdmin = auth.role === 'admin';
 
     // Validate action permissions
     if (action === 'cancel' && !isBuyer) {
@@ -484,4 +485,4 @@ export async function PUT(
       { status: 500 }
     );
   }
-}
+})

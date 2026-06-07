@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware';
 import ZAI from 'z-ai-web-dev-sdk';
+import { rateLimit, getRateLimitKey, feedbackRateLimit } from '@/lib/rate-limit';
 import { withCsrf } from '@/lib/with-csrf';
 
 // Singleton ZAI instance
@@ -18,6 +20,16 @@ const SYSTEM_PROMPT = `You are a friendly and helpful support assistant for Mark
 // GET /api/feedback?sessionId=string
 // Fetch a feedback thread with its messages by sessionId
 export async function GET(request: NextRequest) {
+  // Rate limiting
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...feedbackRateLimit, key: `feedback:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const sessionId = searchParams.get('sessionId') || '';
@@ -61,6 +73,21 @@ export async function GET(request: NextRequest) {
 // POST /api/feedback
 // Send a message and receive an AI response
 export const POST = withCsrf(async (request: NextRequest) => {
+  // Rate limiting
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...feedbackRateLimit, key: `feedback:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  const userId = auth.userId;
   try {
     const body = await request.json();
     const { sessionId, userId, content, category } = body;

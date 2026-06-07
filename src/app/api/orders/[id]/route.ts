@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware';
 import { sendEmailAsync } from '@/lib/email';
 import { orderStatusUpdateEmail } from '@/lib/email-templates';
 import { notifyOrderStatusUpdate } from '@/lib/notifications';
 
+import { withCsrf } from '@/lib/with-csrf';
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -82,10 +84,12 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const PUT = withCsrf(async (request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
   try {
     const { id } = await params;
     const body = await request.json();
@@ -223,12 +227,21 @@ export async function PUT(
       { status: 500 }
     );
   }
-}
+})
 
 // PATCH — alias for PUT (components use PATCH method)
-export async function PATCH(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
-  return PUT(request, context);
-}
+export const PATCH = withCsrf(async (request: NextRequest,
+  context: { params: Promise<{ id: string }> }) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  try {
+    return PUT(request, context);
+  } catch (error) {
+    return NextResponse.json(
+      { success: false, error: 'Failed to update order' },
+      { status: 500 }
+    );
+  }
+})

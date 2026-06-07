@@ -3,6 +3,8 @@ import { db } from '@/lib/db';
 import { Prisma } from '@prisma/client';
 import { createNotification } from '@/lib/notifications';
 import { withCsrf } from '@/lib/with-csrf';
+import { authenticateRequest } from '@/lib/auth-middleware';
+import { validateInput, returnCreateSchema } from '@/lib/validation';
 
 // GET /api/returns — List return requests
 export async function GET(request: NextRequest) {
@@ -109,36 +111,24 @@ export async function GET(request: NextRequest) {
 
 // POST /api/returns — Create a return request
 export const POST = withCsrf(async (request: NextRequest) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
   try {
     const body = await request.json();
-    const { orderId, userId, reason, description, images, type } = body;
 
-    // Validate required fields
-    if (!orderId || !userId || !reason || !description) {
+    // Validate input with Zod
+    const validation = validateInput(returnCreateSchema, body);
+    if (!validation.success) {
       return NextResponse.json(
-        { success: false, error: 'orderId, userId, reason, and description are required' },
+        { success: false, error: validation.error },
         { status: 400 }
       );
     }
-
-    // Validate reason
-    const validReasons = ['damaged', 'defective', 'wrong_item', 'not_as_described', 'changed_mind', 'other'];
-    if (!validReasons.includes(reason)) {
-      return NextResponse.json(
-        { success: false, error: `Invalid reason. Must be one of: ${validReasons.join(', ')}` },
-        { status: 400 }
-      );
-    }
-
-    // Validate type
+    const { orderId, reason, description, images, type } = validation.data;
+    const userId = auth.userId;
     const returnType = type || 'return';
-    const validTypes = ['return', 'exchange', 'refund_only'];
-    if (!validTypes.includes(returnType)) {
-      return NextResponse.json(
-        { success: false, error: `Invalid type. Must be one of: ${validTypes.join(', ')}` },
-        { status: 400 }
-      );
-    }
 
     // Check order exists and belongs to user
     const order = await db.order.findUnique({

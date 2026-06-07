@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { authenticateRequest } from '@/lib/auth-middleware'
 import { generateWithAI } from '@/lib/ai-provider'
+import { rateLimit, getRateLimitKey, aiRateLimit } from '@/lib/rate-limit'
 
+import { withCsrf } from '@/lib/with-csrf';
+import { validateInput, aiDescriptionSchema } from '@/lib/validation';
 type DescriptionType = 'product' | 'shop' | 'gig'
 
 interface GenerateDescriptionBody {
@@ -80,7 +84,18 @@ function buildUserPrompt(body: GenerateDescriptionBody): string {
   return prompt
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
+  // Rate limiting — AI is costly
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...aiRateLimit, key: `ai-desc:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json({ success: false, error: 'Too many requests. Please try again later.' }, { status: 429 });
+  }
+
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
   try {
     let body: GenerateDescriptionBody
 
@@ -93,35 +108,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate required fields
-    if (!body.type || !body.name) {
+    // Validate input with Zod
+    const validation = validateInput(aiDescriptionSchema, body);
+    if (!validation.success) {
       return NextResponse.json(
-        { success: false, error: 'Both "type" and "name" fields are required' },
+        { success: false, error: validation.error },
         { status: 400 }
-      )
+      );
     }
 
-    // Validate type
-    if (!VALID_TYPES.includes(body.type)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Invalid type "${body.type}". Must be one of: ${VALID_TYPES.join(', ')}`,
-        },
-        { status: 400 }
-      )
-    }
-
-    // Validate name is not empty
-    if (typeof body.name !== 'string' || body.name.trim().length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'The "name" field must be a non-empty string' },
-        { status: 400 }
-      )
-    }
-
-    const systemPrompt = buildSystemPrompt(body.type)
-    const userPrompt = buildUserPrompt(body)
+    const systemPrompt = buildSystemPrompt(validation.data.type)
+    const userPrompt = buildUserPrompt(validation.data as GenerateDescriptionBody)
 
     // Generate using smart AI provider (auto-switches Z-AI ↔ Gemini)
     const description = await generateWithAI(systemPrompt, userPrompt)
@@ -145,4 +142,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})

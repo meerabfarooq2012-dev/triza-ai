@@ -118,12 +118,17 @@ export function SellerMessages() {
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // ── Socket.io Connection ──────────────────────────────────────────────
+  const { authToken } = useMarketplaceStore()
+
   useEffect(() => {
     if (!currentUser) return
 
     const socket = io('/?XTransformPort=3003', {
       transports: ['websocket', 'polling'],
       autoConnect: true,
+      auth: {
+        token: authToken || undefined,
+      },
     })
 
     socketRef.current = socket

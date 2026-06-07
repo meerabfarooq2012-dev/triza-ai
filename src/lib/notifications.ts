@@ -68,9 +68,24 @@ async function pushNotificationSocket(
   try {
     // Use the notification service's HTTP push endpoint (port 3005)
     // The service will relay the notification to connected Socket.io clients
+    // Now requires JWT Bearer token for authentication
+
+    // Sign a short-lived service token using the same JWT secret
+    // The notification service verifies this token
+    const jwt = await import('jsonwebtoken')
+    const JWT_SECRET = process.env.JWT_SECRET || 'marketo-dev-secret-change-in-production'
+    const serviceToken = jwt.sign(
+      { userId: 'service', email: 'system', role: 'service' },
+      JWT_SECRET,
+      { expiresIn: '1m' }
+    )
+
     const res = await fetch(`http://localhost:3005/push`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${serviceToken}`,
+      },
       body: JSON.stringify({ userId, notification }),
     })
 

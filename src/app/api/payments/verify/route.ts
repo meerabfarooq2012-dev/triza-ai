@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware';
 
+import { withCsrf } from '@/lib/with-csrf';
 // In-memory rate limiter for verification attempts
 const verifyAttempts = new Map<string, { count: number; resetAt: number }>();
 const VERIFY_RATE_LIMIT_WINDOW = 10 * 60 * 1000; // 10 minutes
@@ -23,7 +25,12 @@ function checkVerifyRateLimit(paymentId: string): boolean {
   return true;
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  const userId = auth.userId;
   try {
     const body = await request.json();
     const { paymentId, verificationToken, buyerId } = body;
@@ -176,4 +183,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})

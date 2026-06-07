@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware';
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+import { withCsrf } from '@/lib/with-csrf';
+export const PATCH = withCsrf(async (request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  if (auth.role !== 'admin') {
+    return NextResponse.json({ success: false, error: 'Admin access required' }, { status: 403 });
+  }
   try {
     const { id } = await params;
     const body = await request.json();
@@ -111,12 +118,17 @@ export async function PATCH(
       { status: 500 }
     );
   }
-}
+})
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const DELETE = withCsrf(async (request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  if (auth.role !== 'admin') {
+    return NextResponse.json({ success: false, error: 'Admin access required' }, { status: 403 });
+  }
   try {
     const { id } = await params;
     const { searchParams } = new URL(request.url);
@@ -191,4 +203,4 @@ export async function DELETE(
       { status: 500 }
     );
   }
-}
+})

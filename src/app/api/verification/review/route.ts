@@ -1,7 +1,9 @@
 import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
+import { authenticateRequest } from '@/lib/auth-middleware'
 import { createAuditLog } from '@/lib/audit-log'
 
+import { withCsrf } from '@/lib/with-csrf';
 // Helper: calculate trust tier based on trust score
 function calculateTier(trustScore: number): string {
   if (trustScore >= 90) return 'platinum'
@@ -59,14 +61,22 @@ async function calculateTrustScore(shopId: string): Promise<number> {
 }
 
 // POST /api/verification/review — Admin reviews a verification submission
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  if (auth.role !== 'admin') {
+    return NextResponse.json({ success: false, error: 'Admin access required' }, { status: 403 });
+  }
   try {
     const body = await request.json()
-    const { verificationId, status, reviewedBy, rejectionReason } = body
+    const { verificationId, status, rejectionReason } = body
+    const reviewedBy = auth.userId;
 
-    if (!verificationId || !status || !reviewedBy) {
+    if (!verificationId || !status) {
       return NextResponse.json(
-        { success: false, error: 'Missing required fields: verificationId, status, reviewedBy' },
+        { success: false, error: 'Missing required fields: verificationId, status' },
         { status: 400 }
       )
     }
@@ -78,14 +88,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verify the reviewer is an admin
-    const reviewer = await db.user.findUnique({ where: { id: reviewedBy } })
-    if (!reviewer || !reviewer.isAdmin) {
-      return NextResponse.json(
-        { success: false, error: 'Only admins can review verification submissions' },
-        { status: 403 }
-      )
-    }
+    // Auth already verified admin role via JWT; reviewer is the authenticated admin
 
     // Fetch the verification record
     const verification = await db.sellerVerification.findUnique({
@@ -290,4 +293,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})

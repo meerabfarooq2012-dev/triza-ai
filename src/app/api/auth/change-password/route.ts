@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { rateLimit, getRateLimitKey, authRateLimit } from '@/lib/rate-limit';
-import { authenticateRequestWithSession, signToken } from '@/lib/auth-middleware';
+import { authenticateRequestWithSession, signToken, signRefreshToken, setAuthCookies } from '@/lib/auth-middleware';
 import { withCsrf } from '@/lib/with-csrf';
 
 export const POST = withCsrf(async (request: NextRequest) => {
@@ -87,18 +87,26 @@ export const POST = withCsrf(async (request: NextRequest) => {
       },
     });
 
-    // Generate a new JWT token
-    const token = signToken({
+    // Generate a new JWT access token and refresh token
+    const authPayload = {
       userId: user.id,
       email: user.email,
       role: user.role,
-    });
+    };
+    const token = signToken(authPayload);
+    const refreshToken = signRefreshToken(authPayload);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       message: 'Password changed successfully.',
       token,
+      refreshToken,
     });
+
+    // Set httpOnly cookies for both tokens
+    setAuthCookies(response, token, refreshToken);
+
+    return response;
   } catch (error) {
     console.error('Change password error:', error);
     return NextResponse.json(

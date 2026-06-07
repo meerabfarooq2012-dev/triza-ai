@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware'
 import { createDownloadLink } from '@/lib/digital-download'
 import { rateLimit, getRateLimitKey } from '@/lib/rate-limit'
 
+import { withCsrf } from '@/lib/with-csrf';
 // POST /api/downloads/create — Generate download links for digital products in an order
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  const userId = auth.userId;
   try {
     // Rate limit: 5 per 15 minutes
     const rlKey = getRateLimitKey(request)
@@ -196,4 +203,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})

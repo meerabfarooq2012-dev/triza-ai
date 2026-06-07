@@ -5,11 +5,12 @@
 
 import { createHmac } from 'crypto'
 
-// Derive the CSRF secret from CSRF_SECRET env, or fall back to JWT_SECRET, or a dev default
-const CSRF_SECRET =
-  process.env.CSRF_SECRET ||
-  process.env.JWT_SECRET ||
-  'marketo-csrf-dev-secret-change-in-production'
+// CSRF_SECRET must be set independently of JWT_SECRET in production
+const CSRF_SECRET = process.env.CSRF_SECRET
+if (!CSRF_SECRET && process.env.NODE_ENV === 'production') {
+  throw new Error('FATAL: CSRF_SECRET environment variable must be set in production')
+}
+const EFFECTIVE_CSRF_SECRET = CSRF_SECRET || 'marketo-csrf-dev-secret-change-in-production'
 
 /**
  * Generate a signed CSRF token.
@@ -18,7 +19,7 @@ const CSRF_SECRET =
  */
 export function generateCsrfToken(): string {
   const randomId = crypto.randomUUID()
-  const signature = createHmac('sha256', CSRF_SECRET)
+  const signature = createHmac('sha256', EFFECTIVE_CSRF_SECRET)
     .update(randomId)
     .digest('hex')
   return `${randomId}.${signature}`
@@ -37,7 +38,7 @@ export function validateCsrfToken(token: string): boolean {
   const [randomId, signature] = parts
   if (!randomId || !signature) return false
 
-  const expectedSignature = createHmac('sha256', CSRF_SECRET)
+  const expectedSignature = createHmac('sha256', EFFECTIVE_CSRF_SECRET)
     .update(randomId)
     .digest('hex')
 

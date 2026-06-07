@@ -1,19 +1,18 @@
-# Task 8 — Cart Multi-Shop Splitting
+# Task 8 — Security Hardening: Rate Limiting, File Upload Security, Error Leakage Fix
 
 ## Agent: main
 
 ## Summary
-Implemented cart multi-shop splitting: when a buyer checks out with items from multiple sellers, the system now creates separate orders for each seller instead of one combined order.
+Comprehensive security hardening across the Marketo marketplace API:
+1. Added rate limiting to 27+ API route handlers that previously had no rate limiting
+2. Enhanced avatar upload with magic byte verification, sharp-based image validation, filename sanitization, and metadata stripping
+3. Fixed error message leakage in 7 route files (removed `error.message`, `debug:` fields, and `String(err)` from 500 responses)
 
-## Files Modified
-1. `src/app/api/orders/route.ts` — Rewrote POST handler to group items by shopId and create separate orders
-2. `src/components/marketplace/payment/checkout-modal.tsx` — Updated summary, handlePayNow, and success steps
-3. `src/types/index.ts` — Added CreatedOrderSummary and MultiOrderResponse types
+## Key Files Modified
+- `src/lib/rate-limit.ts` — Added 19 new rate limit presets
+- `src/lib/error-handler.ts` — NEW: Safe error message utility
+- `src/app/api/users/[id]/avatar/route.ts` — Major rewrite with sharp validation
+- 22+ API route files — Added rate limiting
+- 7 route files — Fixed error leakage
 
-## Key Design Decisions
-- Items are grouped by product.shopId (derived from DB, not client-sent)
-- Each shop group gets its own order with independent totalAmount and platformFee
-- Shipping cost is split evenly across shop orders
-- Payment records are created in parallel for all orders
-- Frontend handles both single-order (legacy) and multi-order (new) response formats
-- Single-shop carts work exactly as before (1 group = 1 order)
+## Status: COMPLETED

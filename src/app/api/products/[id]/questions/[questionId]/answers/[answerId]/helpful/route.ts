@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
+import { withCsrf } from '@/lib/with-csrf';
 // POST /api/products/[id]/questions/[questionId]/answers/[answerId]/helpful — Mark answer as helpful
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string; questionId: string; answerId: string }> }
-) {
+export const POST = withCsrf(async (request: NextRequest,
+  { params }: { params: Promise<{ id: string; questionId: string; answerId: string }> }) => {
   try {
     const { answerId } = await params
     const body = await request.json()
@@ -52,4 +51,4 @@ export async function POST(
       { status: 500 }
     )
   }
-}
+})

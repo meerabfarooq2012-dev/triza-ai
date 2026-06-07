@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { createAuditLog } from '@/lib/audit-log';
 
+import { withCsrf } from '@/lib/with-csrf';
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -92,7 +93,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function PUT(request: NextRequest) {
+export const PUT = withCsrf(async (request: NextRequest) => {
   try {
     const body = await request.json();
     const { userId, disputeId, status, resolution } = body;
@@ -181,4 +182,4 @@ export async function PUT(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-
+import { authenticateRequest } from '@/lib/auth-middleware';
+import { withCsrf } from '@/lib/with-csrf';
 // GET /api/disputes/[id] — Get dispute detail
 export async function GET(
   _request: NextRequest,
@@ -85,10 +86,12 @@ export async function GET(
 }
 
 // PUT /api/disputes/[id] — Update dispute (add seller response, change status, etc.)
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const PUT = withCsrf(async (request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
   try {
     const { id } = await params;
     const body = await request.json();
@@ -97,12 +100,12 @@ export async function PUT(
       assignedAdminId,
       priority,
       status,
-      changedBy,
       // Resolve fields (used when status is 'resolved')
       resolution,
       resolutionType,
       refundAmount,
     } = body;
+    const changedBy = auth.userId;
 
     const dispute = await db.dispute.findUnique({
       where: { id },
@@ -487,4 +490,4 @@ export async function PUT(
       { status: 500 }
     );
   }
-}
+})

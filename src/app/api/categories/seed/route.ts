@@ -5,7 +5,8 @@ import { rawSubcategories, toSlug as gigToSlug } from '@/lib/gig-subcategories';
 import { rawPhysicalSubcategories, toSlug as physicalToSlug } from '@/lib/physical-subcategories';
 import { rawDigitalSubcategories, toSlug as digitalToSlug } from '@/lib/digital-subcategories';
 
-export async function POST() {
+import { withCsrf } from '@/lib/with-csrf';
+export const POST = withCsrf(async () => {
   try {
     let created = 0;
     let updated = 0;
@@ -254,4 +255,4 @@ export async function POST() {
       { status: 500 }
     );
   }
-}
+})

@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware';
 import { PLATFORM_FEE_PERCENT } from '@/lib/constants';
 import { createDownloadLink } from '@/lib/digital-download';
 
+import { withCsrf } from '@/lib/with-csrf';
 // Rate limiting: tracks release attempts per paymentId
 const releaseAttempts = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT_WINDOW = 5 * 60 * 1000; // 5 minutes
@@ -94,10 +96,15 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const PUT = withCsrf(async (request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  if (auth.role !== 'admin') {
+    return NextResponse.json({ success: false, error: 'Admin access required' }, { status: 403 });
+  }
   try {
     const { id } = await params;
     const body = await request.json();
@@ -629,4 +636,4 @@ export async function PUT(
       { status: 500 }
     );
   }
-}
+})

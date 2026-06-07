@@ -32,7 +32,7 @@ export function TwoFactorVerify({ open, onOpenChange, userId, email, tempToken }
   const [isVerifying, setIsVerifying] = useState(false)
   const [error, setError] = useState('')
 
-  const { login, setAuthToken, setCurrentView } = useMarketplaceStore()
+  const { login, setAuthToken, setRefreshToken, setCurrentView } = useMarketplaceStore()
 
   // Reset state when dialog opens
   useEffect(() => {
@@ -71,10 +71,16 @@ export function TwoFactorVerify({ open, onOpenChange, userId, email, tempToken }
       })
 
       if (res.success && res.data) {
-        // Store the real token
+        // Store the real token and refresh token
         const token = res.data.token
+        const refreshToken = res.data.refreshToken
         if (token) {
           setAuthToken(token)
+          // Also set httpOnly cookies server-side for extra security
+          api.auth.setAuthCookies(token, refreshToken).catch(() => {})
+        }
+        if (refreshToken) {
+          setRefreshToken(refreshToken)
         }
 
         // Update user state

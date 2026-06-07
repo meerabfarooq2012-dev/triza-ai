@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { rateLimit, getRateLimitKey, apiRateLimit } from '@/lib/rate-limit';
+import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware';
+import { rateLimit, getRateLimitKey, taxRateLimit } from '@/lib/rate-limit';
 import { withCsrf } from '@/lib/with-csrf';
 
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
   try {
-    const rateLimitResult = rateLimit({ ...apiRateLimit, key: `tax-calc:${getRateLimitKey(request)}` });
+    const rateLimitResult = rateLimit({ ...taxRateLimit, key: `tax-calc:${getRateLimitKey(request)}` });
     if (!rateLimitResult.success) {
       return NextResponse.json({ success: false, error: 'Too many requests' }, { status: 429 });
     }
@@ -63,7 +68,7 @@ export async function POST(request: NextRequest) {
     console.error('Tax calculation error:', error);
     return NextResponse.json({ success: false, error: 'Failed to calculate tax' }, { status: 500 });
   }
-}
+})
 
 // Also allow GET for quick tax config check
 export async function GET() {

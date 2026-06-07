@@ -7,7 +7,8 @@ import { createHash } from 'crypto'
 import { db } from '@/lib/db'
 
 const SESSION_THROTTLE_MS = 5 * 60 * 1000 // 5 minutes — only update lastActiveAt this often
-const JWT_EXPIRY_DAYS = 7
+const JWT_ACCESS_TOKEN_EXPIRY_MINUTES = 15 // Access token expiry (must match auth-middleware.ts)
+const JWT_REFRESH_TOKEN_EXPIRY_DAYS = 7 // Refresh token expiry
 
 /**
  * Hash a JWT token using SHA-256. We NEVER store raw tokens.
@@ -27,7 +28,7 @@ export async function createSession(
   ipAddress?: string,
 ) {
   const tokenHash = hashToken(token)
-  const expiresAt = new Date(Date.now() + JWT_EXPIRY_DAYS * 24 * 60 * 60 * 1000)
+  const expiresAt = new Date(Date.now() + JWT_REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000)
 
   // Clean up expired sessions for this user on each new login
   await cleanExpiredSessions()

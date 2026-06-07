@@ -1,18 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-
+import { authenticateRequest } from '@/lib/auth-middleware';
+import { rateLimit, getRateLimitKey, socialRateLimit } from '@/lib/rate-limit';
+import { withCsrf } from '@/lib/with-csrf';
+import { validateInput, socialShareSchema } from '@/lib/validation';
 // POST: Track product share
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
+  // Rate limiting
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...socialRateLimit, key: `social-share:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
   try {
     const body = await request.json();
-    const { productId, userId, platform } = body;
 
-    if (!productId || !userId) {
+    // Validate input with Zod
+    const validation = validateInput(socialShareSchema, body);
+    if (!validation.success) {
       return NextResponse.json(
-        { success: false, error: 'productId and userId are required' },
+        { success: false, error: validation.error },
         { status: 400 }
       );
     }
+    const { productId, platform } = validation.data;
+    const userId = auth.userId;
 
     // Verify the product exists
     const product = await db.product.findUnique({
@@ -72,4 +92,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})

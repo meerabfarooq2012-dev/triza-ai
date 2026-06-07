@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { rateLimit, getRateLimitKey, authRateLimit } from '@/lib/rate-limit';
-import { signToken } from '@/lib/auth-middleware';
+import { signToken, signRefreshToken, setAuthCookies } from '@/lib/auth-middleware';
 import { createSession } from '@/lib/session';
 import { withCsrf } from '@/lib/with-csrf';
 
@@ -129,8 +129,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
         userId: user.id,
         email: user.email,
         role: user.role,
-        twoFactorPending: true,
-      });
+      } as { userId: string; email: string; role: string });
       // Override the JWT expiry to 5 minutes for temp tokens
       // We'll use a special response format
       return NextResponse.json({
@@ -142,12 +141,14 @@ export const POST = withCsrf(async (request: NextRequest) => {
       });
     }
 
-    // Generate JWT token
-    const token = signToken({
+    // Generate JWT access token and refresh token
+    const authPayload = {
       userId: user.id,
       email: user.email,
       role: user.role,
-    });
+    };
+    const token = signToken(authPayload);
+    const refreshToken = signRefreshToken(authPayload);
 
     // Create a session record in the database (token is hashed, never stored raw)
     const userAgent = request.headers.get('user-agent') || undefined;
@@ -162,16 +163,21 @@ export const POST = withCsrf(async (request: NextRequest) => {
 
     const { password: _, ...userWithoutPassword } = user;
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: userWithoutPassword,
       token,
+      refreshToken,
     });
+
+    // Set httpOnly cookies for both tokens
+    setAuthCookies(response, token, refreshToken);
+
+    return response;
   } catch (error) {
     console.error('Login error:', error);
-    const errMsg = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { success: false, error: 'Failed to login', debug: errMsg.substring(0, 200) },
+      { success: false, error: 'Failed to login' },
       { status: 500 }
     );
   }

@@ -13,6 +13,7 @@ interface MarketplaceState {
   isAuthenticated: boolean
   isLoadingAuth: boolean
   authToken: string | null
+  refreshToken: string | null
 
   // Navigation
   currentView: ViewMode
@@ -52,6 +53,7 @@ interface MarketplaceState {
   logout: () => void
   setLoadingAuth: (loading: boolean) => void
   setAuthToken: (token: string | null) => void
+  setRefreshToken: (token: string | null) => void
 
   // Navigation actions
   setCurrentView: (view: ViewMode, params?: Record<string, string>) => void
@@ -107,6 +109,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
       isAuthenticated: false,
       isLoadingAuth: false,
       authToken: null,
+      refreshToken: null,
 
       // ----- Navigation State -----
       currentView: 'landing',
@@ -169,6 +172,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         }
         set({
           authToken: null,
+          refreshToken: null,
           currentUser: null,
           isAuthenticated: false,
           isLoadingAuth: false,
@@ -190,6 +194,10 @@ export const useMarketplaceStore = create<MarketplaceState>()(
 
       setAuthToken: (token: string | null) => {
         set({ authToken: token })
+      },
+
+      setRefreshToken: (token: string | null) => {
+        set({ refreshToken: token })
       },
 
       // ----- Navigation Actions -----
@@ -345,6 +353,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         currentUser: state.currentUser,
         isAuthenticated: state.isAuthenticated,
         authToken: state.authToken,
+        refreshToken: state.refreshToken,
         activeRole: state.activeRole,
         cart: state.cart,
         cartTotal: state.cartTotal,

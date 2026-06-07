@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createHmac } from 'crypto';
 import { db } from '@/lib/db';
-import { authenticateRequest, signToken } from '@/lib/auth-middleware';
+import { authenticateRequest, signToken, signRefreshToken, setAuthCookies } from '@/lib/auth-middleware';
 import { rateLimit, getRateLimitKey, apiRateLimit } from '@/lib/rate-limit';
 import { withCsrf } from '@/lib/with-csrf';
 import { verifyTOTP, verifyBackupCode } from '@/lib/two-factor';
@@ -74,26 +74,34 @@ async function handler(request: NextRequest) {
       });
     }
 
-    // Generate full auth token (for login 2FA completion)
-    const token = signToken({
+    // Generate full auth token and refresh token
+    const authPayload = {
       userId: user.id,
       email: user.email,
       role: user.role,
-    });
+    };
+    const token = signToken(authPayload);
+    const refreshToken = signRefreshToken(authPayload);
 
     const { password: _, ...userWithoutPassword } = await db.user.findUnique({
       where: { id: user.id },
       include: { shop: true },
     }) || user;
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: {
         token,
+        refreshToken,
         user: userWithoutPassword,
         usedBackupCode,
       },
     });
+
+    // Set httpOnly cookies for both tokens
+    setAuthCookies(response, token, refreshToken);
+
+    return response;
   } catch (error) {
     console.error('2FA verify error:', error);
     return NextResponse.json({ success: false, error: 'Verification failed' }, { status: 500 });

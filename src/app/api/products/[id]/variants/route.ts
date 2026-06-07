@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware';
 
+import { withCsrf } from '@/lib/with-csrf';
 // GET /api/products/[id]/variants — Fetch all variant options + variants for a product
 export async function GET(
   request: NextRequest,
@@ -55,10 +57,12 @@ export async function GET(
 }
 
 // POST /api/products/[id]/variants — Create/replace variant structure for a product
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const POST = withCsrf(async (request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
   try {
     const { id: productId } = await params;
     const body = await request.json();
@@ -262,7 +266,7 @@ export async function POST(
       { status: 500 }
     );
   }
-}
+})
 
 /**
  * Auto-generate all combinations from variant options

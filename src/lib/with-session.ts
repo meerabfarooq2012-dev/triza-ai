@@ -1,6 +1,7 @@
 // =============================================================================
 // Marketo With-Session Middleware — Validates that a session is still active
 // Wraps API route handlers to enforce session-based token validation
+// Supports both Authorization header and httpOnly cookie token extraction
 // =============================================================================
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -14,8 +15,8 @@ type SessionHandler = (
 
 /**
  * Wrap an API route handler with session validation.
- * Extracts the JWT token, verifies it, then checks that the session
- * has not been revoked in the database.
+ * Extracts the JWT token (from Authorization header or httpOnly cookie),
+ * verifies it, then checks that the session has not been revoked in the database.
  *
  * Usage:
  * ```ts
@@ -28,7 +29,7 @@ type SessionHandler = (
  */
 export function withSession(handler: SessionHandler): SessionHandler {
   return async (request, context) => {
-    // 1. Extract the token from Authorization header
+    // 1. Extract the token from Authorization header or httpOnly cookie
     const token = extractToken(request)
     if (!token) {
       return NextResponse.json(

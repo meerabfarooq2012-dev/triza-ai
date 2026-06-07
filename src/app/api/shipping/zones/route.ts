@@ -1,8 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware';
+import { rateLimit, getRateLimitKey, shippingRateLimit } from '@/lib/rate-limit';
 
+import { withCsrf } from '@/lib/with-csrf';
 // GET — List shipping zones for a shop (query param: shopId). Include rates.
 export async function GET(request: NextRequest) {
+  // Rate limiting
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...shippingRateLimit, key: `shipping-zones:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const shopId = searchParams.get('shopId');
@@ -44,7 +57,24 @@ export async function GET(request: NextRequest) {
 }
 
 // POST — Create a new shipping zone for a shop
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
+  // Rate limiting
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...shippingRateLimit, key: `shipping-zones:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  if (auth.role !== 'admin') {
+    return NextResponse.json({ success: false, error: 'Admin access required' }, { status: 403 });
+  }
   try {
     const body = await request.json();
     const { shopId, name, countries, isActive } = body;
@@ -104,4 +134,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})

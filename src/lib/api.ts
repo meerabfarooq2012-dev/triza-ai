@@ -142,6 +142,88 @@ async function withCsrfHeaders(
   return headers
 }
 
+// =============================================================================
+// Token Refresh Logic — Automatically refreshes expired access tokens
+// =============================================================================
+
+let isRefreshing = false
+let refreshPromise: Promise<boolean> | null = null
+const pendingRequests: Array<{
+  resolve: (value: boolean) => void
+}> = []
+
+/**
+ * Attempt to refresh the access token using the stored refresh token.
+ * Returns true if the token was refreshed successfully, false otherwise.
+ * Queues concurrent refresh attempts so only one refresh happens at a time.
+ */
+async function refreshAccessToken(): Promise<boolean> {
+  // If already refreshing, queue this request
+  if (isRefreshing && refreshPromise) {
+    return refreshPromise
+  }
+
+  isRefreshing = true
+  refreshPromise = (async () => {
+    const store = useMarketplaceStore.getState()
+    try {
+      const { refreshToken } = store
+
+      if (!refreshToken) {
+        return false
+      }
+
+      // Get CSRF token for the refresh request
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      }
+      await withCsrfHeaders(headers, 'POST')
+
+      const response = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ refreshToken }),
+      })
+
+      if (!response.ok) {
+        // Refresh failed — clear tokens and force re-login
+        store.setAuthToken(null)
+        store.setRefreshToken(null)
+        return false
+      }
+
+      const data = await response.json()
+      if (data.success && data.token) {
+        store.setAuthToken(data.token)
+        if (data.refreshToken) {
+          store.setRefreshToken(data.refreshToken)
+        }
+        return true
+      }
+
+      // Refresh failed
+      store.setAuthToken(null)
+      store.setRefreshToken(null)
+      return false
+    } catch {
+      store.setAuthToken(null)
+      store.setRefreshToken(null)
+      return false
+    } finally {
+      isRefreshing = false
+      refreshPromise = null
+
+      // Resolve all queued requests
+      for (const pending of pendingRequests) {
+        pending.resolve(refreshPromise ? true : false)
+      }
+      pendingRequests.length = 0
+    }
+  })()
+
+  return refreshPromise
+}
+
 async function request<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -183,6 +265,45 @@ async function request<T>(
       if (response.status === 403 && data?.error === 'Invalid CSRF token') {
         invalidateCsrfToken()
       }
+
+      // If access token expired (401), try to refresh it
+      if (response.status === 401 && authToken && endpoint !== '/auth/refresh') {
+        const refreshed = await refreshAccessToken()
+        if (refreshed) {
+          // Retry the original request with the new token
+          const newAuthToken = useMarketplaceStore.getState().authToken
+          const retryHeaders: Record<string, string> = {
+            'Content-Type': 'application/json',
+            ...(options.headers as Record<string, string>),
+          }
+          if (newAuthToken) {
+            retryHeaders['Authorization'] = `Bearer ${newAuthToken}`
+          }
+          await withCsrfHeaders(retryHeaders, method)
+
+          const retryConfig: RequestInit = {
+            ...options,
+            headers: retryHeaders,
+          }
+
+          const retryResponse = await fetch(url, retryConfig)
+          const retryData = await retryResponse.json()
+
+          if (!retryResponse.ok) {
+            if (retryResponse.status === 403 && retryData?.error === 'Invalid CSRF token') {
+              invalidateCsrfToken()
+            }
+            throw new ApiError(
+              retryData.error || `Request failed with status ${retryResponse.status}`,
+              retryResponse.status,
+              retryData
+            )
+          }
+
+          return retryData as T
+        }
+      }
+
       throw new ApiError(
         data.error || `Request failed with status ${response.status}`,
         response.status,
@@ -206,13 +327,13 @@ async function request<T>(
 
 const authApi = {
   login: (email: string, password: string) =>
-    request<ApiResponse<{ user: User; token: string }>>('/auth/login', {
+    request<ApiResponse<{ user: User; token: string; refreshToken?: string }>>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     }),
 
   register: (data: RegisterInput) =>
-    request<ApiResponse<{ user: User }>>('/auth/register', {
+    request<ApiResponse<{ user: User; token?: string; refreshToken?: string }>>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
@@ -250,6 +371,20 @@ const authApi = {
     request<ApiResponse>('/auth/resend-verification', {
       method: 'POST',
       body: JSON.stringify({ userId }),
+    }),
+
+  // ----- Token Refresh -----
+  refreshToken: (refreshToken: string) =>
+    request<ApiResponse<{ token: string; refreshToken: string }>>('/auth/refresh', {
+      method: 'POST',
+      body: JSON.stringify({ refreshToken }),
+    }),
+
+  // ----- httpOnly Cookie Setting -----
+  setAuthCookies: (token: string, refreshToken?: string) =>
+    request<ApiResponse>('/auth/set-cookie', {
+      method: 'POST',
+      body: JSON.stringify({ token, refreshToken }),
     }),
 
   // ----- Session Management -----
@@ -972,7 +1107,7 @@ const twoFactorApi = {
     }),
 
   verify: (data: { userId: string; code: string; setupMode?: boolean }) =>
-    request<ApiResponse<{ token: string; user: User; usedBackupCode?: boolean }>>('/auth/2fa/verify', {
+    request<ApiResponse<{ token: string; refreshToken?: string; user: User; usedBackupCode?: boolean }>>('/auth/2fa/verify', {
       method: 'POST',
       body: JSON.stringify(data),
     }),

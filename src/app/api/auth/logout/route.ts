@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimit, getRateLimitKey, authRateLimit } from '@/lib/rate-limit';
-import { extractToken, verifyToken } from '@/lib/auth-middleware';
+import { extractToken, verifyToken, clearAuthCookies } from '@/lib/auth-middleware';
 import { revokeSession } from '@/lib/session';
 import { withCsrf } from '@/lib/with-csrf';
 
@@ -37,10 +37,15 @@ export const POST = withCsrf(async (request: NextRequest) => {
       }
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       message: 'Logged out successfully.',
     });
+
+    // Clear httpOnly auth cookies
+    clearAuthCookies(response);
+
+    return response;
   } catch (error) {
     console.error('Logout error:', error);
     return NextResponse.json(

@@ -1,6 +1,7 @@
 import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
 
+import { withCsrf } from '@/lib/with-csrf';
 // ──────────────────────────────────────────────
 // TIER RULES (same logic as GET /api/seller-tier/[shopId])
 // ──────────────────────────────────────────────
@@ -60,7 +61,7 @@ function calculateProgress(
 // ──────────────────────────────────────────────
 // POST /api/seller-tier/calculate — Recalculate seller tiers
 // ──────────────────────────────────────────────
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
   try {
     const body = await request.json().catch(() => ({}))
     const { shopId } = body as { shopId?: string }
@@ -355,4 +356,4 @@ export async function POST(request: NextRequest) {
       { status: 500 },
     )
   }
-}
+})

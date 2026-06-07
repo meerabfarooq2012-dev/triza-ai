@@ -1,8 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { rateLimit, getRateLimitKey, socialRateLimit } from '@/lib/rate-limit';
 
 // GET: Get followers of a shop OR shops a user follows
 export async function GET(request: NextRequest) {
+  // Rate limiting
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...socialRateLimit, key: `social-followers:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const shopId = searchParams.get('shopId');

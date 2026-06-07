@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware';
 import { Prisma } from '@prisma/client';
+import { rateLimit, getRateLimitKey, productRateLimit } from '@/lib/rate-limit';
 import { withCsrf } from '@/lib/with-csrf';
 import { cache } from '@/lib/cache';
+import { validateInput, productCreateSchema } from '@/lib/validation';
 
 function slugify(text: string): string {
   return text
@@ -12,6 +15,16 @@ function slugify(text: string): string {
 }
 
 export async function GET(request: NextRequest) {
+  // Rate limiting
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...productRateLimit, key: `products:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search') || searchParams.get('query') || '';
@@ -299,8 +312,34 @@ export async function GET(request: NextRequest) {
 }
 
 export const POST = withCsrf(async (request: NextRequest) => {
+  // Rate limiting
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...productRateLimit, key: `products:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  if (auth.role !== 'seller' && auth.role !== 'admin' && auth.role !== 'both') {
+    return NextResponse.json({ success: false, error: 'Seller access required' }, { status: 403 });
+  }
   try {
     const body = await request.json();
+
+    // Validate input with Zod
+    const validation = validateInput(productCreateSchema, body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { success: false, error: validation.error },
+        { status: 400 }
+      );
+    }
     const {
       shopId,
       categoryId,
@@ -309,7 +348,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
       shortDesc,
       price,
       comparePrice,
-      type = 'digital',
+      type,
       images,
       fileUrl,
       fileSize,
@@ -320,14 +359,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
       deliveryInfo,
       deliveryCountries,
       requirements,
-    } = body;
-
-    if (!shopId || !name || !description || price === undefined) {
-      return NextResponse.json(
-        { success: false, error: 'shopId, name, description, and price are required' },
-        { status: 400 }
-      );
-    }
+    } = validation.data;
 
     const shop = await db.shop.findUnique({ where: { id: shopId } });
     if (!shop) {
@@ -338,7 +370,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
     }
 
     // Verify the requesting user owns the shop
-    const { userId: requestUserId } = body;
+    const requestUserId = validation.data.userId;
     if (requestUserId && shop.userId !== requestUserId) {
       return NextResponse.json(
         { success: false, error: 'You can only create products in your own shop' },

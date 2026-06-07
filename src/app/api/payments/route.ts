@@ -1,10 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware';
 import { Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { PLATFORM_FEE_PERCENT } from '@/lib/constants';
+import { rateLimit, getRateLimitKey, paymentRateLimit } from '@/lib/rate-limit';
 
+import { withCsrf } from '@/lib/with-csrf';
 export async function GET(request: NextRequest) {
+  // Rate limiting
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...paymentRateLimit, key: `payments:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get('userId') || '';
@@ -107,7 +120,22 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
+  // Rate limiting
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...paymentRateLimit, key: `payments:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  const userId = auth.userId;
   try {
     const body = await request.json();
     const { orderId, buyerId, sellerId, paymentMethod, amount } = body;
@@ -323,4 +351,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})

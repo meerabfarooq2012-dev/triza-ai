@@ -1,8 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware'
+import { rateLimit, getRateLimitKey, wishlistRateLimit } from '@/lib/rate-limit'
 
+import { withCsrf } from '@/lib/with-csrf';
+import { validateInput, wishlistCreateSchema } from '@/lib/validation';
 // GET /api/wishlists?userId=xxx — List current user's wishlists with item counts
 export async function GET(req: NextRequest) {
+  // Rate limiting
+  const rlKey = getRateLimitKey(req);
+  const rlResult = rateLimit({ ...wishlistRateLimit, key: `wishlists:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
   try {
     const { searchParams } = new URL(req.url)
     const userId = searchParams.get('userId')
@@ -45,14 +59,31 @@ export async function GET(req: NextRequest) {
 }
 
 // POST /api/wishlists — Create a wishlist
-export async function POST(req: NextRequest) {
+export const POST = withCsrf(async (req: NextRequest) => {
+  // Rate limiting
+  const rlKey = getRateLimitKey(req);
+  const rlResult = rateLimit({ ...wishlistRateLimit, key: `wishlists:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
+  const auth = authenticateRequest(req);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  const userId = auth.userId;
   try {
     const body = await req.json()
-    const { userId, name, isPublic } = body
 
-    if (!userId || !name) {
-      return NextResponse.json({ success: false, error: 'userId and name are required' }, { status: 400 })
+    // Validate input with Zod
+    const validation = validateInput(wishlistCreateSchema, body)
+    if (!validation.success) {
+      return NextResponse.json({ success: false, error: validation.error }, { status: 400 })
     }
+    const { userId, name, isPublic } = validation.data
 
     // Generate a unique slug from the name
     const baseSlug = name
@@ -86,4 +117,4 @@ export async function POST(req: NextRequest) {
     console.error('Failed to create wishlist:', error)
     return NextResponse.json({ success: false, error: 'Failed to create wishlist' }, { status: 500 })
   }
-}
+})

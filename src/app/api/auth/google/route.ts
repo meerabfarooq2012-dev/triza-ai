@@ -4,7 +4,10 @@ import bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
 import { sendEmailAsync } from '@/lib/email';
 import { welcomeEmail } from '@/lib/email-templates';
+import { signToken, signRefreshToken, setAuthCookies } from '@/lib/auth-middleware';
+import { createSession } from '@/lib/session';
 
+import { withCsrf } from '@/lib/with-csrf';
 function slugify(text: string): string {
   return text
     .toLowerCase()
@@ -20,7 +23,7 @@ interface GoogleUserInfo {
   email_verified?: boolean;
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
   try {
     const body = await request.json();
     const { accessToken, role = 'buyer' } = body;
@@ -95,10 +98,32 @@ export async function POST(request: NextRequest) {
 
       const { password: _, ...userWithoutPassword } = updatedUser!;
 
-      return NextResponse.json({
+      // Generate tokens for existing user
+      const authPayload = {
+        userId: existingUser.id,
+        email: existingUser.email,
+        role: existingUser.role,
+      };
+      const token = signToken(authPayload);
+      const refreshToken = signRefreshToken(authPayload);
+
+      // Create session
+      const userAgent = request.headers.get('user-agent') || undefined;
+      const ipAddress =
+        request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || undefined;
+      await createSession(existingUser.id, token, userAgent, ipAddress).catch(() => {});
+
+      const response = NextResponse.json({
         success: true,
         data: userWithoutPassword,
+        token,
+        refreshToken,
       });
+
+      // Set httpOnly cookies
+      setAuthCookies(response, token, refreshToken);
+
+      return response;
     }
 
     // New user — create account
@@ -147,6 +172,21 @@ export async function POST(request: NextRequest) {
 
     const { password: _, ...userWithoutPassword } = fullUser!;
 
+    // Generate tokens for new user
+    const authPayload = {
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    };
+    const token = signToken(authPayload);
+    const refreshToken = signRefreshToken(authPayload);
+
+    // Create session
+    const userAgent = request.headers.get('user-agent') || undefined;
+    const ipAddress =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || undefined;
+    await createSession(user.id, token, userAgent, ipAddress).catch(() => {});
+
     // Send welcome email (non-blocking)
     sendEmailAsync({
       to: googleUser.email,
@@ -154,16 +194,20 @@ export async function POST(request: NextRequest) {
       html: welcomeEmail({ name: googleUser.name || googleUser.email.split('@')[0], role }),
     });
 
-    return NextResponse.json(
-      { success: true, data: userWithoutPassword },
+    const response = NextResponse.json(
+      { success: true, data: userWithoutPassword, token, refreshToken },
       { status: 201 }
     );
+
+    // Set httpOnly cookies
+    setAuthCookies(response, token, refreshToken);
+
+    return response;
   } catch (error) {
     console.error('[Google Auth] Error:', error);
-    const errMsg = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { success: false, error: 'Failed to authenticate with Google', debug: errMsg.substring(0, 200) },
+      { success: false, error: 'Failed to authenticate with Google' },
       { status: 500 }
     );
   }
-}
+})

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware'
 
+import { withCsrf } from '@/lib/with-csrf';
 // GET /api/gigs/[id]/questions/[questionId]/answers — List answers for a question
 export async function GET(
   request: NextRequest,
@@ -48,10 +50,16 @@ export async function GET(
 }
 
 // POST /api/gigs/[id]/questions/[questionId]/answers — Post an answer
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string; questionId: string }> }
-) {
+export const POST = withCsrf(async (request: NextRequest,
+  { params }: { params: Promise<{ id: string; questionId: string }> }) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  if (auth.role !== 'seller' && auth.role !== 'admin' && auth.role !== 'both') {
+    return NextResponse.json({ success: false, error: 'Seller access required' }, { status: 403 });
+  }
+  const userId = auth.userId;
   try {
     const { id: gigId, questionId } = await params
     const body = await request.json()
@@ -143,4 +151,4 @@ export async function POST(
       { status: 500 }
     )
   }
-}
+})

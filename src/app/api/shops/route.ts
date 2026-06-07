@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware';
 import { withCsrf } from '@/lib/with-csrf';
 import { cache } from '@/lib/cache';
+import { validateInput, shopCreateSchema } from '@/lib/validation';
 
 function slugify(text: string): string {
   return text
@@ -106,8 +108,22 @@ export async function GET(request: NextRequest) {
 }
 
 export const POST = withCsrf(async (request: NextRequest) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  const userId = auth.userId;
   try {
     const body = await request.json();
+
+    // Validate input with Zod
+    const validation = validateInput(shopCreateSchema, body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { success: false, error: validation.error },
+        { status: 400 }
+      );
+    }
     const {
       userId,
       name,
@@ -123,14 +139,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
       contactEmail,
       contactPhone,
       address,
-    } = body;
-
-    if (!userId || !name) {
-      return NextResponse.json(
-        { success: false, error: 'userId and name are required' },
-        { status: 400 }
-      );
-    }
+    } = validation.data;
 
     const existingShop = await db.shop.findUnique({ where: { userId } });
     if (existingShop) {

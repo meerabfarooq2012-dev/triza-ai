@@ -12,6 +12,7 @@ import {
   Loader2,
   AlertCircle,
   Receipt,
+  ShieldAlert,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -22,6 +23,8 @@ import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
+import { api } from '@/lib/api'
+import { useMarketplaceStore } from '@/store/use-marketplace-store'
 
 interface PlatformSettingsData {
   id: string
@@ -51,6 +54,8 @@ export default function AdminSettings() {
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [authError, setAuthError] = useState(false)
+  const { isAuthenticated, currentUser, setCurrentView } = useMarketplaceStore()
 
   // Platform settings state
   const [platformName, setPlatformName] = useState('Marketo')
@@ -70,14 +75,22 @@ export default function AdminSettings() {
   const [taxLabel, setTaxLabel] = useState('Tax')
 
   // Load settings from the database via API on mount
+  // Uses the api client so the auth token and CSRF cookie are included automatically
   const fetchSettings = useCallback(async () => {
     setLoading(true)
     setError(null)
+    setAuthError(false)
+
+    // Check if user is authenticated and is admin
+    if (!isAuthenticated || (currentUser?.role !== 'admin' && currentUser?.role !== 'both')) {
+      setAuthError(true)
+      setLoading(false)
+      return
+    }
+
     try {
-      const res = await fetch('/api/admin/settings')
-      if (!res.ok) throw new Error('Failed to load settings')
-      const data = await res.json()
-      const s: PlatformSettingsData = data.settings
+      const data = await api.admin.getSettings()
+      const s = data.settings as unknown as PlatformSettingsData
 
       setPlatformName(s.platformName || 'Marketo')
       setTagline(s.tagline || 'Your Marketplace, Your Way')
@@ -95,11 +108,17 @@ export default function AdminSettings() {
       setTaxLabel(s.taxLabel ?? 'Tax')
     } catch (err) {
       console.error('Failed to load admin settings:', err)
-      setError('Failed to load settings. Please try again.')
+      // Check if it's an auth error
+      const errMsg = err instanceof Error ? err.message : ''
+      if (errMsg.includes('401') || errMsg.includes('Unauthorized') || errMsg.includes('Authentication')) {
+        setAuthError(true)
+      } else {
+        setError('Failed to load settings. Please try again.')
+      }
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [isAuthenticated, currentUser?.role])
 
   useEffect(() => {
     fetchSettings()
@@ -108,28 +127,20 @@ export default function AdminSettings() {
   const handleSave = async () => {
     setSaving(true)
     try {
-      const res = await fetch('/api/admin/settings', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          platformName,
-          tagline,
-          description,
-          commissionRate: parseFloat(commissionRate) || 10,
-          maintenanceMode,
-          allowRegistration,
-          allowSellerRegistration,
-          taxEnabled,
-          taxRate: parseFloat(taxRate) || 0,
-          taxInclusive,
-          taxLabel: taxLabel || 'Tax',
-        }),
+      // Use the api client so the auth token and CSRF token are included automatically
+      await api.admin.updateSettings({
+        platformName,
+        tagline,
+        description,
+        commissionRate: parseFloat(commissionRate) || 10,
+        maintenanceMode,
+        allowRegistration,
+        allowSellerRegistration,
+        taxEnabled,
+        taxRate: parseFloat(taxRate) || 0,
+        taxInclusive,
+        taxLabel: taxLabel || 'Tax',
       })
-
-      if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Failed to save settings')
-      }
 
       toast.success('Settings saved successfully')
     } catch (err) {
@@ -146,6 +157,27 @@ export default function AdminSettings() {
       <div className="flex items-center justify-center py-20">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <span className="ml-3 text-muted-foreground">Loading settings...</span>
+      </div>
+    )
+  }
+
+  // Auth error state
+  if (authError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-4">
+        <ShieldAlert className="h-12 w-12 text-amber-500" />
+        <h3 className="text-lg font-semibold">Authentication Required</h3>
+        <p className="text-muted-foreground text-center max-w-md">
+          Your session may have expired. Please sign in again to access admin settings.
+        </p>
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={() => setCurrentView('auth')}>
+            Sign In
+          </Button>
+          <Button variant="outline" onClick={fetchSettings}>
+            Retry
+          </Button>
+        </div>
       </div>
     )
   }

@@ -139,84 +139,15 @@ export async function POST(request: NextRequest) {
 // Handles GET-based callbacks (some gateways redirect with query params)
 // =============================================================================
 
-export async function GET(request: NextRequest) {
-  try {
-    const gateway = request.nextUrl.searchParams.get('gateway');
-    const token = request.nextUrl.searchParams.get('token');
-    const status = request.nextUrl.searchParams.get('status');
-    const orderId = request.nextUrl.searchParams.get('orderId');
-
-    // ----- Sandbox mode: handle simulated payment confirmation -----
-    if (token && (status === 'success' || status === 'fail')) {
-      completeSimulatedPayment(token, status === 'success');
-    }
-
-    // Convert query params to callback data format and process
-    const callbackData: Record<string, string> = {};
-    request.nextUrl.searchParams.forEach((value, key) => {
-      callbackData[key] = value;
-    });
-
-    if (!orderId) {
-      // Return a simple HTML page for the buyer redirect
-      return new NextResponse(
-        getRedirectHtml('Processing...', 'Your payment is being processed. You will be redirected shortly.'),
-        { headers: { 'Content-Type': 'text/html' } }
-      );
-    }
-
-    // Find the payment
-    const payment = await db.payment.findUnique({
-      where: { orderId },
-      include: { order: true },
-    });
-
-    if (!payment) {
-      return new NextResponse(
-        getRedirectHtml('Payment Not Found', 'We could not find the payment record for this order.'),
-        { headers: { 'Content-Type': 'text/html' } }
-      );
-    }
-
-    // Determine success based on status param or sandbox token
-    const isSuccess = status === 'success' || (token && status !== 'fail');
-
-    if (isSuccess && payment.status !== 'completed') {
-      await handleSuccessfulPayment(
-        payment,
-        callbackData.transactionId || callbackData.pp_TxnRefNo || '',
-        gateway || 'unknown',
-        callbackData
-      );
-    } else if (!isSuccess && payment.status === 'processing') {
-      await handleFailedPayment(
-        payment,
-        callbackData.transactionId || callbackData.pp_TxnRefNo || '',
-        gateway || 'unknown',
-        status || 'unknown',
-        callbackData
-      );
-    }
-
-    // Return HTML redirect page for the buyer
-    const message = isSuccess
-      ? 'Your payment was successful! You will be redirected to your orders.'
-      : 'Your payment could not be processed. Please try again.';
-
-    return new NextResponse(
-      getRedirectHtml(
-        isSuccess ? 'Payment Successful' : 'Payment Failed',
-        message
-      ),
-      { headers: { 'Content-Type': 'text/html' } }
-    );
-  } catch (error) {
-    console.error('[Payment Callback GET] Error:', error);
-    return new NextResponse(
-      getRedirectHtml('Error', 'An error occurred while processing your payment callback.'),
-      { headers: { 'Content-Type': 'text/html' } }
-    );
-  }
+// GET callback handler is disabled for security.
+// GET-based callbacks cannot be cryptographically verified — an attacker could
+// call /api/payments/callback?status=success&orderId=... to mark payments as successful.
+// Only POST callbacks with proper signature verification are allowed.
+export async function GET() {
+  return NextResponse.json(
+    { success: false, error: 'Method Not Allowed. Only POST callbacks with cryptographic verification are accepted.' },
+    { status: 405, headers: { Allow: 'POST' } }
+  );
 }
 
 // =============================================================================

@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { authenticateRequest } from '@/lib/auth-middleware';
 import { rateLimit, getRateLimitKey, apiRateLimit } from '@/lib/rate-limit';
 import { withCsrf } from '@/lib/with-csrf';
+import { validateInput, cartItemAddSchema } from '@/lib/validation';
 
 interface CartItemData {
   productId: string;
@@ -25,15 +26,13 @@ async function postHandler(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { productId, quantity = 1, variantId } = body;
 
-    if (!productId) {
-      return NextResponse.json({ success: false, error: 'Product ID is required' }, { status: 400 });
+    // Validate input with Zod
+    const validation = validateInput(cartItemAddSchema, body);
+    if (!validation.success) {
+      return NextResponse.json({ success: false, error: validation.error }, { status: 400 });
     }
-
-    if (quantity < 1 || quantity > 99) {
-      return NextResponse.json({ success: false, error: 'Quantity must be between 1 and 99' }, { status: 400 });
-    }
+    const { productId, quantity, variantId } = validation.data;
 
     // Verify product exists and is active
     const product = await db.product.findUnique({

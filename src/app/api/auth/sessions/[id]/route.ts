@@ -7,10 +7,9 @@ import { authenticateRequestWithSession } from '@/lib/auth-middleware'
 import { revokeSessionById } from '@/lib/session'
 import { rateLimit, getRateLimitKey, apiRateLimit } from '@/lib/rate-limit'
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
+import { withCsrf } from '@/lib/with-csrf';
+export const DELETE = withCsrf(async (request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },) => {
   try {
     // Rate limiting
     const rateLimitKey = getRateLimitKey(request)
@@ -51,4 +50,4 @@ export async function DELETE(
       { status: 500 },
     )
   }
-}
+})

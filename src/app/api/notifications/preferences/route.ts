@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { authenticateRequest } from '@/lib/auth-middleware';
 
+import { withCsrf } from '@/lib/with-csrf';
 export async function GET(request: NextRequest) {
   try {
     const userId = request.nextUrl.searchParams.get('userId');
@@ -36,10 +38,15 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function PUT(request: NextRequest) {
+export const PUT = withCsrf(async (request: NextRequest) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
   try {
     const body = await request.json();
-    const { userId, ...updates } = body;
+    const { ...updates } = body;
+    const userId = auth.userId;
 
     if (!userId) {
       return NextResponse.json(
@@ -79,4 +86,4 @@ export async function PUT(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})

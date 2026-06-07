@@ -1,7 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { authenticateRequest } from '@/lib/auth-middleware';
+import { rateLimit, getRateLimitKey, notificationRateLimit } from '@/lib/rate-limit';
 
+import { withCsrf } from '@/lib/with-csrf';
+import { validateInput, notificationCreateSchema, notificationUpdateSchema, notificationDeleteSchema } from '@/lib/validation';
 export async function GET(request: NextRequest) {
+  // Rate limiting
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...notificationRateLimit, key: `notifications:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
   try {
     const userId = request.nextUrl.searchParams.get('userId');
     const category = request.nextUrl.searchParams.get('category');
@@ -60,17 +74,34 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
+  // Rate limiting
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...notificationRateLimit, key: `notifications:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
   try {
     const body = await request.json();
-    const { userId, title, message, type, category, link, image, priority, metadata } = body;
 
-    if (!userId || !title || !message) {
+    // Validate input with Zod
+    const validation = validateInput(notificationCreateSchema, body);
+    if (!validation.success) {
       return NextResponse.json(
-        { success: false, error: 'userId, title, and message are required' },
+        { success: false, error: validation.error },
         { status: 400 }
       );
     }
+    const { title, message, type, category, link, image, priority, metadata } = validation.data;
+    const userId = auth.userId;
 
     const notification = await db.notification.create({
       data: {
@@ -124,12 +155,36 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})
 
-export async function PUT(request: NextRequest) {
+export const PUT = withCsrf(async (request: NextRequest) => {
+  // Rate limiting
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...notificationRateLimit, key: `notifications:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
   try {
     const body = await request.json();
-    const { notificationId, markAll, userId } = body;
+
+    // Validate input with Zod
+    const validation = validateInput(notificationUpdateSchema, body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { success: false, error: validation.error },
+        { status: 400 }
+      );
+    }
+    const { notificationId, markAll } = validation.data;
+    const userId = auth.userId;
 
     if (markAll && userId) {
       await db.notification.updateMany({
@@ -177,12 +232,36 @@ export async function PUT(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})
 
-export async function DELETE(request: NextRequest) {
+export const DELETE = withCsrf(async (request: NextRequest) => {
+  // Rate limiting
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...notificationRateLimit, key: `notifications:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
   try {
     const body = await request.json();
-    const { notificationId, userId } = body;
+
+    // Validate input with Zod
+    const validation = validateInput(notificationDeleteSchema, body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { success: false, error: validation.error },
+        { status: 400 }
+      );
+    }
+    const { notificationId } = validation.data;
+    const userId = auth.userId;
 
     if (notificationId) {
       const notification = await db.notification.findUnique({
@@ -229,4 +308,4 @@ export async function DELETE(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware';
 
+import { withCsrf } from '@/lib/with-csrf';
 const VALID_SHIPMENT_STATUSES = [
   'pending',
   'picked_up',
@@ -98,10 +100,13 @@ export async function GET(
 // When status changes to 'delivered', set deliveredAt and also update Order status to 'delivered'
 // When status changes to 'picked_up', set shippedAt and update Order status to 'shipped'
 // Create OrderStatusLog entries for status changes
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const PUT = withCsrf(async (request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  const userId = auth.userId;
   try {
     const { id } = await params;
     const body = await request.json();
@@ -240,13 +245,16 @@ export async function PUT(
       { status: 500 }
     );
   }
-}
+})
 
 // DELETE — Delete a shipment (admin only)
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const DELETE = withCsrf(async (request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  const userId = auth.userId;
   try {
     const { id } = await params;
 
@@ -273,4 +281,4 @@ export async function DELETE(
       { status: 500 }
     );
   }
-}
+})

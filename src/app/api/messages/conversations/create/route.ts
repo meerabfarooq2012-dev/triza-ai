@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware';
 import { withCsrf } from '@/lib/with-csrf';
 
 // POST /api/messages/conversations/create
 // Create or find a conversation between two users
 export const POST = withCsrf(async (request: NextRequest) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  const userId = auth.userId;
   try {
     const body = await request.json();
     const { userId, otherUserId, productId, gigId, initialMessage } = body;

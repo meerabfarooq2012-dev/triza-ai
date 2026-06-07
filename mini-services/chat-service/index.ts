@@ -1,12 +1,48 @@
 import { Server } from "socket.io";
+import jwt from "jsonwebtoken";
 
 const PORT = 3003;
 
+// ─── JWT Configuration ────────────────────────────────────────────────────
+// Must match the JWT_SECRET used by the main Next.js app (auth-middleware.ts)
+const JWT_SECRET = process.env.JWT_SECRET || "marketo-dev-secret-change-in-production";
+
+// ─── Allowed CORS Origins ─────────────────────────────────────────────────
+const ALLOWED_ORIGINS = [
+  process.env.FRONTEND_URL || "http://localhost:3000",
+  "https://marketo-vercel-app.vercel.app",
+];
+
+// ─── Socket.io Server ─────────────────────────────────────────────────────
+
 const io = new Server(PORT, {
   cors: {
-    origin: "*",
+    origin: ALLOWED_ORIGINS,
     methods: ["GET", "POST"],
   },
+});
+
+// ─── JWT Authentication Middleware ─────────────────────────────────────────
+io.use((socket, next) => {
+  const token =
+    socket.handshake.auth.token ||
+    (socket.handshake.query.token as string | undefined);
+
+  if (!token) {
+    return next(new Error("Authentication required"));
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as {
+      userId: string;
+      email: string;
+      role: string;
+    };
+    socket.data.user = decoded;
+    next();
+  } catch (err) {
+    next(new Error("Invalid token"));
+  }
 });
 
 // Track user-socket mapping: socketId -> userId
@@ -16,26 +52,32 @@ const socketUserMap = new Map<string, string>();
 const socketRoomsMap = new Map<string, Set<string>>();
 
 io.on("connection", (socket) => {
-  console.log(`[ChatService] Socket connected: ${socket.id}`);
+  console.log(
+    `[ChatService] Socket connected: ${socket.id} (user: ${socket.data.user?.userId})`
+  );
 
   // ─── Register User ────────────────────────────────────────────────
-  socket.on(
-    "register-user",
-    (data: { userId: string }) => {
-      const { userId } = data;
-      const roomName = `user:${userId}`;
+  socket.on("register-user", (data: { userId: string }) => {
+    const { userId } = data;
 
-      socketUserMap.set(socket.id, userId);
-      socket.join(roomName);
-
-      console.log(
-        `[ChatService] User ${userId} registered (room: ${roomName})`
-      );
-
-      // Broadcast online presence to all conversations this user may be part of
-      socket.broadcast.emit("user-joined", { userId });
+    // Verify userId matches the authenticated user
+    if (socket.data.user?.userId !== userId) {
+      socket.emit("error", { message: "User ID mismatch" });
+      return;
     }
-  );
+
+    const roomName = `user:${userId}`;
+
+    socketUserMap.set(socket.id, userId);
+    socket.join(roomName);
+
+    console.log(
+      `[ChatService] User ${userId} registered (room: ${roomName})`
+    );
+
+    // Broadcast online presence to all conversations this user may be part of
+    socket.broadcast.emit("user-joined", { userId });
+  });
 
   // ─── Join Conversation ────────────────────────────────────────────
   socket.on(
@@ -43,6 +85,12 @@ io.on("connection", (socket) => {
     (data: { conversationId: string; userId: string }) => {
       const { conversationId, userId } = data;
       const roomName = `conv:${conversationId}`;
+
+      // Verify userId matches the authenticated user
+      if (socket.data.user?.userId !== userId) {
+        socket.emit("error", { message: "User ID mismatch" });
+        return;
+      }
 
       // Track user mapping
       socketUserMap.set(socket.id, userId);
@@ -104,6 +152,12 @@ io.on("connection", (socket) => {
       const { conversationId, message } = data;
       const roomName = `conv:${conversationId}`;
 
+      // Verify the sender matches the authenticated user
+      if (socket.data.user?.userId !== message.senderId) {
+        socket.emit("error", { message: "Sender ID mismatch" });
+        return;
+      }
+
       console.log(
         `[ChatService] Message in conversation ${conversationId} from user ${message.senderId}`
       );
@@ -120,8 +174,15 @@ io.on("connection", (socket) => {
       const { conversationId, userId, userName } = data;
       const roomName = `conv:${conversationId}`;
 
+      // Verify userId matches the authenticated user
+      if (socket.data.user?.userId !== userId) {
+        return;
+      }
+
       // Broadcast to others in the room (not back to sender)
-      socket.to(roomName).emit("user-typing", { conversationId, userId, userName });
+      socket
+        .to(roomName)
+        .emit("user-typing", { conversationId, userId, userName });
     }
   );
 
@@ -131,6 +192,11 @@ io.on("connection", (socket) => {
     (data: { conversationId: string; userId: string }) => {
       const { conversationId, userId } = data;
       const roomName = `conv:${conversationId}`;
+
+      // Verify userId matches the authenticated user
+      if (socket.data.user?.userId !== userId) {
+        return;
+      }
 
       // Broadcast to others in the room
       socket.to(roomName).emit("user-stop-typing", { conversationId, userId });
@@ -143,6 +209,11 @@ io.on("connection", (socket) => {
     (data: { conversationId: string; userId: string }) => {
       const { conversationId, userId } = data;
       const roomName = `conv:${conversationId}`;
+
+      // Verify userId matches the authenticated user
+      if (socket.data.user?.userId !== userId) {
+        return;
+      }
 
       console.log(
         `[ChatService] User ${userId} marked messages as read in conversation ${conversationId}`

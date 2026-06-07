@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware'
 
+import { withCsrf } from '@/lib/with-csrf';
 // Simple CSV parser that handles basic quoting
 function parseCSV(text: string): string[][] {
   const rows: string[][] = []
@@ -59,7 +61,14 @@ function parseCSV(text: string): string[][] {
 }
 
 // POST /api/products/import — Import products from CSV
-export async function POST(req: NextRequest) {
+export const POST = withCsrf(async (req: NextRequest) => {
+  const auth = authenticateRequest(req);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  if (auth.role !== 'admin') {
+    return NextResponse.json({ success: false, error: 'Admin access required' }, { status: 403 });
+  }
   try {
     const formData = await req.formData()
     const file = formData.get('file') as File | null
@@ -243,4 +252,4 @@ export async function POST(req: NextRequest) {
     console.error('Failed to import products:', error)
     return NextResponse.json({ success: false, error: 'Failed to import products' }, { status: 500 })
   }
-}
+})

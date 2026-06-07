@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware';
 
+import { withCsrf } from '@/lib/with-csrf';
 // Helper to recalculate average rating for a product or shop
 async function recalculateRating(productId?: string | null, shopId?: string | null, gigId?: string | null) {
   if (productId) {
@@ -65,10 +67,12 @@ async function recalculateRating(productId?: string | null, shopId?: string | nu
 }
 
 // DELETE /api/reviews/[id] - Delete a review
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const DELETE = withCsrf(async (request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
   try {
     const { id } = await params;
     const searchParams = request.nextUrl.searchParams;
@@ -120,13 +124,15 @@ export async function DELETE(
       { status: 500 }
     );
   }
-}
+})
 
 // PATCH /api/reviews/[id] - Update a review
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const PATCH = withCsrf(async (request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
   try {
     const { id } = await params;
     const body = await request.json();
@@ -198,4 +204,4 @@ export async function PATCH(
       { status: 500 }
     );
   }
-}
+})

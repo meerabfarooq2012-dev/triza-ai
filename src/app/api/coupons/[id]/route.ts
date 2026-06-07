@@ -1,8 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware'
 
+import { withCsrf } from '@/lib/with-csrf';
 // PATCH /api/coupons/[id]
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export const PATCH = withCsrf(async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+  const auth = authenticateRequest(req);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  if (auth.role !== 'admin' && auth.role !== 'seller' && auth.role !== 'both') {
+    return NextResponse.json({ success: false, error: 'Seller or admin access required' }, { status: 403 });
+  }
   try {
     const { id } = await params
     const body = await req.json()
@@ -47,10 +56,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     console.error('Failed to update coupon:', error)
     return NextResponse.json({ success: false, error: 'Failed to update coupon' }, { status: 500 })
   }
-}
+})
 
 // DELETE /api/coupons/[id]
-export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export const DELETE = withCsrf(async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+  const auth = authenticateRequest(req);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  if (auth.role !== 'admin' && auth.role !== 'seller' && auth.role !== 'both') {
+    return NextResponse.json({ success: false, error: 'Seller or admin access required' }, { status: 403 });
+  }
   try {
     const { id } = await params
 
@@ -66,4 +82,4 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     console.error('Failed to delete coupon:', error)
     return NextResponse.json({ success: false, error: 'Failed to delete coupon' }, { status: 500 })
   }
-}
+})

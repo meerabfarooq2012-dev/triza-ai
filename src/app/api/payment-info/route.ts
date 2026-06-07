@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware';
 import { Prisma } from '@prisma/client';
 import type { PaymentInfoMethod, PaymentInfoType, PaymentInfoAccountDetails } from '@/types';
 
+import { withCsrf } from '@/lib/with-csrf';
+import { validateInput, paymentInfoCreateSchema } from '@/lib/validation';
 const VALID_METHODS: PaymentInfoMethod[] = ['easypaisa', 'jazzcash', 'card', 'payoneer', 'wise', 'bank_transfer'];
 const VALID_TYPES: PaymentInfoType[] = ['buyer', 'seller'];
 
@@ -116,34 +119,24 @@ function validateAccountDetails(method: PaymentInfoMethod, details: PaymentInfoA
   return null;
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  const userId = auth.userId;
   try {
     const body = await request.json();
-    const { userId, type, method, label, accountDetails, isDefault } = body;
 
-    // Validate required fields
-    if (!userId || !type || !method || !label || !accountDetails) {
+    // Validate input with Zod
+    const validation = validateInput(paymentInfoCreateSchema, body);
+    if (!validation.success) {
       return NextResponse.json(
-        { success: false, error: 'userId, type, method, label, and accountDetails are required' },
+        { success: false, error: validation.error },
         { status: 400 }
       );
     }
-
-    // Validate type
-    if (!VALID_TYPES.includes(type)) {
-      return NextResponse.json(
-        { success: false, error: `Invalid type. Must be one of: ${VALID_TYPES.join(', ')}` },
-        { status: 400 }
-      );
-    }
-
-    // Validate method
-    if (!VALID_METHODS.includes(method)) {
-      return NextResponse.json(
-        { success: false, error: `Invalid method. Must be one of: ${VALID_METHODS.join(', ')}` },
-        { status: 400 }
-      );
-    }
+    const { userId, type, method, label, accountDetails, isDefault } = validation.data;
 
     // Method-specific accountDetails validation
     const validationError = validateAccountDetails(method, accountDetails);
@@ -204,4 +197,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})

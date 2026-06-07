@@ -2,6 +2,8 @@
 
 import { useEffect } from 'react'
 
+const isProduction = process.env.NODE_ENV === 'production'
+
 export default function Error({
   error,
   reset,
@@ -25,12 +27,14 @@ export default function Error({
         <p className="text-muted-foreground text-sm">
           An unexpected error occurred. This has been logged for investigation.
         </p>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-left">
-          <p className="text-sm text-red-800 font-mono break-all">{error.message}</p>
-          {error.digest && (
-            <p className="text-xs text-red-500 mt-2">Digest: {error.digest}</p>
-          )}
-        </div>
+        {!isProduction && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-left">
+            <p className="text-sm text-red-800 font-mono break-all">{error.message}</p>
+            {error.digest && (
+              <p className="text-xs text-red-500 mt-2">Digest: {error.digest}</p>
+            )}
+          </div>
+        )}
         <div className="flex gap-3 justify-center">
           <button
             onClick={reset}

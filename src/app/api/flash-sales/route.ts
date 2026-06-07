@@ -1,8 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-
+import { authenticateRequest } from '@/lib/auth-middleware'
+import { rateLimit, getRateLimitKey, flashSaleRateLimit } from '@/lib/rate-limit'
+import { withCsrf } from '@/lib/with-csrf';
+import { validateInput, flashSaleCreateSchema } from '@/lib/validation';
 // GET /api/flash-sales?shopId=xxx&type=flash_sale&active=true&includeExpired=false&page=1&limit=20
 export async function GET(req: NextRequest) {
+  // Rate limiting
+  const rlKey = getRateLimitKey(req);
+  const rlResult = rateLimit({ ...flashSaleRateLimit, key: `flash-sales:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
   try {
     const { searchParams } = new URL(req.url)
     const shopId = searchParams.get('shopId')
@@ -88,7 +101,7 @@ export async function GET(req: NextRequest) {
     })
   } catch (error) {
     console.error('Failed to fetch flash sales:', error)
-    const message = error instanceof Error ? error.message : 'Failed to fetch flash sales'
+    const message = 'Failed to fetch flash sales'
     return NextResponse.json(
       { success: false, error: message },
       { status: 500 }
@@ -97,17 +110,36 @@ export async function GET(req: NextRequest) {
 }
 
 // POST /api/flash-sales
-export async function POST(req: NextRequest) {
+export const POST = withCsrf(async (req: NextRequest) => {
+  // Rate limiting
+  const rlKey = getRateLimitKey(req);
+  const rlResult = rateLimit({ ...flashSaleRateLimit, key: `flash-sales:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
+  const auth = authenticateRequest(req);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  if (auth.role !== 'admin' && auth.role !== 'seller' && auth.role !== 'both') {
+    return NextResponse.json({ success: false, error: 'Seller or admin access required' }, { status: 403 });
+  }
   try {
     const body = await req.json()
-    const { shopId, productId, title, description, salePrice, type, startDate, endDate, maxQuantity, banner } = body
 
-    if (!shopId || !productId || !title || salePrice === undefined || !startDate || !endDate) {
+    // Validate input with Zod
+    const validation = validateInput(flashSaleCreateSchema, body)
+    if (!validation.success) {
       return NextResponse.json(
-        { success: false, error: 'shopId, productId, title, salePrice, startDate, and endDate are required' },
+        { success: false, error: validation.error },
         { status: 400 }
       )
     }
+    const { shopId, productId, title, description, salePrice, type, startDate, endDate, maxQuantity, banner } = validation.data
 
     // Validate product belongs to the shop
     const product = await db.product.findFirst({
@@ -199,4 +231,4 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+})

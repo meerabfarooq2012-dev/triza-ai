@@ -1,9 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { rateLimit, getRateLimitKey, shippingRateLimit } from '@/lib/rate-limit';
 
+import { withCsrf } from '@/lib/with-csrf';
 // POST — Calculate available shipping options for an order
 // Body: { shopId, country, orderTotal, weight? }
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
+  // Rate limiting
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...shippingRateLimit, key: `shipping-calc:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = await request.json();
     const { shopId, country, orderTotal, weight } = body;
@@ -199,7 +211,7 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})
 
 function formatRate(
   rate: {

@@ -1,10 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware';
 import { Prisma } from '@prisma/client';
 import { notifyNewReview } from '@/lib/notifications';
+import { rateLimit, getRateLimitKey, reviewRateLimit } from '@/lib/rate-limit';
 import { withCsrf } from '@/lib/with-csrf';
+import { validateInput, reviewCreateSchema, reviewHelpfulSchema } from '@/lib/validation';
 
 export async function GET(request: NextRequest) {
+  // Rate limiting
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...reviewRateLimit, key: `reviews:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const productId = searchParams.get('productId') || '';
@@ -136,13 +149,35 @@ export async function GET(request: NextRequest) {
 }
 
 export const POST = withCsrf(async (request: NextRequest) => {
+  // Rate limiting
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...reviewRateLimit, key: `reviews:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  const userId = auth.userId;
   try {
     const body = await request.json();
 
     // Handle helpful vote action (legacy support)
-    if (body.action === 'helpful' && body.reviewId) {
+    if (body.action === 'helpful') {
+      const helpfulValidation = validateInput(reviewHelpfulSchema, body);
+      if (!helpfulValidation.success) {
+        return NextResponse.json(
+          { success: false, error: helpfulValidation.error },
+          { status: 400 }
+        );
+      }
       const review = await db.review.findUnique({
-        where: { id: body.reviewId },
+        where: { id: helpfulValidation.data.reviewId },
       });
 
       if (!review) {
@@ -153,7 +188,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
       }
 
       const updatedReview = await db.review.update({
-        where: { id: body.reviewId },
+        where: { id: helpfulValidation.data.reviewId },
         data: {
           helpfulCount: { increment: 1 },
         },
@@ -165,29 +200,15 @@ export const POST = withCsrf(async (request: NextRequest) => {
       return NextResponse.json({ success: true, data: updatedReview });
     }
 
-    // Default: create a new review
-    const { userId, shopId, productId, gigId, rating, title, comment, images } = body;
-
-    if (!userId || !comment || !rating) {
+    // Default: create a new review — validate with Zod
+    const validation = validateInput(reviewCreateSchema, body);
+    if (!validation.success) {
       return NextResponse.json(
-        { success: false, error: 'userId, rating, and comment are required' },
+        { success: false, error: validation.error },
         { status: 400 }
       );
     }
-
-    if (!shopId && !productId && !gigId) {
-      return NextResponse.json(
-        { success: false, error: 'shopId, productId, or gigId is required' },
-        { status: 400 }
-      );
-    }
-
-    if (rating < 1 || rating > 5) {
-      return NextResponse.json(
-        { success: false, error: 'Rating must be between 1 and 5' },
-        { status: 400 }
-      );
-    }
+    const { userId, shopId, productId, gigId, rating, title, comment, images } = validation.data;
 
     // Check if user already reviewed this
     const existingReview = await db.review.findFirst({

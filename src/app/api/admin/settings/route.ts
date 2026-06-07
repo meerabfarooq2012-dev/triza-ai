@@ -2,9 +2,20 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { rateLimit, apiRateLimit, getRateLimitKey } from '@/lib/rate-limit'
 import { createAuditLog } from '@/lib/audit-log'
+import { authenticateRequest } from '@/lib/auth-middleware'
+import { withCsrf } from '@/lib/with-csrf';
 
 // GET /api/admin/settings — Get platform settings
 export async function GET(request: NextRequest) {
+  // Verify admin authentication
+  const auth = await authenticateRequest(request)
+  if (!auth) {
+    return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+  }
+  if (auth.role !== 'admin' && auth.role !== 'both') {
+    return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+  }
+
   // Rate limit
   const rlKey = getRateLimitKey(request)
   const rl = rateLimit({ ...apiRateLimit, key: `admin-settings-get:${rlKey}` })
@@ -33,7 +44,16 @@ export async function GET(request: NextRequest) {
 }
 
 // PATCH /api/admin/settings — Update platform settings
-export async function PATCH(request: NextRequest) {
+export const PATCH = withCsrf(async (request: NextRequest) => {
+  // Verify admin authentication
+  const auth = await authenticateRequest(request)
+  if (!auth) {
+    return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+  }
+  if (auth.role !== 'admin' && auth.role !== 'both') {
+    return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+  }
+
   // Rate limit
   const rlKey = getRateLimitKey(request)
   const rl = rateLimit({ ...apiRateLimit, key: `admin-settings-patch:${rlKey}` })
@@ -105,4 +125,4 @@ export async function PATCH(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})

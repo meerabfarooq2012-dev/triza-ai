@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware';
 import { withCsrf } from '@/lib/with-csrf';
 import { createAuditLog } from '@/lib/audit-log';
 
@@ -81,6 +82,10 @@ async function handleUpdateProduct(
   request: NextRequest,
   context?: unknown
 ) {
+  const auth = authenticateRequest(req);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
   try {
     const { params } = context as { params: Promise<{ id: string }> };
     const { id } = await params;
@@ -95,7 +100,7 @@ async function handleUpdateProduct(
     }
 
     const shop = await db.shop.findUnique({ where: { id: product.shopId } });
-    if (!shop || shop.userId !== body.userId) {
+    if (!shop || (shop.userId !== auth.userId && auth.role !== 'admin')) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 403 }
@@ -175,17 +180,14 @@ export const DELETE = withCsrf(async (
   request: NextRequest,
   context?: unknown
 ) => {
+  const auth = authenticateRequest(req);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
   try {
     const { params } = context as { params: Promise<{ id: string }> };
     const { id } = await params;
-    const userId = request.nextUrl.searchParams.get('userId');
-
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, error: 'userId is required' },
-        { status: 400 }
-      );
-    }
+    const userId = auth.userId;
 
     const product = await db.product.findUnique({ where: { id } });
     if (!product) {
@@ -196,7 +198,7 @@ export const DELETE = withCsrf(async (
     }
 
     const shop = await db.shop.findUnique({ where: { id: product.shopId } });
-    if (!shop || shop.userId !== userId) {
+    if (!shop || (shop.userId !== userId && auth.role !== 'admin')) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 403 }

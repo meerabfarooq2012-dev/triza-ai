@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-
+import { authenticateRequest } from '@/lib/auth-middleware';
+import { withCsrf } from '@/lib/with-csrf';
 // GET /api/disputes/[id]/messages — List messages for a dispute
 export async function GET(
   request: NextRequest,
@@ -77,21 +78,24 @@ export async function GET(
 }
 
 // POST /api/disputes/[id]/messages — Send a message in a dispute
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const POST = withCsrf(async (request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
   try {
     const { id } = await params;
     const body = await request.json();
-    const { senderId, senderRole, content, isInternal } = body;
+    const { senderRole, content, isInternal } = body;
+    const senderId = auth.userId;
 
     // Validate required fields
-    if (!senderId || !senderRole || !content) {
+    if (!senderRole || !content) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Missing required fields: senderId, senderRole, content',
+          error: 'Missing required fields: senderRole, content',
         },
         { status: 400 }
       );
@@ -223,4 +227,4 @@ export async function POST(
       { status: 500 }
     );
   }
-}
+})

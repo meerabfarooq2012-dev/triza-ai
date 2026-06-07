@@ -1,8 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-
+import { authenticateRequest } from '@/lib/auth-middleware';
+import { rateLimit, getRateLimitKey, socialRateLimit } from '@/lib/rate-limit';
+import { withCsrf } from '@/lib/with-csrf';
 // GET: Get activities for a specific shop
 export async function GET(request: NextRequest) {
+  // Rate limiting
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...socialRateLimit, key: `social-activities:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const shopId = searchParams.get('shopId');
@@ -81,14 +93,29 @@ export async function GET(request: NextRequest) {
 }
 
 // POST: Create an activity
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
+  // Rate limiting
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...socialRateLimit, key: `social-activities:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
   try {
     const body = await request.json();
-    const { userId, shopId, productId, type, title, description, image, metadata } = body;
+    const { shopId, productId, type, title, description, image, metadata } = body;
+    const userId = auth.userId;
 
-    if (!userId || !type || !title) {
+    if (!type || !title) {
       return NextResponse.json(
-        { success: false, error: 'userId, type, and title are required' },
+        { success: false, error: 'type and title are required' },
         { status: 400 }
       );
     }
@@ -189,4 +216,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})

@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware';
 
+import { withCsrf } from '@/lib/with-csrf';
 // PATCH /api/products/[id]/variants/[variantId] — Update a single variant
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string; variantId: string }> }
-) {
+export const PATCH = withCsrf(async (request: NextRequest,
+  { params }: { params: Promise<{ id: string; variantId: string }> }) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
   try {
     const { id: productId, variantId } = await params;
     const body = await request.json();
@@ -104,13 +108,15 @@ export async function PATCH(
       { status: 500 }
     );
   }
-}
+})
 
 // DELETE /api/products/[id]/variants/[variantId] — Soft-delete a variant (set isActive=false)
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string; variantId: string }> }
-) {
+export const DELETE = withCsrf(async (request: NextRequest,
+  { params }: { params: Promise<{ id: string; variantId: string }> }) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
   try {
     const { id: productId, variantId } = await params;
     const userId = request.nextUrl.searchParams.get('userId');
@@ -174,4 +180,4 @@ export async function DELETE(
       { status: 500 }
     );
   }
-}
+})

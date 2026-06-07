@@ -2,72 +2,30 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 
+import { withCsrf } from '@/lib/with-csrf';
 /**
  * Admin Setup Endpoint
  *
- * GET  /api/setup/admin?key=marketo-setup-2024  → Setup admin (works in browser!)
- * POST /api/setup/admin  Body: { setupKey: "marketo-setup-2024" } → Setup admin
+ * POST /api/setup/admin  Body: { setupKey: "<ADMIN_SETUP_KEY env var>" } → Setup admin
  *
  * This fixes the admin password hash so login works on Vercel/Supabase.
+ * The setup key must be provided via the ADMIN_SETUP_KEY environment variable.
  */
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const setupKey = searchParams.get('key');
 
-    if (setupKey !== 'marketo-setup-2024') {
+export const POST = withCsrf(async (request: NextRequest) => {
+  try {
+    const setupKeyEnv = process.env.ADMIN_SETUP_KEY;
+    if (!setupKeyEnv) {
       return NextResponse.json(
-        { success: false, error: 'Invalid setup key. Use ?key=marketo-setup-2024' },
-        { status: 403 }
+        { success: false, error: 'Setup key is not configured on the server. Set ADMIN_SETUP_KEY environment variable.' },
+        { status: 503 }
       );
     }
 
-    return await setupAdmin();
-  } catch (error) {
-    console.error('Admin setup error:', error);
-    const errMsg = error instanceof Error ? error.message : String(error);
-
-    // Provide helpful diagnostics for common Supabase issues
-    const helpInfo: Record<string, string> = {};
-
-    if (errMsg.includes('tenant') || errMsg.includes('ENOTFOUND')) {
-      helpInfo.issue = 'SUPABASE_CONNECTION_FAILED';
-      helpInfo.cause = 'Your Supabase project is likely PAUSED (free tier auto-pauses after 7 days of inactivity) or the DATABASE_URL has the wrong region.';
-      helpInfo.fix = [
-        'Step 1: Go to https://supabase.com/dashboard',
-        'Step 2: Find your project — if it says "Paused", click "Restore project"',
-        'Step 3: Wait 1-2 minutes for the project to come back online',
-        'Step 4: Go to Project Settings → Database → Connection string',
-        'Step 5: Copy the "Connection pooling" URL (Transaction mode, port 6543) — this is your DATABASE_URL',
-        'Step 6: Copy the "Direct connection" URL (Session mode, port 5432) — this is your DIRECT_URL',
-        'Step 7: Update both URLs in Vercel → Settings → Environment Variables',
-        'Step 8: Redeploy (Deployments → click "..." → Redeploy)',
-        'Step 9: Come back and try this setup URL again',
-      ].join('\n');
-      helpInfo.diagnostic = 'Visit /api/db-diagnostic?key=marketo-setup-2024 for more details';
-    } else if (errMsg.includes('password') || errMsg.includes('authentication')) {
-      helpInfo.issue = 'DATABASE_AUTH_FAILED';
-      helpInfo.cause = 'The database password in your DATABASE_URL is incorrect.';
-      helpInfo.fix = 'Check your Supabase database password in Project Settings → Database and update the DATABASE_URL in Vercel.';
-    }
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Setup failed: ' + errMsg,
-        help: Object.keys(helpInfo).length > 0 ? helpInfo : undefined,
-      },
-      { status: 500 }
-    );
-  }
-}
-
-export async function POST(request: NextRequest) {
-  try {
     const body = await request.json();
     const { setupKey } = body;
 
-    if (setupKey !== 'marketo-setup-2024') {
+    if (setupKey !== setupKeyEnv) {
       return NextResponse.json(
         { success: false, error: 'Invalid setup key' },
         { status: 403 }
@@ -78,11 +36,11 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Admin setup error:', error);
     return NextResponse.json(
-      { success: false, error: 'Setup failed: ' + (error instanceof Error ? error.message : String(error)) },
+      { success: false, error: 'Setup failed' },
       { status: 500 }
     );
   }
-}
+})
 
 async function setupAdmin() {
   const adminEmail = 'admin@marketo.com';
@@ -128,11 +86,7 @@ async function setupAdmin() {
 
     return NextResponse.json({
       success: true,
-      message: '✅ Admin user fixed! You can now login.',
-      credentials: {
-        email: adminEmail,
-        password: adminPassword,
-      },
+      message: 'Admin account created/updated successfully',
     });
   }
 
@@ -178,10 +132,6 @@ async function setupAdmin() {
 
   return NextResponse.json({
     success: true,
-    message: '✅ Admin user created! You can now login.',
-    credentials: {
-      email: adminEmail,
-      password: adminPassword,
-    },
+    message: 'Admin account created/updated successfully',
   });
 }

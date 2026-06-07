@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware';
 import { Prisma } from '@prisma/client';
 import { sendEmailAsync } from '@/lib/email';
 import { withdrawalNotificationEmail } from '@/lib/email-templates';
 import { withCsrf } from '@/lib/with-csrf';
+import { validateInput, withdrawalCreateSchema } from '@/lib/validation';
 
 export async function GET(request: NextRequest) {
   try {
@@ -80,31 +82,23 @@ export async function GET(request: NextRequest) {
 }
 
 export const POST = withCsrf(async (request: NextRequest) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  const userId = auth.userId;
   try {
     const body = await request.json();
-    const { userId, amount, method, accountDetails } = body;
 
-    if (!userId || !amount || !method || !accountDetails) {
+    // Validate input with Zod
+    const validation = validateInput(withdrawalCreateSchema, body);
+    if (!validation.success) {
       return NextResponse.json(
-        { success: false, error: 'userId, amount, method, and accountDetails are required' },
+        { success: false, error: validation.error },
         { status: 400 }
       );
     }
-
-    const validMethods = ['easypaisa', 'jazzcash', 'payoneer', 'wise', 'bank_transfer'];
-    if (!validMethods.includes(method)) {
-      return NextResponse.json(
-        { success: false, error: `Invalid method. Must be one of: ${validMethods.join(', ')}` },
-        { status: 400 }
-      );
-    }
-
-    if (amount <= 0) {
-      return NextResponse.json(
-        { success: false, error: 'Amount must be greater than 0' },
-        { status: 400 }
-      );
-    }
+    const { userId, amount, method, accountDetails } = validation.data;
 
     // Minimum withdrawal amount
     const MIN_WITHDRAWAL_AMOUNT = 10;

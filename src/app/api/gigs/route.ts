@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware';
 import { Prisma } from '@prisma/client';
+import { rateLimit, getRateLimitKey, gigRateLimit } from '@/lib/rate-limit';
 
+import { withCsrf } from '@/lib/with-csrf';
+import { validateInput, gigCreateSchema } from '@/lib/validation';
 function slugify(text: string): string {
   return text
     .toLowerCase()
@@ -10,6 +14,16 @@ function slugify(text: string): string {
 }
 
 export async function GET(request: NextRequest) {
+  // Rate limiting
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...gigRateLimit, key: `gigs:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search') || '';
@@ -176,9 +190,35 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
+  // Rate limiting
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...gigRateLimit, key: `gigs:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  if (auth.role !== 'seller' && auth.role !== 'admin' && auth.role !== 'both') {
+    return NextResponse.json({ success: false, error: 'Seller access required' }, { status: 403 });
+  }
   try {
     const body = await request.json();
+
+    // Validate input with Zod
+    const validation = validateInput(gigCreateSchema, body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { success: false, error: validation.error },
+        { status: 400 }
+      );
+    }
     const {
       shopId,
       categoryId,
@@ -190,14 +230,7 @@ export async function POST(request: NextRequest) {
       faqs,
       requirements,
       isFeatured,
-    } = body;
-
-    if (!shopId || !title || !description || !packages || packages.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'shopId, title, description, and at least one package are required' },
-        { status: 400 }
-      );
-    }
+    } = validation.data;
 
     const shop = await db.shop.findUnique({ where: { id: shopId } });
     if (!shop) {
@@ -256,4 +289,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})

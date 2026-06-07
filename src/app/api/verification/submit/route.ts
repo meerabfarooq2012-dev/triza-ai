@@ -1,20 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
+import { withCsrf } from '@/lib/with-csrf';
+import { validateInput, verificationSubmitSchema } from '@/lib/validation';
 // POST /api/verification/submit
-export async function POST(req: NextRequest) {
+export const POST = withCsrf(async (req: NextRequest) => {
   try {
     const body = await req.json()
-    const { userId, shopId, documentType, country, documentNumber, documentUrl } = body
 
-    if (!userId || !shopId || !documentType) {
-      return NextResponse.json({ success: false, error: 'userId, shopId, and documentType are required' }, { status: 400 })
+    // Validate input with Zod
+    const validation = validateInput(verificationSubmitSchema, body)
+    if (!validation.success) {
+      return NextResponse.json({ success: false, error: validation.error }, { status: 400 })
     }
-
-    const validDocTypes = ['national_id', 'passport', 'business_license', 'tax_certificate', 'utility_bill', 'bank_statement']
-    if (!validDocTypes.includes(documentType)) {
-      return NextResponse.json({ success: false, error: 'Invalid document type' }, { status: 400 })
-    }
+    const { userId, shopId, documentType, country, documentNumber, documentUrl } = validation.data
 
     // Check user exists
     const user = await db.user.findUnique({ where: { id: userId } })
@@ -64,4 +63,4 @@ export async function POST(req: NextRequest) {
     console.error('[Verification Submit API]', error)
     return NextResponse.json({ success: false, error: 'Failed to submit verification document' }, { status: 500 })
   }
-}
+})

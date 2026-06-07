@@ -1,35 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateAndApplyCoupon } from '../_lib/validate-coupon';
 import type { ApplyCouponInput } from '@/types';
+import { rateLimit, getRateLimitKey, couponValidateRateLimit } from '@/lib/rate-limit';
 
-export async function POST(request: NextRequest) {
+import { withCsrf } from '@/lib/with-csrf';
+import { validateInput, couponValidateSchema } from '@/lib/validation';
+export const POST = withCsrf(async (request: NextRequest) => {
+  // Rate limiting — prevent coupon brute force
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...couponValidateRateLimit, key: `coupon-validate:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = await request.json();
-    const { code, shopId, userId, cartTotal, items }: ApplyCouponInput & { userId?: string } = body;
 
-    if (!code || !shopId || cartTotal === undefined || !items || !Array.isArray(items)) {
+    // Validate input with Zod
+    const validation = validateInput(couponValidateSchema, body);
+    if (!validation.success) {
       return NextResponse.json(
-        { success: false, error: 'code, shopId, cartTotal, and items are required' },
+        { success: false, error: validation.error },
         { status: 400 }
       );
     }
-
-    if (items.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Cart must contain at least one item' },
-        { status: 400 }
-      );
-    }
-
-    // Validate each item has required fields
-    for (const item of items) {
-      if (!item.productId || !item.type || item.price === undefined || item.quantity === undefined) {
-        return NextResponse.json(
-          { success: false, error: 'Each cart item must have productId, type, price, and quantity' },
-          { status: 400 }
-        );
-      }
-    }
+    const { code, shopId, userId, cartTotal, items }: ApplyCouponInput & { userId?: string } = validation.data as ApplyCouponInput & { userId?: string };
 
     // Validate the coupon WITHOUT recording usage (preview only)
     const result = await validateAndApplyCoupon(
@@ -55,4 +53,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})

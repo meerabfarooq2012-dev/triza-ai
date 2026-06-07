@@ -1,7 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendEmail, isEmailConfigured } from '@/lib/email';
+import { rateLimit, getRateLimitKey, emailRateLimit } from '@/lib/rate-limit';
 
-export async function POST(request: NextRequest) {
+import { withCsrf } from '@/lib/with-csrf';
+export const POST = withCsrf(async (request: NextRequest) => {
+  // Rate limiting — email is costly
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...emailRateLimit, key: `email-send:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
   try {
     if (!isEmailConfigured()) {
       return NextResponse.json(
@@ -51,4 +63,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})

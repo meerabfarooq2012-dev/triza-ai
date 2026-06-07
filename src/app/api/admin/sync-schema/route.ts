@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
+import { withCsrf } from '@/lib/with-csrf';
 /**
  * POST /api/admin/sync-schema
  * 
@@ -443,13 +444,21 @@ const MIGRATIONS: { name: string; sql: string }[] = [
   },
 ]
 
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
   try {
-    // Verify admin key
+    // Verify admin key via environment variable
+    const adminSetupKey = process.env.ADMIN_SETUP_KEY
+    if (!adminSetupKey) {
+      return NextResponse.json(
+        { error: 'Setup key is not configured on the server. Set ADMIN_SETUP_KEY environment variable.' },
+        { status: 503 }
+      )
+    }
+
     const body = await request.json().catch(() => ({}))
     const key = body.key || request.nextUrl.searchParams.get('key')
     
-    if (key !== 'marketo-sync-schema-2024') {
+    if (key !== adminSetupKey) {
       return NextResponse.json({ error: 'Invalid key' }, { status: 403 })
     }
 
@@ -493,15 +502,23 @@ export async function POST(request: NextRequest) {
     console.error('[sync-schema] Error:', error.message)
     return NextResponse.json({ 
       success: false, 
-      error: error.message
+      error: 'Schema sync failed. Please check server logs for details.'
     }, { status: 500 })
   }
-}
+})
 
 export async function GET(request: NextRequest) {
+  const adminSetupKey = process.env.ADMIN_SETUP_KEY
+  if (!adminSetupKey) {
+    return NextResponse.json(
+      { error: 'Setup key is not configured on the server. Set ADMIN_SETUP_KEY environment variable.' },
+      { status: 503 }
+    )
+  }
+
   const key = request.nextUrl.searchParams.get('key')
   
-  if (key !== 'marketo-sync-schema-2024') {
+  if (key !== adminSetupKey) {
     return NextResponse.json({ error: 'Invalid key' }, { status: 403 })
   }
 
@@ -531,11 +548,10 @@ export async function GET(request: NextRequest) {
       migrationCount: MIGRATIONS.length
     })
   } catch (error: any) {
+    console.error('[sync-schema] GET error:', error.message)
     return NextResponse.json({
       status: 'error',
-      error: error.message,
-      env: process.env.NODE_ENV,
-      databaseUrlSet: !!process.env.DATABASE_URL,
+      error: 'Failed to check schema status',
       migrationCount: MIGRATIONS.length
     })
   }

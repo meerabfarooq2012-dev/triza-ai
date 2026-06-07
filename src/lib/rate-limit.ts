@@ -79,3 +79,67 @@ export const apiRateLimit = { windowMs: 60 * 1000, maxRequests: 60 }
 
 /** Password reset: 5 requests per 15 minutes */
 export const passwordResetRateLimit = { windowMs: 15 * 60 * 1000, maxRequests: 5 }
+
+// =============================================================================
+// Custom rate limit presets for specific route categories
+// =============================================================================
+
+/** AI generation: 5 requests per minute (costly operations) */
+export const aiRateLimit = { windowMs: 60 * 1000, maxRequests: 5 }
+
+/** Email sending: 3 requests per minute */
+export const emailRateLimit = { windowMs: 60 * 1000, maxRequests: 3 }
+
+/** Coupon validation: 10 requests per minute (prevent brute force) */
+export const couponValidateRateLimit = { windowMs: 60 * 1000, maxRequests: 10 }
+
+/** Coupon redemption: 5 requests per minute */
+export const couponRedeemRateLimit = { windowMs: 60 * 1000, maxRequests: 5 }
+
+/** Search: 20 requests per minute */
+export const searchRateLimit = { windowMs: 60 * 1000, maxRequests: 20 }
+
+/** Reviews: 10 requests per minute */
+export const reviewRateLimit = { windowMs: 60 * 1000, maxRequests: 10 }
+
+/** Disputes: 5 requests per minute */
+export const disputeRateLimit = { windowMs: 60 * 1000, maxRequests: 5 }
+
+/** Notifications: 30 requests per minute */
+export const notificationRateLimit = { windowMs: 60 * 1000, maxRequests: 30 }
+
+/** Social endpoints: 20 requests per minute */
+export const socialRateLimit = { windowMs: 60 * 1000, maxRequests: 20 }
+
+/** Shipping endpoints: 30 requests per minute */
+export const shippingRateLimit = { windowMs: 60 * 1000, maxRequests: 30 }
+
+/** Products: 20 requests per minute */
+export const productRateLimit = { windowMs: 60 * 1000, maxRequests: 20 }
+
+/** Gigs: 20 requests per minute */
+export const gigRateLimit = { windowMs: 60 * 1000, maxRequests: 20 }
+
+/** Wishlists: 20 requests per minute */
+export const wishlistRateLimit = { windowMs: 60 * 1000, maxRequests: 20 }
+
+/** Flash sales: 10 requests per minute */
+export const flashSaleRateLimit = { windowMs: 60 * 1000, maxRequests: 10 }
+
+/** Cart: 30 requests per minute */
+export const cartRateLimit = { windowMs: 60 * 1000, maxRequests: 30 }
+
+/** Payments: 10 requests per minute */
+export const paymentRateLimit = { windowMs: 60 * 1000, maxRequests: 10 }
+
+/** Orders: 10 requests per minute */
+export const orderRateLimit = { windowMs: 60 * 1000, maxRequests: 10 }
+
+/** Messages: 20 requests per minute */
+export const messageRateLimit = { windowMs: 60 * 1000, maxRequests: 20 }
+
+/** Feedback/AI chat: 5 requests per minute */
+export const feedbackRateLimit = { windowMs: 60 * 1000, maxRequests: 5 }
+
+/** Tax calculation: 20 requests per minute */
+export const taxRateLimit = { windowMs: 60 * 1000, maxRequests: 20 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware';
 import { withCsrf } from '@/lib/with-csrf';
 
 export async function GET(
@@ -67,18 +68,16 @@ async function handleUpdateShop(
   request: NextRequest,
   context?: unknown
 ) {
+  const auth = authenticateRequest(req);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
   try {
     const { params } = context as { params: Promise<{ slug: string }> };
     const { slug } = await params;
     const body = await request.json();
-    const { userId, ...updateData } = body;
-
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, error: 'userId is required' },
-        { status: 400 }
-      );
-    }
+    const { ...updateData } = body;
+    const userId = auth.userId;
 
     const shop = await db.shop.findUnique({ where: { slug } });
     if (!shop) {
@@ -88,7 +87,7 @@ async function handleUpdateShop(
       );
     }
 
-    if (shop.userId !== userId) {
+    if (shop.userId !== userId && auth.role !== 'admin') {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 403 }
@@ -140,17 +139,14 @@ export const DELETE = withCsrf(async (
   request: NextRequest,
   context?: unknown
 ) => {
+  const auth = authenticateRequest(req);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
   try {
     const { params } = context as { params: Promise<{ slug: string }> };
     const { slug } = await params;
-    const userId = request.nextUrl.searchParams.get('userId');
-
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, error: 'userId is required' },
-        { status: 400 }
-      );
-    }
+    const userId = auth.userId;
 
     const shop = await db.shop.findUnique({ where: { slug } });
     if (!shop) {
@@ -160,7 +156,7 @@ export const DELETE = withCsrf(async (
       );
     }
 
-    if (shop.userId !== userId) {
+    if (shop.userId !== userId && auth.role !== 'admin') {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 403 }

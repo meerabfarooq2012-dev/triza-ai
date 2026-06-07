@@ -8,6 +8,7 @@ import { authenticateRequestWithSession, extractToken } from '@/lib/auth-middlew
 import { getUserSessions, revokeAllUserSessions, hashToken } from '@/lib/session'
 import { rateLimit, getRateLimitKey, apiRateLimit } from '@/lib/rate-limit'
 
+import { withCsrf } from '@/lib/with-csrf';
 export async function GET(request: NextRequest) {
   try {
     // Rate limiting
@@ -59,7 +60,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function DELETE(request: NextRequest) {
+export const DELETE = withCsrf(async (request: NextRequest) => {
   try {
     // Rate limiting
     const rateLimitKey = getRateLimitKey(request)
@@ -107,4 +108,4 @@ export async function DELETE(request: NextRequest) {
       { status: 500 },
     )
   }
-}
+})

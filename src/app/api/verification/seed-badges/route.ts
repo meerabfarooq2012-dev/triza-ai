@@ -1,8 +1,16 @@
 import { db } from '@/lib/db'
-import { NextResponse } from 'next/server'
-
+import { NextRequest, NextResponse } from 'next/server'
+import { authenticateRequest } from '@/lib/auth-middleware'
+import { withCsrf } from '@/lib/with-csrf';
 // POST /api/verification/seed-badges — Seed default trust badges into the database
-export async function POST() {
+export const POST = withCsrf(async (request: NextRequest) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  if (auth.role !== 'admin') {
+    return NextResponse.json({ success: false, error: 'Admin access required' }, { status: 403 });
+  }
   try {
     const defaultBadges = [
       {
@@ -114,4 +122,4 @@ export async function POST() {
       { status: 500 }
     )
   }
-}
+})

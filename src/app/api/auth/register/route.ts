@@ -5,7 +5,7 @@ import { sendEmailAsync } from '@/lib/email';
 import { welcomeEmail, emailVerificationEmail } from '@/lib/email-templates';
 import { notifyWelcome } from '@/lib/notifications';
 import { rateLimit, getRateLimitKey, authRateLimit } from '@/lib/rate-limit';
-import { signToken } from '@/lib/auth-middleware';
+import { signToken, signRefreshToken, setAuthCookies } from '@/lib/auth-middleware';
 import { createSession } from '@/lib/session';
 import { withCsrf } from '@/lib/with-csrf';
 import { randomBytes } from 'crypto';
@@ -119,12 +119,14 @@ export const POST = withCsrf(async (request: NextRequest) => {
 
     const { password: _, ...userWithoutPassword } = fullUser!;
 
-    // Generate JWT token
-    const token = signToken({
+    // Generate JWT access token and refresh token
+    const authPayload = {
       userId: user.id,
       email: user.email,
       role: user.role,
-    });
+    };
+    const token = signToken(authPayload);
+    const refreshToken = signRefreshToken(authPayload);
 
     // Create a session record in the database (token is hashed, never stored raw)
     const userAgent = request.headers.get('user-agent') || undefined;
@@ -155,10 +157,15 @@ export const POST = withCsrf(async (request: NextRequest) => {
     // Send welcome notification (non-blocking)
     notifyWelcome(user.id, name).catch(() => {});
 
-    return NextResponse.json(
-      { success: true, data: userWithoutPassword, token },
+    const response = NextResponse.json(
+      { success: true, data: userWithoutPassword, token, refreshToken },
       { status: 201 }
     );
+
+    // Set httpOnly cookies for both tokens
+    setAuthCookies(response, token, refreshToken);
+
+    return response;
   } catch (error) {
     console.error('Registration error:', error);
     return NextResponse.json(

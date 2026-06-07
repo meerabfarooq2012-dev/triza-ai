@@ -263,9 +263,9 @@ export async function GET(request: NextRequest) {
       results,
     })
   } catch (error) {
-    const errMsg = error instanceof Error ? error.message : String(error)
+    console.error('Schema sync failed:', error)
     return NextResponse.json(
-      { success: false, error: 'Schema sync failed: ' + errMsg },
+      { success: false, error: 'Schema sync failed. Please check server logs for details.' },
       { status: 500 }
     )
   }

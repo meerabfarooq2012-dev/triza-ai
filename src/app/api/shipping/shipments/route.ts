@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware';
 
+import { withCsrf } from '@/lib/with-csrf';
 const VALID_SHIPMENT_STATUSES = [
   'pending',
   'picked_up',
@@ -98,7 +100,12 @@ export async function GET(request: NextRequest) {
 }
 
 // POST — Create a new shipment (seller adds tracking info)
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  const userId = auth.userId;
   try {
     const body = await request.json();
     const {
@@ -210,10 +217,15 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})
 
 // PUT — Update shipment status
-export async function PUT(request: NextRequest) {
+export const PUT = withCsrf(async (request: NextRequest) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  const userId = auth.userId;
   try {
     const body = await request.json();
     const {
@@ -337,4 +349,4 @@ export async function PUT(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})

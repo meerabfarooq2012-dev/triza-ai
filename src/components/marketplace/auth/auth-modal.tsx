@@ -87,7 +87,7 @@ export function AuthModal() {
   // Ref for auto-scrolling to error
   const errorRef = useRef<HTMLDivElement>(null)
 
-  const { login, setAuthToken, setCurrentView } = useMarketplaceStore()
+  const { login, setAuthToken, setRefreshToken, setCurrentView } = useMarketplaceStore()
 
   const { t } = useLanguage()
 
@@ -171,8 +171,14 @@ export function AuthModal() {
       if (res.success && res.data) {
         const user = res.data.user || res.data
         const token = res.data.token
+        const refreshToken = (res.data as Record<string, unknown>)?.refreshToken as string | undefined
         if (token) {
           setAuthToken(token)
+          // Also set httpOnly cookies server-side for extra security
+          api.auth.setAuthCookies(token, refreshToken).catch(() => {})
+        }
+        if (refreshToken) {
+          setRefreshToken(refreshToken)
         }
         login(user)
         navigateAfterAuth(user)
@@ -229,8 +235,14 @@ export function AuthModal() {
       if (res.success && res.data) {
         const user = res.data.user || res.data
         const token = res.data.token
+        const refreshToken = (res.data as Record<string, unknown>)?.refreshToken as string | undefined
         if (token) {
           setAuthToken(token)
+          // Also set httpOnly cookies server-side for extra security
+          api.auth.setAuthCookies(token, refreshToken).catch(() => {})
+        }
+        if (refreshToken) {
+          setRefreshToken(refreshToken)
         }
         login(user)
         // Show email verification dialog if email is not verified
@@ -335,6 +347,15 @@ export function AuthModal() {
             .then((res) => res.json())
             .then((data) => {
               if (data.success && data.data) {
+                const token = data.token
+                const refreshToken = data.refreshToken
+                if (token) {
+                  setAuthToken(token)
+                  api.auth.setAuthCookies(token, refreshToken).catch(() => {})
+                }
+                if (refreshToken) {
+                  setRefreshToken(refreshToken)
+                }
                 login(data.data)
                 navigateAfterAuth(data.data)
               } else {

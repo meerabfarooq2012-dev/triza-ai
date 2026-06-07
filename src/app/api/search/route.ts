@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { Prisma } from '@prisma/client';
+import { rateLimit, getRateLimitKey, searchRateLimit } from '@/lib/rate-limit';
 
+import { withCsrf } from '@/lib/with-csrf';
 interface SearchParams {
   q?: string;
   query?: string;
@@ -102,6 +104,16 @@ function buildShopWhere(params: SearchParams): Prisma.ShopWhereInput {
 }
 
 export async function GET(request: NextRequest) {
+  // Rate limiting
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...searchRateLimit, key: `search:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const params: SearchParams = {
@@ -129,7 +141,17 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
+  // Rate limiting
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...searchRateLimit, key: `search:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = await request.json();
     const params: SearchParams = {
@@ -155,7 +177,7 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})
 
 async function executeSearch(params: SearchParams) {
   const q = params.q || params.query || '';

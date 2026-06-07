@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-
+import { authenticateRequest } from '@/lib/auth-middleware'
+import { withCsrf } from '@/lib/with-csrf';
 // GET /api/flash-sales/[id]
 export async function GET(
   _req: NextRequest,
@@ -62,14 +63,17 @@ export async function GET(
 }
 
 // PATCH /api/flash-sales/[id]
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const PATCH = withCsrf(async (req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }) => {
+  const auth = authenticateRequest(req);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
   try {
     const { id } = await params
     const body = await req.json()
-    const { title, description, salePrice, startDate, endDate, maxQuantity, isActive, banner, userId } = body
+    const { title, description, salePrice, startDate, endDate, maxQuantity, isActive, banner } = body
+    const userId = auth.userId;
 
     // Get the flash sale with shop to check ownership
     const existing = await db.flashSale.findUnique({
@@ -87,9 +91,9 @@ export async function PATCH(
     }
 
     // Verify ownership
-    if (!userId || existing.shop.userId !== userId) {
+    if (existing.shop.userId !== userId && auth.role !== 'admin') {
       return NextResponse.json(
-        { success: false, error: 'Only the shop owner can update this flash sale' },
+        { success: false, error: 'Only the shop owner or admin can update this flash sale' },
         { status: 403 }
       )
     }
@@ -154,17 +158,18 @@ export async function PATCH(
       { status: 500 }
     )
   }
-}
+})
 
 // DELETE /api/flash-sales/[id]
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const DELETE = withCsrf(async (req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }) => {
+  const auth = authenticateRequest(req);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
   try {
     const { id } = await params
-    const { searchParams } = new URL(req.url)
-    const userId = searchParams.get('userId')
+    const userId = auth.userId;
 
     const existing = await db.flashSale.findUnique({
       where: { id },
@@ -181,9 +186,9 @@ export async function DELETE(
     }
 
     // Verify ownership
-    if (!userId || existing.shop.userId !== userId) {
+    if (existing.shop.userId !== userId && auth.role !== 'admin') {
       return NextResponse.json(
-        { success: false, error: 'Only the shop owner can delete this flash sale' },
+        { success: false, error: 'Only the shop owner or admin can delete this flash sale' },
         { status: 403 }
       )
     }
@@ -198,4 +203,4 @@ export async function DELETE(
       { status: 500 }
     )
   }
-}
+})

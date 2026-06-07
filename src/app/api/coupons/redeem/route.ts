@@ -1,9 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { Prisma } from '@prisma/client';
+import { rateLimit, getRateLimitKey, couponRedeemRateLimit } from '@/lib/rate-limit';
 import { withCsrf } from '@/lib/with-csrf';
 
 export const POST = withCsrf(async (request: NextRequest) => {
+  // Rate limiting — prevent coupon abuse
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...couponRedeemRateLimit, key: `coupon-redeem:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = await request.json();
     const { couponId, userId, orderId, discountAmount } = body as {

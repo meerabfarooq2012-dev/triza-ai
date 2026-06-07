@@ -1,8 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware';
+import { rateLimit, getRateLimitKey, shippingRateLimit } from '@/lib/rate-limit';
 
+import { withCsrf } from '@/lib/with-csrf';
+import { validateInput, addressCreateSchema, addressUpdateSchema, addressDeleteSchema } from '@/lib/validation';
 // GET — List all delivery addresses for a user
 export async function GET(request: NextRequest) {
+  // Rate limiting
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...shippingRateLimit, key: `shipping-addr:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get('userId');
@@ -39,9 +53,33 @@ export async function GET(request: NextRequest) {
 }
 
 // POST — Create a new delivery address
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
+  // Rate limiting
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...shippingRateLimit, key: `shipping-addr:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  const userId = auth.userId;
   try {
     const body = await request.json();
+
+    // Validate input with Zod
+    const validation = validateInput(addressCreateSchema, body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { success: false, error: validation.error },
+        { status: 400 }
+      );
+    }
     const {
       userId,
       label,
@@ -53,45 +91,7 @@ export async function POST(request: NextRequest) {
       zipCode,
       country = 'PK',
       isDefault,
-    } = body;
-
-    // Validate required fields
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, error: 'userId is required' },
-        { status: 400 }
-      );
-    }
-    if (!label) {
-      return NextResponse.json(
-        { success: false, error: 'label is required' },
-        { status: 400 }
-      );
-    }
-    if (!fullName) {
-      return NextResponse.json(
-        { success: false, error: 'fullName is required' },
-        { status: 400 }
-      );
-    }
-    if (!phone) {
-      return NextResponse.json(
-        { success: false, error: 'phone is required' },
-        { status: 400 }
-      );
-    }
-    if (!address) {
-      return NextResponse.json(
-        { success: false, error: 'address is required' },
-        { status: 400 }
-      );
-    }
-    if (!city) {
-      return NextResponse.json(
-        { success: false, error: 'city is required' },
-        { status: 400 }
-      );
-    }
+    } = validation.data;
 
     // Check if this is the user's first address — auto-set as default
     const existingCount = await db.deliveryAddress.count({
@@ -134,12 +134,36 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})
 
 // PUT — Update a delivery address
-export async function PUT(request: NextRequest) {
+export const PUT = withCsrf(async (request: NextRequest) => {
+  // Rate limiting
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...shippingRateLimit, key: `shipping-addr:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  const userId = auth.userId;
   try {
     const body = await request.json();
+
+    // Validate input with Zod
+    const validation = validateInput(addressUpdateSchema, body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { success: false, error: validation.error },
+        { status: 400 }
+      );
+    }
     const {
       id,
       userId,
@@ -153,20 +177,7 @@ export async function PUT(request: NextRequest) {
       country,
       isDefault,
       isActive,
-    } = body;
-
-    if (!id) {
-      return NextResponse.json(
-        { success: false, error: 'id is required' },
-        { status: 400 }
-      );
-    }
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, error: 'userId is required' },
-        { status: 400 }
-      );
-    }
+    } = validation.data;
 
     // Verify address belongs to user
     const existing = await db.deliveryAddress.findUnique({ where: { id } });
@@ -216,10 +227,25 @@ export async function PUT(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})
 
 // DELETE — Delete (soft-delete) a delivery address
-export async function DELETE(request: NextRequest) {
+export const DELETE = withCsrf(async (request: NextRequest) => {
+  // Rate limiting
+  const rlKey = getRateLimitKey(request);
+  const rlResult = rateLimit({ ...shippingRateLimit, key: `shipping-addr:${rlKey}` });
+  if (!rlResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  const userId = auth.userId;
   try {
     const searchParams = request.nextUrl.searchParams;
 
@@ -230,21 +256,18 @@ export async function DELETE(request: NextRequest) {
       // DELETE may have no body — fall back to query params
     }
 
-    const id = (body.id as string) || searchParams.get('id');
-    const userId = (body.userId as string) || searchParams.get('userId');
+    const rawId = (body.id as string) || searchParams.get('id');
+    const rawUserId = (body.userId as string) || searchParams.get('userId');
 
-    if (!id) {
+    // Validate input with Zod
+    const validation = validateInput(addressDeleteSchema, { id: rawId, userId: rawUserId });
+    if (!validation.success) {
       return NextResponse.json(
-        { success: false, error: 'id is required' },
+        { success: false, error: validation.error },
         { status: 400 }
       );
     }
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, error: 'userId is required' },
-        { status: 400 }
-      );
-    }
+    const { id, userId: deleteUserId } = validation.data;
 
     const existing = await db.deliveryAddress.findUnique({ where: { id } });
     if (!existing) {
@@ -253,7 +276,7 @@ export async function DELETE(request: NextRequest) {
         { status: 404 }
       );
     }
-    if (existing.userId !== userId) {
+    if (existing.userId !== deleteUserId) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 403 }
@@ -269,7 +292,7 @@ export async function DELETE(request: NextRequest) {
     // If the deleted address was the default, set the next available as default
     if (existing.isDefault) {
       const nextDefault = await db.deliveryAddress.findFirst({
-        where: { userId, isActive: true },
+        where: { userId: deleteUserId, isActive: true },
         orderBy: { createdAt: 'desc' },
       });
       if (nextDefault) {
@@ -291,4 +314,4 @@ export async function DELETE(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})

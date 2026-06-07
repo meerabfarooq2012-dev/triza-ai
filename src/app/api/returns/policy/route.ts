@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-
+import { authenticateRequest } from '@/lib/auth-middleware';
+import { withCsrf } from '@/lib/with-csrf';
 // GET /api/returns/policy — Get return policy for a shop
 export async function GET(request: NextRequest) {
   try {
@@ -53,7 +54,14 @@ export async function GET(request: NextRequest) {
 }
 
 // POST /api/returns/policy — Create or update return policy
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  if (auth.role !== 'seller' && auth.role !== 'admin' && auth.role !== 'both') {
+    return NextResponse.json({ success: false, error: 'Seller access required' }, { status: 403 });
+  }
   try {
     const body = await request.json();
     const {
@@ -153,4 +161,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+})

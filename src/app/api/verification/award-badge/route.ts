@@ -1,8 +1,16 @@
 import { db } from '@/lib/db'
 import { NextRequest, NextResponse } from 'next/server'
-
+import { authenticateRequest } from '@/lib/auth-middleware'
+import { withCsrf } from '@/lib/with-csrf';
 // POST /api/verification/award-badge — Award a badge to a seller
-export async function POST(request: NextRequest) {
+export const POST = withCsrf(async (request: NextRequest) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  if (auth.role !== 'admin') {
+    return NextResponse.json({ success: false, error: 'Admin access required' }, { status: 403 });
+  }
   try {
     const body = await request.json()
     const { userId, shopId, badgeSlug } = body
@@ -90,4 +98,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})

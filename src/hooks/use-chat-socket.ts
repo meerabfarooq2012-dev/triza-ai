@@ -31,7 +31,7 @@ type UserPresenceHandler = (data: { conversationId: string; userId: string }) =>
 let chatSocket: Socket | null = null
 let chatSocketConnected = false
 
-function getChatSocket(): Socket | null {
+function getChatSocket(authToken?: string | null): Socket | null {
   if (typeof window === 'undefined') return null
 
   if (!chatSocket) {
@@ -41,6 +41,9 @@ function getChatSocket(): Socket | null {
       reconnection: true,
       reconnectionAttempts: 15,
       reconnectionDelay: 1000,
+      auth: {
+        token: authToken || undefined,
+      },
     })
 
     chatSocket.on('connect', () => {
@@ -52,6 +55,10 @@ function getChatSocket(): Socket | null {
       chatSocketConnected = false
       console.log('[ChatSocket] Disconnected')
     })
+
+    chatSocket.on('connect_error', (err) => {
+      console.warn('[ChatSocket] Connection error:', err.message)
+    })
   }
 
   return chatSocket
@@ -62,7 +69,7 @@ function getChatSocket(): Socket | null {
 // =============================================================================
 
 export function useChatSocket() {
-  const { currentUser } = useMarketplaceStore()
+  const { currentUser, authToken } = useMarketplaceStore()
   const [isConnected, setIsConnected] = useState(false)
   const [typingUsers, setTypingUsers] = useState<Map<string, string[]>>(new Map())
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set())
@@ -80,8 +87,13 @@ export function useChatSocket() {
       return
     }
 
-    const socket = getChatSocket()
+    const socket = getChatSocket(authToken)
     if (!socket) return
+
+    // Update auth token on the socket if it changed
+    if (socket.auth && typeof socket.auth === 'object') {
+      (socket.auth as Record<string, unknown>).token = authToken || undefined
+    }
 
     if (!socket.connected) {
       socket.connect()

@@ -4,10 +4,11 @@ import { rawSubcategories, toSlug as gigToSlug } from '@/lib/gig-subcategories';
 import { rawPhysicalSubcategories, toSlug as physicalToSlug } from '@/lib/physical-subcategories';
 import { rawDigitalSubcategories, toSlug as digitalToSlug } from '@/lib/digital-subcategories';
 
+import { withCsrf } from '@/lib/with-csrf';
 // Fast bulk seed using Prisma createMany - works on Vercel without timeout
 // Usage: POST /api/categories/bulk-seed?key=marketo-setup-2024&step=digital|physical|gigs|all
 
-export async function POST(request: Request) {
+export const POST = withCsrf(async (request: Request) => {
   try {
     const { searchParams } = new URL(request.url);
     const key = searchParams.get('key');
@@ -137,9 +138,9 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to bulk seed categories',
+        error: 'Failed to bulk seed categories. Please check server logs for details.',
       },
       { status: 500 }
     );
   }
-}
+})

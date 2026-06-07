@@ -1,26 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware'
 
+import { withCsrf } from '@/lib/with-csrf';
+import { validateInput, wishlistItemAddSchema, wishlistItemRemoveSchema } from '@/lib/validation';
 // POST /api/wishlists/[id]/items — Add item to wishlist
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const POST = withCsrf(async (req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }) => {
+  const auth = authenticateRequest(req);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  const userId = auth.userId;
   try {
     const { id } = await params
     const body = await req.json()
-    const { productId, userId } = body
 
-    if (!productId || !userId) {
-      return NextResponse.json({ success: false, error: 'productId and userId are required' }, { status: 400 })
+    // Validate input with Zod
+    const addValidation = validateInput(wishlistItemAddSchema, body)
+    if (!addValidation.success) {
+      return NextResponse.json({ success: false, error: addValidation.error }, { status: 400 })
     }
+    const { productId, userId: bodyUserId } = addValidation.data
 
     const wishlist = await db.wishlist.findUnique({ where: { id } })
     if (!wishlist) {
       return NextResponse.json({ success: false, error: 'Wishlist not found' }, { status: 404 })
     }
 
-    if (wishlist.userId !== userId) {
+    if (wishlist.userId !== bodyUserId) {
       return NextResponse.json({ success: false, error: 'Only the owner can add items' }, { status: 403 })
     }
 
@@ -55,28 +63,33 @@ export async function POST(
     console.error('Failed to add item to wishlist:', error)
     return NextResponse.json({ success: false, error: 'Failed to add item to wishlist' }, { status: 500 })
   }
-}
+})
 
 // DELETE /api/wishlists/[id]/items — Remove item from wishlist
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const DELETE = withCsrf(async (req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }) => {
+  const auth = authenticateRequest(req);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  const userId = auth.userId;
   try {
     const { id } = await params
     const body = await req.json()
-    const { productId, userId } = body
 
-    if (!productId || !userId) {
-      return NextResponse.json({ success: false, error: 'productId and userId are required' }, { status: 400 })
+    // Validate input with Zod
+    const removeValidation = validateInput(wishlistItemRemoveSchema, body)
+    if (!removeValidation.success) {
+      return NextResponse.json({ success: false, error: removeValidation.error }, { status: 400 })
     }
+    const { productId, userId: bodyUserId } = removeValidation.data
 
     const wishlist = await db.wishlist.findUnique({ where: { id } })
     if (!wishlist) {
       return NextResponse.json({ success: false, error: 'Wishlist not found' }, { status: 404 })
     }
 
-    if (wishlist.userId !== userId) {
+    if (wishlist.userId !== bodyUserId) {
       return NextResponse.json({ success: false, error: 'Only the owner can remove items' }, { status: 403 })
     }
 
@@ -95,4 +108,4 @@ export async function DELETE(
     console.error('Failed to remove item from wishlist:', error)
     return NextResponse.json({ success: false, error: 'Failed to remove item from wishlist' }, { status: 500 })
   }
-}
+})

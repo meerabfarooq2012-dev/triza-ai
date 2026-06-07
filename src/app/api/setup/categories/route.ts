@@ -137,7 +137,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Category seed error:', error);
     return NextResponse.json(
-      { success: false, error: 'Seed failed: ' + (error instanceof Error ? error.message : String(error)) },
+      { success: false, error: 'Seed failed. Please check server logs for details.' },
       { status: 500 }
     );
   }

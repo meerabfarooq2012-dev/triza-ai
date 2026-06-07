@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware';
 import type { PaymentInfoMethod, PaymentInfoAccountDetails } from '@/types';
 
+import { withCsrf } from '@/lib/with-csrf';
 const VALID_METHODS: PaymentInfoMethod[] = ['easypaisa', 'jazzcash', 'card', 'payoneer', 'wise', 'bank_transfer'];
 
 function validateAccountDetails(method: PaymentInfoMethod, details: PaymentInfoAccountDetails): string | null {
@@ -79,10 +81,13 @@ export async function GET(
 // PUT /api/payment-info/[id] — Update a payment info record
 // =============================================================================
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const PUT = withCsrf(async (request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  const userId = auth.userId;
   try {
     const { id } = await params;
     const body = await request.json();
@@ -167,16 +172,19 @@ export async function PUT(
       { status: 500 }
     );
   }
-}
+})
 
 // =============================================================================
 // DELETE /api/payment-info/[id] — Delete a payment info record (soft delete)
 // =============================================================================
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const DELETE = withCsrf(async (request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  const userId = auth.userId;
   try {
     const { id } = await params;
     const searchParams = request.nextUrl.searchParams;
@@ -246,4 +254,4 @@ export async function DELETE(
       { status: 500 }
     );
   }
-}
+})

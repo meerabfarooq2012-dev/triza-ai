@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware'
 
+import { withCsrf } from '@/lib/with-csrf';
 // GET /api/wishlists/[id] — Get wishlist with items (including product details)
 export async function GET(
   req: NextRequest,
@@ -45,10 +47,13 @@ export async function GET(
 }
 
 // PATCH /api/wishlists/[id] — Update wishlist
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const PATCH = withCsrf(async (req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }) => {
+  const auth = authenticateRequest(req);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  const userId = auth.userId;
   try {
     const { id } = await params
     const body = await req.json()
@@ -102,13 +107,16 @@ export async function PATCH(
     console.error('Failed to update wishlist:', error)
     return NextResponse.json({ success: false, error: 'Failed to update wishlist' }, { status: 500 })
   }
-}
+})
 
 // DELETE /api/wishlists/[id] — Delete wishlist
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const DELETE = withCsrf(async (req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }) => {
+  const auth = authenticateRequest(req);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  const userId = auth.userId;
   try {
     const { id } = await params
     const { searchParams } = new URL(req.url)
@@ -134,4 +142,4 @@ export async function DELETE(
     console.error('Failed to delete wishlist:', error)
     return NextResponse.json({ success: false, error: 'Failed to delete wishlist' }, { status: 500 })
   }
-}
+})

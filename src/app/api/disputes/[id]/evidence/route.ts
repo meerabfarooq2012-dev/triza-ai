@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-
+import { authenticateRequest } from '@/lib/auth-middleware';
+import { withCsrf } from '@/lib/with-csrf';
 // GET /api/disputes/[id]/evidence — List evidence for a dispute
 export async function GET(
   request: NextRequest,
@@ -50,21 +51,24 @@ export async function GET(
 }
 
 // POST /api/disputes/[id]/evidence — Upload evidence to a dispute
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const POST = withCsrf(async (request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }) => {
+  const auth = authenticateRequest(request);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
   try {
     const { id } = await params;
     const body = await request.json();
-    const { uploadedBy, type, fileUrl, fileName, description } = body;
+    const { type, fileUrl, fileName, description } = body;
+    const uploadedBy = auth.userId;
 
     // Validate required fields
-    if (!uploadedBy || !type || !fileUrl) {
+    if (!type || !fileUrl) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Missing required fields: uploadedBy, type, fileUrl',
+          error: 'Missing required fields: type, fileUrl',
         },
         { status: 400 }
       );
@@ -103,17 +107,9 @@ export async function POST(
     }
 
     // Verify user is a party to the dispute or an admin
-    const user = await db.user.findUnique({ where: { id: uploadedBy } });
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'User not found' },
-        { status: 404 }
-      );
-    }
-
     const isParty =
       dispute.userId === uploadedBy || dispute.sellerId === uploadedBy;
-    const isAdmin = user.isAdmin;
+    const isAdmin = auth.role === 'admin';
     if (!isParty && !isAdmin) {
       return NextResponse.json(
         {
@@ -210,4 +206,4 @@ export async function POST(
       { status: 500 }
     );
   }
-}
+})

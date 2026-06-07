@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware'
 
+import { withCsrf } from '@/lib/with-csrf';
+import { validateInput, couponCreateSchema } from '@/lib/validation';
 // GET /api/coupons?shopId=xxx
 export async function GET(req: NextRequest) {
   try {
@@ -46,14 +49,23 @@ export async function GET(req: NextRequest) {
 }
 
 // POST /api/coupons
-export async function POST(req: NextRequest) {
+export const POST = withCsrf(async (req: NextRequest) => {
+  const auth = authenticateRequest(req);
+  if (!auth) {
+    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
+  }
+  if (auth.role !== 'admin' && auth.role !== 'seller' && auth.role !== 'both') {
+    return NextResponse.json({ success: false, error: 'Seller or admin access required' }, { status: 403 });
+  }
   try {
     const body = await req.json()
-    const { shopId, code, description, type, value, minOrderAmount, maxDiscount, usageLimit, perUserLimit, startDate, endDate, appliesToType, productId, isActive } = body
 
-    if (!shopId || !code || !type || value === undefined) {
-      return NextResponse.json({ success: false, error: 'shopId, code, type, and value are required' }, { status: 400 })
+    // Validate input with Zod
+    const validation = validateInput(couponCreateSchema, body)
+    if (!validation.success) {
+      return NextResponse.json({ success: false, error: validation.error }, { status: 400 })
     }
+    const { shopId, code, description, type, value, minOrderAmount, maxDiscount, usageLimit, perUserLimit, startDate, endDate, appliesToType, productId, isActive } = validation.data
 
     // Check for duplicate code in shop
     const existing = await db.coupon.findUnique({
@@ -88,4 +100,4 @@ export async function POST(req: NextRequest) {
     console.error('Failed to create coupon:', error)
     return NextResponse.json({ success: false, error: 'Failed to create coupon' }, { status: 500 })
   }
-}
+})

@@ -28,7 +28,7 @@ export function ChangePasswordForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const { currentUser } = useMarketplaceStore()
+  const { currentUser, setAuthToken, setRefreshToken } = useMarketplaceStore()
 
   const hasMinLength = newPassword.length >= 6
   const passwordsMatch = newPassword.length > 0 && confirmPassword.length > 0 && newPassword === confirmPassword
@@ -67,6 +67,16 @@ export function ChangePasswordForm() {
     try {
       const res = await api.auth.changePassword(currentUser.id, currentPassword, newPassword)
       if (res.success) {
+        // Update tokens if the API returned new ones
+        const responseData = res as unknown as Record<string, unknown>
+        if (responseData.token) {
+          setAuthToken(responseData.token as string)
+          const rt = responseData.refreshToken as string | undefined
+          if (rt) {
+            setRefreshToken(rt)
+          }
+          api.auth.setAuthCookies(responseData.token as string, rt).catch(() => {})
+        }
         toast.success('Password updated successfully!')
         setCurrentPassword('')
         setNewPassword('')
