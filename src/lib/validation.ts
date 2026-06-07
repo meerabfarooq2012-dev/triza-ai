@@ -170,6 +170,160 @@ export const idParamSchema = z.object({
 });
 
 // ---------------------------------------------------------------------------
+// Wishlist schemas
+// ---------------------------------------------------------------------------
+
+export const wishlistCreateSchema = z.object({
+  name: z.string().min(1).max(200),
+  isPublic: z.boolean().default(false),
+  userId: z.string().min(1),
+});
+
+export const wishlistItemAddSchema = z.object({
+  productId: z.string().min(1),
+  userId: z.string().min(1),
+});
+
+export const wishlistItemRemoveSchema = z.object({
+  productId: z.string().min(1),
+  userId: z.string().min(1),
+});
+
+// ---------------------------------------------------------------------------
+// Address schemas
+// ---------------------------------------------------------------------------
+
+export const addressCreateSchema = z.object({
+  name: z.string().min(1).max(200),
+  phone: z.string().min(1).max(30),
+  address: z.string().min(1).max(500),
+  city: z.string().min(1).max(100),
+  state: z.string().min(1).max(100),
+  zip: z.string().min(1).max(20),
+  country: z.string().min(1).max(5),
+  isDefault: z.boolean().default(false),
+});
+
+export const addressUpdateSchema = z.object({
+  name: z.string().min(1).max(200).optional(),
+  phone: z.string().min(1).max(30).optional(),
+  address: z.string().min(1).max(500).optional(),
+  city: z.string().min(1).max(100).optional(),
+  state: z.string().min(1).max(100).optional(),
+  zip: z.string().min(1).max(20).optional(),
+  country: z.string().min(1).max(5).optional(),
+  isDefault: z.boolean().optional(),
+});
+
+export const addressDeleteSchema = z.object({
+  id: z.string().min(1),
+});
+
+// ---------------------------------------------------------------------------
+// AI description schema
+// ---------------------------------------------------------------------------
+
+export const aiDescriptionSchema = z.object({
+  productId: z.string().min(1),
+  prompt: z.string().max(2000).optional(),
+});
+
+// ---------------------------------------------------------------------------
+// Cart item schema
+// ---------------------------------------------------------------------------
+
+export const cartItemAddSchema = z.object({
+  productId: z.string().min(1),
+  quantity: z.number().int().positive().max(100),
+  variantId: z.string().optional(),
+});
+
+// ---------------------------------------------------------------------------
+// Coupon schemas
+// ---------------------------------------------------------------------------
+
+export const couponCreateSchema = z.object({
+  code: z.string().min(1).max(50),
+  type: z.enum(['percentage', 'fixed']),
+  value: z.number().positive(),
+  minOrder: z.number().min(0).optional(),
+  maxDiscount: z.number().positive().optional(),
+  usageLimit: z.number().int().positive().optional(),
+  expiresAt: z.string().min(1),
+  shopId: z.string().min(1),
+});
+
+export const couponValidateSchema = z.object({
+  code: z.string().min(1).max(50),
+  cartTotal: z.number().min(0),
+  shopId: z.string().min(1).optional(),
+});
+
+// ---------------------------------------------------------------------------
+// Flash sale schema
+// ---------------------------------------------------------------------------
+
+export const flashSaleCreateSchema = z.object({
+  productId: z.string().min(1),
+  discountPrice: z.number().positive(),
+  startDate: z.string().min(1),
+  endDate: z.string().min(1),
+  quantity: z.number().int().positive(),
+});
+
+// ---------------------------------------------------------------------------
+// Gig schema
+// ---------------------------------------------------------------------------
+
+export const gigCreateSchema = z.object({
+  title: z.string().min(1).max(200),
+  description: z.string().min(1).max(5000),
+  categoryId: z.string().min(1),
+  price: z.number().positive().max(999999),
+  deliveryTime: z.number().int().positive().max(365),
+  images: z.array(z.string().url().max(2048)).max(10).optional(),
+  tags: z.array(z.string().max(50)).max(20).optional(),
+});
+
+// ---------------------------------------------------------------------------
+// Payment info schema
+// ---------------------------------------------------------------------------
+
+export const paymentInfoCreateSchema = z.object({
+  bankName: z.string().min(1).max(200),
+  accountTitle: z.string().min(1).max(200),
+  accountNumber: z.string().min(1).max(50),
+  bankCode: z.string().min(1).max(20),
+});
+
+// ---------------------------------------------------------------------------
+// Review helpful schema
+// ---------------------------------------------------------------------------
+
+export const reviewHelpfulSchema = z.object({
+  userId: z.string().min(1),
+});
+
+// ---------------------------------------------------------------------------
+// Social share schema
+// ---------------------------------------------------------------------------
+
+export const socialShareSchema = z.object({
+  platform: z.enum(['facebook', 'twitter', 'linkedin', 'whatsapp', 'telegram', 'email']),
+  entityType: z.enum(['product', 'shop', 'gig']),
+  entityId: z.string().min(1),
+});
+
+// ---------------------------------------------------------------------------
+// Verification submit schema
+// ---------------------------------------------------------------------------
+
+export const verificationSubmitSchema = z.object({
+  shopId: z.string().min(1),
+  documents: z.array(z.string().url().max(2048)).min(1).max(10),
+});
+
+// ---------------------------------------------------------------------------
 // Helper: validate and return typed data or error response
 // ---------------------------------------------------------------------------
 

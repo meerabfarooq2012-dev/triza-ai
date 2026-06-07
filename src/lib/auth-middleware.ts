@@ -10,6 +10,7 @@ import { validateSession } from '@/lib/session'
 const JWT_SECRET = process.env.JWT_SECRET
 if (!JWT_SECRET) throw new Error('FATAL: JWT_SECRET environment variable is not set')
 const JWT_EXPIRES_IN = '7d' // 7 days
+const REFRESH_TOKEN_EXPIRES_IN = '30d' // 30 days
 
 export interface AuthPayload {
   userId: string
@@ -94,6 +95,66 @@ export async function authenticateRequestWithSession(request: Request): Promise<
   if (!isValidSession) return null
 
   return payload
+}
+
+/**
+ * Sign a refresh token with the given payload
+ */
+export function signRefreshToken(payload: AuthPayload): string {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRES_IN })
+}
+
+/**
+ * Verify a refresh token
+ * @returns the decoded payload or null if invalid/expired
+ */
+export function verifyRefreshToken(token: string): AuthPayload | null {
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as AuthPayload
+    return decoded
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Set authentication cookies on a NextResponse object
+ * Sets httpOnly cookies for both access token and refresh token
+ */
+export function setAuthCookies(
+  response: { cookies: { set: (name: string, value: string, options: Record<string, unknown>) => unknown } },
+  token: string,
+  refreshToken?: string
+): void {
+  const isSecure = process.env.NODE_ENV === 'production'
+
+  response.cookies.set('auth-token', token, {
+    httpOnly: true,
+    secure: isSecure,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 7 * 24 * 60 * 60, // 7 days
+  })
+
+  if (refreshToken) {
+    response.cookies.set('refresh-token', refreshToken, {
+      httpOnly: true,
+      secure: isSecure,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 30 * 24 * 60 * 60, // 30 days
+    })
+  }
+}
+
+/**
+ * Clear authentication cookies on a NextResponse object
+ */
+export function clearAuthCookies(
+  response: { cookies: { delete: (name: string) => unknown } }
+): void {
+  response.cookies.delete('auth-token')
+  response.cookies.delete('refresh-token')
 }
 
 /**

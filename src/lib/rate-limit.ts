@@ -215,3 +215,39 @@ export const loginRateLimit = { windowMs: 15 * 60 * 1000, maxRequests: 5 }
 
 /** Registration: 3 registrations per hour */
 export const registerRateLimit = { windowMs: 60 * 60 * 1000, maxRequests: 3 }
+
+/** Wishlist: 20 requests per minute */
+export const wishlistRateLimit = { windowMs: 60 * 1000, maxRequests: 20 }
+
+/** AI endpoints: 10 requests per minute */
+export const aiRateLimit = { windowMs: 60 * 1000, maxRequests: 10 }
+
+/** Coupon redemption: 5 requests per 15 minutes */
+export const couponRedeemRateLimit = { windowMs: 15 * 60 * 1000, maxRequests: 5 }
+
+/** Coupon validation: 20 requests per minute */
+export const couponValidateRateLimit = { windowMs: 60 * 1000, maxRequests: 20 }
+
+/** Feedback: 5 requests per 15 minutes */
+export const feedbackRateLimit = { windowMs: 15 * 60 * 1000, maxRequests: 5 }
+
+/** Flash sales: 10 requests per minute */
+export const flashSaleRateLimit = { windowMs: 60 * 1000, maxRequests: 10 }
+
+/** Gigs: 20 requests per minute */
+export const gigRateLimit = { windowMs: 60 * 1000, maxRequests: 20 }
+
+/** Reviews: 10 requests per 15 minutes */
+export const reviewRateLimit = { windowMs: 15 * 60 * 1000, maxRequests: 10 }
+
+/** Search: 30 requests per minute */
+export const searchRateLimit = { windowMs: 60 * 1000, maxRequests: 30 }
+
+/** Shipping: 20 requests per minute */
+export const shippingRateLimit = { windowMs: 60 * 1000, maxRequests: 20 }
+
+/** Social endpoints: 20 requests per minute */
+export const socialRateLimit = { windowMs: 60 * 1000, maxRequests: 20 }
+
+/** Tax calculation: 20 requests per minute */
+export const taxRateLimit = { windowMs: 60 * 1000, maxRequests: 20 }
