@@ -1,86 +1,66 @@
 // =============================================================================
 // Marketo Input Sanitization Utilities
 // Provides sanitization and validation helpers for user input
+//
+// IMPORTANT: This module must NOT have any module-level code that can crash.
+// It is imported by the login route, and any module-level crash will cause
+// Vercel to return an HTML 500 error page instead of JSON.
+//
+// isomorphic-dompurify is NOT eagerly loaded — it requires jsdom which can
+// crash on Vercel serverless. We use a basic regex-based fallback instead.
+// If DOMPurify is needed for rich HTML, use loadDOMPurify() + purifyHtml().
 // =============================================================================
 
 // ---------------------------------------------------------------------------
-// DOMPurify — Lazy-loaded with error handling for Vercel serverless
-// isomorphic-dompurify can crash at import time on Vercel serverless if the
-// DOM environment is not available. We use dynamic import with a fallback.
+// DOMPurify — Lazy async loading only (never at module init time)
 // ---------------------------------------------------------------------------
 
-let DOMPurify: typeof import('isomorphic-dompurify').default | null = null
-let domPurifyLoadAttempted = false
-let domPurifyLoadError: string | null = null
+let DOMPurifyInstance: { sanitize: (input: string, config: Record<string, unknown>) => string } | null = null
+let domPurifyLoaded = false
 
-async function loadDOMPurify() {
-  if (DOMPurify) return DOMPurify
-  if (domPurifyLoadAttempted) return null // Don't retry if it already failed
-  domPurifyLoadAttempted = true
+/**
+ * Async load DOMPurify. Returns true if loaded successfully.
+ * Call this before using purifyHtml(). Safe to call multiple times.
+ */
+export async function loadDOMPurify(): Promise<boolean> {
+  if (DOMPurifyInstance) return true
+  if (domPurifyLoaded) return false // Already tried and failed
+  domPurifyLoaded = true
 
   try {
     const mod = await import('isomorphic-dompurify')
-    DOMPurify = mod.default || mod
-    return DOMPurify
-  } catch (error) {
-    domPurifyLoadError = error instanceof Error ? error.message : String(error)
-    console.error('[sanitize] Failed to load isomorphic-dompurify:', domPurifyLoadError)
-    return null
+    const dp = mod.default || mod
+    if (dp && typeof dp.sanitize === 'function') {
+      DOMPurifyInstance = dp
+      return true
+    }
+    return false
+  } catch {
+    // DOMPurify not available (expected on Vercel serverless)
+    return false
   }
 }
 
-// Try to eagerly load DOMPurify (works in Node.js with JSDOM)
-// If it fails, sanitizeHtml will use a basic fallback
-try {
-  // Use require for synchronous loading at module init time
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const mod = require('isomorphic-dompurify')
-  DOMPurify = mod.default || mod
-} catch {
-  // DOMPurify not available — sanitizeHtml will use fallback
-  domPurifyLoadAttempted = true
+// ---------------------------------------------------------------------------
+// DOMPurify configuration
+// ---------------------------------------------------------------------------
+const DOMPURIFY_CONFIG = {
+  ALLOW_TAGS: [
+    'b', 'i', 'em', 'strong', 'a', 'p', 'br',
+    'ul', 'ol', 'li',
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+    'blockquote', 'code', 'pre', 'span', 'div',
+    'img', 'hr',
+    'table', 'thead', 'tbody', 'tr', 'th', 'td',
+  ],
+  ALLOW_ATTR: ['href', 'src', 'alt', 'title', 'class', 'target', 'rel'],
+  FORBID_TAGS: ['style', 'script', 'iframe', 'object', 'embed', 'form', 'input', 'textarea', 'button', 'base', 'link', 'meta'],
+  FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur', 'onmousedown', 'onmouseup', 'onkeydown', 'onkeyup', 'onkeypress', 'onchange', 'onsubmit', 'onreset', 'onabort', 'onresize'],
+  ALLOW_DATA_ATTR: false,
 }
 
 // ---------------------------------------------------------------------------
-// DOMPurify configuration — applied once and reused by sanitizeHtml
-// ---------------------------------------------------------------------------
-const ALLOWED_TAGS = [
-  'b', 'i', 'em', 'strong', 'a', 'p', 'br',
-  'ul', 'ol', 'li',
-  'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-  'blockquote', 'code', 'pre', 'span', 'div',
-  'img', 'hr',
-  'table', 'thead', 'tbody', 'tr', 'th', 'td',
-] as const;
-
-const ALLOWED_ATTR = [
-  'href', 'src', 'alt', 'title', 'class', 'target', 'rel',
-] as const;
-
-const FORBIDDEN_TAGS = [
-  'style', 'script', 'iframe', 'object', 'embed',
-  'form', 'input', 'textarea', 'button',
-  'base', 'link', 'meta',
-] as const;
-
-const FORBIDDEN_ATTR = [
-  'onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur',
-  'onmousedown', 'onmouseup', 'onkeydown', 'onkeyup', 'onkeypress',
-  'onchange', 'onsubmit', 'onreset', 'onabort', 'onresize',
-] as const;
-
-// Configure DOMPurify with restrictive defaults (applied on every call)
-const DOMPURIFY_CONFIG = {
-  ALLOW_TAGS: [...ALLOWED_TAGS],
-  ALLOW_ATTR: [...ALLOWED_ATTR],
-  FORBID_TAGS: [...FORBIDDEN_TAGS],
-  FORBID_ATTR: [...FORBIDDEN_ATTR],
-  ALLOW_DATA_ATTR: false,
-} as const;
-
-// ---------------------------------------------------------------------------
-// Basic HTML sanitization fallback — used when DOMPurify is not available
-// (e.g., on Vercel serverless if isomorphic-dompurify fails to load)
+// Basic HTML sanitization fallback — always available, no external deps
 // ---------------------------------------------------------------------------
 
 function basicSanitizeHtml(input: string): string {
@@ -100,20 +80,32 @@ function basicSanitizeHtml(input: string): string {
     .trim()
 }
 
-// Sanitize HTML content using DOMPurify (allows basic formatting only)
-// Falls back to basic regex-based sanitization if DOMPurify is not available
+/**
+ * Sanitize HTML content — uses DOMPurify if loaded, otherwise basic regex fallback.
+ * This is synchronous and always safe to call.
+ */
 export function sanitizeHtml(input: string): string {
   if (typeof input !== 'string') return ''
 
-  if (DOMPurify && typeof DOMPurify.sanitize === 'function') {
+  if (DOMPurifyInstance) {
     try {
-      return DOMPurify.sanitize(input, DOMPURIFY_CONFIG).trim()
+      return DOMPurifyInstance.sanitize(input, DOMPURIFY_CONFIG).trim()
     } catch {
-      // DOMPurify failed — use fallback
+      // DOMPurify failed — fall through to basic fallback
     }
   }
 
   return basicSanitizeHtml(input)
+}
+
+/**
+ * Async HTML sanitization — loads DOMPurify first, then sanitizes.
+ * Use this for rich HTML content where DOMPurify provides better protection.
+ * Falls back to basic sanitization if DOMPurify is unavailable.
+ */
+export async function purifyHtml(input: string): Promise<string> {
+  await loadDOMPurify()
+  return sanitizeHtml(input)
 }
 
 // Sanitize string input to prevent XSS
