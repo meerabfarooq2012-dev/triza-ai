@@ -7,8 +7,19 @@ import jwt from 'jsonwebtoken'
 import { randomBytes } from 'crypto'
 import { validateSession } from '@/lib/session'
 
-const JWT_SECRET = process.env.JWT_SECRET
-if (!JWT_SECRET) throw new Error('FATAL: JWT_SECRET environment variable is not set')
+// Lazy initialization: do NOT throw at module import time.
+// On Vercel, a missing env var at import time would crash the entire route handler
+// and cause Next.js to return an HTML error page instead of JSON.
+let _jwtSecret: string | undefined
+function getJwtSecret(): string {
+  if (!_jwtSecret) {
+    _jwtSecret = process.env.JWT_SECRET
+  }
+  if (!_jwtSecret) {
+    throw new Error('JWT_SECRET environment variable is not set')
+  }
+  return _jwtSecret
+}
 const JWT_EXPIRES_IN = '7d' // 7 days
 const REFRESH_TOKEN_EXPIRES_IN = '30d' // 30 days
 
@@ -23,7 +34,7 @@ export interface AuthPayload {
  * Sign a JWT token with the given payload
  */
 export function signToken(payload: AuthPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN })
+  return jwt.sign(payload, getJwtSecret(), { expiresIn: JWT_EXPIRES_IN })
 }
 
 /**
@@ -32,7 +43,7 @@ export function signToken(payload: AuthPayload): string {
  */
 export function verifyToken(token: string): AuthPayload | null {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as AuthPayload
+    const decoded = jwt.verify(token, getJwtSecret()) as AuthPayload
     return decoded
   } catch {
     return null
@@ -101,7 +112,7 @@ export async function authenticateRequestWithSession(request: Request): Promise<
  * Sign a refresh token with the given payload
  */
 export function signRefreshToken(payload: AuthPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRES_IN })
+  return jwt.sign(payload, getJwtSecret(), { expiresIn: REFRESH_TOKEN_EXPIRES_IN })
 }
 
 /**
@@ -110,7 +121,7 @@ export function signRefreshToken(payload: AuthPayload): string {
  */
 export function verifyRefreshToken(token: string): AuthPayload | null {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as AuthPayload
+    const decoded = jwt.verify(token, getJwtSecret()) as AuthPayload
     return decoded
   } catch {
     return null

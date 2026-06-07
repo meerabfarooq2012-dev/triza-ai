@@ -5,11 +5,19 @@
 
 import { createHmac } from 'crypto'
 
-// Derive the CSRF secret from CSRF_SECRET env, or fall back to JWT_SECRET
-const CSRF_SECRET =
-  process.env.CSRF_SECRET ||
-  process.env.JWT_SECRET
-if (!CSRF_SECRET) throw new Error('FATAL: CSRF_SECRET or JWT_SECRET environment variable must be set')
+// Lazy initialization: do NOT throw at module import time.
+// On Vercel, a missing env var at import time would crash the entire route handler
+// and cause Next.js to return an HTML error page instead of JSON.
+let _csrfSecret: string | undefined
+function getCsrfSecret(): string {
+  if (!_csrfSecret) {
+    _csrfSecret = process.env.CSRF_SECRET || process.env.JWT_SECRET
+  }
+  if (!_csrfSecret) {
+    throw new Error('CSRF_SECRET or JWT_SECRET environment variable must be set')
+  }
+  return _csrfSecret
+}
 
 /**
  * Generate a signed CSRF token.
@@ -18,7 +26,7 @@ if (!CSRF_SECRET) throw new Error('FATAL: CSRF_SECRET or JWT_SECRET environment 
  */
 export function generateCsrfToken(): string {
   const randomId = crypto.randomUUID()
-  const signature = createHmac('sha256', CSRF_SECRET)
+  const signature = createHmac('sha256', getCsrfSecret())
     .update(randomId)
     .digest('hex')
   return `${randomId}.${signature}`
@@ -37,7 +45,7 @@ export function validateCsrfToken(token: string): boolean {
   const [randomId, signature] = parts
   if (!randomId || !signature) return false
 
-  const expectedSignature = createHmac('sha256', CSRF_SECRET)
+  const expectedSignature = createHmac('sha256', getCsrfSecret())
     .update(randomId)
     .digest('hex')
 

@@ -257,6 +257,26 @@ async function request<T>(
   try {
     const response = await fetch(url, config)
 
+    // Guard against HTML responses (e.g. Next.js error pages on Vercel)
+    // that would cause JSON.parse to throw "Unexpected token '<'"
+    const contentType = response.headers.get('content-type') || ''
+    if (!contentType.includes('application/json')) {
+      // If the server returned HTML instead of JSON, it's likely a server error
+      const statusText = response.statusText || 'Server Error'
+      if (response.status >= 500) {
+        throw new ApiError(
+          'Server error — the API returned an HTML page instead of JSON. ' +
+          'This usually means a missing environment variable (JWT_SECRET, DATABASE_URL) or a deployment issue. ' +
+          `Status: ${response.status} ${statusText}`,
+          response.status
+        )
+      }
+      throw new ApiError(
+        `Unexpected response type (${contentType}). Expected JSON. Status: ${response.status}`,
+        response.status
+      )
+    }
+
     const data = await response.json()
 
     if (!response.ok) {
