@@ -12,13 +12,19 @@ import {
   Package,
   HardDrive,
   XCircle,
+  RefreshCw,
+  ShieldCheck,
+  Timer,
+  ArrowDownToLine,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { toast } from 'sonner'
 
+// ----- Types -----
 interface DownloadItem {
   id: string
   productId: string
@@ -42,6 +48,7 @@ interface DownloadItem {
   timeRemaining: number
 }
 
+// ----- Helpers -----
 function formatFileSize(bytes: number | null): string {
   if (!bytes) return 'Unknown size'
   if (bytes < 1024) return `${bytes} B`
@@ -50,66 +57,85 @@ function formatFileSize(bytes: number | null): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
 }
 
-function formatTimeRemaining(ms: number): string {
+function formatExpiryCountdown(expiresAt: string): string {
+  const ms = new Date(expiresAt).getTime() - Date.now()
   if (ms <= 0) return 'Expired'
   const days = Math.floor(ms / (1000 * 60 * 60 * 24))
   const hours = Math.floor((ms % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-  if (days > 0) return `${days}d ${hours}h`
+  if (days > 0) return `Expires in ${days} day${days !== 1 ? 's' : ''} ${hours}h`
+  if (hours > 0) return `Expires in ${hours} hour${hours !== 1 ? 's' : ''}`
   const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60))
-  if (hours > 0) return `${hours}h ${minutes}m`
-  const seconds = Math.floor((ms % (1000 * 60)) / 1000)
-  return `${minutes}m ${seconds}s`
+  return `Expires in ${minutes} minute${minutes !== 1 ? 's' : ''}`
 }
 
-function DownloadCard({ download, onDownload }: { download: DownloadItem; onDownload: (token: string) => void }) {
+// ----- Status Badge Component -----
+function DownloadStatusBadge({ download }: { download: DownloadItem }) {
+  if (download.isExpired) {
+    return (
+      <Badge variant="outline" className="text-[10px] gap-1 text-red-600 border-red-300 bg-red-50 dark:bg-red-950/30 dark:border-red-800 dark:text-red-400">
+        <Clock className="h-3 w-3" />
+        Expired
+      </Badge>
+    )
+  }
+  if (download.isExhausted) {
+    return (
+      <Badge variant="outline" className="text-[10px] gap-1 text-amber-600 border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-400">
+        <XCircle className="h-3 w-3" />
+        Maxed Out
+      </Badge>
+    )
+  }
+  return (
+    <Badge variant="outline" className="text-[10px] gap-1 text-emerald-600 border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-400">
+      <CheckCircle2 className="h-3 w-3" />
+      Active
+    </Badge>
+  )
+}
+
+// ----- Download Card -----
+function DownloadCard({
+  download,
+  onDownload,
+  onRequestNewLink,
+}: {
+  download: DownloadItem
+  onDownload: (token: string) => Promise<void>
+  onRequestNewLink: (download: DownloadItem) => Promise<void>
+}) {
   const [downloading, setDownloading] = useState(false)
+  const [requesting, setRequesting] = useState(false)
 
   const handleDownload = async () => {
     setDownloading(true)
     try {
-      onDownload(download.downloadToken)
-      // Brief delay to show the loading state
-      setTimeout(() => setDownloading(false), 2000)
-    } catch {
+      await onDownload(download.downloadToken)
+    } finally {
       setDownloading(false)
     }
   }
 
-  const statusConfig = (() => {
-    if (download.isExpired) {
-      return {
-        icon: Clock,
-        label: 'Link Expired',
-        color: 'text-gray-500',
-        bgColor: 'bg-gray-50 dark:bg-gray-900/30',
-        borderColor: 'border-gray-200 dark:border-gray-800',
-        badgeVariant: 'outline' as const,
-        badgeColor: 'text-gray-500 border-gray-300',
-      }
+  const handleRequestNewLink = async () => {
+    setRequesting(true)
+    try {
+      await onRequestNewLink(download)
+    } finally {
+      setRequesting(false)
     }
-    if (download.isExhausted) {
-      return {
-        icon: XCircle,
-        label: 'Downloads Exhausted',
-        color: 'text-red-500',
-        bgColor: 'bg-red-50 dark:bg-red-950/20',
-        borderColor: 'border-red-200 dark:border-red-900',
-        badgeVariant: 'outline' as const,
-        badgeColor: 'text-red-500 border-red-300',
-      }
-    }
-    return {
-      icon: CheckCircle2,
-      label: 'Available',
-      color: 'text-emerald-600',
-      bgColor: 'bg-background',
-      borderColor: 'border-border',
-      badgeVariant: 'outline' as const,
-      badgeColor: 'text-emerald-600 border-emerald-300',
-    }
-  })()
+  }
 
-  const StatusIcon = statusConfig.icon
+  const remaining = download.maxDownloads - download.downloadCount
+  const progressPercent = Math.min(
+    (download.downloadCount / download.maxDownloads) * 100,
+    100
+  )
+
+  const progressColor = download.isExhausted
+    ? 'bg-red-500'
+    : progressPercent > 60
+      ? 'bg-amber-500'
+      : 'bg-emerald-500'
 
   return (
     <motion.div
@@ -118,10 +144,18 @@ function DownloadCard({ download, onDownload }: { download: DownloadItem; onDown
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.2 }}
     >
-      <Card className={`border ${statusConfig.borderColor} ${download.isExpired ? 'opacity-70' : ''} hover:shadow-md transition-shadow`}>
+      <Card
+        className={`border hover:shadow-md transition-shadow ${
+          download.isExpired
+            ? 'border-red-200 dark:border-red-900 opacity-75'
+            : download.isExhausted
+              ? 'border-amber-200 dark:border-amber-900'
+              : 'border-border'
+        }`}
+      >
         <CardContent className="p-4 sm:p-6">
           <div className="flex gap-4">
-            {/* Product Image */}
+            {/* Product Image Thumbnail */}
             <div className="h-16 w-16 sm:h-20 sm:w-20 flex-shrink-0 overflow-hidden rounded-lg bg-muted border">
               {download.productImage ? (
                 <img
@@ -130,21 +164,22 @@ function DownloadCard({ download, onDownload }: { download: DownloadItem; onDown
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center">
-                  <Package className="h-8 w-8 text-muted-foreground/40" />
+                <div className="flex h-full w-full items-center justify-center bg-amber-50 dark:bg-amber-950/30">
+                  <Package className="h-8 w-8 text-amber-400" />
                 </div>
               )}
             </div>
 
             {/* Content */}
             <div className="flex-1 min-w-0">
+              {/* Title row */}
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <h4 className="font-semibold text-sm sm:text-base truncate">
                     {download.productName}
                   </h4>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-amber-600 border-amber-300">
                       {download.productType}
                     </Badge>
                     {download.fileName && (
@@ -154,14 +189,11 @@ function DownloadCard({ download, onDownload }: { download: DownloadItem; onDown
                     )}
                   </div>
                 </div>
-                <Badge className={`text-[10px] ${statusConfig.badgeColor}`}>
-                  <StatusIcon className="h-3 w-3 mr-1" />
-                  {statusConfig.label}
-                </Badge>
+                <DownloadStatusBadge download={download} />
               </div>
 
-              {/* File info */}
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-xs text-muted-foreground">
+              {/* File info row */}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2.5 text-xs text-muted-foreground">
                 {download.fileName && (
                   <span className="flex items-center gap-1">
                     <FileText className="h-3 w-3" />
@@ -174,67 +206,103 @@ function DownloadCard({ download, onDownload }: { download: DownloadItem; onDown
                 </span>
               </div>
 
-              {/* Download progress */}
+              {/* Download progress bar */}
               <div className="mt-3">
                 <div className="flex items-center justify-between text-xs mb-1.5">
-                  <span className="text-muted-foreground">
-                    Downloads: {download.downloadCount}/{download.maxDownloads}
+                  <span className={`font-medium ${
+                    download.isExhausted
+                      ? 'text-red-600'
+                      : remaining <= 1
+                        ? 'text-amber-600'
+                        : 'text-muted-foreground'
+                  }`}>
+                    {remaining}/{download.maxDownloads} downloads remaining
                   </span>
-                  <span className={download.isExpired ? 'text-gray-500' : 'text-amber-600'}>
-                    {download.isExpired
-                      ? 'Expired'
-                      : formatTimeRemaining(download.timeRemaining)}
+                  <span className={`flex items-center gap-1 ${
+                    download.isExpired
+                      ? 'text-red-500'
+                      : download.isExhausted
+                        ? 'text-amber-600'
+                        : 'text-muted-foreground'
+                  }`}>
+                    {download.isExpired ? (
+                      <>
+                        <Clock className="h-3 w-3" />
+                        Expired
+                      </>
+                    ) : (
+                      <>
+                        <Timer className="h-3 w-3" />
+                        {formatExpiryCountdown(download.expiresAt)}
+                      </>
+                    )}
                   </span>
                 </div>
-                <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-300 ${
-                      download.isExhausted
-                        ? 'bg-red-400'
-                        : download.downloadCount / download.maxDownloads > 0.6
-                          ? 'bg-amber-500'
-                          : 'bg-emerald-500'
-                    }`}
-                    style={{
-                      width: `${Math.min((download.downloadCount / download.maxDownloads) * 100, 100)}%`,
-                    }}
+                <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                  <motion.div
+                    className={`h-full rounded-full ${progressColor}`}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${progressPercent}%` }}
+                    transition={{ duration: 0.5, ease: 'easeOut' }}
                   />
                 </div>
               </div>
 
-              {/* Download button */}
-              {download.isActive && (
-                <Button
-                  className="mt-3 w-full sm:w-auto gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-sm"
-                  size="sm"
-                  onClick={handleDownload}
-                  disabled={downloading}
-                >
-                  {downloading ? (
-                    <>
+              {/* Action buttons */}
+              <div className="mt-3 flex items-center gap-2 flex-wrap">
+                {download.isActive ? (
+                  <Button
+                    className="gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-sm"
+                    size="sm"
+                    onClick={handleDownload}
+                    disabled={downloading}
+                  >
+                    {downloading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Downloading...
+                      </>
+                    ) : (
+                      <>
+                        <ArrowDownToLine className="h-4 w-4" />
+                        Download ({remaining} left)
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 border-amber-300 text-amber-600 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-400 dark:hover:bg-amber-950/30"
+                    onClick={handleRequestNewLink}
+                    disabled={requesting}
+                  >
+                    {requesting ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Downloading...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="h-4 w-4" />
-                      Download ({download.downloadCount}/{download.maxDownloads})
-                    </>
-                  )}
-                </Button>
-              )}
+                    ) : (
+                      <RefreshCw className="h-4 w-4" />
+                    )}
+                    Request New Link
+                  </Button>
+                )}
+              </div>
 
+              {/* Expiry / Exhausted warnings */}
               {download.isExpired && (
-                <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">
+                <div className="mt-2.5 flex items-center gap-2 text-xs text-red-500">
                   <AlertTriangle className="h-3.5 w-3.5" />
-                  <span>This download link expired on {new Date(download.expiresAt).toLocaleDateString()}</span>
+                  <span>
+                    This download link expired on{' '}
+                    {new Date(download.expiresAt).toLocaleDateString()}
+                  </span>
                 </div>
               )}
-
               {download.isExhausted && !download.isExpired && (
-                <div className="mt-3 flex items-center gap-2 text-xs text-red-500">
+                <div className="mt-2.5 flex items-center gap-2 text-xs text-amber-600">
                   <AlertTriangle className="h-3.5 w-3.5" />
-                  <span>All {download.maxDownloads} downloads have been used</span>
+                  <span>
+                    All {download.maxDownloads} downloads have been used
+                  </span>
                 </div>
               )}
             </div>
@@ -245,6 +313,7 @@ function DownloadCard({ download, onDownload }: { download: DownloadItem; onDown
   )
 }
 
+// ----- Loading Skeleton -----
 function DownloadSkeleton() {
   return (
     <Card className="border">
@@ -254,7 +323,7 @@ function DownloadSkeleton() {
           <div className="flex-1 space-y-3">
             <div className="h-5 w-3/4 rounded bg-muted" />
             <div className="h-3 w-1/2 rounded bg-muted" />
-            <div className="h-1.5 w-full rounded-full bg-muted" />
+            <div className="h-2 w-full rounded-full bg-muted" />
             <div className="h-8 w-32 rounded bg-muted" />
           </div>
         </div>
@@ -263,11 +332,20 @@ function DownloadSkeleton() {
   )
 }
 
+// ----- Main Component -----
 export function MyDownloads() {
-  const { currentUser } = useMarketplaceStore()
+  const { currentUser, authToken } = useMarketplaceStore()
   const [downloads, setDownloads] = useState<DownloadItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const getAuthHeaders = useCallback(() => {
+    const headers: Record<string, string> = {}
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`
+    }
+    return headers
+  }, [authToken])
 
   const fetchDownloads = useCallback(async () => {
     if (!currentUser?.id) {
@@ -279,7 +357,9 @@ export function MyDownloads() {
     setError(null)
 
     try {
-      const res = await fetch(`/api/downloads?userId=${currentUser.id}`)
+      const res = await fetch(`/api/downloads?userId=${currentUser.id}`, {
+        headers: getAuthHeaders(),
+      })
       const data = await res.json()
 
       if (data.success) {
@@ -292,17 +372,19 @@ export function MyDownloads() {
     } finally {
       setLoading(false)
     }
-  }, [currentUser?.id])
+  }, [currentUser?.id, getAuthHeaders])
 
   useEffect(() => {
     fetchDownloads()
   }, [fetchDownloads])
 
-  // Refresh downloads every 60 seconds to update countdowns
+  // Auto-refresh every 60s to keep countdowns updated
   useEffect(() => {
     const interval = setInterval(() => {
       if (currentUser?.id) {
-        fetch(`/api/downloads?userId=${currentUser.id}`)
+        fetch(`/api/downloads?userId=${currentUser.id}`, {
+          headers: getAuthHeaders(),
+        })
           .then((res) => res.json())
           .then((data) => {
             if (data.success) {
@@ -312,12 +394,10 @@ export function MyDownloads() {
           .catch(() => {})
       }
     }, 60000)
-
     return () => clearInterval(interval)
-  }, [currentUser?.id])
+  }, [currentUser?.id, getAuthHeaders])
 
-  const handleDownload = (token: string) => {
-    // Open the download endpoint in a new tab — the server will redirect to the signed URL
+  const handleDownload = async (token: string) => {
     window.open(`/api/downloads/${token}`, '_blank')
     toast.success('Download started!', {
       description: 'Your file will begin downloading shortly.',
@@ -326,10 +406,43 @@ export function MyDownloads() {
     setTimeout(() => fetchDownloads(), 2000)
   }
 
+  const handleRequestNewLink = async (download: DownloadItem) => {
+    if (!download.orderId || !currentUser?.id) {
+      toast.error('Cannot request a new link for this download.')
+      return
+    }
+
+    try {
+      const res = await fetch('/api/downloads/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify({
+          userId: currentUser.id,
+          orderId: download.orderId,
+        }),
+      })
+      const data = await res.json()
+
+      if (data.success) {
+        toast.success('New download link generated!', {
+          description: 'Your download links have been refreshed.',
+        })
+        fetchDownloads()
+      } else {
+        toast.error(data.error || 'Failed to generate new link')
+      }
+    } catch {
+      toast.error('Network error. Please try again.')
+    }
+  }
+
   const activeDownloads = downloads.filter((d) => d.isActive)
   const expiredDownloads = downloads.filter((d) => d.isExpired || d.isExhausted)
 
-  // Loading state
+  // ---- Loading ----
   if (loading) {
     return (
       <div className="space-y-4">
@@ -346,7 +459,7 @@ export function MyDownloads() {
     )
   }
 
-  // Error state
+  // ---- Error ----
   if (error) {
     return (
       <div className="text-center py-12">
@@ -361,17 +474,22 @@ export function MyDownloads() {
     )
   }
 
-  // Empty state
+  // ---- Empty State ----
   if (downloads.length === 0) {
     return (
-      <div className="text-center py-12">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-50 dark:bg-amber-950/30 mb-4">
-          <Download className="h-8 w-8 text-amber-500" />
+      <div className="text-center py-16">
+        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-amber-50 dark:bg-amber-950/30 mb-6">
+          <Download className="h-10 w-10 text-amber-500" />
         </div>
-        <h3 className="text-lg font-semibold mb-2">No digital purchases yet</h3>
+        <h3 className="text-xl font-semibold mb-2">No digital downloads yet</h3>
         <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-          When you purchase digital products and your payment is confirmed, your download links will appear here.
+          When you purchase digital products and your order is delivered, your
+          download links will appear here.
         </p>
+        <div className="mt-6 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+          <ShieldCheck className="h-3.5 w-3.5 text-amber-500" />
+          <span>All downloads are secured with expiring token-based links</span>
+        </div>
       </div>
     )
   }
@@ -383,12 +501,19 @@ export function MyDownloads() {
         <div>
           <h2 className="text-xl font-bold">My Downloads</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            {activeDownloads.length} active download{activeDownloads.length !== 1 ? 's' : ''}
-            {expiredDownloads.length > 0 && ` · ${expiredDownloads.length} expired`}
+            {activeDownloads.length} active download
+            {activeDownloads.length !== 1 ? 's' : ''}
+            {expiredDownloads.length > 0 &&
+              ` \u00B7 ${expiredDownloads.length} expired`}
           </p>
         </div>
-        <Button onClick={fetchDownloads} variant="outline" size="sm" className="gap-1.5">
-          <Download className="h-3.5 w-3.5" />
+        <Button
+          onClick={fetchDownloads}
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
           Refresh
         </Button>
       </div>
@@ -406,6 +531,7 @@ export function MyDownloads() {
                   key={download.id}
                   download={download}
                   onDownload={handleDownload}
+                  onRequestNewLink={handleRequestNewLink}
                 />
               ))}
             </AnimatePresence>
@@ -419,19 +545,29 @@ export function MyDownloads() {
           <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
             Past Downloads
           </h3>
-          <div className="grid gap-4">
+          <div className="grid gap-4 max-h-96 overflow-y-auto">
             <AnimatePresence>
               {expiredDownloads.map((download) => (
                 <DownloadCard
                   key={download.id}
                   download={download}
                   onDownload={handleDownload}
+                  onRequestNewLink={handleRequestNewLink}
                 />
               ))}
             </AnimatePresence>
           </div>
         </div>
       )}
+
+      {/* Security notice */}
+      <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2">
+        <ShieldCheck className="h-3.5 w-3.5 text-amber-500" />
+        <span>
+          Download links expire after 30 days and allow up to 5 downloads per
+          purchase for security.
+        </span>
+      </div>
     </div>
   )
 }

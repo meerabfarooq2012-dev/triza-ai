@@ -1,34 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { authenticateRequest } from '@/lib/auth-middleware';
 import { withCsrf } from '@/lib/with-csrf';
+
 // POST /api/disputes/[id]/resolve — Resolve a dispute
-export const POST = withCsrf(async (request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }) => {
-  const auth = authenticateRequest(request);
-  if (!auth) {
-    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
-  }
-  if (auth.role !== 'admin') {
-    return NextResponse.json({ success: false, error: 'Admin access required' }, { status: 403 });
-  }
+export const POST = withCsrf(async (
+  request: NextRequest,
+  context?: unknown
+) => {
+  const { params } = context as { params: Promise<{ id: string }> };
   try {
     const { id } = await params;
     const body = await request.json();
     const {
       status: bodyStatus,
+      resolvedBy,
       resolution,
       resolutionType,
       refundAmount,
     } = body;
-    const resolvedBy = auth.userId;
 
     // Validate required fields
-    if (!resolution) {
+    if (!resolvedBy || !resolution) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Missing required field: resolution',
+          error: 'Missing required fields: resolvedBy, resolution',
         },
         { status: 400 }
       );
@@ -85,7 +81,26 @@ export const POST = withCsrf(async (request: NextRequest,
       );
     }
 
-    // Auth already verified admin role via JWT; resolver is the authenticated admin
+    // Only admin or assigned admin can resolve
+    const resolver = await db.user.findUnique({ where: { id: resolvedBy } });
+    if (!resolver) {
+      return NextResponse.json(
+        { success: false, error: 'Resolver user not found' },
+        { status: 404 }
+      );
+    }
+
+    const isAdmin = resolver.isAdmin;
+    const isAssignedAdmin = dispute.assignedAdminId === resolvedBy;
+    if (!isAdmin && !isAssignedAdmin) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Only an admin or the assigned admin can resolve this dispute',
+        },
+        { status: 403 }
+      );
+    }
 
     const now = new Date();
 
@@ -223,4 +238,4 @@ export const POST = withCsrf(async (request: NextRequest,
       { status: 500 }
     );
   }
-})
+});

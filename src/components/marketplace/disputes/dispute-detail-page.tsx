@@ -85,7 +85,7 @@ const STATUS_CONFIG: Record<DisputeStatus, {
   investigating: { label: 'Investigating', color: 'text-amber-700', bgColor: 'bg-amber-50', borderColor: 'border-amber-200', icon: Eye },
   awaiting_response: { label: 'Awaiting Response', color: 'text-orange-700', bgColor: 'bg-orange-50', borderColor: 'border-orange-200', icon: MessageSquare },
   escalated: { label: 'Escalated', color: 'text-red-700', bgColor: 'bg-red-50', borderColor: 'border-red-200', icon: AlertTriangle },
-  resolved: { label: 'Resolved', color: 'text-emerald-700', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', icon: CheckCircle2 },
+  resolved: { label: 'Resolved', color: 'text-amber-700', bgColor: 'bg-amber-50', borderColor: 'border-amber-200', icon: CheckCircle2 },
   closed: { label: 'Closed', color: 'text-gray-700', bgColor: 'bg-gray-50', borderColor: 'border-gray-200', icon: XCircle },
 }
 
@@ -619,7 +619,7 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
             <Card className="border-0 shadow-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Scale className="h-4 w-4 text-emerald-600" />
+                  <Scale className="h-4 w-4 text-amber-600" />
                   Dispute Information
                 </CardTitle>
               </CardHeader>
@@ -655,20 +655,20 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
 
                 {/* Resolution info */}
                 {dispute.resolution && (
-                  <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 space-y-2">
-                    <p className="text-xs font-semibold text-emerald-700 flex items-center gap-1.5">
+                  <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 space-y-2">
+                    <p className="text-xs font-semibold text-amber-700 flex items-center gap-1.5">
                       <CheckCircle2 className="h-3.5 w-3.5" />
                       Resolution
                     </p>
-                    <p className="text-sm text-emerald-800">{dispute.resolution}</p>
+                    <p className="text-sm text-amber-800">{dispute.resolution}</p>
                     <div className="flex items-center gap-3 flex-wrap">
                       {dispute.resolutionType && (
-                        <Badge variant="outline" className="text-xs bg-emerald-100 text-emerald-700 border-emerald-200">
+                        <Badge variant="outline" className="text-xs bg-amber-100 text-amber-700 border-amber-200">
                           {RESOLUTION_TYPE_LABELS[dispute.resolutionType] || dispute.resolutionType}
                         </Badge>
                       )}
                       {dispute.refundAmount != null && (
-                        <span className="text-sm font-semibold text-emerald-700 flex items-center gap-0.5">
+                        <span className="text-sm font-semibold text-amber-700 flex items-center gap-0.5">
                           <DollarSign className="h-3.5 w-3.5" />
                           {dispute.refundAmount.toFixed(2)}
                         </span>
@@ -683,7 +683,7 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
                     <Separator />
                     <div>
                       <p className="text-xs font-semibold mb-2 flex items-center gap-1.5">
-                        <Package className="h-3.5 w-3.5 text-emerald-600" />
+                        <Package className="h-3.5 w-3.5 text-amber-600" />
                         Order Summary
                       </p>
                       <div className="space-y-2">
@@ -694,7 +694,7 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
                               key={item.id}
                               className="flex items-center gap-3 rounded-lg bg-muted/50 p-3"
                             >
-                              <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-white border">
+                              <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-white dark:bg-gray-800 border dark:border-gray-700">
                                 {productImages[0] ? (
                                   <img
                                     src={productImages[0]}
@@ -736,7 +736,7 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
                     <div className="flex items-center gap-2">
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={buyerInfo?.avatar || dispute.user?.avatar || undefined} />
-                        <AvatarFallback className="text-xs bg-emerald-100 text-emerald-700">
+                        <AvatarFallback className="text-xs bg-amber-100 text-amber-700">
                           {(buyerInfo?.name || dispute.user?.name || 'B').charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
@@ -773,7 +773,7 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
             <Card className="border-0 shadow-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4 text-emerald-600" />
+                  <MessageSquare className="h-4 w-4 text-amber-600" />
                   Communication
                   {messages.length > 0 && (
                     <Badge variant="secondary" className="text-[10px]">{messages.length}</Badge>
@@ -794,7 +794,7 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
                         const isMe = msg.senderId === userId
                         const isInternal = msg.isInternal
                         const roleBadgeColor = msg.senderRole === 'buyer'
-                          ? 'bg-emerald-100 text-emerald-700'
+                          ? 'bg-amber-100 text-amber-700'
                           : msg.senderRole === 'seller'
                             ? 'bg-sky-100 text-sky-700'
                             : 'bg-amber-100 text-amber-700'
@@ -810,7 +810,7 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
                             <Avatar className="h-8 w-8 shrink-0">
                               <AvatarImage src={msg.sender?.avatar || undefined} />
                               <AvatarFallback className={`text-xs ${
-                                msg.senderRole === 'buyer' ? 'bg-emerald-100 text-emerald-700' :
+                                msg.senderRole === 'buyer' ? 'bg-amber-100 text-amber-700' :
                                 msg.senderRole === 'seller' ? 'bg-sky-100 text-sky-700' :
                                 'bg-amber-100 text-amber-700'
                               }`}>
@@ -834,7 +834,7 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
                               </div>
                               <div className={`text-sm rounded-lg p-3 ${
                                 isMe
-                                  ? 'bg-emerald-600 text-white'
+                                  ? 'bg-amber-600 text-gray-900'
                                   : isInternal
                                     ? 'bg-amber-50 border border-amber-200 text-amber-900'
                                     : 'bg-muted/50'
@@ -867,7 +867,7 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
                       }}
                     />
                     <Button
-                      className="bg-emerald-600 hover:bg-emerald-700 self-end"
+                      className="bg-amber-600 hover:bg-amber-700 self-end"
                       size="icon"
                       onClick={handleSendMessage}
                       disabled={sendingMessage || !messageText.trim()}
@@ -894,7 +894,7 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base flex items-center gap-2">
-                    <Paperclip className="h-4 w-4 text-emerald-600" />
+                    <Paperclip className="h-4 w-4 text-amber-600" />
                     Evidence
                     {evidence.length > 0 && (
                       <Badge variant="secondary" className="text-[10px]">{evidence.length}</Badge>
@@ -928,7 +928,7 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
                           key={ev.id}
                           className="rounded-lg border bg-muted/20 p-3 flex items-start gap-3 group"
                         >
-                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-white border overflow-hidden">
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-white dark:bg-gray-800 border dark:border-gray-700 overflow-hidden">
                             {ev.type === 'image' || ev.type === 'screenshot' ? (
                               <img
                                 src={ev.fileUrl}
@@ -980,7 +980,7 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
             <Card className="border-0 shadow-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-emerald-600" />
+                  <Clock className="h-4 w-4 text-amber-600" />
                   Timeline
                 </CardTitle>
               </CardHeader>
@@ -997,7 +997,7 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
                           <div className="flex flex-col items-center">
                             <div className={`flex h-7 w-7 items-center justify-center rounded-full border-2 shrink-0 ${
                               isLast
-                                ? 'bg-emerald-500 border-emerald-500 text-white'
+                                ? 'bg-amber-500 border-amber-500 text-white'
                                 : 'bg-white border-muted-foreground/30 text-muted-foreground'
                             }`}>
                               <TimelineIcon className="h-3.5 w-3.5" />
@@ -1007,7 +1007,7 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
                             )}
                           </div>
                           <div className="pb-4 min-w-0">
-                            <p className={`text-sm font-medium ${isLast ? 'text-emerald-700' : ''}`}>
+                            <p className={`text-sm font-medium ${isLast ? 'text-amber-700' : ''}`}>
                               {entry.action.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
                             </p>
                             {entry.note && (
@@ -1035,7 +1035,7 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
             <Card className="border-0 shadow-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Gavel className="h-4 w-4 text-emerald-600" />
+                  <Gavel className="h-4 w-4 text-amber-600" />
                   Actions
                 </CardTitle>
               </CardHeader>
@@ -1087,7 +1087,7 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
                           className="resize-none"
                         />
                         <Button
-                          className="w-full bg-emerald-600 hover:bg-emerald-700"
+                          className="w-full bg-amber-600 hover:bg-amber-700"
                           onClick={handleSellerRespond}
                           disabled={responding || !sellerResponse.trim()}
                         >
@@ -1170,7 +1170,7 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
                     {(dispute.status !== 'resolved' && dispute.status !== 'closed') && (
                       <>
                         <Button
-                          className="w-full bg-emerald-600 hover:bg-emerald-700"
+                          className="w-full bg-amber-600 hover:bg-amber-700"
                           onClick={() => setResolveDialogOpen(true)}
                         >
                           <CheckCircle2 className="h-4 w-4 mr-2" />
@@ -1191,19 +1191,19 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
 
                 {/* Completed / Closed info */}
                 {dispute.status === 'resolved' && (
-                  <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 flex items-start gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600 mt-0.5 shrink-0" />
+                  <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 flex items-start gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
                     <div>
-                      <p className="text-xs text-emerald-700 font-semibold">Dispute Resolved</p>
+                      <p className="text-xs text-amber-700 font-semibold">Dispute Resolved</p>
                       {dispute.resolvedAt && (
-                        <p className="text-[10px] text-emerald-600">{formatFullDate(dispute.resolvedAt)}</p>
+                        <p className="text-[10px] text-amber-600">{formatFullDate(dispute.resolvedAt)}</p>
                       )}
                     </div>
                   </div>
                 )}
 
                 {dispute.status === 'closed' && (
-                  <div className="rounded-lg bg-gray-50 border border-gray-200 p-3 flex items-start gap-2">
+                  <div className="rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 p-3 flex items-start gap-2">
                     <XCircle className="h-4 w-4 text-gray-500 mt-0.5 shrink-0" />
                     <div>
                       <p className="text-xs text-gray-700 font-semibold">Dispute Closed</p>
@@ -1271,7 +1271,7 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+              <CheckCircle2 className="h-5 w-5 text-amber-600" />
               Resolve Dispute
             </DialogTitle>
             <DialogDescription>
@@ -1329,7 +1329,7 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
               Cancel
             </Button>
             <Button
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-amber-600 hover:bg-amber-700"
               onClick={handleResolve}
               disabled={resolving || !resolutionText.trim()}
             >
@@ -1352,7 +1352,7 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
               Closing a dispute is permanent and cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <div className="rounded-lg bg-gray-50 border border-gray-200 p-3 flex items-start gap-2">
+          <div className="rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 p-3 flex items-start gap-2">
             <AlertTriangle className="h-4 w-4 text-gray-600 mt-0.5 shrink-0" />
             <p className="text-xs text-gray-700">
               This will close the dispute without a resolution. Both parties will be notified.
@@ -1379,7 +1379,7 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Paperclip className="h-5 w-5 text-emerald-600" />
+              <Paperclip className="h-5 w-5 text-amber-600" />
               Add Evidence
             </DialogTitle>
             <DialogDescription>
@@ -1424,7 +1424,7 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
               Cancel
             </Button>
             <Button
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-amber-600 hover:bg-amber-700"
               onClick={handleAddEvidence}
               disabled={addingEvidence || !evUrl.trim()}
             >

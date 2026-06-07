@@ -1,0 +1,53 @@
+-- =============================================================================
+-- Enable Supabase Realtime on Message and Notification tables
+-- =============================================================================
+--
+-- Run this script in the Supabase SQL Editor to enable Realtime
+-- for the tables used by the Marketo marketplace.
+--
+-- Prerequisites:
+--   1. The "Message" and "Notification" tables must exist in the public schema.
+--   2. Row Level Security (RLS) must be enabled on these tables so that
+--      users only receive events for rows they are allowed to see.
+--
+-- After running this script:
+--   - INSERT events on "Message" will be broadcast via Supabase Realtime
+--   - INSERT events on "Notification" will be broadcast via Supabase Realtime
+--   - The client-side hooks (use-chat-socket, use-realtime-notifications)
+--     will automatically use Supabase Realtime on Vercel deployments
+--
+-- =============================================================================
+
+-- Enable Realtime on the Message table
+ALTER PUBLICATION supabase_realtime ADD TABLE "Message";
+
+-- Enable Realtime on the Notification table
+ALTER PUBLICATION supabase_realtime ADD TABLE "Notification";
+
+-- =============================================================================
+-- Optional: Enable RLS policies for Realtime access
+-- =============================================================================
+-- If RLS is not already configured, you need policies that allow users to
+-- read their own messages and notifications. The anon key respects RLS,
+-- so without these policies, the Realtime client won't receive any events.
+--
+-- Example RLS policies:
+--
+-- -- Messages: Users can see messages they sent or received
+-- CREATE POLICY "Users can see their own messages"
+--   ON "Message" FOR SELECT
+--   USING ("senderId" = auth.uid() OR "receiverId" = auth.uid());
+--
+-- -- Notifications: Users can see their own notifications
+-- CREATE POLICY "Users can see their own notifications"
+--   ON "Notification" FOR SELECT
+--   USING ("userId" = auth.uid());
+--
+-- =============================================================================
+-- Verify the setup
+-- =============================================================================
+-- After running, you can verify with:
+--
+-- SELECT * FROM pg_publication_tables WHERE pubname = 'supabase_realtime';
+--
+-- This should list both "Message" and "Notification" tables.

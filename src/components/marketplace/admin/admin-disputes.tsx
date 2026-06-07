@@ -159,7 +159,7 @@ export default function AdminDisputes() {
         {[
           { label: 'Open', count: counts.open, color: 'text-red-600' },
           { label: 'Investigating', count: counts.investigating, color: 'text-yellow-600' },
-          { label: 'Resolved', count: counts.resolved, color: 'text-green-600' },
+          { label: 'Resolved', count: counts.resolved, color: 'text-amber-600' },
           { label: 'Closed', count: counts.closed, color: 'text-gray-600' },
         ].map((item) => (
           <Card key={item.label} className="border-0 shadow-sm">

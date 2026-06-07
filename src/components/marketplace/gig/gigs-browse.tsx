@@ -137,24 +137,24 @@ const categoryIconMap: Record<string, React.ReactNode> = {
 
 const categoryGradients = [
   'from-amber-50 to-amber-100',
-  'from-emerald-50 to-teal-50',
   'from-amber-50 to-yellow-50',
   'from-amber-50 to-yellow-50',
-  'from-cyan-50 to-sky-50',
+  'from-amber-50 to-yellow-50',
+  'from-orange-50 to-sky-50',
   'from-amber-50 to-amber-100',
-  'from-lime-50 to-green-50',
+  'from-lime-50 to-amber-50',
   'from-orange-50 to-red-50',
 ]
 
 const iconColorMap: Record<string, string> = {
   'graphic-design': 'text-amber-600',
-  'web-development': 'text-emerald-600',
-  'app-development': 'text-green-600',
+  'web-development': 'text-amber-600',
+  'app-development': 'text-amber-600',
   'ui-ux-design': 'text-amber-600',
   'video-editing': 'text-amber-600',
   'animation-motion-graphics': 'text-orange-600',
-  'content-writing': 'text-cyan-600',
-  'copywriting': 'text-teal-600',
+  'content-writing': 'text-orange-600',
+  'copywriting': 'text-yellow-600',
   'translation': 'text-sky-600',
   'digital-marketing': 'text-fuchsia-600',
   'social-media-management': 'text-blue-600',
@@ -166,23 +166,23 @@ const iconColorMap: Record<string, string> = {
   'cloud-computing': 'text-sky-600',
   'game-development': 'text-lime-600',
   'e-commerce-services': 'text-yellow-600',
-  'shopify-development': 'text-emerald-600',
+  'shopify-development': 'text-amber-600',
   'wordpress-development': 'text-blue-600',
-  'photography-photo-editing': 'text-teal-600',
-  'music-audio-production': 'text-indigo-600',
+  'photography-photo-editing': 'text-yellow-600',
+  'music-audio-production': 'text-yellow-600',
   'voice-over': 'text-amber-600',
   'business-consulting': 'text-gray-600',
-  'accounting-finance': 'text-emerald-700',
+  'accounting-finance': 'text-amber-700',
   'customer-support': 'text-amber-700',
   'architecture-interior-design': 'text-slate-600',
   '3d-modeling-rendering': 'text-orange-700',
-  'programming-software-engineering': 'text-emerald-600',
+  'programming-software-engineering': 'text-amber-600',
   'online-tutoring': 'text-amber-700',
   'resume-cv-writing': 'text-amber-700',
-  'email-marketing': 'text-cyan-700',
+  'email-marketing': 'text-orange-700',
   'branding-identity': 'text-amber-700',
-  'nft-blockchain': 'text-indigo-700',
-  'chatbot-development': 'text-teal-700',
+  'nft-blockchain': 'text-yellow-700',
+  'chatbot-development': 'text-yellow-700',
   'script-writing': 'text-amber-700',
   'presentation-design': 'text-fuchsia-700',
   'product-design': 'text-sky-700',
@@ -306,7 +306,7 @@ export function GigsBrowse() {
   return (
     <div className="min-h-screen">
       {/* Hero Banner */}
-      <div className="relative bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white overflow-hidden">
+      <div className="relative bg-gradient-to-r from-amber-600 via-yellow-600 to-orange-600 text-white overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-0 left-1/4 w-72 h-72 bg-white/10 rounded-full blur-3xl" />
           <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
@@ -321,21 +321,21 @@ export function GigsBrowse() {
             <h1 className="text-3xl md:text-5xl font-bold mb-4">
               Find the Perfect Freelancer
             </h1>
-            <p className="text-lg md:text-xl text-emerald-100 mb-8 max-w-2xl mx-auto">
+            <p className="text-lg md:text-xl text-amber-100 mb-8 max-w-2xl mx-auto">
               Browse thousands of professional freelance services across {GIG_CATEGORIES.length} categories
             </p>
             <div className="max-w-2xl mx-auto relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-emerald-300" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-amber-300" />
               <Input
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 placeholder="Search for freelance services..."
-                className="pl-12 pr-24 h-12 bg-white/10 border-white/20 text-white placeholder:text-emerald-200 focus:bg-white/20 focus:border-white/40 text-base rounded-xl"
+                className="pl-12 pr-24 h-12 bg-white/10 border-white/20 text-white placeholder:text-amber-200 focus:bg-white/20 focus:border-white/40 text-base rounded-xl"
               />
               <Button
                 onClick={handleSearch}
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-white text-emerald-700 hover:bg-emerald-50 h-9 px-4 rounded-lg font-semibold"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/40 h-9 px-4 rounded-lg font-semibold"
               >
                 Search
               </Button>
@@ -349,7 +349,7 @@ export function GigsBrowse() {
         {selectedCategory && (
           <div className="flex items-center gap-2 mb-4">
             <span className="text-sm text-muted-foreground">Showing:</span>
-            <Badge className="gap-1.5 bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border-0 pr-1">
+            <Badge className="gap-1.5 bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border-0 pr-1">
               {(() => {
                 for (const [parentSlug, subs] of Object.entries(GIG_SUBCATEGORIES)) {
                   const sub = subs.find(s => s.slug === selectedCategory)
@@ -362,7 +362,7 @@ export function GigsBrowse() {
               })()}
               <button
                 onClick={() => handleCategoryClick(null)}
-                className="ml-0.5 rounded-full p-0.5 hover:bg-emerald-200 dark:hover:bg-emerald-800 transition-colors"
+                className="ml-0.5 rounded-full p-0.5 hover:bg-amber-200 dark:hover:bg-amber-800 transition-colors"
               >
                 <X size={12} />
               </button>
@@ -379,7 +379,7 @@ export function GigsBrowse() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={`h-7 text-xs ${!selectedCategory ? 'text-emerald-600 font-semibold' : ''}`}
+                  className={`h-7 text-xs ${!selectedCategory ? 'text-amber-600 font-semibold' : ''}`}
                   onClick={() => handleCategoryClick(null)}
                 >
                   <LayoutGrid className="h-3.5 w-3.5 mr-1" />
@@ -401,9 +401,9 @@ export function GigsBrowse() {
                             onClick={() => handleCategoryClick(category.slug)}
                             className={`flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-sm transition-all duration-150 ${
                               isSelected
-                                ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-medium shadow-sm'
+                                ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 font-medium shadow-sm'
                                 : isSubSelected
-                                ? 'bg-emerald-50/50 text-emerald-600 font-medium'
+                                ? 'bg-amber-50/50 text-amber-600 font-medium'
                                 : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground'
                             }`}
                           >
@@ -421,7 +421,7 @@ export function GigsBrowse() {
                             <button
                               onClick={() => toggleCategoryExpand(category.slug)}
                               className={`flex-shrink-0 p-1.5 rounded-md hover:bg-muted/50 transition-colors ${
-                                isExpanded ? 'text-emerald-600' : 'text-muted-foreground'
+                                isExpanded ? 'text-amber-600' : 'text-muted-foreground'
                               }`}
                             >
                               <ChevronDown
@@ -446,7 +446,7 @@ export function GigsBrowse() {
                                   onClick={() => handleCategoryClick(category.slug)}
                                   className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs transition-colors ${
                                     isSelected
-                                      ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-medium'
+                                      ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 font-medium'
                                       : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                                   }`}
                                 >
@@ -458,7 +458,7 @@ export function GigsBrowse() {
                                     onClick={() => handleCategoryClick(sub.slug)}
                                     className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs transition-colors ${
                                       selectedCategory === sub.slug
-                                        ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-medium'
+                                        ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 font-medium'
                                         : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                                     }`}
                                   >
@@ -489,7 +489,7 @@ export function GigsBrowse() {
                       <Filter className="h-4 w-4" />
                       Categories
                       {selectedCategory && (
-                        <Badge className="ml-1 bg-emerald-500 text-white text-[10px] px-1.5 border-0">
+                        <Badge className="ml-1 bg-amber-500 text-gray-900 text-[10px] px-1.5 border-0">
                           1
                         </Badge>
                       )}
@@ -502,7 +502,7 @@ export function GigsBrowse() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className={`h-7 text-xs ${!selectedCategory ? 'text-emerald-600 font-semibold' : ''}`}
+                          className={`h-7 text-xs ${!selectedCategory ? 'text-amber-600 font-semibold' : ''}`}
                           onClick={() => { handleCategoryClick(null); setMobileFilterOpen(false) }}
                         >
                           <LayoutGrid className="h-3.5 w-3.5 mr-1" />
@@ -525,9 +525,9 @@ export function GigsBrowse() {
                                   onClick={() => { handleCategoryClick(category.slug); setMobileFilterOpen(false) }}
                                   className={`flex-1 flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left text-sm transition-all duration-150 ${
                                     isSelected
-                                      ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-medium'
+                                      ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 font-medium'
                                       : isSubSelected
-                                      ? 'bg-emerald-50/50 text-emerald-600 font-medium'
+                                      ? 'bg-amber-50/50 text-amber-600 font-medium'
                                       : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground'
                                   }`}
                                 >
@@ -545,7 +545,7 @@ export function GigsBrowse() {
                                   <button
                                     onClick={() => toggleCategoryExpand(category.slug)}
                                     className={`flex-shrink-0 p-1.5 rounded-md hover:bg-muted/50 transition-colors ${
-                                      isExpanded ? 'text-emerald-600' : 'text-muted-foreground'
+                                      isExpanded ? 'text-amber-600' : 'text-muted-foreground'
                                     }`}
                                   >
                                     <ChevronDown
@@ -570,7 +570,7 @@ export function GigsBrowse() {
                                         onClick={() => { handleCategoryClick(category.slug); setMobileFilterOpen(false) }}
                                         className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs transition-colors ${
                                           isSelected
-                                            ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-medium'
+                                            ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 font-medium'
                                             : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                                         }`}
                                       >
@@ -582,7 +582,7 @@ export function GigsBrowse() {
                                           onClick={() => { handleCategoryClick(sub.slug); setMobileFilterOpen(false) }}
                                           className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs transition-colors ${
                                             selectedCategory === sub.slug
-                                              ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-medium'
+                                              ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 font-medium'
                                               : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                                           }`}
                                         >
@@ -694,23 +694,23 @@ export function GigsBrowse() {
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                             />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-emerald-50">
-                              <Briefcase size={32} className="text-emerald-300" />
+                            <div className="w-full h-full flex items-center justify-center bg-amber-50">
+                              <Briefcase size={32} className="text-amber-300" />
                             </div>
                           )}
                           {gig.isFeatured && (
-                            <Badge className="absolute top-2 left-2 text-xs bg-amber-500 text-white border-0">
+                            <Badge className="absolute top-2 left-2 text-xs bg-amber-500 text-gray-900 border-0">
                               Featured
                             </Badge>
                           )}
                           {/* Category badge on image */}
                           {gig.category && (
-                            <Badge className="absolute bottom-2 left-2 text-[10px] gap-1 bg-white/90 text-gray-800 border-0 backdrop-blur-sm shadow-sm">
+                            <Badge className="absolute bottom-2 left-2 text-[10px] gap-1 bg-white/90 dark:bg-gray-800/90 text-gray-800 dark:text-gray-200 border-0 backdrop-blur-sm shadow-sm">
                               {categoryIconMap[gig.category.icon || ''] || <Briefcase size={8} />}
                               {gig.category.name}
                             </Badge>
                           )}
-                          <Badge className="absolute top-2 right-2 text-xs gap-1 bg-emerald-500 text-white border-0">
+                          <Badge className="absolute top-2 right-2 text-xs gap-1 bg-amber-500 text-gray-900 border-0">
                             <Briefcase size={10} />
                             Gig
                           </Badge>
@@ -719,13 +719,13 @@ export function GigsBrowse() {
                           {/* Category tag above title */}
                           {gig.category && (
                             <div className="flex items-center gap-1 mb-1.5">
-                              <span className={`text-[10px] ${iconColorMap[gig.category.slug] || 'text-emerald-600'}`}>
+                              <span className={`text-[10px] ${iconColorMap[gig.category.slug] || 'text-amber-600'}`}>
                                 {categoryIconMap[gig.category.icon || ''] || <Briefcase size={10} />}
                               </span>
                               <span className="text-[10px] font-medium text-muted-foreground">{gig.category.name}</span>
                             </div>
                           )}
-                          <h3 className="font-semibold text-sm line-clamp-2 mb-1 group-hover:text-emerald-600 transition-colors">
+                          <h3 className="font-semibold text-sm line-clamp-2 mb-1 group-hover:text-amber-600 transition-colors">
                             {gig.title}
                           </h3>
                           {gig.shop && (
@@ -740,7 +740,7 @@ export function GigsBrowse() {
                           </div>
                           <div className="flex items-baseline gap-1.5">
                             <span className="text-xs text-muted-foreground">Starting at</span>
-                            <span className="font-bold text-lg text-emerald-600">${(startingPrice ?? 0).toFixed(2)}</span>
+                            <span className="font-bold text-lg text-amber-600">${(startingPrice ?? 0).toFixed(2)}</span>
                           </div>
                           {packages.length > 0 && (
                             <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
@@ -784,7 +784,7 @@ export function GigsBrowse() {
                   variant={page === p ? 'default' : 'outline'}
                   size="icon"
                   onClick={() => setPage(p)}
-                  className={`w-9 h-9 ${page === p ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : ''}`}
+                  className={`w-9 h-9 ${page === p ? 'bg-amber-500 hover:bg-amber-600 text-gray-900' : ''}`}
                 >
                   {p}
                 </Button>
@@ -796,7 +796,7 @@ export function GigsBrowse() {
                     variant={page === totalPages ? 'default' : 'outline'}
                     size="icon"
                     onClick={() => setPage(totalPages)}
-                    className={`w-9 h-9 ${page === totalPages ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : ''}`}
+                    className={`w-9 h-9 ${page === totalPages ? 'bg-amber-500 hover:bg-amber-600 text-gray-900' : ''}`}
                   >
                     {totalPages}
                   </Button>

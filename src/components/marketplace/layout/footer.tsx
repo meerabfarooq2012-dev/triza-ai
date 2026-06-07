@@ -48,8 +48,9 @@ export function Footer() {
           <div className="sm:col-span-2 lg:col-span-1">
             <button
               onClick={() => handleNavClick('landing')}
-              className="inline-block mb-3"
+              className="inline-flex items-center gap-2 mb-3"
             >
+              <img src="/logo.png" alt="Marketo" className="h-7 w-7 rounded-lg" />
               <span className="text-xl font-extrabold gold-gradient-text">
                 {PLATFORM_NAME}
               </span>

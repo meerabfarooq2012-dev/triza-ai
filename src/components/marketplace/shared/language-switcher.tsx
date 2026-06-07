@@ -49,7 +49,7 @@ export function LanguageSwitcher({ variant = 'default' }: { variant?: 'default' 
                 </div>
               </div>
               {key === locale && (
-                <Check size={14} className="text-emerald-600 flex-shrink-0" />
+                <Check size={14} className="text-amber-600 flex-shrink-0" />
               )}
             </DropdownMenuItem>
           ))}
@@ -80,7 +80,7 @@ export function LanguageSwitcher({ variant = 'default' }: { variant?: 'default' 
                 <span className="text-sm">{config.nativeLabel}</span>
               </div>
               {key === locale && (
-                <Check size={14} className="text-emerald-600" />
+                <Check size={14} className="text-amber-600" />
               )}
             </DropdownMenuItem>
           ))}
@@ -109,13 +109,13 @@ export function LanguageSwitcher({ variant = 'default' }: { variant?: 'default' 
             onClick={() => setLocale(key as Locale)}
             className={`
               flex items-center justify-between gap-3 cursor-pointer py-2.5
-              ${key === locale ? 'bg-emerald-50 dark:bg-emerald-950/30' : ''}
+              ${key === locale ? 'bg-amber-50 dark:bg-amber-950/30' : ''}
             `}
           >
             <div className="flex items-center gap-3">
               <span className="text-lg">{config.flag}</span>
               <div className="flex flex-col">
-                <span className={`text-sm ${key === locale ? 'font-semibold text-emerald-700 dark:text-emerald-400' : 'font-medium'}`}>
+                <span className={`text-sm ${key === locale ? 'font-semibold text-amber-700 dark:text-amber-400' : 'font-medium'}`}>
                   {config.nativeLabel}
                 </span>
                 <span className="text-[10px] text-muted-foreground">{config.label}</span>
@@ -128,7 +128,7 @@ export function LanguageSwitcher({ variant = 'default' }: { variant?: 'default' 
                 </span>
               )}
               {key === locale && (
-                <Check size={16} className="text-emerald-600" />
+                <Check size={16} className="text-amber-600" />
               )}
             </div>
           </DropdownMenuItem>

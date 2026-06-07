@@ -268,7 +268,7 @@ export function FileDisputeDialog({
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Scale className="h-5 w-5 text-emerald-600" />
+            <Scale className="h-5 w-5 text-amber-600" />
             File a Dispute
           </DialogTitle>
           <DialogDescription>
@@ -279,8 +279,8 @@ export function FileDisputeDialog({
         {/* Success State */}
         {createdDisputeId ? (
           <div className="py-6 text-center space-y-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 mx-auto">
-              <CheckCircle2 className="h-8 w-8 text-emerald-600" />
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 mx-auto">
+              <CheckCircle2 className="h-8 w-8 text-amber-600" />
             </div>
             <h3 className="text-lg font-semibold">Dispute Filed Successfully!</h3>
             <p className="text-sm text-muted-foreground">
@@ -288,7 +288,7 @@ export function FileDisputeDialog({
               Our team will review it and get back to you.
             </p>
             <Button
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-amber-600 hover:bg-amber-700"
               onClick={() => onOpenChange(false)}
             >
               <ChevronRight className="h-4 w-4 mr-1.5" />
@@ -511,7 +511,7 @@ export function FileDisputeDialog({
                 Cancel
               </Button>
               <Button
-                className="bg-emerald-600 hover:bg-emerald-700"
+                className="bg-amber-600 hover:bg-amber-700"
                 onClick={handleSubmit}
                 disabled={submitting || !selectedOrderId || !reason || !description.trim()}
               >

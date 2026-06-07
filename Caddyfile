@@ -1,23 +1,33 @@
 :81 {
-	@transform_port_query {
-		query XTransformPort=*
-	}
+        # ⚠️ SECURITY WARNING: SSRF RISK ⚠️
+        # The XTransformPort parameter allows clients to specify an arbitrary port for reverse proxy.
+        # This creates a Server-Side Request Forgery (SSRF) vulnerability — an attacker can proxy
+        # requests to any local service/port (e.g. metadata endpoints, internal APIs, databases).
+        # Mitigation options (implement when possible):
+        #   1. Whitelist allowed ports instead of allowing any port
+        #   2. Add authentication/authorization checks before proxying
+        #   3. Restrict to a specific set of upstream services
+        # This is kept as-is for gateway functionality but should be locked down in production.
 
-	handle @transform_port_query {
-		reverse_proxy localhost:{query.XTransformPort} {
-			header_up Host {host}
-			header_up X-Forwarded-For {remote_host}
-			header_up X-Forwarded-Proto {scheme}
-			header_up X-Real-IP {remote_host}
-		}
-	}
+        @transform_port_query {
+                query XTransformPort=*
+        }
 
-	handle {
-		reverse_proxy localhost:3000 {
-			header_up Host {host}
-			header_up X-Forwarded-For {remote_host}
-			header_up X-Forwarded-Proto {scheme}
-			header_up X-Real-IP {remote_host}
-		}
-	}
+        handle @transform_port_query {
+                reverse_proxy localhost:{query.XTransformPort} {
+                        header_up Host {host}
+                        header_up X-Forwarded-For {remote_host}
+                        header_up X-Forwarded-Proto {scheme}
+                        header_up X-Real-IP {remote_host}
+                }
+        }
+
+        handle {
+                reverse_proxy localhost:3000 {
+                        header_up Host {host}
+                        header_up X-Forwarded-For {remote_host}
+                        header_up X-Forwarded-Proto {scheme}
+                        header_up X-Real-IP {remote_host}
+                }
+        }
 }

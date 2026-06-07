@@ -171,7 +171,7 @@ export function AboutSection() {
               icon: <ShoppingBag className="h-6 w-6" />,
               title: 'Custom Shops',
               description: 'Create your own customizable shop with a unique public URL.',
-              gradient: 'from-emerald-500 to-teal-600',
+              gradient: 'from-amber-500 to-yellow-600',
             },
           ].map((item, i) => (
             <motion.div

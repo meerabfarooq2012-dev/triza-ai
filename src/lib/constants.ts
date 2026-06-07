@@ -58,8 +58,8 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
 export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
   pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
   processing: 'bg-blue-100 text-blue-800 border-blue-200',
-  shipped: 'bg-indigo-100 text-indigo-800 border-indigo-200',
-  delivered: 'bg-green-100 text-green-800 border-green-200',
+  shipped: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+  delivered: 'bg-amber-100 text-amber-800 border-amber-200',
   cancelled: 'bg-red-100 text-red-800 border-red-200',
   refunded: 'bg-gray-100 text-gray-800 border-gray-200',
 }
@@ -67,8 +67,8 @@ export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
 export const ORDER_STATUS_DOT_COLORS: Record<OrderStatus, string> = {
   pending: 'bg-yellow-500',
   processing: 'bg-blue-500',
-  shipped: 'bg-indigo-500',
-  delivered: 'bg-green-500',
+  shipped: 'bg-yellow-500',
+  delivered: 'bg-amber-500',
   cancelled: 'bg-red-500',
   refunded: 'bg-gray-500',
 }
@@ -84,7 +84,7 @@ export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
 
 export const PAYMENT_STATUS_COLORS: Record<PaymentStatus, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
-  paid: 'bg-green-100 text-green-800',
+  paid: 'bg-amber-100 text-amber-800',
   failed: 'bg-red-100 text-red-800',
   refunded: 'bg-gray-100 text-gray-800',
 }
@@ -135,12 +135,12 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
 
 export const NOTIFICATION_TYPE_COLORS: Record<NotificationType, string> = {
   info: 'text-blue-600',
-  success: 'text-green-600',
+  success: 'text-amber-600',
   warning: 'text-yellow-600',
   error: 'text-red-600',
   order: 'text-amber-600',
-  message: 'text-cyan-600',
-  payment: 'text-emerald-600',
+  message: 'text-orange-600',
+  payment: 'text-amber-600',
   review: 'text-amber-600',
   shop: 'text-amber-600',
   promotion: 'text-orange-600',
@@ -161,8 +161,8 @@ export const NOTIFICATION_CATEGORY_LABELS: Record<string, string> = {
 
 export const NOTIFICATION_CATEGORY_COLORS: Record<string, string> = {
   order: 'bg-amber-100 text-amber-700 border-amber-200',
-  payment: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-  message: 'bg-cyan-100 text-cyan-700 border-cyan-200',
+  payment: 'bg-amber-100 text-amber-700 border-amber-200',
+  message: 'bg-orange-100 text-orange-700 border-orange-200',
   review: 'bg-amber-100 text-amber-700 border-amber-200',
   shop: 'bg-amber-100 text-amber-700 border-amber-200',
   promotion: 'bg-orange-100 text-orange-700 border-orange-200',
@@ -200,7 +200,7 @@ export const DISPUTE_STATUS_LABELS: Record<DisputeStatus, string> = {
 export const DISPUTE_STATUS_COLORS: Record<DisputeStatus, string> = {
   open: 'bg-red-100 text-red-800',
   investigating: 'bg-yellow-100 text-yellow-800',
-  resolved: 'bg-green-100 text-green-800',
+  resolved: 'bg-amber-100 text-amber-800',
   closed: 'bg-gray-100 text-gray-800',
 }
 

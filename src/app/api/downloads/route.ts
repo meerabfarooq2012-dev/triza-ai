@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDownloadsForUser } from '@/lib/digital-download'
+import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware'
 
-// GET /api/downloads — Get all downloads for a user
+// GET /api/downloads — Get all downloads for a user (only for completed/delivered orders of digital products)
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -14,7 +15,46 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const downloads = await getDownloadsForUser(userId)
+    // Verify the authenticated user is requesting their own downloads
+    const auth = await authenticateRequest(request)
+    if (!auth || auth.userId !== userId) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized access' },
+        { status: 401 }
+      )
+    }
+
+    // Fetch all downloads for this user where the associated order is delivered/completed
+    // or where the order status allows downloads (delivered, shipped with paid payment)
+    const downloads = await db.digitalDownload.findMany({
+      where: {
+        userId,
+        order: {
+          status: { in: ['delivered', 'completed', 'shipped'] },
+          paymentStatus: { in: ['paid'] },
+        },
+      },
+      include: {
+        product: {
+          select: {
+            id: true,
+            name: true,
+            images: true,
+            type: true,
+            fileUrl: true,
+            fileSize: true,
+          },
+        },
+        order: {
+          select: {
+            id: true,
+            status: true,
+            paymentStatus: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
 
     // Enrich the response with computed fields
     const enrichedDownloads = downloads.map((dl) => {

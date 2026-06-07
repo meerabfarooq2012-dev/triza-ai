@@ -27,6 +27,7 @@ import {
   Rss,
   Scale,
   ShieldCheck,
+  Download,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -58,7 +59,7 @@ import type { ViewMode } from '@/types'
 import { NotificationBell } from '@/components/marketplace/notifications/notification-bell'
 import { ThemeToggle } from '@/components/marketplace/layout/theme-toggle'
 import { SearchAutocomplete } from '@/components/marketplace/search/search-autocomplete'
-import { LanguageSwitcher } from '@/components/marketplace/shared/language-switcher'
+import { usePwa } from '@/components/providers/pwa-provider'
 
 export function Header() {
   const {
@@ -75,6 +76,7 @@ export function Header() {
   } = useMarketplaceStore()
 
   const { t } = useLanguage()
+  const { canInstall, promptInstall } = usePwa()
 
   const [searchInput, setSearchInput] = useState('')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -174,8 +176,9 @@ export function Header() {
             {/* Logo */}
             <button
               onClick={() => handleNavClick('landing')}
-              className="flex items-center gap-1 flex-shrink-0"
+              className="flex items-center gap-2 flex-shrink-0"
             >
+              <img src="/logo.png" alt="Marketo" className="h-8 w-8 rounded-lg" />
               <span className="text-xl font-extrabold gold-gradient-text bg-clip-text text-transparent">
                 {PLATFORM_NAME}
               </span>
@@ -248,7 +251,7 @@ export function Header() {
             >
               <ShoppingCart className="h-4.5 w-4.5" />
               {cart.length > 0 && (
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] font-bold gold-gradient text-white border-0">
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] font-bold gold-gradient text-white dark:text-gray-900 border-0">
                   {cart.length > 99 ? '99+' : cart.length}
                 </Badge>
               )}
@@ -264,7 +267,7 @@ export function Header() {
               >
                 <MessageSquare className="h-4.5 w-4.5" />
                 {unreadMessages > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] font-bold bg-emerald-500 text-white border-0">
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] font-bold bg-amber-500 text-gray-900 border-0">
                     {unreadMessages > 99 ? '99+' : unreadMessages}
                   </Badge>
                 )}
@@ -276,11 +279,21 @@ export function Header() {
               <NotificationBell />
             )}
 
+            {/* Install App Button */}
+            {canInstall && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={promptInstall}
+                className="hidden sm:flex h-8 gap-1.5 border-amber-500/50 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 hover:border-amber-500"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span className="text-xs font-medium">Install App</span>
+              </Button>
+            )}
+
             {/* Theme Toggle */}
             <ThemeToggle />
-
-            {/* Language Switcher */}
-            <LanguageSwitcher variant="default" />
 
             {/* User Menu */}
             {isAuthenticated && currentUser ? (
@@ -350,7 +363,7 @@ export function Header() {
                       <MessageSquare className="mr-2 h-4 w-4" />
                       {t('common.messages')}
                       {unreadMessages > 0 && (
-                        <Badge className="ml-auto h-5 px-1.5 text-[10px] bg-emerald-500 text-white border-0">
+                        <Badge className="ml-auto h-5 px-1.5 text-[10px] bg-amber-500 text-gray-900 border-0">
                           {unreadMessages}
                         </Badge>
                       )}
@@ -416,6 +429,17 @@ export function Header() {
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
 
+                  {/* Install App */}
+                  {canInstall && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={promptInstall} className="text-amber-600 dark:text-amber-400 focus:text-amber-600">
+                        <Download className="mr-2 h-4 w-4" />
+                        Install Marketo App
+                      </DropdownMenuItem>
+                    </>
+                  )}
+
                   {/* Admin link */}
                   {currentUser?.isAdmin && (
                     <>
@@ -449,7 +473,7 @@ export function Header() {
                 <Button
                   size="sm"
                   onClick={() => handleNavClick('auth', { mode: 'register' })}
-                  className="gold-gradient hover:opacity-90 text-white border-0"
+                  className="gold-gradient hover:opacity-90 text-white dark:text-gray-900 border-0"
                 >
                   {t('common.signup')}
                 </Button>
@@ -523,9 +547,12 @@ export function Header() {
         <SheetContent side="left" className="w-72 p-0">
           <SheetHeader className="p-4 pb-2 border-b">
             <SheetTitle>
-              <span className="text-lg font-extrabold gold-gradient-text bg-clip-text text-transparent">
-                {PLATFORM_NAME}
-              </span>
+              <div className="flex items-center gap-2">
+                <img src="/logo.png" alt="Marketo" className="h-7 w-7 rounded-lg" />
+                <span className="text-lg font-extrabold gold-gradient-text bg-clip-text text-transparent">
+                  {PLATFORM_NAME}
+                </span>
+              </div>
             </SheetTitle>
           </SheetHeader>
 
@@ -550,12 +577,6 @@ export function Header() {
               <div className="flex items-center justify-between px-3 py-2">
                 <span className="text-sm text-muted-foreground">{t('nav.theme')}</span>
                 <ThemeToggle />
-              </div>
-
-              {/* Language Switcher (mobile) */}
-              <div className="flex items-center justify-between px-3 py-2">
-                <span className="text-sm text-muted-foreground">{t('language.title') || 'Language'}</span>
-                <LanguageSwitcher variant="compact" />
               </div>
 
               {/* Auth buttons (mobile) */}
@@ -632,7 +653,7 @@ export function Header() {
                     <MessageSquare className="h-4.5 w-4.5" />
                     {t('common.messages')}
                     {unreadMessages > 0 && (
-                      <Badge className="ml-auto h-5 px-1.5 text-[10px] bg-emerald-500 text-white border-0">
+                      <Badge className="ml-auto h-5 px-1.5 text-[10px] bg-amber-500 text-gray-900 border-0">
                         {unreadMessages}
                       </Badge>
                     )}
@@ -744,6 +765,18 @@ export function Header() {
                     {t('nav.activityFeed')}
                   </Button>
 
+                  {/* Install App - Mobile */}
+                  {canInstall && (
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start gap-3 border-amber-500/50 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+                      onClick={() => { promptInstall(); setMobileMenuOpen(false) }}
+                    >
+                      <Download className="h-4.5 w-4.5" />
+                      Install Marketo App
+                    </Button>
+                  )}
+
                   {currentUser?.isAdmin && (
                     <Button
                       variant="ghost"
@@ -759,7 +792,7 @@ export function Header() {
 
                   <Button
                     variant="ghost"
-                    className="w-full justify-start gap-3 text-red-600 hover:text-red-600 hover:bg-red-50"
+                    className="w-full justify-start gap-3 text-red-600 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
                     onClick={() => { logout(); setMobileMenuOpen(false) }}
                   >
                     <LogOut className="h-4.5 w-4.5" />
@@ -776,7 +809,7 @@ export function Header() {
                     {t('common.login')}
                   </Button>
                   <Button
-                    className="w-full gold-gradient hover:opacity-90 text-white border-0"
+                    className="w-full gold-gradient hover:opacity-90 text-white dark:text-gray-900 border-0"
                     onClick={() => handleNavClick('auth', { mode: 'register' })}
                   >
                     {t('common.signup')}

@@ -144,11 +144,11 @@ export function EmailVerificationDialog({
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-                className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/40"
+                className="flex h-20 w-20 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/40"
               >
-                <CheckCircle2 className="h-10 w-10 text-emerald-600 dark:text-emerald-400" />
+                <CheckCircle2 className="h-10 w-10 text-amber-600 dark:text-amber-400" />
               </motion.div>
-              <h3 className="text-xl font-bold text-emerald-700 dark:text-emerald-400">
+              <h3 className="text-xl font-bold text-amber-700 dark:text-amber-400">
                 Email Verified!
               </h3>
               <p className="text-sm text-muted-foreground max-w-sm">
@@ -172,8 +172,8 @@ export function EmailVerificationDialog({
             >
               <DialogHeader>
                 <div className="flex items-center gap-3 mb-1">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-900/40">
-                    <ShieldCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-900/40">
+                    <ShieldCheck className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                   </div>
                   <DialogTitle className="text-xl">Verify Your Email</DialogTitle>
                 </div>
@@ -185,8 +185,8 @@ export function EmailVerificationDialog({
               </DialogHeader>
 
               {/* Info banner */}
-              <div className="rounded-lg border border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30 p-3">
-                <p className="text-xs text-emerald-700 dark:text-emerald-400 flex items-start gap-2">
+              <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 p-3">
+                <p className="text-xs text-amber-700 dark:text-amber-400 flex items-start gap-2">
                   <Mail className="h-4 w-4 shrink-0 mt-0.5" />
                   <span>
                     Verifying your email unlocks full access to all Marketo features including buying, selling, and secure transactions.
@@ -251,7 +251,7 @@ export function EmailVerificationDialog({
                   type="button"
                   onClick={handleResend}
                   disabled={isResending || resendCooldown > 0 || !userId}
-                  className="text-sm text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 font-medium disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5"
+                  className="text-sm text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 font-medium disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5"
                 >
                   {isResending ? (
                     <>

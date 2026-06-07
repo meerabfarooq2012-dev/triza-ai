@@ -118,17 +118,22 @@ export function BuyerMessages() {
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // ── Socket.io Connection ──────────────────────────────────────────────
-  const { authToken } = useMarketplaceStore()
-
   useEffect(() => {
     if (!currentUser) return
 
-    const socket = io('/?XTransformPort=3003', {
+    // Determine if we're on Vercel (no WebSocket server available)
+    const isVercel = typeof window !== 'undefined' && (
+      window.location.hostname.endsWith('.vercel.app') ||
+      window.location.hostname.endsWith('.app') ||
+      !window.location.hostname.includes('localhost')
+    )
+
+    const socketUrl = isVercel ? '' : undefined
+    const socket = io(socketUrl ?? '/?XTransformPort=3003', {
       transports: ['websocket', 'polling'],
       autoConnect: true,
-      auth: {
-        token: authToken || undefined,
-      },
+      reconnectionAttempts: isVercel ? 3 : Infinity,
+      timeout: isVercel ? 5000 : 20000,
     })
 
     socketRef.current = socket
@@ -435,7 +440,7 @@ export function BuyerMessages() {
     return (
       <Card className="overflow-hidden border-0 shadow-sm">
         <div className="grid h-[600px] grid-cols-1 md:grid-cols-3">
-          <div className="border-r border-gray-100 bg-gray-50/50 p-4 space-y-3">
+          <div className="border-r border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 p-4 space-y-3">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3">
                 <Skeleton className="h-10 w-10 rounded-full" />
@@ -456,9 +461,9 @@ export function BuyerMessages() {
       <div className="grid h-[600px] grid-cols-1 md:grid-cols-3">
         {/* Conversation List */}
         {showConversationList && (
-          <div className="border-r border-gray-100 bg-gray-50/50 flex flex-col">
+          <div className="border-r border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col">
             <div className="border-b border-gray-100 p-4">
-              <h3 className="font-semibold text-gray-900">Messages</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100">Messages</h3>
               <p className="text-xs text-gray-500 mt-0.5">Chat with sellers</p>
             </div>
             <ScrollArea className="flex-1">
@@ -480,20 +485,20 @@ export function BuyerMessages() {
                       <button
                         key={conv.id}
                         className={`w-full rounded-lg p-3 text-left transition-colors ${
-                          isSelected ? 'bg-emerald-50' : 'hover:bg-gray-100'
+                          isSelected ? 'bg-amber-50' : 'hover:bg-gray-100'
                         }`}
                         onClick={() => handleSelectConversation(conv)}
                       >
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10">
                             <AvatarImage src={conv.otherUser.avatar || undefined} />
-                            <AvatarFallback className="bg-emerald-100 text-emerald-700">
+                            <AvatarFallback className="bg-amber-100 text-amber-700">
                               {conv.otherUser.name.slice(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center justify-between">
-                              <p className={`truncate text-sm ${hasUnread ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>
+                              <p className={`truncate text-sm ${hasUnread ? 'font-semibold text-gray-900 dark:text-gray-100' : 'font-medium text-gray-700 dark:text-gray-300'}`}>
                                 {conv.otherUser.name}
                               </p>
                               <span className="text-[11px] text-gray-400 whitespace-nowrap ml-2">
@@ -505,14 +510,14 @@ export function BuyerMessages() {
                                 {conv.lastMessagePreview || 'No messages yet'}
                               </p>
                               {hasUnread && (
-                                <Badge className="ml-2 h-5 min-w-[20px] justify-center bg-emerald-600 text-[10px] text-white shrink-0">
+                                <Badge className="ml-2 h-5 min-w-[20px] justify-center bg-amber-600 text-[10px] text-white shrink-0">
                                   {conv.unreadCount}
                                 </Badge>
                               )}
                             </div>
                             {/* Product/Gig context */}
                             {(conv.product || conv.gig) && (
-                              <Badge variant="outline" className="mt-1 text-[10px] h-5 gap-1 text-emerald-700 border-emerald-200 bg-emerald-50/50">
+                              <Badge variant="outline" className="mt-1 text-[10px] h-5 gap-1 text-amber-700 border-amber-200 bg-amber-50/50">
                                 {conv.product ? (
                                   <><Package className="h-3 w-3" />{conv.product.name}</>
                                 ) : conv.gig ? (
@@ -560,20 +565,20 @@ export function BuyerMessages() {
                   )}
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={selectedConversation.otherUser.avatar || undefined} />
-                    <AvatarFallback className="bg-emerald-100 text-emerald-700 text-xs">
+                    <AvatarFallback className="bg-amber-100 text-amber-700 text-xs">
                       {selectedConversation.otherUser.name.slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                       {selectedConversation.otherUser.name}
                     </p>
-                    <p className="text-xs text-emerald-600">Seller</p>
+                    <p className="text-xs text-amber-600">Seller</p>
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-xs text-emerald-600 hover:text-emerald-700"
+                    className="text-xs text-amber-600 hover:text-amber-700"
                     onClick={() => setCurrentView('messages', {
                       conversationId: selectedConversation.id,
                     })}
@@ -598,17 +603,17 @@ export function BuyerMessages() {
                             <div
                               className={`max-w-[75%] rounded-2xl px-4 py-2.5 ${
                                 isMine
-                                  ? 'bg-emerald-600 text-white'
-                                  : 'bg-gray-100 text-gray-900'
+                                  ? 'bg-amber-600 text-gray-900'
+                                  : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
                               }`}
                             >
                               <p className="text-sm">{msg.content}</p>
                               <div className="flex items-center gap-1 mt-1">
-                                <p className={`text-[10px] ${isMine ? 'text-emerald-200' : 'text-gray-400'}`}>
+                                <p className={`text-[10px] ${isMine ? 'text-amber-200' : 'text-gray-400'}`}>
                                   {formatRelativeTime(msg.createdAt)}
                                 </p>
                                 {isMine && (
-                                  <span className={`text-[10px] ${msg.isRead ? 'text-emerald-200' : 'text-emerald-300/60'}`}>
+                                  <span className={`text-[10px] ${msg.isRead ? 'text-amber-200' : 'text-amber-300/60'}`}>
                                     {msg.isRead ? '✓✓' : '✓'}
                                   </span>
                                 )}
@@ -667,7 +672,7 @@ export function BuyerMessages() {
                     <Button
                       type="submit"
                       size="icon"
-                      className="bg-emerald-600 hover:bg-emerald-700"
+                      className="bg-amber-600 hover:bg-amber-700"
                       disabled={!newMessage.trim() || sendingMessage}
                     >
                       <Send className="h-4 w-4" />
@@ -678,7 +683,7 @@ export function BuyerMessages() {
             ) : (
               <div className="flex flex-1 flex-col items-center justify-center text-center">
                 <MessageSquare className="mb-3 h-12 w-12 text-gray-300" />
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                   Select a conversation
                 </p>
                 <p className="mt-1 text-xs text-gray-500">

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { createNotification } from '@/lib/notifications';
-import { authenticateRequest } from '@/lib/auth-middleware';
 import { withCsrf } from '@/lib/with-csrf';
+
 // GET /api/returns/[id] — Get single return request
 export async function GET(
   request: NextRequest,
@@ -91,16 +91,16 @@ export async function GET(
 }
 
 // PUT /api/returns/[id] — Update return request (approve, reject, cancel, mark processing)
-export const PUT = withCsrf(async (request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }) => {
-  const auth = authenticateRequest(request);
-  if (!auth) {
-    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
-  }
+export const PUT = withCsrf(async (
+  request: NextRequest,
+  context?: unknown
+) => {
+  const { params } = context as { params: Promise<{ id: string }> };
   try {
     const { id } = await params;
     const body = await request.json();
     const {
+      userId,
       action,
       refundAmount,
       refundMethod,
@@ -108,11 +108,10 @@ export const PUT = withCsrf(async (request: NextRequest,
       adminNote,
       resolution,
     } = body;
-    const userId = auth.userId;
 
-    if (!action) {
+    if (!userId || !action) {
       return NextResponse.json(
-        { success: false, error: 'action is required' },
+        { success: false, error: 'userId and action are required' },
         { status: 400 }
       );
     }
@@ -142,7 +141,9 @@ export const PUT = withCsrf(async (request: NextRequest,
 
     const isSeller = returnRequest.order.sellerId === userId;
     const isBuyer = returnRequest.order.buyerId === userId;
-    const isAdmin = auth.role === 'admin';
+    // Check admin status from database
+    const requestingUser = await db.user.findUnique({ where: { id: userId } });
+    const isAdmin = requestingUser?.isAdmin === true;
 
     // Validate action permissions
     if (action === 'cancel' && !isBuyer) {
@@ -485,4 +486,4 @@ export const PUT = withCsrf(async (request: NextRequest,
       { status: 500 }
     );
   }
-})
+});

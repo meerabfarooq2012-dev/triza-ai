@@ -1,26 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { Prisma } from '@prisma/client';
-import { sendEmailAsync } from '@/lib/email';
-import { orderConfirmationBuyerEmail, newOrderSellerEmail } from '@/lib/email-templates';
 import { notifyOrderCreated } from '@/lib/notifications';
 import { PLATFORM_FEE_PERCENT } from '@/lib/constants';
-import { rateLimit, getRateLimitKey, orderRateLimit } from '@/lib/rate-limit';
 import { withCsrf } from '@/lib/with-csrf';
 import { authenticateRequestWithSession } from '@/lib/auth-middleware';
 import { validateInput, orderCreateSchema } from '@/lib/validation';
+import { getSafeErrorMessage } from '@/lib/error-handler';
 
 export async function GET(request: NextRequest) {
-  // Rate limiting
-  const rlKey = getRateLimitKey(request);
-  const rlResult = rateLimit({ ...orderRateLimit, key: `orders:${rlKey}` });
-  if (!rlResult.success) {
-    return NextResponse.json(
-      { success: false, error: 'Too many requests. Please try again later.' },
-      { status: 429 }
-    );
-  }
-
   try {
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get('userId') || '';
@@ -121,7 +109,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('List orders error:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch orders' },
+      { success: false, error: getSafeErrorMessage(error, 'Failed to fetch orders') },
       { status: 500 }
     );
   }
@@ -211,16 +199,6 @@ async function resolveItem(
 // ---------------------------------------------------------------------------
 
 export const POST = withCsrf(async (request: NextRequest) => {
-  // Rate limiting
-  const rlKey = getRateLimitKey(request);
-  const rlResult = rateLimit({ ...orderRateLimit, key: `orders:${rlKey}` });
-  if (!rlResult.success) {
-    return NextResponse.json(
-      { success: false, error: 'Too many requests. Please try again later.' },
-      { status: 429 }
-    );
-  }
-
   try {
     // Authenticate the request (with session validation)
     const auth = await authenticateRequestWithSession(request);
@@ -233,7 +211,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
 
     const body = await request.json();
 
-    // Validate input with Zod
+    // Validate input with Zod schema
     const validation = validateInput(orderCreateSchema, body);
     if (!validation.success) {
       return NextResponse.json(
@@ -241,6 +219,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
         { status: 400 }
       );
     }
+
     const {
       buyerId,
       items,
@@ -449,53 +428,8 @@ export const POST = withCsrf(async (request: NextRequest) => {
         data: { totalSales: { increment: 1 } },
       });
 
-      // Create notifications (non-blocking)
+      // Create notifications + send emails (non-blocking — email sending is handled inside notifyOrderCreated)
       notifyOrderCreated(buyerId, sellerId, order.id, totalAmount).catch(() => {});
-
-      // Send order confirmation emails (non-blocking)
-      const orderItemsForEmail = order.items.map((item) => ({
-        name: item.product?.name || 'Unknown Product',
-        quantity: item.quantity,
-        price: item.price,
-        type: item.type,
-      }));
-
-      // Fetch buyer and seller emails
-      const [buyerUser, sellerUser] = await Promise.all([
-        db.user.findUnique({ where: { id: buyerId }, select: { email: true, name: true } }),
-        db.user.findUnique({ where: { id: sellerId }, select: { email: true, name: true } }),
-      ]);
-
-      if (buyerUser?.email) {
-        sendEmailAsync({
-          to: buyerUser.email,
-          subject: `Order Confirmation #${order.id.slice(-8)} — Marketo`,
-          html: orderConfirmationBuyerEmail({
-            orderNumber: order.id.slice(-8),
-            buyerName: buyerUser.name,
-            items: orderItemsForEmail,
-            totalAmount,
-            sellerName: sellerUser?.name || 'Seller',
-            paymentMethod,
-          }),
-        });
-      }
-
-      if (sellerUser?.email) {
-        sendEmailAsync({
-          to: sellerUser.email,
-          subject: `🎉 New Order #${order.id.slice(-8)} — Marketo`,
-          html: newOrderSellerEmail({
-            orderNumber: order.id.slice(-8),
-            sellerName: sellerUser.name,
-            buyerName: buyerUser?.name || 'Buyer',
-            items: orderItemsForEmail,
-            totalAmount,
-            platformFee,
-            sellerPayout: Math.round((totalAmount - platformFee) * 100) / 100,
-          }),
-        });
-      }
 
       createdOrders.push({
         id: order.id,
@@ -522,7 +456,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
   } catch (error) {
     console.error('Create order error:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to create order' },
+      { success: false, error: getSafeErrorMessage(error, 'Failed to create order') },
       { status: 500 }
     );
   }

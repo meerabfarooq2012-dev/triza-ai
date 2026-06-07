@@ -89,9 +89,9 @@ const STATUS_CONFIG: Record<ReturnStatus, {
   },
   approved: {
     label: 'Approved',
-    color: 'text-emerald-700',
-    bgColor: 'bg-emerald-50',
-    borderColor: 'border-emerald-200',
+    color: 'text-amber-700',
+    bgColor: 'bg-amber-50',
+    borderColor: 'border-amber-200',
     icon: CheckCircle2,
   },
   rejected: {
@@ -110,9 +110,9 @@ const STATUS_CONFIG: Record<ReturnStatus, {
   },
   completed: {
     label: 'Completed',
-    color: 'text-emerald-700',
-    bgColor: 'bg-emerald-50',
-    borderColor: 'border-emerald-200',
+    color: 'text-amber-700',
+    bgColor: 'bg-amber-50',
+    borderColor: 'border-amber-200',
     icon: CheckCircle2,
   },
   cancelled: {
@@ -587,7 +587,7 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4 sm:p-6">
             <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
-              <Clock className="h-4 w-4 text-emerald-600" />
+              <Clock className="h-4 w-4 text-amber-600" />
               Return Progress
             </h3>
 
@@ -596,7 +596,7 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
               {/* Connecting line */}
               <div className="absolute top-4 left-8 right-8 h-0.5 bg-muted" />
               <div
-                className="absolute top-4 left-8 h-0.5 bg-emerald-500 transition-all duration-500"
+                className="absolute top-4 left-8 h-0.5 bg-amber-500 transition-all duration-500"
                 style={{
                   width: (() => {
                     const statusOrder: ReturnStatus[] = ['requested', 'under_review', 'approved', 'processing', 'completed']
@@ -617,9 +617,9 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
                     <div
                       className={`flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all ${
                         stepStatus === 'completed'
-                          ? 'bg-emerald-500 border-emerald-500 text-white'
+                          ? 'bg-amber-500 border-amber-500 text-white'
                           : stepStatus === 'current'
-                            ? 'bg-emerald-500 border-emerald-500 text-white ring-4 ring-emerald-100'
+                            ? 'bg-amber-500 border-amber-500 text-white ring-4 ring-amber-100'
                             : 'bg-background border-muted-foreground/30 text-muted-foreground'
                       }`}
                     >
@@ -632,7 +632,7 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
                       )}
                     </div>
                     <p className={`text-xs mt-2 font-medium text-center ${
-                      stepStatus === 'current' ? 'text-emerald-700' : stepStatus === 'completed' ? 'text-emerald-600' : 'text-muted-foreground'
+                      stepStatus === 'current' ? 'text-amber-700' : stepStatus === 'completed' ? 'text-amber-600' : 'text-muted-foreground'
                     }`}>
                       {step.label}
                     </p>
@@ -658,9 +658,9 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
                       <div
                         className={`flex h-7 w-7 items-center justify-center rounded-full border-2 shrink-0 ${
                           stepStatus === 'completed'
-                            ? 'bg-emerald-500 border-emerald-500 text-white'
+                            ? 'bg-amber-500 border-amber-500 text-white'
                             : stepStatus === 'current'
-                              ? 'bg-emerald-500 border-emerald-500 text-white'
+                              ? 'bg-amber-500 border-amber-500 text-white'
                               : 'bg-background border-muted-foreground/30 text-muted-foreground'
                         }`}
                       >
@@ -671,12 +671,12 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
                         )}
                       </div>
                       {idx < TIMELINE_STEPS.length - 1 && (
-                        <div className={`w-0.5 h-8 ${stepStatus === 'completed' ? 'bg-emerald-300' : 'bg-muted'}`} />
+                        <div className={`w-0.5 h-8 ${stepStatus === 'completed' ? 'bg-amber-300' : 'bg-muted'}`} />
                       )}
                     </div>
                     <div className="pb-4 min-w-0">
                       <p className={`text-sm font-medium ${
-                        stepStatus === 'current' ? 'text-emerald-700' : stepStatus === 'completed' ? 'text-emerald-600' : 'text-muted-foreground'
+                        stepStatus === 'current' ? 'text-amber-700' : stepStatus === 'completed' ? 'text-amber-600' : 'text-muted-foreground'
                       }`}>
                         {step.label}
                       </p>
@@ -731,7 +731,7 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
             <Card className="border-0 shadow-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <RotateCcw className="h-4 w-4 text-emerald-600" />
+                  <RotateCcw className="h-4 w-4 text-amber-600" />
                   Return Details
                 </CardTitle>
               </CardHeader>
@@ -769,7 +769,7 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
                             setSelectedImage(img)
                             setImageDialogOpen(true)
                           }}
-                          className="relative h-20 w-20 rounded-lg border overflow-hidden hover:ring-2 hover:ring-emerald-500 transition-all"
+                          className="relative h-20 w-20 rounded-lg border overflow-hidden hover:ring-2 hover:ring-amber-500 transition-all"
                         >
                           <div className="flex h-full w-full items-center justify-center bg-muted">
                             <ImageIcon className="h-6 w-6 text-muted-foreground" />
@@ -841,7 +841,7 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
               <Card className="border-0 shadow-sm">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
-                    <Package className="h-4 w-4 text-emerald-600" />
+                    <Package className="h-4 w-4 text-amber-600" />
                     Order Summary
                   </CardTitle>
                 </CardHeader>
@@ -930,17 +930,17 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <Card className="border-0 shadow-sm border-l-4 border-l-emerald-500">
+              <Card className="border-0 shadow-sm border-l-4 border-l-amber-500">
                 <CardContent className="p-4 sm:p-6 space-y-3">
                   <h4 className="text-sm font-semibold flex items-center gap-2">
-                    <DollarSign className="h-4 w-4 text-emerald-600" />
+                    <DollarSign className="h-4 w-4 text-amber-600" />
                     Refund Information
                   </h4>
-                  <div className="rounded-lg bg-emerald-50 p-3 text-center">
-                    <p className="text-2xl font-bold text-emerald-700">
+                  <div className="rounded-lg bg-amber-50 p-3 text-center">
+                    <p className="text-2xl font-bold text-amber-700">
                       ${returnData.refundAmount.toFixed(2)}
                     </p>
-                    <p className="text-xs text-emerald-600">Refund Amount</p>
+                    <p className="text-xs text-amber-600">Refund Amount</p>
                   </div>
                   {returnData.refundMethod && (
                     <div className="flex items-center gap-2 text-sm">
@@ -971,7 +971,7 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
                 <div className="flex items-center gap-3">
                   <Avatar className="h-10 w-10">
                     <AvatarImage src={returnData.user?.avatar || undefined} />
-                    <AvatarFallback className="bg-emerald-100 text-emerald-700">
+                    <AvatarFallback className="bg-amber-100 text-amber-700">
                       {(returnData.user?.name || 'U').charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
@@ -1027,7 +1027,7 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
                 {isSeller && returnData.status === 'requested' && (
                   <>
                     <Button
-                      className="w-full bg-emerald-600 hover:bg-emerald-700"
+                      className="w-full bg-amber-600 hover:bg-amber-700"
                       onClick={() => {
                         setRefundAmount(returnData.order?.totalAmount?.toString() || '')
                         setApproveDialogOpen(true)
@@ -1052,7 +1052,7 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
                 {isSeller && returnData.status === 'under_review' && (
                   <>
                     <Button
-                      className="w-full bg-emerald-600 hover:bg-emerald-700"
+                      className="w-full bg-amber-600 hover:bg-amber-700"
                       onClick={() => {
                         setRefundAmount(returnData.order?.totalAmount?.toString() || '')
                         setApproveDialogOpen(true)
@@ -1087,7 +1087,7 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
 
                 {isSeller && returnData.status === 'processing' && (
                   <Button
-                    className="w-full bg-emerald-600 hover:bg-emerald-700"
+                    className="w-full bg-amber-600 hover:bg-amber-700"
                     onClick={() => setRefundDialogOpen(true)}
                     disabled={actionLoading}
                   >
@@ -1097,9 +1097,9 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
                 )}
 
                 {returnData.status === 'completed' && (
-                  <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 flex items-start gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600 mt-0.5 shrink-0" />
-                    <p className="text-xs text-emerald-700">This return has been completed.</p>
+                  <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 flex items-start gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                    <p className="text-xs text-amber-700">This return has been completed.</p>
                   </div>
                 )}
 
@@ -1149,7 +1149,7 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+              <CheckCircle2 className="h-5 w-5 text-amber-600" />
               Approve Return
             </DialogTitle>
             <DialogDescription>
@@ -1195,7 +1195,7 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
               Cancel
             </Button>
             <Button
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-amber-600 hover:bg-amber-700"
               onClick={handleApprove}
               disabled={actionLoading}
             >
@@ -1252,7 +1252,7 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-emerald-600" />
+              <DollarSign className="h-5 w-5 text-amber-600" />
               Process Refund
             </DialogTitle>
             <DialogDescription>
@@ -1261,11 +1261,11 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
           </DialogHeader>
 
           <div className="space-y-3 py-2">
-            <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-4 text-center">
-              <p className="text-2xl font-bold text-emerald-700">
+            <div className="rounded-lg bg-amber-50 border border-amber-200 p-4 text-center">
+              <p className="text-2xl font-bold text-amber-700">
                 ${returnData.refundAmount?.toFixed(2) || '0.00'}
               </p>
-              <p className="text-sm text-emerald-600">
+              <p className="text-sm text-amber-600">
                 via {REFUND_METHOD_LABELS[returnData.refundMethod || 'original']}
               </p>
             </div>
@@ -1282,7 +1282,7 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
               Cancel
             </Button>
             <Button
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-amber-600 hover:bg-amber-700"
               onClick={handleProcessRefund}
               disabled={actionLoading}
             >
@@ -1417,7 +1417,7 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
               Cancel
             </Button>
             <Button
-              className={adminResolution === 'approve' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'}
+              className={adminResolution === 'approve' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-red-600 hover:bg-red-700'}
               onClick={handleResolveEscalation}
               disabled={actionLoading}
             >

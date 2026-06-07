@@ -61,7 +61,7 @@ export function HeroSection() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
             <Button
               size="lg"
-              className="gold-gradient hover:opacity-90 text-white shadow-xl shadow-amber-500/25 px-8 text-base transition-opacity duration-300"
+              className="gold-gradient hover:opacity-90 text-white dark:text-gray-900 shadow-xl shadow-amber-500/25 px-8 text-base transition-opacity duration-300"
               onClick={() => setCurrentView('auth', { tab: 'register' })}
             >
               {t('landing.startSelling')}
@@ -79,7 +79,7 @@ export function HeroSection() {
             <Button
               size="lg"
               variant="outline"
-              className="px-8 text-base border-2 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 border-emerald-200 text-emerald-700 hover:text-emerald-800 dark:border-emerald-800 dark:text-emerald-300"
+              className="px-8 text-base border-2 hover:bg-amber-50 dark:hover:bg-amber-950/30 border-amber-200 text-amber-700 hover:text-amber-800 dark:border-amber-800 dark:text-amber-300"
               onClick={() => setCurrentView('gigs-browse')}
             >
               <Briefcase className="mr-2 h-4 w-4" />

@@ -77,11 +77,11 @@ interface MethodConfig {
 }
 
 const ALL_METHODS: MethodConfig[] = [
-  { id: 'easypaisa', name: 'Easypaisa', icon: Wallet, color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-300', description: 'Mobile wallet payment', buyerAvailable: true, sellerAvailable: true },
+  { id: 'easypaisa', name: 'Easypaisa', icon: Wallet, color: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-300', description: 'Mobile wallet payment', buyerAvailable: true, sellerAvailable: true },
   { id: 'jazzcash', name: 'JazzCash', icon: Wallet, color: 'text-red-600', bgColor: 'bg-red-50', borderColor: 'border-red-300', description: 'Mobile wallet payment', buyerAvailable: true, sellerAvailable: true },
   { id: 'card', name: 'Debit/Credit Card', icon: CreditCard, color: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-300', description: 'Visa, Mastercard, UnionPay', buyerAvailable: true, sellerAvailable: false },
   { id: 'payoneer', name: 'Payoneer', icon: Globe, color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-300', description: 'Global payment platform', buyerAvailable: true, sellerAvailable: true },
-  { id: 'wise', name: 'Wise', icon: Mail, color: 'text-teal-600', bgColor: 'bg-teal-50', borderColor: 'border-teal-300', description: 'International transfer', buyerAvailable: true, sellerAvailable: true },
+  { id: 'wise', name: 'Wise', icon: Mail, color: 'text-yellow-600', bgColor: 'bg-yellow-50', borderColor: 'border-yellow-300', description: 'International transfer', buyerAvailable: true, sellerAvailable: true },
   { id: 'bank_transfer', name: 'Bank Transfer', icon: Building2, color: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-300', description: 'Direct bank transfer', buyerAvailable: false, sellerAvailable: true },
 ]
 
@@ -325,10 +325,10 @@ function PaymentMethodForm({
   }
 
   return (
-    <Card className="border-2 border-emerald-200 shadow-md">
+    <Card className="border-2 border-amber-200 shadow-md">
       <CardHeader className="pb-3">
         <CardTitle className="text-base font-semibold flex items-center gap-2">
-          {isEditing ? <Edit2 className="h-4 w-4 text-emerald-600" /> : <Plus className="h-4 w-4 text-emerald-600" />}
+          {isEditing ? <Edit2 className="h-4 w-4 text-amber-600" /> : <Plus className="h-4 w-4 text-amber-600" />}
           {isEditing ? 'Edit' : 'Add'} {type === 'buyer' ? 'Payment' : 'Receiving'} Method
         </CardTitle>
         <CardDescription className="text-xs">
@@ -354,7 +354,7 @@ function PaymentMethodForm({
                   key={m.id}
                   className={`flex items-center gap-2.5 rounded-lg border-2 p-3 cursor-pointer transition-all ${
                     selectedMethod === m.id
-                      ? `border-emerald-400 bg-emerald-50/50 shadow-sm`
+                      ? `border-amber-400 bg-amber-50/50 shadow-sm`
                       : 'border-transparent bg-muted/30 hover:border-muted-foreground/20'
                   }`}
                 >
@@ -649,7 +649,7 @@ function PaymentMethodForm({
             id="ps-default"
             checked={isDefault}
             onCheckedChange={(checked) => setIsDefault(checked === true)}
-            className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+            className="data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600"
           />
           <Label htmlFor="ps-default" className="text-sm cursor-pointer">
             Set as default {type === 'buyer' ? 'payment' : 'receiving'} method
@@ -657,10 +657,10 @@ function PaymentMethodForm({
         </div>
 
         {/* Security note */}
-        <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3">
+        <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
           <div className="flex items-start gap-2">
-            <ShieldCheck className="h-4 w-4 text-emerald-600 mt-0.5 flex-shrink-0" />
-            <p className="text-xs text-emerald-700">
+            <ShieldCheck className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+            <p className="text-xs text-amber-700">
               Your payment details are securely stored. Card numbers are never saved in full — only the last 4 digits are kept.
             </p>
           </div>
@@ -677,7 +677,7 @@ function PaymentMethodForm({
             Cancel
           </Button>
           <Button
-            className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+            className="flex-1 bg-amber-600 hover:bg-amber-700"
             onClick={handleSave}
             disabled={saving}
           >
@@ -726,7 +726,7 @@ function SavedMethodCard({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -12, transition: { duration: 0.2 } }}
     >
-      <Card className={`border-0 shadow-sm transition-shadow hover:shadow-md group ${pm.isDefault ? 'ring-2 ring-emerald-200' : ''}`}>
+      <Card className={`border-0 shadow-sm transition-shadow hover:shadow-md group ${pm.isDefault ? 'ring-2 ring-amber-200' : ''}`}>
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
             {/* Icon */}
@@ -742,8 +742,8 @@ function SavedMethodCard({
                   {pm.method.replace('_', ' ')}
                 </Badge>
                 {pm.isDefault && (
-                  <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 text-[10px] px-1.5 py-0 shrink-0">
-                    <Star className="h-2.5 w-2.5 mr-0.5 fill-emerald-600 text-emerald-600" />
+                  <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 text-[10px] px-1.5 py-0 shrink-0">
+                    <Star className="h-2.5 w-2.5 mr-0.5 fill-amber-600 text-amber-600" />
                     Default
                   </Badge>
                 )}
@@ -798,7 +798,7 @@ function SavedMethodCard({
                 </Button>
               ) : (
                 <div className="h-8 w-8 flex items-center justify-center">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  <CheckCircle2 className="h-4 w-4 text-amber-600" />
                 </div>
               )}
 
@@ -977,7 +977,7 @@ export function PaymentSettingsPage({ userId, userRole }: PaymentSettingsPagePro
       <motion.div variants={itemVariants} className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold flex items-center gap-2">
-            <CreditCard className="h-5 w-5 text-emerald-600" />
+            <CreditCard className="h-5 w-5 text-amber-600" />
             Payment Information
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
@@ -987,7 +987,7 @@ export function PaymentSettingsPage({ userId, userRole }: PaymentSettingsPagePro
         {!showForm && (
           <Button
             size="sm"
-            className="bg-emerald-600 hover:bg-emerald-700"
+            className="bg-amber-600 hover:bg-amber-700"
             onClick={() => {
               setEditingItem(null)
               setShowForm(true)
@@ -1019,17 +1019,17 @@ export function PaymentSettingsPage({ userId, userRole }: PaymentSettingsPagePro
 
       {/* Info Banner */}
       <motion.div variants={itemVariants}>
-        <div className="flex items-start gap-3 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 p-4">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100">
-            <Info className="h-5 w-5 text-emerald-600" />
+        <div className="flex items-start gap-3 rounded-xl bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 p-4">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100">
+            <Info className="h-5 w-5 text-amber-600" />
           </div>
           <div>
-            <p className="text-sm font-medium text-emerald-900">
+            <p className="text-sm font-medium text-amber-900">
               {activeType === 'buyer'
                 ? 'Payment methods are used at checkout to pay for orders'
                 : 'Receiving methods are used when you withdraw your earnings'}
             </p>
-            <p className="text-xs text-emerald-700 mt-1">
+            <p className="text-xs text-amber-700 mt-1">
               {activeType === 'buyer'
                 ? 'Save your card, mobile wallet, or international payment details for faster checkout.'
                 : 'Add your bank, mobile wallet, or international account to receive payouts.'}
@@ -1091,7 +1091,7 @@ export function PaymentSettingsPage({ userId, userRole }: PaymentSettingsPagePro
                   : 'Add a receiving method like a bank account, Easypaisa, or Payoneer so you can withdraw your earnings.'}
               </p>
               <Button
-                className="mt-4 bg-emerald-600 hover:bg-emerald-700"
+                className="mt-4 bg-amber-600 hover:bg-amber-700"
                 onClick={() => {
                   setEditingItem(null)
                   setShowForm(true)
@@ -1123,7 +1123,7 @@ export function PaymentSettingsPage({ userId, userRole }: PaymentSettingsPagePro
 
       {/* Security Footer */}
       <motion.div variants={itemVariants}>
-        <div className="rounded-lg bg-gray-50 border border-gray-200 p-4">
+        <div className="rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center gap-2 mb-2">
             <ShieldCheck className="h-4 w-4 text-gray-500" />
             <span className="text-sm font-medium text-gray-700">Security & Privacy</span>

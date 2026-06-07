@@ -23,7 +23,7 @@ const typeIconMap: Record<ProductType, React.ReactNode> = {
 const typeBadgeVariant: Record<ProductType, string> = {
   digital: 'bg-amber-100 text-amber-700',
   physical: 'bg-orange-100 text-orange-700',
-  freelance: 'bg-emerald-100 text-emerald-700',
+  freelance: 'bg-amber-100 text-amber-700',
 }
 
 function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {

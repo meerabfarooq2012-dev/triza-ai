@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { authenticateRequest } from '@/lib/auth-middleware';
 import { withCsrf } from '@/lib/with-csrf';
+
 // GET /api/disputes/[id]/evidence — List evidence for a dispute
 export async function GET(
   request: NextRequest,
@@ -51,24 +51,22 @@ export async function GET(
 }
 
 // POST /api/disputes/[id]/evidence — Upload evidence to a dispute
-export const POST = withCsrf(async (request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }) => {
-  const auth = authenticateRequest(request);
-  if (!auth) {
-    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
-  }
+export const POST = withCsrf(async (
+  request: NextRequest,
+  context?: unknown
+) => {
+  const { params } = context as { params: Promise<{ id: string }> };
   try {
     const { id } = await params;
     const body = await request.json();
-    const { type, fileUrl, fileName, description } = body;
-    const uploadedBy = auth.userId;
+    const { uploadedBy, type, fileUrl, fileName, description } = body;
 
     // Validate required fields
-    if (!type || !fileUrl) {
+    if (!uploadedBy || !type || !fileUrl) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Missing required fields: type, fileUrl',
+          error: 'Missing required fields: uploadedBy, type, fileUrl',
         },
         { status: 400 }
       );
@@ -107,9 +105,17 @@ export const POST = withCsrf(async (request: NextRequest,
     }
 
     // Verify user is a party to the dispute or an admin
+    const user = await db.user.findUnique({ where: { id: uploadedBy } });
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
     const isParty =
       dispute.userId === uploadedBy || dispute.sellerId === uploadedBy;
-    const isAdmin = auth.role === 'admin';
+    const isAdmin = user.isAdmin;
     if (!isParty && !isAdmin) {
       return NextResponse.json(
         {
@@ -206,4 +212,4 @@ export const POST = withCsrf(async (request: NextRequest,
       { status: 500 }
     );
   }
-})
+});

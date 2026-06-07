@@ -11,7 +11,7 @@ export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded'
 export type PaymentMethod = 'easypaisa' | 'jazzcash' | 'payoneer' | 'wise' | 'card' | 'bank_transfer'
 export type EscrowStatus = 'held' | 'released' | 'refunded'
 export type TransactionType = 'credit' | 'debit' | 'commission' | 'withdrawal' | 'refund' | 'escrow_hold' | 'escrow_release'
-export type WithdrawalStatus = 'pending' | 'processing' | 'approved' | 'rejected' | 'completed'
+export type WithdrawalStatus = 'pending' | 'processing' | 'approved' | 'rejected' | 'completed' | 'cancelled'
 export type OrderItemStatus = 'pending' | 'delivered' | 'cancelled'
 export type LayoutStyle = 'grid' | 'list' | 'featured'
 export type DisplayStyle = 'modern' | 'classic' | 'minimal'
@@ -667,6 +667,7 @@ export interface PaginatedResponse<T> {
 }
 
 export type DeliveryFilterType = 'free_shipping' | 'digital_download' | 'express_delivery'
+export type DateAddedFilter = '24h' | '7d' | '30d' | '365d'
 
 export interface SearchFilters {
   query?: string
@@ -679,6 +680,10 @@ export interface SearchFilters {
   inStock?: boolean
   location?: string
   delivery?: DeliveryFilterType
+  sellerVerified?: boolean
+  onSale?: boolean
+  minDiscount?: number
+  dateAdded?: DateAddedFilter
   sortBy?: 'price_asc' | 'price_desc' | 'newest' | 'popular' | 'rating'
   page?: number
   limit?: number
@@ -1686,7 +1691,7 @@ export const VERIFICATION_STATUS_LABELS: Record<string, { label: string; color: 
   none: { label: 'Not Verified', color: 'text-gray-500', bgColor: 'bg-gray-100' },
   pending: { label: 'Pending Review', color: 'text-amber-600', bgColor: 'bg-amber-50' },
   under_review: { label: 'Under Review', color: 'text-blue-600', bgColor: 'bg-blue-50' },
-  approved: { label: 'Verified', color: 'text-emerald-600', bgColor: 'bg-emerald-50' },
+  approved: { label: 'Verified', color: 'text-amber-600', bgColor: 'bg-amber-50' },
   rejected: { label: 'Rejected', color: 'text-red-600', bgColor: 'bg-red-50' },
   expired: { label: 'Expired', color: 'text-orange-600', bgColor: 'bg-orange-50' },
 }

@@ -1,38 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { authenticateRequest } from '@/lib/auth-middleware';
-import { rateLimit, getRateLimitKey, socialRateLimit } from '@/lib/rate-limit';
 import { withCsrf } from '@/lib/with-csrf';
-import { validateInput, socialFollowSchema } from '@/lib/validation';
+
 // POST: Follow/unfollow a shop (toggle)
 export const POST = withCsrf(async (request: NextRequest) => {
-  // Rate limiting
-  const rlKey = getRateLimitKey(request);
-  const rlResult = rateLimit({ ...socialRateLimit, key: `social-follow:${rlKey}` });
-  if (!rlResult.success) {
-    return NextResponse.json(
-      { success: false, error: 'Too many requests. Please try again later.' },
-      { status: 429 }
-    );
-  }
-
-  const auth = authenticateRequest(request);
-  if (!auth) {
-    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
-  }
   try {
     const body = await request.json();
+    const { userId, shopId } = body;
 
-    // Validate input with Zod
-    const validation = validateInput(socialFollowSchema, body);
-    if (!validation.success) {
+    if (!userId || !shopId) {
       return NextResponse.json(
-        { success: false, error: validation.error },
+        { success: false, error: 'userId and shopId are required' },
         { status: 400 }
       );
     }
-    const { shopId } = validation.data;
-    const userId = auth.userId;
 
     // Verify the shop exists
     const shop = await db.shop.findUnique({
@@ -111,20 +92,10 @@ export const POST = withCsrf(async (request: NextRequest) => {
       { status: 500 }
     );
   }
-})
+});
 
 // GET: Check if user follows a shop
 export async function GET(request: NextRequest) {
-  // Rate limiting
-  const rlKey = getRateLimitKey(request);
-  const rlResult = rateLimit({ ...socialRateLimit, key: `social-follow:${rlKey}` });
-  if (!rlResult.success) {
-    return NextResponse.json(
-      { success: false, error: 'Too many requests. Please try again later.' },
-      { status: 429 }
-    );
-  }
-
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');

@@ -1,21 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import bcrypt from 'bcryptjs';
-import { rateLimit, getRateLimitKey, authRateLimit } from '@/lib/rate-limit';
-import { signToken, signRefreshToken, setAuthCookies } from '@/lib/auth-middleware';
+import {
+  rateLimit,
+  getFingerprintedRateLimitKey,
+  getRequestFingerprint,
+  loginRateLimit,
+  recordFailedLoginAttempt,
+  clearFailedLoginAttempts,
+} from '@/lib/rate-limit';
+import { signToken } from '@/lib/auth-middleware';
 import { createSession } from '@/lib/session';
 import { withCsrf } from '@/lib/with-csrf';
+import { normalizeEmail } from '@/lib/sanitize';
+import { getSafeErrorMessage } from '@/lib/error-handler';
+import { validateInput, loginSchema } from '@/lib/validation';
 
 const MAX_LOGIN_ATTEMPTS = 5;
-const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+const LOCKOUT_DURATION_MS = 30 * 60 * 1000; // 30 minutes (enhanced from 15)
 
 export const POST = withCsrf(async (request: NextRequest) => {
   try {
-    // Rate limiting
-    const rateLimitKey = getRateLimitKey(request);
+    // Rate limiting — use fingerprinted key (IP + User-Agent) for more accurate limiting
+    const rateLimitKey = getFingerprintedRateLimitKey(request, 'login');
     const rateLimitResult = rateLimit({
-      ...authRateLimit,
-      key: `login:${rateLimitKey}`,
+      ...loginRateLimit,
+      key: rateLimitKey,
     });
 
     if (!rateLimitResult.success) {
@@ -30,24 +40,37 @@ export const POST = withCsrf(async (request: NextRequest) => {
       );
     }
 
-    const body = await request.json();
-    const { email, password } = body;
+    // Progressive delay: check if this fingerprint has repeated failed attempts
+    const fingerprint = getRequestFingerprint(request);
+    const progressiveDelay = recordFailedLoginAttempt(fingerprint);
+    if (progressiveDelay > 0) {
+      // Apply the progressive delay before processing
+      await new Promise((resolve) => setTimeout(resolve, progressiveDelay));
+    }
 
-    if (!email || !password) {
+    const body = await request.json();
+
+    // Validate input with Zod schema
+    const validation = validateInput(loginSchema, body);
+    if (!validation.success) {
       return NextResponse.json(
-        { success: false, error: 'Email and password are required' },
+        { success: false, error: validation.error },
         { status: 400 }
       );
     }
+
+    const { password } = validation.data;
+    const email = normalizeEmail(validation.data.email);
 
     const user = await db.user.findUnique({
       where: { email },
       include: { shop: true },
     });
 
+    // Use generic message to avoid revealing whether email exists
     if (!user) {
       return NextResponse.json(
-        { success: false, error: 'Invalid email or password' },
+        { success: false, error: 'Invalid credentials' },
         { status: 401 }
       );
     }
@@ -59,7 +82,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
       );
     }
 
-    // Check if user is locked out
+    // Check if user is locked out (30-minute lockout after 5 failed attempts)
     if (user.lockoutUntil && new Date() < user.lockoutUntil) {
       const retryAfterSeconds = Math.ceil(
         (user.lockoutUntil.getTime() - Date.now()) / 1000
@@ -102,15 +125,17 @@ export const POST = withCsrf(async (request: NextRequest) => {
         );
       }
 
-      const remainingAttempts = MAX_LOGIN_ATTEMPTS - newAttempts;
       return NextResponse.json(
         {
           success: false,
-          error: `Invalid email or password. ${remainingAttempts} attempt(s) remaining.`,
+          error: 'Invalid credentials',
         },
         { status: 401 }
       );
     }
+
+    // Clear failed login attempts on success
+    clearFailedLoginAttempts(fingerprint);
 
     // Reset login attempts and update last login on success
     await db.user.update({
@@ -129,7 +154,8 @@ export const POST = withCsrf(async (request: NextRequest) => {
         userId: user.id,
         email: user.email,
         role: user.role,
-      } as { userId: string; email: string; role: string });
+        twoFactorPending: true,
+      });
       // Override the JWT expiry to 5 minutes for temp tokens
       // We'll use a special response format
       return NextResponse.json({
@@ -141,19 +167,17 @@ export const POST = withCsrf(async (request: NextRequest) => {
       });
     }
 
-    // Generate JWT access token and refresh token
-    const authPayload = {
+    // Generate JWT token
+    const token = signToken({
       userId: user.id,
       email: user.email,
       role: user.role,
-    };
-    const token = signToken(authPayload);
-    const refreshToken = signRefreshToken(authPayload);
+    });
 
     // Create a session record in the database (token is hashed, never stored raw)
     const userAgent = request.headers.get('user-agent') || undefined;
     const ipAddress =
-      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      request.headers.get('x-forwarded-for')?.split(',').map(s => s.trim()).slice(-1)[0] ||
       undefined;
 
     await createSession(user.id, token, userAgent, ipAddress).catch((err) => {
@@ -163,21 +187,15 @@ export const POST = withCsrf(async (request: NextRequest) => {
 
     const { password: _, ...userWithoutPassword } = user;
 
-    const response = NextResponse.json({
+    return NextResponse.json({
       success: true,
       data: userWithoutPassword,
       token,
-      refreshToken,
     });
-
-    // Set httpOnly cookies for both tokens
-    setAuthCookies(response, token, refreshToken);
-
-    return response;
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to login' },
+      { success: false, error: getSafeErrorMessage(error, 'Failed to login') },
       { status: 500 }
     );
   }

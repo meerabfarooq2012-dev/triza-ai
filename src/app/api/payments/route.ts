@@ -1,23 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db'
-import { authenticateRequest } from '@/lib/auth-middleware';
+import { db } from '@/lib/db';
 import { Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { PLATFORM_FEE_PERCENT } from '@/lib/constants';
-import { rateLimit, getRateLimitKey, paymentRateLimit } from '@/lib/rate-limit';
+import { getSafeErrorMessage } from '@/lib/error-handler';
 
-import { withCsrf } from '@/lib/with-csrf';
 export async function GET(request: NextRequest) {
-  // Rate limiting
-  const rlKey = getRateLimitKey(request);
-  const rlResult = rateLimit({ ...paymentRateLimit, key: `payments:${rlKey}` });
-  if (!rlResult.success) {
-    return NextResponse.json(
-      { success: false, error: 'Too many requests. Please try again later.' },
-      { status: 429 }
-    );
-  }
-
   try {
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get('userId') || '';
@@ -114,28 +102,13 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('List payments error:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch payments' },
+      { success: false, error: getSafeErrorMessage(error, 'Failed to fetch payments') },
       { status: 500 }
     );
   }
 }
 
-export const POST = withCsrf(async (request: NextRequest) => {
-  // Rate limiting
-  const rlKey = getRateLimitKey(request);
-  const rlResult = rateLimit({ ...paymentRateLimit, key: `payments:${rlKey}` });
-  if (!rlResult.success) {
-    return NextResponse.json(
-      { success: false, error: 'Too many requests. Please try again later.' },
-      { status: 429 }
-    );
-  }
-
-  const auth = authenticateRequest(request);
-  if (!auth) {
-    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
-  }
-  const userId = auth.userId;
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { orderId, buyerId, sellerId, paymentMethod, amount } = body;
@@ -347,8 +320,8 @@ export const POST = withCsrf(async (request: NextRequest) => {
   } catch (error) {
     console.error('Create payment error:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to create payment' },
+      { success: false, error: getSafeErrorMessage(error, 'Failed to create payment') },
       { status: 500 }
     );
   }
-})
+}

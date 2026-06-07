@@ -48,7 +48,7 @@ const STATUS_STEPS: { key: ShipmentStatus; label: string; icon: React.ElementTyp
   { key: 'picked_up', label: 'Picked Up', icon: Package, color: 'text-amber-500' },
   { key: 'in_transit', label: 'In Transit', icon: Truck, color: 'text-blue-500' },
   { key: 'out_for_delivery', label: 'Out for Delivery', icon: ArrowRightCircle, color: 'text-amber-500' },
-  { key: 'delivered', label: 'Delivered', icon: CheckCircle2, color: 'text-emerald-600' },
+  { key: 'delivered', label: 'Delivered', icon: CheckCircle2, color: 'text-amber-600' },
 ]
 
 const EXTRA_STATUSES: { key: ShipmentStatus; label: string; icon: React.ElementType; color: string; bgColor: string }[] = [
@@ -270,7 +270,7 @@ export function ShipmentTracker({ orderId, isSeller }: ShipmentTrackerProps) {
             {isSeller && (
               <Button
                 size="sm"
-                className="mt-4 bg-emerald-600 hover:bg-emerald-700"
+                className="mt-4 bg-amber-600 hover:bg-amber-700"
                 onClick={() => handleUpdateStatus('pending')}
                 disabled={updatingStatus}
               >
@@ -297,7 +297,7 @@ export function ShipmentTracker({ orderId, isSeller }: ShipmentTrackerProps) {
       <motion.div variants={itemVariants} className="flex items-center justify-between">
         <div>
           <h3 className="text-base font-semibold flex items-center gap-2">
-            <Truck className="h-5 w-5 text-emerald-600" />
+            <Truck className="h-5 w-5 text-amber-600" />
             Shipment Tracking
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">
@@ -307,7 +307,7 @@ export function ShipmentTracker({ orderId, isSeller }: ShipmentTrackerProps) {
         <Badge
           className={`capitalize text-xs px-2.5 py-1 ${
             currentStatus === 'delivered'
-              ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100'
+              ? 'bg-amber-100 text-amber-800 hover:bg-amber-100'
               : isExtra
                 ? 'bg-red-100 text-red-800 hover:bg-red-100'
                 : 'bg-amber-100 text-amber-800 hover:bg-amber-100'
@@ -328,7 +328,7 @@ export function ShipmentTracker({ orderId, isSeller }: ShipmentTrackerProps) {
                 <div className="absolute top-5 left-0 right-0 h-1 bg-muted rounded-full" />
                 {/* Progress bar fill */}
                 <div
-                  className="absolute top-5 left-0 h-1 bg-emerald-500 rounded-full transition-all duration-500"
+                  className="absolute top-5 left-0 h-1 bg-amber-500 rounded-full transition-all duration-500"
                   style={{ width: currentStepIdx >= 0 ? `${(currentStepIdx / (STATUS_STEPS.length - 1)) * 100}%` : '0%' }}
                 />
 
@@ -342,15 +342,15 @@ export function ShipmentTracker({ orderId, isSeller }: ShipmentTrackerProps) {
                       <div
                         className={`flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all ${
                           isCompleted
-                            ? 'bg-emerald-600 border-emerald-600 text-white'
+                            ? 'bg-amber-600 border-amber-600 text-white'
                             : isCurrent
-                              ? 'bg-white border-emerald-400 text-emerald-600'
-                              : 'bg-white border-muted text-muted-foreground'
+                              ? 'bg-white dark:bg-gray-800 border-amber-400 text-amber-600 dark:text-amber-400'
+                              : 'bg-white dark:bg-gray-800 border-muted text-muted-foreground'
                         }`}
                       >
                         <Icon className="h-5 w-5" />
                       </div>
-                      <span className={`text-[11px] mt-2 font-medium ${isCompleted ? 'text-emerald-700' : 'text-muted-foreground'}`}>
+                      <span className={`text-[11px] mt-2 font-medium ${isCompleted ? 'text-amber-700' : 'text-muted-foreground'}`}>
                         {step.label}
                       </span>
                     </div>
@@ -374,22 +374,22 @@ export function ShipmentTracker({ orderId, isSeller }: ShipmentTrackerProps) {
                       <div
                         className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition-all ${
                           isCompleted
-                            ? 'bg-emerald-600 border-emerald-600 text-white'
+                            ? 'bg-amber-600 border-amber-600 text-white'
                             : isCurrent
-                              ? 'bg-white border-emerald-400 text-emerald-600'
-                              : 'bg-white border-muted text-muted-foreground'
+                              ? 'bg-white dark:bg-gray-800 border-amber-400 text-amber-600 dark:text-amber-400'
+                              : 'bg-white dark:bg-gray-800 border-muted text-muted-foreground'
                         }`}
                       >
                         <Icon className="h-4 w-4" />
                       </div>
                       {!isLast && (
-                        <div className={`w-0.5 h-8 ${isCompleted ? 'bg-emerald-500' : 'bg-muted'}`} />
+                        <div className={`w-0.5 h-8 ${isCompleted ? 'bg-amber-500' : 'bg-muted'}`} />
                       )}
                     </div>
 
                     {/* Step content */}
                     <div className="pb-4">
-                      <span className={`text-sm font-medium ${isCompleted ? 'text-emerald-700' : 'text-muted-foreground'}`}>
+                      <span className={`text-sm font-medium ${isCompleted ? 'text-amber-700' : 'text-muted-foreground'}`}>
                         {step.label}
                       </span>
                       {isCurrent && (
@@ -423,7 +423,7 @@ export function ShipmentTracker({ orderId, isSeller }: ShipmentTrackerProps) {
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-emerald-600" />
+                <MapPin className="h-4 w-4 text-amber-600" />
                 Carrier & Tracking
               </CardTitle>
               {isSeller && (
@@ -477,7 +477,7 @@ export function ShipmentTracker({ orderId, isSeller }: ShipmentTrackerProps) {
                 </div>
                 <Button
                   size="sm"
-                  className="w-full bg-emerald-600 hover:bg-emerald-700"
+                  className="w-full bg-amber-600 hover:bg-amber-700"
                   onClick={handleSaveCarrier}
                   disabled={savingCarrier}
                 >
@@ -523,7 +523,7 @@ export function ShipmentTracker({ orderId, isSeller }: ShipmentTrackerProps) {
                   {shipment.deliveredAt && (
                     <div>
                       <p className="text-[11px] text-muted-foreground">Delivered On</p>
-                      <p className="text-sm font-medium text-emerald-600">
+                      <p className="text-sm font-medium text-amber-600">
                         {formatDateTime(shipment.deliveredAt)}
                       </p>
                     </div>
@@ -544,7 +544,7 @@ export function ShipmentTracker({ orderId, isSeller }: ShipmentTrackerProps) {
                       href={shipment.trackingUrl || `${carrierInfo.url}?tracking=${shipment.trackingNumber}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 hover:text-emerald-800 hover:underline"
+                      className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-700 hover:text-amber-800 hover:underline"
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
                       Track on {carrierInfo.label}
@@ -560,10 +560,10 @@ export function ShipmentTracker({ orderId, isSeller }: ShipmentTrackerProps) {
       {/* Seller: Update Status Panel */}
       {isSeller && nextStatuses.length > 0 && (
         <motion.div variants={itemVariants}>
-          <Card className="border-0 shadow-sm border-l-4 border-l-emerald-400">
+          <Card className="border-0 shadow-sm border-l-4 border-l-amber-400">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Edit2 className="h-4 w-4 text-emerald-600" />
+                <Edit2 className="h-4 w-4 text-amber-600" />
                 Update Shipment Status
               </CardTitle>
               <CardDescription className="text-xs">

@@ -127,11 +127,11 @@ export function ResetPasswordDialog({ open, onOpenChange, token: tokenProp }: Re
               exit={{ opacity: 0 }}
               className="py-4 text-center space-y-4"
             >
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/50">
-                <Check className="h-7 w-7 text-green-600 dark:text-green-400" />
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/50">
+                <Check className="h-7 w-7 text-amber-600 dark:text-amber-400" />
               </div>
               <div>
-                <p className="text-sm font-medium text-green-800 dark:text-green-300">
+                <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
                   Your password has been reset successfully!
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -217,8 +217,8 @@ export function ResetPasswordDialog({ open, onOpenChange, token: tokenProp }: Re
                   >
                     {hasMinLength ? (
                       <>
-                        <Check className="h-3.5 w-3.5 text-green-500 dark:text-green-400" />
-                        <span className="text-xs text-green-600 dark:text-green-400">Minimum 6 characters</span>
+                        <Check className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
+                        <span className="text-xs text-amber-600 dark:text-amber-400">Minimum 6 characters</span>
                       </>
                     ) : (
                       <>
@@ -247,7 +247,7 @@ export function ResetPasswordDialog({ open, onOpenChange, token: tokenProp }: Re
                       passwordsMismatch
                         ? 'border-red-400 dark:border-red-500 focus-visible:ring-red-500/30'
                         : passwordsMatch
-                        ? 'border-green-400 dark:border-green-500 focus-visible:ring-green-500/30'
+                        ? 'border-amber-400 dark:border-amber-500 focus-visible:ring-amber-500/30'
                         : ''
                     }`}
                     disabled={isLoading}
@@ -268,8 +268,8 @@ export function ResetPasswordDialog({ open, onOpenChange, token: tokenProp }: Re
                   >
                     {passwordsMatch ? (
                       <>
-                        <Check className="h-3.5 w-3.5 text-green-500 dark:text-green-400" />
-                        <span className="text-xs text-green-600 dark:text-green-400">Passwords match</span>
+                        <Check className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
+                        <span className="text-xs text-amber-600 dark:text-amber-400">Passwords match</span>
                       </>
                     ) : passwordsMismatch ? (
                       <>

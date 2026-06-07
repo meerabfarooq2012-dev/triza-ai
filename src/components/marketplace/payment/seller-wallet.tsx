@@ -53,6 +53,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { WalletSkeleton } from '@/components/marketplace/shared/loading-skeletons'
 import { EmptyState } from '@/components/marketplace/shared/empty-state'
 import { toast } from 'sonner'
 import type {
@@ -80,12 +81,12 @@ const TRANSACTION_TYPE_CONFIG: Record<
   string,
   { label: string; color: string; icon: React.ReactNode; category: string }
 > = {
-  credit: { label: 'Credit', color: 'bg-emerald-100 text-emerald-800', icon: <ArrowUpRight className="h-3 w-3" />, category: 'credits' },
+  credit: { label: 'Credit', color: 'bg-amber-100 text-amber-800', icon: <ArrowUpRight className="h-3 w-3" />, category: 'credits' },
   debit: { label: 'Debit', color: 'bg-red-100 text-red-800', icon: <ArrowDownRight className="h-3 w-3" />, category: 'credits' },
   commission: { label: 'Commission', color: 'bg-amber-100 text-amber-800', icon: <DollarSign className="h-3 w-3" />, category: 'commissions' },
   withdrawal: { label: 'Withdrawal', color: 'bg-amber-100 text-amber-800', icon: <ArrowDownCircle className="h-3 w-3" />, category: 'withdrawals' },
   escrow_hold: { label: 'Escrow Hold', color: 'bg-blue-100 text-blue-800', icon: <Clock className="h-3 w-3" />, category: 'escrow' },
-  escrow_release: { label: 'Escrow Release', color: 'bg-emerald-100 text-emerald-700', icon: <CheckCircle2 className="h-3 w-3" />, category: 'escrow' },
+  escrow_release: { label: 'Escrow Release', color: 'bg-amber-100 text-amber-700', icon: <CheckCircle2 className="h-3 w-3" />, category: 'escrow' },
   refund: { label: 'Refund', color: 'bg-amber-100 text-amber-800', icon: <RefreshCw className="h-3 w-3" />, category: 'escrow' },
 }
 
@@ -95,9 +96,9 @@ const WITHDRAWAL_STATUS_CONFIG: Record<
 > = {
   pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-800' },
   processing: { label: 'Processing', color: 'bg-blue-100 text-blue-800' },
-  approved: { label: 'Approved', color: 'bg-emerald-100 text-emerald-800' },
+  approved: { label: 'Approved', color: 'bg-amber-100 text-amber-800' },
   rejected: { label: 'Rejected', color: 'bg-red-100 text-red-800' },
-  completed: { label: 'Completed', color: 'bg-green-100 text-green-800' },
+  completed: { label: 'Completed', color: 'bg-amber-100 text-amber-800' },
 }
 
 // Withdrawal progress steps
@@ -164,7 +165,7 @@ function EarningsChartTooltip({ active, payload, label }: { active?: boolean; pa
     return (
       <div className="rounded-lg border bg-background p-2 shadow-md">
         <p className="text-xs font-medium text-muted-foreground">{label}</p>
-        <p className="text-sm font-bold text-emerald-600">${(payload[0].value ?? 0).toFixed(2)}</p>
+        <p className="text-sm font-bold text-amber-600">${(payload[0].value ?? 0).toFixed(2)}</p>
       </div>
     )
   }
@@ -377,24 +378,7 @@ export function SellerWallet() {
   }
 
   if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-6">
-                <Skeleton className="h-20 rounded" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        <Card>
-          <CardContent className="p-6">
-            <Skeleton className="h-64 rounded" />
-          </CardContent>
-        </Card>
-      </div>
-    )
+    return <WalletSkeleton />
   }
 
   if (error) {
@@ -423,9 +407,9 @@ export function SellerWallet() {
       label: 'Available Balance',
       value: `$${(wallet?.balance || 0).toFixed(2)}`,
       icon: WalletIcon,
-      bgColor: 'bg-emerald-50',
-      textColor: 'text-emerald-600',
-      gradient: 'from-emerald-500 to-teal-600',
+      bgColor: 'bg-amber-50',
+      textColor: 'text-amber-600',
+      gradient: 'from-amber-500 to-yellow-600',
     },
     {
       label: 'Pending (Escrow)',
@@ -469,7 +453,7 @@ export function SellerWallet() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-500">{stat.label}</p>
-                    <p className="mt-1 text-2xl font-bold text-gray-900">{stat.value}</p>
+                    <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{stat.value}</p>
                   </div>
                   <div className={`rounded-xl p-3 ${stat.bgColor}`}>
                     <stat.icon className={`h-6 w-6 ${stat.textColor}`} />
@@ -480,7 +464,7 @@ export function SellerWallet() {
                     {monthlyChange !== 0 && (
                       <span
                         className={`flex items-center gap-0.5 text-xs font-medium ${
-                          monthlyChange >= 0 ? 'text-emerald-600' : 'text-red-600'
+                          monthlyChange >= 0 ? 'text-amber-600' : 'text-red-600'
                         }`}
                       >
                         {monthlyChange >= 0 ? (
@@ -508,7 +492,7 @@ export function SellerWallet() {
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg font-semibold flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-emerald-600" />
+              <TrendingUp className="h-5 w-5 text-amber-600" />
               Earnings Overview
             </CardTitle>
           </CardHeader>
@@ -563,7 +547,7 @@ export function SellerWallet() {
                     key={f.id}
                     variant={txFilter === f.id ? 'default' : 'outline'}
                     size="sm"
-                    className={`h-7 text-xs px-2.5 ${txFilter === f.id ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
+                    className={`h-7 text-xs px-2.5 ${txFilter === f.id ? 'bg-amber-600 hover:bg-amber-700' : ''}`}
                     onClick={() => setTxFilter(f.id)}
                   >
                     {f.label}
@@ -618,7 +602,7 @@ export function SellerWallet() {
                             </TableCell>
                             <TableCell
                               className={`text-sm font-medium text-right ${
-                                isCredit ? 'text-emerald-600' : 'text-red-600'
+                                isCredit ? 'text-amber-600' : 'text-red-600'
                               }`}
                             >
                               {isCredit ? '+' : '-'}${(Math.abs(tx.amount ?? 0)).toFixed(2)}
@@ -631,7 +615,7 @@ export function SellerWallet() {
                                 variant="outline"
                                 className={`text-[10px] px-1.5 py-0 ${
                                   tx.status === 'completed'
-                                    ? 'bg-green-100 text-green-800'
+                                    ? 'bg-amber-100 text-amber-800'
                                     : tx.status === 'pending'
                                       ? 'bg-yellow-100 text-yellow-800'
                                       : 'bg-red-100 text-red-800'
@@ -677,20 +661,20 @@ export function SellerWallet() {
                           type="button"
                           className={`w-full flex items-center gap-3 rounded-lg border-2 p-2.5 text-left transition-all ${
                             isSelected
-                              ? 'border-emerald-400 bg-emerald-50/50 shadow-sm'
+                              ? 'border-amber-400 bg-amber-50/50 shadow-sm'
                               : 'border-transparent bg-muted/30 hover:border-muted-foreground/20'
                           }`}
                           onClick={() => handleSelectSavedMethod(pm)}
                         >
                           <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${
-                            pm.method === 'easypaisa' ? 'bg-emerald-50' :
+                            pm.method === 'easypaisa' ? 'bg-amber-50' :
                             pm.method === 'jazzcash' ? 'bg-red-50' :
                             pm.method === 'payoneer' ? 'bg-blue-50' :
-                            pm.method === 'wise' ? 'bg-teal-50' :
+                            pm.method === 'wise' ? 'bg-yellow-50' :
                             'bg-amber-50'
                           }`}>
                             {pm.method === 'easypaisa' || pm.method === 'jazzcash' ? (
-                              <WalletIcon className={`h-3.5 w-3.5 ${pm.method === 'easypaisa' ? 'text-emerald-600' : 'text-red-600'}`} />
+                              <WalletIcon className={`h-3.5 w-3.5 ${pm.method === 'easypaisa' ? 'text-amber-600' : 'text-red-600'}`} />
                             ) : pm.method === 'bank_transfer' ? (
                               <Building2 className="h-3.5 w-3.5 text-amber-600" />
                             ) : (
@@ -715,9 +699,9 @@ export function SellerWallet() {
                             </p>
                           </div>
                           <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                            isSelected ? 'border-emerald-500' : 'border-muted-foreground/30'
+                            isSelected ? 'border-amber-500' : 'border-muted-foreground/30'
                           }`}>
-                            {isSelected && <div className="h-2 w-2 rounded-full bg-emerald-500" />}
+                            {isSelected && <div className="h-2 w-2 rounded-full bg-amber-500" />}
                           </div>
                         </button>
                       )
@@ -727,7 +711,7 @@ export function SellerWallet() {
                       type="button"
                       className={`w-full flex items-center gap-3 rounded-lg border-2 p-2.5 text-left transition-all ${
                         !selectedSavedMethodId
-                          ? 'border-emerald-400 bg-emerald-50/50 shadow-sm'
+                          ? 'border-amber-400 bg-amber-50/50 shadow-sm'
                           : 'border-transparent bg-muted/30 hover:border-muted-foreground/20'
                       }`}
                       onClick={() => {
@@ -747,9 +731,9 @@ export function SellerWallet() {
                       </div>
                       <span className="text-xs font-medium">Enter new account details</span>
                       <div className={`ml-auto h-4 w-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                        !selectedSavedMethodId ? 'border-emerald-500' : 'border-muted-foreground/30'
+                        !selectedSavedMethodId ? 'border-amber-500' : 'border-muted-foreground/30'
                       }`}>
-                        {!selectedSavedMethodId && <div className="h-2 w-2 rounded-full bg-emerald-500" />}
+                        {!selectedSavedMethodId && <div className="h-2 w-2 rounded-full bg-amber-500" />}
                       </div>
                     </button>
                   </div>
@@ -784,7 +768,7 @@ export function SellerWallet() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="h-7 text-xs px-2.5 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300"
+                      className="h-7 text-xs px-2.5 hover:bg-amber-50 hover:text-amber-700 hover:border-amber-300"
                       onClick={() => handleQuickAmount(qa)}
                       disabled={qa > availableBalance}
                     >
@@ -795,7 +779,7 @@ export function SellerWallet() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-7 text-xs px-2.5 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 font-semibold"
+                    className="h-7 text-xs px-2.5 hover:bg-amber-50 hover:text-amber-700 hover:border-amber-300 font-semibold"
                     onClick={() => handleQuickAmount('max')}
                     disabled={availableBalance <= 0}
                   >
@@ -936,14 +920,14 @@ export function SellerWallet() {
               </div>
 
               {/* Zero Fee Notice */}
-              <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3">
-                <p className="text-xs text-emerald-700 font-medium text-center">
+              <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
+                <p className="text-xs text-amber-700 font-medium text-center">
                   🎉 Zero withdrawal fees! You receive the full amount.
                 </p>
               </div>
 
               <Button
-                className="w-full bg-emerald-600 hover:bg-emerald-700"
+                className="w-full bg-amber-600 hover:bg-amber-700"
                 onClick={handleWithdraw}
                 disabled={submitting || amount <= 0 || amount > availableBalance}
               >
@@ -1013,16 +997,16 @@ export function SellerWallet() {
                                     {idx > 0 && (
                                       <div
                                         className={`h-0.5 flex-1 ${
-                                          idx <= currentStep ? 'bg-emerald-400' : 'bg-gray-200'
+                                          idx <= currentStep ? 'bg-amber-400' : 'bg-gray-200'
                                         }`}
                                       />
                                     )}
                                     <div
                                       className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${
                                         isCompleted
-                                          ? 'bg-emerald-500 text-white'
+                                          ? 'bg-amber-500 text-gray-900'
                                           : isCurrent
-                                            ? 'bg-emerald-100 text-emerald-600 ring-2 ring-emerald-400'
+                                            ? 'bg-amber-100 text-amber-600 ring-2 ring-amber-400'
                                             : 'bg-gray-100 text-gray-400'
                                       }`}
                                     >
@@ -1035,7 +1019,7 @@ export function SellerWallet() {
                                     {idx < WITHDRAWAL_STEPS.length - 1 && (
                                       <div
                                         className={`h-0.5 flex-1 ${
-                                          idx < currentStep ? 'bg-emerald-400' : 'bg-gray-200'
+                                          idx < currentStep ? 'bg-amber-400' : 'bg-gray-200'
                                         }`}
                                       />
                                     )}
@@ -1108,7 +1092,7 @@ export function SellerWallet() {
                           <TableCell className="text-xs text-right text-muted-foreground">
                             ${(w.fee ?? 0).toFixed(2)}
                           </TableCell>
-                          <TableCell className="text-sm text-right text-emerald-600">
+                          <TableCell className="text-sm text-right text-amber-600">
                             ${(w.netAmount ?? 0).toFixed(2)}
                           </TableCell>
                           <TableCell>
@@ -1145,19 +1129,19 @@ export function SellerWallet() {
       {/* Link to Payment Settings */}
       {currentUser && (
         <motion.div variants={itemVariants}>
-          <div className="rounded-lg bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 p-4">
+          <div className="rounded-lg bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <WalletIcon className="h-5 w-5 text-emerald-600" />
+                <WalletIcon className="h-5 w-5 text-amber-600" />
                 <div>
-                  <p className="text-sm font-medium text-emerald-900">Manage Receiving Methods</p>
-                  <p className="text-xs text-emerald-700">Add or update your bank accounts, wallets, and receiving details</p>
+                  <p className="text-sm font-medium text-amber-900">Manage Receiving Methods</p>
+                  <p className="text-xs text-amber-700">Add or update your bank accounts, wallets, and receiving details</p>
                 </div>
               </div>
               <Button
                 size="sm"
                 variant="outline"
-                className="border-emerald-300 text-emerald-700 hover:bg-emerald-100"
+                className="border-amber-300 text-amber-700 hover:bg-amber-100"
                 onClick={() => {
                   const store = useMarketplaceStore.getState()
                   store.setCurrentView('seller-dashboard', { tab: 'payment-settings' })

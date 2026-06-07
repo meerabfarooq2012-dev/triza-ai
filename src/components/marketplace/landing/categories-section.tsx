@@ -86,18 +86,18 @@ const iconMap: Record<string, React.ReactNode> = {
 const categoryGradients = [
   'from-amber-50 to-amber-50 dark:from-amber-950/30 dark:to-amber-950/30',
   'from-amber-50 to-yellow-50 dark:from-amber-950/30 dark:to-yellow-950/30',
-  'from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30',
   'from-amber-50 to-yellow-50 dark:from-amber-950/30 dark:to-yellow-950/30',
-  'from-cyan-50 to-sky-50 dark:from-cyan-950/30 dark:to-sky-950/30',
+  'from-amber-50 to-yellow-50 dark:from-amber-950/30 dark:to-yellow-950/30',
+  'from-orange-50 to-sky-50 dark:from-orange-950/30 dark:to-sky-950/30',
   'from-amber-50 to-amber-50 dark:from-amber-950/30 dark:to-amber-950/30',
 ]
 
 const iconColors = [
   'text-amber-600 dark:text-amber-400',
   'text-amber-600 dark:text-amber-400',
-  'text-emerald-600 dark:text-emerald-400',
   'text-amber-600 dark:text-amber-400',
-  'text-cyan-600 dark:text-cyan-400',
+  'text-amber-600 dark:text-amber-400',
+  'text-orange-600 dark:text-orange-400',
   'text-amber-600 dark:text-amber-400',
 ]
 
@@ -265,38 +265,38 @@ export function CategoriesSection() {
   }, [categories])
 
   const getHoverColor = (tab: ProductTab) => {
-    if (tab === 'gigs') return 'hover:border-emerald-200 dark:hover:border-emerald-800'
-    if (tab === 'digital') return 'hover:border-cyan-200 dark:hover:border-cyan-800'
+    if (tab === 'gigs') return 'hover:border-amber-200 dark:hover:border-amber-800'
+    if (tab === 'digital') return 'hover:border-orange-200 dark:hover:border-orange-800'
     return 'hover:border-amber-200 dark:hover:border-amber-800'
   }
 
   const getActiveHoverTextColor = (tab: ProductTab) => {
-    if (tab === 'gigs') return 'group-hover:text-emerald-600 dark:group-hover:text-emerald-400'
-    if (tab === 'digital') return 'group-hover:text-cyan-600 dark:group-hover:text-cyan-400'
+    if (tab === 'gigs') return 'group-hover:text-amber-600 dark:group-hover:text-amber-400'
+    if (tab === 'digital') return 'group-hover:text-orange-600 dark:group-hover:text-orange-400'
     return 'group-hover:text-amber-600 dark:group-hover:text-amber-400'
   }
 
   const getExpandedBorderColor = (tab: ProductTab) => {
-    if (tab === 'gigs') return 'border-emerald-300 dark:border-emerald-700'
-    if (tab === 'digital') return 'border-cyan-300 dark:border-cyan-700'
+    if (tab === 'gigs') return 'border-amber-300 dark:border-amber-700'
+    if (tab === 'digital') return 'border-orange-300 dark:border-orange-700'
     return 'border-amber-300 dark:border-amber-700'
   }
 
   const getChevronColor = (tab: ProductTab) => {
-    if (tab === 'gigs') return 'text-emerald-500'
-    if (tab === 'digital') return 'text-cyan-500'
+    if (tab === 'gigs') return 'text-amber-500'
+    if (tab === 'digital') return 'text-orange-500'
     return 'text-amber-500'
   }
 
   const getBadgeColor = (tab: ProductTab) => {
-    if (tab === 'gigs') return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
-    if (tab === 'digital') return 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300'
+    if (tab === 'gigs') return 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+    if (tab === 'digital') return 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300'
     return 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
   }
 
   const getPillColor = (tab: ProductTab) => {
-    if (tab === 'gigs') return 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-300 dark:hover:bg-emerald-900/40'
-    if (tab === 'digital') return 'bg-cyan-50 text-cyan-700 hover:bg-cyan-100 dark:bg-cyan-950/30 dark:text-cyan-300 dark:hover:bg-cyan-900/40'
+    if (tab === 'gigs') return 'bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-950/30 dark:text-amber-300 dark:hover:bg-amber-900/40'
+    if (tab === 'digital') return 'bg-orange-50 text-orange-700 hover:bg-orange-100 dark:bg-orange-950/30 dark:text-orange-300 dark:hover:bg-orange-900/40'
     return 'bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-950/30 dark:text-amber-300 dark:hover:bg-amber-900/40'
   }
 

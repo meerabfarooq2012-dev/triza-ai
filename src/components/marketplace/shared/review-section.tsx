@@ -72,7 +72,7 @@ interface ReviewSectionProps {
   shopOwnerId?: string
 }
 
-type ReviewSortOption = 'recent' | 'highest' | 'lowest' | 'helpful' | 'photos'
+type ReviewSortOption = 'newest' | 'highest' | 'lowest' | 'helpful'
 type FilterChip = 'all' | '5' | '4' | '3' | '2' | '1' | 'photos' | 'verified'
 
 // =============================================================================
@@ -83,11 +83,10 @@ const HELPED_STORAGE_KEY = 'marketo_helped_reviews'
 const REVIEWS_PER_PAGE = 10
 
 const SORT_OPTIONS: { value: ReviewSortOption; label: string }[] = [
-  { value: 'recent', label: 'Most Recent' },
-  { value: 'highest', label: 'Highest Rated' },
-  { value: 'lowest', label: 'Lowest Rated' },
+  { value: 'newest', label: 'Most Recent' },
+  { value: 'highest', label: 'Highest Rating' },
+  { value: 'lowest', label: 'Lowest Rating' },
   { value: 'helpful', label: 'Most Helpful' },
-  { value: 'photos', label: 'With Photos' },
 ]
 
 const FILTER_CHIPS: { value: FilterChip; label: string }[] = [
@@ -221,7 +220,7 @@ function RatingSummary({
             onClick={() => onStarFilter(activeFilter === star ? null : star)}
             className={`flex items-center gap-2 text-sm w-full group rounded-md px-1 py-0.5 transition-colors ${
               activeFilter === star
-                ? 'bg-emerald-50 dark:bg-emerald-950/30'
+                ? 'bg-amber-50 dark:bg-amber-950/30'
                 : 'hover:bg-muted/50'
             }`}
           >
@@ -287,8 +286,8 @@ function PhotoLightbox({
                   onClick={() => setCurrentIndex(idx)}
                   className={`w-2.5 h-2.5 rounded-full transition-all ${
                     idx === currentIndex
-                      ? 'bg-white w-6'
-                      : 'bg-white/50 hover:bg-white/80'
+                      ? 'bg-white dark:bg-gray-600 w-6'
+                      : 'bg-white/50 dark:bg-gray-500/50 hover:bg-white/80 dark:hover:bg-gray-500/80'
                   }`}
                 />
               ))}
@@ -397,7 +396,7 @@ function ReviewCard({
               {review.user?.avatar ? (
                 <AvatarImage src={review.user.avatar} alt={review.user?.name || ''} />
               ) : (
-                <AvatarFallback className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
+                <AvatarFallback className="bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
                   {review.user?.name?.[0] || 'U'}
                 </AvatarFallback>
               )}
@@ -412,7 +411,7 @@ function ReviewCard({
                   {review.isVerified && (
                     <Badge
                       variant="secondary"
-                      className="text-xs gap-1 bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
+                      className="text-xs gap-1 bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
                     >
                       <ShieldCheck size={10} />
                       Verified Purchase
@@ -483,14 +482,14 @@ function ReviewCard({
                   disabled={isHelped || helpfulLoading === review.id}
                   className={`flex items-center gap-1.5 text-xs transition-colors ${
                     isHelped
-                      ? 'text-emerald-600 dark:text-emerald-400'
+                      ? 'text-amber-600 dark:text-amber-400'
                       : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   {helpfulLoading === review.id ? (
                     <Loader2 size={14} className="animate-spin" />
                   ) : (
-                    <ThumbsUp size={14} className={isHelped ? 'fill-emerald-500' : ''} />
+                    <ThumbsUp size={14} className={isHelped ? 'fill-amber-500' : ''} />
                   )}
                   Helpful{review.helpfulCount ? ` (${review.helpfulCount})` : ''}
                 </button>
@@ -578,7 +577,7 @@ function ReviewCard({
                           size="sm"
                           onClick={handleSubmitReply}
                           disabled={!replyText.trim() || replying}
-                          className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+                          className="gap-1.5 bg-amber-600 hover:bg-amber-700 text-gray-900"
                         >
                           {replying ? (
                             <Loader2 size={14} className="animate-spin" />
@@ -747,7 +746,7 @@ function WriteReviewForm({
     <div>
       <Button
         onClick={() => setIsOpen(!isOpen)}
-        className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+        className="gap-2 bg-amber-600 hover:bg-amber-700 text-gray-900"
       >
         <Star size={16} className="fill-current" />
         Write a Review
@@ -869,7 +868,7 @@ function WriteReviewForm({
                             className="w-16 h-16 object-cover rounded-lg border border-border"
                           />
                           {url.startsWith('http') && (
-                            <span className="absolute bottom-0.5 left-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 text-white">
+                            <span className="absolute bottom-0.5 left-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-500 text-gray-900">
                               <Cloud className="h-2 w-2" />
                             </span>
                           )}
@@ -886,9 +885,9 @@ function WriteReviewForm({
                 </div>
 
                 {/* Verified purchase notice */}
-                <div className="flex items-center gap-2 p-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
-                  <CheckCircle size={14} className="text-emerald-600 flex-shrink-0" />
-                  <p className="text-xs text-emerald-700 dark:text-emerald-400">
+                <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                  <CheckCircle size={14} className="text-amber-600 flex-shrink-0" />
+                  <p className="text-xs text-amber-700 dark:text-amber-400">
                     ✓ Your review may be marked as &quot;Verified Purchase&quot; if you bought this item.
                   </p>
                 </div>
@@ -910,7 +909,7 @@ function WriteReviewForm({
                   <Button
                     onClick={handleSubmit}
                     disabled={!comment.trim() || submitting}
-                    className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+                    className="gap-2 bg-amber-600 hover:bg-amber-700 text-gray-900"
                   >
                     {submitting && <Loader2 size={14} className="animate-spin" />}
                     {submitting ? 'Submitting...' : 'Submit Review'}
@@ -1055,7 +1054,7 @@ function EditReviewForm({
   }
 
   return (
-    <Card className="p-6 border-0 shadow-sm border-l-4 border-l-emerald-500">
+    <Card className="p-6 border-0 shadow-sm border-l-4 border-l-amber-500">
       <h3 className="font-bold text-lg mb-4">Edit Review</h3>
       <div className="space-y-4">
         {/* Star rating */}
@@ -1162,7 +1161,7 @@ function EditReviewForm({
                     className="w-16 h-16 object-cover rounded-lg border border-border"
                   />
                   {url.startsWith('http') && (
-                    <span className="absolute bottom-0.5 left-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 text-white">
+                    <span className="absolute bottom-0.5 left-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-500 text-gray-900">
                       <Cloud className="h-2 w-2" />
                     </span>
                   )}
@@ -1195,7 +1194,7 @@ function EditReviewForm({
           <Button
             onClick={handleSubmit}
             disabled={!comment.trim() || submitting}
-            className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+            className="gap-2 bg-amber-600 hover:bg-amber-700 text-gray-900"
           >
             {submitting && <Loader2 size={14} className="animate-spin" />}
             {submitting ? 'Saving...' : 'Save Changes'}
@@ -1286,7 +1285,7 @@ function EmptyReviewState({ onWriteReview }: { onWriteReview?: () => void }) {
       {onWriteReview && (
         <Button
           onClick={onWriteReview}
-          className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+          className="gap-2 bg-amber-600 hover:bg-amber-700 text-gray-900"
         >
           <Star size={16} className="fill-current" />
           Write the First Review
@@ -1310,8 +1309,9 @@ export function ReviewSection({
 }: ReviewSectionProps) {
   const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
-  const [reviewSort, setReviewSort] = useState<ReviewSortOption>('recent')
+  const [reviewSort, setReviewSort] = useState<ReviewSortOption>('newest')
   const [activeFilter, setActiveFilter] = useState<FilterChip>('all')
+  const [verifiedOnly, setVerifiedOnly] = useState(false)
   const [starFilter, setStarFilter] = useState<number | null>(null)
   const [reviewPage, setReviewPage] = useState(1)
   const [reviewTotal, setReviewTotal] = useState(0)
@@ -1325,6 +1325,19 @@ export function ReviewSection({
     distribution: { star: number; count: number; percentage: number }[]
   } | null>(null)
   const [editingReview, setEditingReview] = useState<Review | null>(null)
+
+  // Build common filter params for API calls
+  const buildFilterParams = useCallback((page: number) => {
+    const params: Record<string, string | number | boolean> = {
+      page,
+      limit: REVIEWS_PER_PAGE,
+      sort: reviewSort,
+    }
+    if (verifiedOnly) params.isVerified = true
+    if (activeFilter === 'photos') params.hasImages = true
+    if (starFilter) params.rating = starFilter
+    return params
+  }, [reviewSort, verifiedOnly, activeFilter, starFilter])
 
   // Fetch reviews
   const fetchReviews = useCallback(async (page: number = 1, append: boolean = false) => {
@@ -1340,11 +1353,16 @@ export function ReviewSection({
         ratingSummary?: typeof apiRatingSummary
       } | null = null
 
+      const filterParams = buildFilterParams(page)
+
       if (productId) {
         const res = await api.reviews.getProductReviews(productId, {
           page,
           limit: REVIEWS_PER_PAGE,
-          sort: reviewSort === 'photos' ? 'recent' : reviewSort,
+          sort: reviewSort,
+          isVerified: verifiedOnly || undefined,
+          hasImages: activeFilter === 'photos' || undefined,
+          rating: starFilter ?? undefined,
         })
         if (res?.data) {
           resData = res.data
@@ -1353,7 +1371,10 @@ export function ReviewSection({
         const res = await api.reviews.getGigReviews(gigId, {
           page,
           limit: REVIEWS_PER_PAGE,
-          sort: reviewSort === 'photos' ? 'recent' : reviewSort,
+          sort: reviewSort,
+          isVerified: verifiedOnly || undefined,
+          hasImages: activeFilter === 'photos' || undefined,
+          rating: starFilter ?? undefined,
         })
         if (res?.data) {
           resData = res.data
@@ -1362,6 +1383,10 @@ export function ReviewSection({
         const res = await api.reviews.getShopReviews(shopSlug, {
           page,
           limit: REVIEWS_PER_PAGE,
+          sort: reviewSort,
+          isVerified: verifiedOnly || undefined,
+          hasImages: activeFilter === 'photos' || undefined,
+          rating: starFilter ?? undefined,
         })
         if (res?.data) {
           resData = res.data
@@ -1372,8 +1397,11 @@ export function ReviewSection({
           shopId,
           page: String(page),
           limit: String(REVIEWS_PER_PAGE),
-          sort: reviewSort === 'photos' ? 'recent' : reviewSort,
+          sort: reviewSort,
         })
+        if (verifiedOnly) searchParams.set('isVerified', 'true')
+        if (activeFilter === 'photos') searchParams.set('hasImages', 'true')
+        if (starFilter) searchParams.set('rating', String(starFilter))
         const response = await fetch(`/api/reviews?${searchParams.toString()}`)
         const data = await response.json()
         if (data.success) {
@@ -1400,18 +1428,18 @@ export function ReviewSection({
       setLoading(false)
       setLoadingMore(false)
     }
-  }, [productId, gigId, shopSlug, shopId, reviewSort])
+  }, [productId, gigId, shopSlug, shopId, reviewSort, verifiedOnly, activeFilter, starFilter, buildFilterParams])
 
   useEffect(() => {
     setReviewPage(1)
     fetchReviews(1, false)
   }, [fetchReviews])
 
-  // Refetch on sort change
+  // Refetch on sort or filter change
   useEffect(() => {
     setReviewPage(1)
     fetchReviews(1, false)
-  }, [reviewSort])
+  }, [reviewSort, verifiedOnly, activeFilter, starFilter])
 
   // Calculate rating distribution — prefer API's accurate summary
   const ratingDistribution = apiRatingSummary?.distribution ?? [5, 4, 3, 2, 1].map(star => ({ star, count: 0, percentage: 0 }))
@@ -1420,17 +1448,17 @@ export function ReviewSection({
 
   const totalReviews = apiRatingSummary?.count ?? reviewTotal
 
-  // Filter reviews
+  // Filter reviews (client-side fallback for in-page filtering; main filters are server-side)
   const filteredReviews = useMemo(() => {
     let filtered = [...reviews]
 
-    // Apply star filter (from sidebar or chip)
+    // Apply star filter (from sidebar or chip) — client-side for instant UI
     const effectiveStarFilter = starFilter ?? (activeFilter !== 'all' && !isNaN(Number(activeFilter)) ? Number(activeFilter) : null)
     if (effectiveStarFilter) {
       filtered = filtered.filter((r) => Math.round(r.rating) === effectiveStarFilter)
     }
 
-    // Apply photo filter
+    // Apply photo filter — client-side for instant UI
     if (activeFilter === 'photos') {
       filtered = filtered.filter((r) => {
         const imgs = safeJsonParse<string[]>(r.images as unknown as string, [])
@@ -1438,37 +1466,13 @@ export function ReviewSection({
       })
     }
 
-    // Apply verified filter
-    if (activeFilter === 'verified') {
+    // Apply verified filter — client-side for instant UI (also sent to API)
+    if (verifiedOnly || activeFilter === 'verified') {
       filtered = filtered.filter((r) => r.isVerified)
     }
 
-    // Client-side sort
-    switch (reviewSort) {
-      case 'highest':
-        filtered.sort((a, b) => b.rating - a.rating)
-        break
-      case 'lowest':
-        filtered.sort((a, b) => a.rating - b.rating)
-        break
-      case 'helpful':
-        filtered.sort((a, b) => (b.helpfulCount || 0) - (a.helpfulCount || 0))
-        break
-      case 'photos':
-        filtered.sort((a, b) => {
-          const aImgs = safeJsonParse<string[]>(a.images as unknown as string, [])
-          const bImgs = safeJsonParse<string[]>(b.images as unknown as string, [])
-          return bImgs.length - aImgs.length
-        })
-        break
-      case 'recent':
-      default:
-        filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        break
-    }
-
     return filtered
-  }, [reviews, starFilter, activeFilter, reviewSort])
+  }, [reviews, starFilter, activeFilter, verifiedOnly])
 
   const hasMoreReviews = reviews.length < reviewTotal
 
@@ -1554,9 +1558,14 @@ export function ReviewSection({
   // Handle filter chip
   const handleFilterChip = (chip: FilterChip) => {
     setActiveFilter(chip)
-    if (chip === 'all' || chip === 'photos' || chip === 'verified') {
+    if (chip === 'verified') {
+      setVerifiedOnly(true)
+      setStarFilter(null)
+    } else if (chip === 'all' || chip === 'photos') {
+      setVerifiedOnly(false)
       setStarFilter(null)
     } else {
+      setVerifiedOnly(false)
       setStarFilter(Number(chip))
     }
   }
@@ -1630,7 +1639,7 @@ export function ReviewSection({
               {activeFilter !== 'all' && (
                 <button
                   onClick={() => handleFilterChip('all')}
-                  className="ml-2 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 underline"
+                  className="ml-2 text-amber-600 hover:text-amber-700 dark:text-amber-400 underline"
                 >
                   Clear filter
                 </button>
@@ -1661,7 +1670,7 @@ export function ReviewSection({
                 onClick={() => handleFilterChip(chip.value)}
                 className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border ${
                   activeFilter === chip.value
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-700'
+                    ? 'bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-700'
                     : 'bg-background text-muted-foreground border-border hover:bg-muted hover:text-foreground'
                 }`}
               >

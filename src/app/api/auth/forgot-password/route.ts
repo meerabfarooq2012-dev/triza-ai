@@ -5,6 +5,8 @@ import { generateResetToken, generateResetExpiry } from '@/lib/auth-middleware';
 import { sendEmailAsync } from '@/lib/email';
 import { passwordResetEmail } from '@/lib/email-templates';
 import { withCsrf } from '@/lib/with-csrf';
+import { validateInput, forgotPasswordSchema } from '@/lib/validation';
+import { getSafeErrorMessage } from '@/lib/error-handler';
 
 export const POST = withCsrf(async (request: NextRequest) => {
   try {
@@ -28,14 +30,17 @@ export const POST = withCsrf(async (request: NextRequest) => {
     }
 
     const body = await request.json();
-    const { email } = body;
 
-    if (!email) {
+    // Validate input with Zod schema
+    const validation = validateInput(forgotPasswordSchema, body);
+    if (!validation.success) {
       return NextResponse.json(
-        { success: false, error: 'Email is required' },
+        { success: false, error: validation.error },
         { status: 400 }
       );
     }
+
+    const { email } = validation.data;
 
     const user = await db.user.findUnique({ where: { email } });
 
@@ -74,7 +79,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
   } catch (error) {
     console.error('Forgot password error:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to process password reset request' },
+      { success: false, error: getSafeErrorMessage(error, 'Failed to process password reset request') },
       { status: 500 }
     );
   }

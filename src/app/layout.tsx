@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "next-themes";
+import { PwaProvider } from "@/components/providers/pwa-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,11 +15,24 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  themeColor: "#d97706",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
+
 export const metadata: Metadata = {
   title: "Marketo - Your Marketplace, Your Way",
   description: "Create your own customizable shop, sell digital & physical products, or offer freelance services — all in one place.",
   keywords: ["Marketo", "marketplace", "e-commerce", "digital products", "freelance", "online shop", "seller"],
   authors: [{ name: "Marketo" }],
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Marketo",
+  },
   openGraph: {
     title: "Marketo - Your Marketplace, Your Way",
     description: "Create your own customizable shop, sell digital & physical products, or offer freelance services.",
@@ -60,6 +74,13 @@ export default function RootLayout({
             `,
           }}
         />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#d97706" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/icon-192x192.png" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/icon-512x512.png" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
@@ -70,7 +91,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <PwaProvider>
+            {children}
+          </PwaProvider>
           <Toaster />
         </ThemeProvider>
       </body>

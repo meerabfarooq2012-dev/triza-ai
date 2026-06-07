@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { authenticateRequest } from '@/lib/auth-middleware';
 import { withCsrf } from '@/lib/with-csrf';
+
 // GET /api/disputes/[id]/messages — List messages for a dispute
 export async function GET(
   request: NextRequest,
@@ -78,24 +78,22 @@ export async function GET(
 }
 
 // POST /api/disputes/[id]/messages — Send a message in a dispute
-export const POST = withCsrf(async (request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }) => {
-  const auth = authenticateRequest(request);
-  if (!auth) {
-    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
-  }
+export const POST = withCsrf(async (
+  request: NextRequest,
+  context?: unknown
+) => {
+  const { params } = context as { params: Promise<{ id: string }> };
   try {
     const { id } = await params;
     const body = await request.json();
-    const { senderRole, content, isInternal } = body;
-    const senderId = auth.userId;
+    const { senderId, senderRole, content, isInternal } = body;
 
     // Validate required fields
-    if (!senderRole || !content) {
+    if (!senderId || !senderRole || !content) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Missing required fields: senderRole, content',
+          error: 'Missing required fields: senderId, senderRole, content',
         },
         { status: 400 }
       );
@@ -227,4 +225,4 @@ export const POST = withCsrf(async (request: NextRequest,
       { status: 500 }
     );
   }
-})
+});

@@ -326,6 +326,7 @@ export function SellerShopSettings() {
           layoutStyle,
           displayStyle,
           customSections,
+          socialLinks: socialLinks.map(({ platform, url }) => ({ platform, url })),
         }),
       })
       const data = await res.json()
@@ -351,7 +352,7 @@ export function SellerShopSettings() {
         <Card className="border-0 shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Link2 className="h-5 w-5 text-emerald-600" />
+              <Link2 className="h-5 w-5 text-amber-600" />
               Your Shop URL
             </CardTitle>
             <CardDescription>
@@ -373,7 +374,7 @@ export function SellerShopSettings() {
       <Card className="border-0 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <ImagePlus className="h-5 w-5 text-emerald-600" />
+            <ImagePlus className="h-5 w-5 text-amber-600" />
             Shop Branding
           </CardTitle>
           <CardDescription>
@@ -387,8 +388,8 @@ export function SellerShopSettings() {
             <div className="flex items-start gap-4">
               <div className="relative">
                 {uploadingLogo ? (
-                  <div className="flex h-24 w-24 items-center justify-center rounded-xl border-2 border-dashed border-emerald-200 bg-emerald-50/50">
-                    <Loader2 className="h-6 w-6 animate-spin text-emerald-500" />
+                  <div className="flex h-24 w-24 items-center justify-center rounded-xl border-2 border-dashed border-amber-200 bg-amber-50/50">
+                    <Loader2 className="h-6 w-6 animate-spin text-amber-500" />
                   </div>
                 ) : logo ? (
                   <div className="group relative h-24 w-24 overflow-hidden rounded-xl border-2 border-border shadow-sm">
@@ -401,7 +402,7 @@ export function SellerShopSettings() {
                       unoptimized
                     />
                     {logo.startsWith('http') && (
-                      <span className="absolute bottom-1 left-1 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-white">
+                      <span className="absolute bottom-1 left-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-gray-900">
                         <Cloud className="h-2.5 w-2.5" />
                       </span>
                     )}
@@ -414,7 +415,7 @@ export function SellerShopSettings() {
                     </button>
                   </div>
                 ) : (
-                  <label className="flex h-24 w-24 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/50 transition-colors hover:border-emerald-300 hover:bg-emerald-50/50">
+                  <label className="flex h-24 w-24 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/50 transition-colors hover:border-amber-300 hover:bg-amber-50/50">
                     <div className="flex flex-col items-center gap-1">
                       <ImagePlus className="h-6 w-6 text-muted-foreground" />
                       <span className="text-[10px] text-muted-foreground">Upload</span>
@@ -456,10 +457,10 @@ export function SellerShopSettings() {
             <Label>Shop Banner</Label>
             <div className="space-y-2">
               {uploadingBanner ? (
-                <div className="flex h-32 items-center justify-center rounded-xl border-2 border-dashed border-emerald-200 bg-emerald-50/50">
+                <div className="flex h-32 items-center justify-center rounded-xl border-2 border-dashed border-amber-200 bg-amber-50/50">
                   <div className="flex flex-col items-center gap-2">
-                    <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
-                    <p className="text-sm font-medium text-emerald-600">Uploading...</p>
+                    <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+                    <p className="text-sm font-medium text-amber-600">Uploading...</p>
                   </div>
                 </div>
               ) : banner ? (
@@ -473,7 +474,7 @@ export function SellerShopSettings() {
                     unoptimized
                   />
                   {banner.startsWith('http') && (
-                    <span className="absolute bottom-2 left-2 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-white">
+                    <span className="absolute bottom-2 left-2 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-gray-900">
                       <Cloud className="h-3 w-3" />
                     </span>
                   )}
@@ -486,7 +487,7 @@ export function SellerShopSettings() {
                   </button>
                 </div>
               ) : (
-                <label className="flex h-32 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/50 transition-colors hover:border-emerald-300 hover:bg-emerald-50/50">
+                <label className="flex h-32 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/50 transition-colors hover:border-amber-300 hover:bg-amber-50/50">
                   <div className="flex flex-col items-center gap-2">
                     <ImagePlus className="h-8 w-8 text-muted-foreground" />
                     <div className="text-center">
@@ -523,7 +524,7 @@ export function SellerShopSettings() {
       <Card className="border-0 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Store className="h-5 w-5 text-emerald-600" />
+            <Store className="h-5 w-5 text-amber-600" />
             Shop Information
           </CardTitle>
           <CardDescription>
@@ -567,7 +568,7 @@ export function SellerShopSettings() {
       <Card className="border-0 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Phone className="h-5 w-5 text-emerald-600" />
+            <Phone className="h-5 w-5 text-amber-600" />
             Contact Information
           </CardTitle>
         </CardHeader>
@@ -626,7 +627,7 @@ export function SellerShopSettings() {
                               key={c.code}
                               type="button"
                               className={`flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent transition-colors ${
-                                phoneCountryCode === c.dial_code ? 'bg-emerald-50 text-emerald-700' : ''
+                                phoneCountryCode === c.dial_code ? 'bg-amber-50 text-amber-700' : ''
                               }`}
                               onClick={() => {
                                 setPhoneCountryCode(c.dial_code)
@@ -686,7 +687,7 @@ export function SellerShopSettings() {
       <Card className="border-0 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Palette className="h-5 w-5 text-emerald-600" />
+            <Palette className="h-5 w-5 text-amber-600" />
             Color Theme
           </CardTitle>
           <CardDescription>
@@ -705,7 +706,7 @@ export function SellerShopSettings() {
                 <div
                   className={`flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all ${
                     primaryColor === preset.primary
-                      ? 'border-emerald-600 scale-110 shadow-md'
+                      ? 'border-amber-600 scale-110 shadow-md'
                       : 'border-transparent hover:border-muted-foreground/30'
                   }`}
                   style={{
@@ -818,7 +819,7 @@ export function SellerShopSettings() {
         <Card className="border-0 shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Layout className="h-5 w-5 text-emerald-600" />
+              <Layout className="h-5 w-5 text-amber-600" />
               Layout Style
             </CardTitle>
           </CardHeader>
@@ -828,7 +829,7 @@ export function SellerShopSettings() {
                 key={value}
                 className={`flex w-full items-center gap-3 rounded-xl border-2 p-3 transition-all ${
                   layoutStyle === value
-                    ? 'border-emerald-500 bg-emerald-50'
+                    ? 'border-amber-500 bg-amber-50'
                     : 'border-border hover:border-muted-foreground/30'
                 }`}
                 onClick={() => setLayoutStyle(value as LayoutStyle)}
@@ -853,7 +854,7 @@ export function SellerShopSettings() {
                           : 'h-4 w-4'
                       } ${
                         layoutStyle === value
-                          ? 'bg-emerald-400'
+                          ? 'bg-amber-400'
                           : 'bg-gray-300'
                       }`}
                     />
@@ -867,7 +868,7 @@ export function SellerShopSettings() {
         <Card className="border-0 shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Type className="h-5 w-5 text-emerald-600" />
+              <Type className="h-5 w-5 text-amber-600" />
               Display Style
             </CardTitle>
           </CardHeader>
@@ -877,7 +878,7 @@ export function SellerShopSettings() {
                 key={value}
                 className={`flex w-full items-center gap-3 rounded-xl border-2 p-3 transition-all ${
                   displayStyle === value
-                    ? 'border-emerald-500 bg-emerald-50'
+                    ? 'border-amber-500 bg-amber-50'
                     : 'border-border hover:border-muted-foreground/30'
                 }`}
                 onClick={() => setDisplayStyle(value as DisplayStyle)}
@@ -888,17 +889,17 @@ export function SellerShopSettings() {
                 <div className="flex flex-col gap-0.5">
                   <div
                     className={`h-1.5 w-8 rounded-full ${
-                      displayStyle === value ? 'bg-emerald-400' : 'bg-gray-300'
+                      displayStyle === value ? 'bg-amber-400' : 'bg-gray-300'
                     }`}
                   />
                   <div
                     className={`h-1 w-6 rounded-full ${
-                      displayStyle === value ? 'bg-emerald-300' : 'bg-gray-200'
+                      displayStyle === value ? 'bg-amber-300' : 'bg-gray-200'
                     }`}
                   />
                   <div
                     className={`h-0.5 w-4 rounded-full ${
-                      displayStyle === value ? 'bg-emerald-200' : 'bg-gray-100'
+                      displayStyle === value ? 'bg-amber-200' : 'bg-gray-100'
                     }`}
                   />
                 </div>
@@ -912,7 +913,7 @@ export function SellerShopSettings() {
       <Card className="border-0 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Layout className="h-5 w-5 text-emerald-600" />
+            <Layout className="h-5 w-5 text-amber-600" />
             Custom Sections
           </CardTitle>
           <CardDescription>
@@ -1024,7 +1025,7 @@ export function SellerShopSettings() {
       <Card className="border-0 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Link2 className="h-5 w-5 text-emerald-600" />
+            <Link2 className="h-5 w-5 text-amber-600" />
             Social Links
           </CardTitle>
           <CardDescription>
@@ -1149,7 +1150,7 @@ export function SellerShopSettings() {
           Reset Changes
         </Button>
         <Button
-          className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+          className="gap-2 bg-amber-600 hover:bg-amber-700"
           onClick={handleSave}
           disabled={saving}
         >

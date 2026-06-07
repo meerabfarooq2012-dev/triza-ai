@@ -67,7 +67,7 @@ interface CompareProduct {
 const typeBadgeVariant: Record<ProductType, string> = {
   digital: 'bg-amber-100 text-amber-700',
   physical: 'bg-orange-100 text-orange-700',
-  freelance: 'bg-emerald-100 text-emerald-700',
+  freelance: 'bg-amber-100 text-amber-700',
 }
 
 function parseImages(images: string): string[] {
@@ -231,7 +231,7 @@ export function ComparisonView() {
               {(() => {
                 const effectivePrice = p.hasVariants && p.variantPriceMin != null ? p.variantPriceMin : p.price
                 return effectivePrice === lowestPrice && products.length > 1 ? (
-                  <Badge className="absolute top-2 left-2 bg-emerald-500 text-white text-[10px] font-bold border-0 gap-0.5">
+                  <Badge className="absolute top-2 left-2 bg-amber-500 text-gray-900 text-[10px] font-bold border-0 gap-0.5">
                     <Tag className="h-2.5 w-2.5" />
                     Best Price
                   </Badge>
@@ -272,7 +272,7 @@ export function ComparisonView() {
           {(() => {
             const effectivePrice = p.hasVariants && p.variantPriceMin != null ? p.variantPriceMin : p.price
             return effectivePrice === lowestPrice && products.length > 1 ? (
-              <span className="inline-flex items-center gap-0.5 text-[10px] text-emerald-600 font-medium mt-0.5">
+              <span className="inline-flex items-center gap-0.5 text-[10px] text-amber-600 font-medium mt-0.5">
                 <Tag className="h-2.5 w-2.5" /> Lowest price
               </span>
             ) : null
@@ -325,14 +325,14 @@ export function ComparisonView() {
       render: (p) => {
         if (p.type === 'digital') {
           return (
-            <span className="inline-flex items-center gap-1 text-xs text-emerald-600 font-medium">
+            <span className="inline-flex items-center gap-1 text-xs text-amber-600 font-medium">
               <CheckCircle2 className="h-3.5 w-3.5" /> Available
             </span>
           )
         }
         if (p.type === 'freelance') {
           return (
-            <span className="inline-flex items-center gap-1 text-xs text-emerald-600 font-medium">
+            <span className="inline-flex items-center gap-1 text-xs text-amber-600 font-medium">
               <CheckCircle2 className="h-3.5 w-3.5" /> Open for hire
             </span>
           )
@@ -342,9 +342,9 @@ export function ComparisonView() {
             <span className="inline-flex items-center gap-1 text-xs font-medium">
               <CheckCircle2 className={cn(
                 'h-3.5 w-3.5',
-                p.stock <= 5 ? 'text-amber-500' : 'text-emerald-600'
+                p.stock <= 5 ? 'text-amber-500' : 'text-amber-600'
               )} />
-              <span className={p.stock <= 5 ? 'text-amber-600' : 'text-emerald-600'}>
+              <span className={p.stock <= 5 ? 'text-amber-600' : 'text-amber-600'}>
                 {p.stock <= 5 ? `Only ${p.stock} left` : 'In Stock'}
               </span>
             </span>
@@ -361,7 +361,7 @@ export function ComparisonView() {
       render: (p) => (
         <span className="text-sm text-center">
           {p.hasVariants ? (
-            <span className="text-emerald-600 font-medium">Yes ({p.variantsCount} options)</span>
+            <span className="text-amber-600 font-medium">Yes ({p.variantsCount} options)</span>
           ) : (
             <span className="text-muted-foreground">No</span>
           )}

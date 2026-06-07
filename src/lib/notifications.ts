@@ -1,4 +1,12 @@
 import { db } from '@/lib/db'
+import { sendEmailAsync } from '@/lib/email'
+import {
+  orderConfirmationBuyerEmail,
+  newOrderSellerEmail,
+  orderStatusUpdateEmail,
+  paymentReceivedSellerEmail,
+  type OrderItem,
+} from '@/lib/email-templates'
 
 // ─── Notification Creator ────────────────────────────────────────────────
 // Helper to create notifications and push them via Socket.io
@@ -65,27 +73,18 @@ async function pushNotificationSocket(
     createdAt: string
   }
 ) {
+  // Skip socket push on Vercel — no mini-service available
+  // Notifications are still persisted in DB and available via REST API polling
+  if (process.env.VERCEL || process.env.VERCEL_ENV) {
+    return
+  }
+
   try {
     // Use the notification service's HTTP push endpoint (port 3005)
     // The service will relay the notification to connected Socket.io clients
-    // Now requires JWT Bearer token for authentication
-
-    // Sign a short-lived service token using the same JWT secret
-    // The notification service verifies this token
-    const jwt = await import('jsonwebtoken')
-    const JWT_SECRET = process.env.JWT_SECRET || 'marketo-dev-secret-change-in-production'
-    const serviceToken = jwt.sign(
-      { userId: 'service', email: 'system', role: 'service' },
-      JWT_SECRET,
-      { expiresIn: '1m' }
-    )
-
     const res = await fetch(`http://localhost:3005/push`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${serviceToken}`,
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, notification }),
     })
 
@@ -98,9 +97,64 @@ async function pushNotificationSocket(
   }
 }
 
+// ─── Email Helper ──────────────────────────────────────────────────────
+// Fetches user email/name and checks emailVerified before sending
+
+interface UserEmailInfo {
+  email: string
+  name: string
+}
+
+/**
+ * Get a user's email info if their email is verified.
+ * Returns null if the user doesn't exist, has no email, or email is not verified.
+ */
+async function getVerifiedUserEmail(userId: string): Promise<UserEmailInfo | null> {
+  try {
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: { email: true, name: true, emailVerified: true },
+    })
+
+    if (!user?.email || !user.emailVerified) {
+      return null
+    }
+
+    return { email: user.email, name: user.name }
+  } catch (error) {
+    console.error('[getVerifiedUserEmail] Error:', error)
+    return null
+  }
+}
+
+/**
+ * Fetch order items as OrderItem[] for email templates
+ */
+async function getOrderItems(orderId: string): Promise<OrderItem[]> {
+  try {
+    const items = await db.orderItem.findMany({
+      where: { orderId },
+      include: {
+        product: { select: { name: true } },
+      },
+    })
+
+    return items.map((item) => ({
+      name: item.product?.name || 'Unknown Product',
+      quantity: item.quantity,
+      price: item.price,
+      type: item.type,
+    }))
+  } catch (error) {
+    console.error('[getOrderItems] Error:', error)
+    return []
+  }
+}
+
 // ─── Notification Templates ──────────────────────────────────────────────
 
 export async function notifyOrderCreated(buyerId: string, sellerId: string, orderId: string, totalAmount: number) {
+  // Create in-app notifications for both buyer and seller
   await Promise.all([
     createNotification({
       userId: buyerId,
@@ -123,6 +177,59 @@ export async function notifyOrderCreated(buyerId: string, sellerId: string, orde
       metadata: { orderId },
     }),
   ])
+
+  // ── Send emails (fire-and-forget) ──────────────────────────────────
+  // Fetch all needed data in parallel
+  const [buyerInfo, sellerInfo, orderItems, order] = await Promise.all([
+    getVerifiedUserEmail(buyerId),
+    getVerifiedUserEmail(sellerId),
+    getOrderItems(orderId),
+    db.order.findUnique({
+      where: { id: orderId },
+      select: {
+        paymentMethod: true,
+        platformFee: true,
+        totalAmount: true,
+      },
+    }),
+  ])
+
+  const orderNumber = orderId.slice(-8)
+  const platformFee = order?.platformFee ?? 0
+  const sellerPayout = Math.round((totalAmount - platformFee) * 100) / 100
+
+  // Send order confirmation email to buyer
+  if (buyerInfo) {
+    sendEmailAsync({
+      to: buyerInfo.email,
+      subject: `✅ Order Confirmation #${orderNumber} — Marketo`,
+      html: orderConfirmationBuyerEmail({
+        orderNumber,
+        buyerName: buyerInfo.name,
+        items: orderItems,
+        totalAmount,
+        sellerName: sellerInfo?.name || 'Seller',
+        paymentMethod: order?.paymentMethod || 'card',
+      }),
+    })
+  }
+
+  // Send new order notification email to seller
+  if (sellerInfo) {
+    sendEmailAsync({
+      to: sellerInfo.email,
+      subject: `🎉 New Order #${orderNumber} — Marketo`,
+      html: newOrderSellerEmail({
+        orderNumber,
+        sellerName: sellerInfo.name,
+        buyerName: buyerInfo?.name || 'Buyer',
+        items: orderItems,
+        totalAmount,
+        platformFee,
+        sellerPayout,
+      }),
+    })
+  }
 }
 
 export async function notifyOrderStatusUpdate(userId: string, orderId: string, status: string) {
@@ -162,6 +269,7 @@ export async function notifyOrderStatusUpdate(userId: string, orderId: string, s
   const info = statusMessages[status]
   if (!info) return
 
+  // Create in-app notification
   await createNotification({
     userId,
     title: info.title,
@@ -172,9 +280,46 @@ export async function notifyOrderStatusUpdate(userId: string, orderId: string, s
     priority: info.priority,
     metadata: { orderId, status },
   })
+
+  // ── Send email (fire-and-forget) ───────────────────────────────────
+  const [userInfo, orderItems, order] = await Promise.all([
+    getVerifiedUserEmail(userId),
+    getOrderItems(orderId),
+    db.order.findUnique({
+      where: { id: orderId },
+      select: {
+        trackingNo: true,
+        totalAmount: true,
+      },
+    }),
+  ])
+
+  if (userInfo) {
+    const statusEmoji: Record<string, string> = {
+      processing: '⏳',
+      shipped: '🚚',
+      delivered: '📦',
+      cancelled: '❌',
+      refunded: '💰',
+    }
+
+    sendEmailAsync({
+      to: userInfo.email,
+      subject: `${statusEmoji[status] || '📋'} Your Order #${orderId.slice(-8)} — ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+      html: orderStatusUpdateEmail({
+        orderNumber: orderId.slice(-8),
+        userName: userInfo.name,
+        newStatus: status,
+        items: orderItems,
+        trackingNumber: order?.trackingNo || undefined,
+        totalAmount: order?.totalAmount ?? 0,
+      }),
+    })
+  }
 }
 
 export async function notifyPaymentReceived(sellerId: string, orderId: string, amount: number) {
+  // Create in-app notification
   await createNotification({
     userId: sellerId,
     title: 'Payment Received! 💳',
@@ -185,6 +330,39 @@ export async function notifyPaymentReceived(sellerId: string, orderId: string, a
     priority: 'high',
     metadata: { orderId, amount },
   })
+
+  // ── Send email (fire-and-forget) ───────────────────────────────────
+  const [sellerInfo, order] = await Promise.all([
+    getVerifiedUserEmail(sellerId),
+    db.order.findUnique({
+      where: { id: orderId },
+      select: {
+        paymentMethod: true,
+        platformFee: true,
+        totalAmount: true,
+        buyer: { select: { name: true } },
+      },
+    }),
+  ])
+
+  if (sellerInfo && order) {
+    const platformFee = order.platformFee ?? 0
+    const sellerPayout = Math.round((amount - platformFee) * 100) / 100
+
+    sendEmailAsync({
+      to: sellerInfo.email,
+      subject: `💳 Payment Received for Order #${orderId.slice(-8)} — Marketo`,
+      html: paymentReceivedSellerEmail({
+        sellerName: sellerInfo.name,
+        amount,
+        orderNumber: orderId.slice(-8),
+        buyerName: order.buyer?.name || 'Buyer',
+        paymentMethod: order.paymentMethod || 'card',
+        platformFee,
+        sellerPayout,
+      }),
+    })
+  }
 }
 
 export async function notifyPaymentReleased(sellerId: string, orderId: string, amount: number) {

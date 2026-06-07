@@ -22,7 +22,7 @@ const features = [
     icon: <ShieldCheck className="h-6 w-6" />,
     title: 'Escrow Payments',
     description: 'Funds held securely in escrow until you confirm delivery. Supports Easypaisa, JazzCash, Payoneer, and Wise.',
-    gradient: 'from-emerald-500 to-teal-600',
+    gradient: 'from-amber-500 to-yellow-600',
   },
   {
     icon: <Package className="h-6 w-6" />,
@@ -40,7 +40,7 @@ const features = [
     icon: <Truck className="h-6 w-6" />,
     title: 'Order Tracking',
     description: 'Real-time payment status tracking from initiation through escrow to release. Full transparency.',
-    gradient: 'from-cyan-500 to-sky-600',
+    gradient: 'from-orange-500 to-sky-600',
   },
   {
     icon: <BarChart3 className="h-6 w-6" />,

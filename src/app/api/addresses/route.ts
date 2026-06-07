@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db'
-import { authenticateRequest } from '@/lib/auth-middleware';
-
+import { db } from '@/lib/db';
 import { withCsrf } from '@/lib/with-csrf';
+
 // GET — List delivery addresses for a user (query param: userId). Sort default first.
 export async function GET(request: NextRequest) {
   try {
@@ -43,11 +42,6 @@ export async function GET(request: NextRequest) {
 // POST — Create a new delivery address
 // If isDefault is true, unset any existing default addresses for that user first
 export const POST = withCsrf(async (request: NextRequest) => {
-  const auth = authenticateRequest(request);
-  if (!auth) {
-    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
-  }
-  const userId = auth.userId;
   try {
     const body = await request.json();
     const {
@@ -142,4 +136,4 @@ export const POST = withCsrf(async (request: NextRequest) => {
       { status: 500 }
     );
   }
-})
+});

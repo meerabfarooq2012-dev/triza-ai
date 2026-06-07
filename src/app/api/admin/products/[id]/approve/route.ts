@@ -3,9 +3,10 @@ import { db } from '@/lib/db';
 import { authenticateRequest } from '@/lib/auth-middleware';
 import { createAuditLog } from '@/lib/audit-log';
 
-import { withCsrf } from '@/lib/with-csrf';
-export const PATCH = withCsrf(async (request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }) => {
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     // Authenticate and verify admin
     const payload = authenticateRequest(request);
@@ -138,4 +139,4 @@ export const PATCH = withCsrf(async (request: NextRequest,
       { status: 500 }
     );
   }
-})
+}

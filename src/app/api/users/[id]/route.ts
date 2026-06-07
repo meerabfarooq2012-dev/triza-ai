@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { authenticateRequestWithSession } from '@/lib/auth-middleware';
 import { rateLimit, getRateLimitKey, apiRateLimit } from '@/lib/rate-limit';
-
 import { withCsrf } from '@/lib/with-csrf';
+
 // GET /api/users/[id] — Get user profile
 export async function GET(
   request: NextRequest,
@@ -54,8 +54,11 @@ export async function GET(
 }
 
 // PATCH /api/users/[id] — Update user profile
-export const PATCH = withCsrf(async (request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }) => {
+export const PATCH = withCsrf(async (
+  request: NextRequest,
+  context?: unknown
+) => {
+  const { params } = context as { params: Promise<{ id: string }> };
   try {
     const { id } = await params;
 
@@ -135,4 +138,4 @@ export const PATCH = withCsrf(async (request: NextRequest,
       { status: 500 }
     );
   }
-})
+});

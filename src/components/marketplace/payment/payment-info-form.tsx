@@ -67,18 +67,18 @@ interface MethodConfig {
 }
 
 const BUYER_METHODS: MethodConfig[] = [
-  { id: 'easypaisa', name: 'Easypaisa', icon: Wallet, color: 'text-emerald-600', bgColor: 'bg-emerald-50', description: 'Mobile wallet payment' },
+  { id: 'easypaisa', name: 'Easypaisa', icon: Wallet, color: 'text-amber-600', bgColor: 'bg-amber-50', description: 'Mobile wallet payment' },
   { id: 'jazzcash', name: 'JazzCash', icon: Wallet, color: 'text-red-600', bgColor: 'bg-red-50', description: 'Mobile wallet payment' },
   { id: 'card', name: 'Debit/Credit Card', icon: CreditCard, color: 'text-amber-600', bgColor: 'bg-amber-50', description: 'Visa, Mastercard, UnionPay' },
   { id: 'payoneer', name: 'Payoneer', icon: Globe, color: 'text-blue-600', bgColor: 'bg-blue-50', description: 'Global payment platform' },
-  { id: 'wise', name: 'Wise', icon: Mail, color: 'text-teal-600', bgColor: 'bg-teal-50', description: 'International transfer' },
+  { id: 'wise', name: 'Wise', icon: Mail, color: 'text-yellow-600', bgColor: 'bg-yellow-50', description: 'International transfer' },
 ]
 
 const SELLER_METHODS: MethodConfig[] = [
-  { id: 'easypaisa', name: 'Easypaisa', icon: Wallet, color: 'text-emerald-600', bgColor: 'bg-emerald-50', description: 'Mobile wallet' },
+  { id: 'easypaisa', name: 'Easypaisa', icon: Wallet, color: 'text-amber-600', bgColor: 'bg-amber-50', description: 'Mobile wallet' },
   { id: 'jazzcash', name: 'JazzCash', icon: Wallet, color: 'text-red-600', bgColor: 'bg-red-50', description: 'Mobile wallet' },
   { id: 'payoneer', name: 'Payoneer', icon: Globe, color: 'text-blue-600', bgColor: 'bg-blue-50', description: 'Global payment platform' },
-  { id: 'wise', name: 'Wise', icon: Mail, color: 'text-teal-600', bgColor: 'bg-teal-50', description: 'International transfer' },
+  { id: 'wise', name: 'Wise', icon: Mail, color: 'text-yellow-600', bgColor: 'bg-yellow-50', description: 'International transfer' },
   { id: 'bank_transfer', name: 'Bank Transfer', icon: Building2, color: 'text-amber-600', bgColor: 'bg-amber-50', description: 'Direct bank transfer' },
 ]
 
@@ -458,19 +458,19 @@ export function PaymentInfoForm({ type, userId }: PaymentInfoFormProps) {
         <h3 className="text-lg font-semibold flex items-center gap-2">
           {type === 'buyer' ? (
             <>
-              <CreditCard className="h-5 w-5 text-emerald-600" />
+              <CreditCard className="h-5 w-5 text-amber-600" />
               Payment Methods
             </>
           ) : (
             <>
-              <Wallet className="h-5 w-5 text-emerald-600" />
+              <Wallet className="h-5 w-5 text-amber-600" />
               Receiving Methods
             </>
           )}
         </h3>
         <Button
           size="sm"
-          className="bg-emerald-600 hover:bg-emerald-700"
+          className="bg-amber-600 hover:bg-amber-700"
           onClick={() => {
             setShowForm((prev) => !prev)
             if (!showForm) {
@@ -540,8 +540,8 @@ export function PaymentInfoForm({ type, userId }: PaymentInfoFormProps) {
                               {pm.method.replace('_', ' ')}
                             </Badge>
                             {pm.isDefault && (
-                              <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 text-[10px] px-1.5 py-0 shrink-0">
-                                <Star className="h-2.5 w-2.5 mr-0.5 fill-emerald-600 text-emerald-600" />
+                              <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 text-[10px] px-1.5 py-0 shrink-0">
+                                <Star className="h-2.5 w-2.5 mr-0.5 fill-amber-600 text-amber-600" />
                                 Default
                               </Badge>
                             )}
@@ -571,7 +571,7 @@ export function PaymentInfoForm({ type, userId }: PaymentInfoFormProps) {
                             </Button>
                           ) : (
                             <div className="h-8 w-8 flex items-center justify-center">
-                              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                              <CheckCircle2 className="h-4 w-4 text-amber-600" />
                             </div>
                           )}
 
@@ -635,7 +635,7 @@ export function PaymentInfoForm({ type, userId }: PaymentInfoFormProps) {
             <Card className="border-0 shadow-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <Plus className="h-4 w-4 text-emerald-600" />
+                  <Plus className="h-4 w-4 text-amber-600" />
                   Add {type === 'buyer' ? 'Payment' : 'Receiving'} Method
                 </CardTitle>
               </CardHeader>
@@ -656,7 +656,7 @@ export function PaymentInfoForm({ type, userId }: PaymentInfoFormProps) {
                         key={m.id}
                         className={`flex items-center gap-2.5 rounded-lg border-2 p-3 cursor-pointer transition-all ${
                           selectedMethod === m.id
-                            ? 'border-emerald-400 bg-emerald-50/50 shadow-sm'
+                            ? 'border-amber-400 bg-amber-50/50 shadow-sm'
                             : 'border-transparent bg-muted/30 hover:border-muted-foreground/20'
                         }`}
                       >
@@ -921,7 +921,7 @@ export function PaymentInfoForm({ type, userId }: PaymentInfoFormProps) {
                     id="pi-default"
                     checked={isDefault}
                     onCheckedChange={(checked) => setIsDefault(checked === true)}
-                    className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+                    className="data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600"
                   />
                   <Label htmlFor="pi-default" className="text-sm cursor-pointer">
                     Set as default {type === 'buyer' ? 'payment' : 'receiving'} method
@@ -929,8 +929,8 @@ export function PaymentInfoForm({ type, userId }: PaymentInfoFormProps) {
                 </div>
 
                 {/* Security note */}
-                <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3">
-                  <p className="text-xs text-emerald-700">
+                <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
+                  <p className="text-xs text-amber-700">
                     🔒 Your payment details are securely stored. Card numbers are never saved in full — only the last 4 digits are kept.
                   </p>
                 </div>
@@ -948,7 +948,7 @@ export function PaymentInfoForm({ type, userId }: PaymentInfoFormProps) {
                     Cancel
                   </Button>
                   <Button
-                    className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                    className="flex-1 bg-amber-600 hover:bg-amber-700"
                     onClick={handleSave}
                     disabled={saving}
                   >

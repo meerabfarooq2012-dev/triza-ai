@@ -1,20 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendEmail, isEmailConfigured } from '@/lib/email';
-import { rateLimit, getRateLimitKey, emailRateLimit } from '@/lib/rate-limit';
-
+import { authenticateRequest } from '@/lib/auth-middleware';
+import { rateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import { withCsrf } from '@/lib/with-csrf';
-export const POST = withCsrf(async (request: NextRequest) => {
-  // Rate limiting — email is costly
-  const rlKey = getRateLimitKey(request);
-  const rlResult = rateLimit({ ...emailRateLimit, key: `email-send:${rlKey}` });
-  if (!rlResult.success) {
-    return NextResponse.json(
-      { success: false, error: 'Too many requests. Please try again later.' },
-      { status: 429 }
-    );
-  }
 
+export const POST = withCsrf(async (request: NextRequest) => {
   try {
+    // Require JWT admin authentication
+    const auth = authenticateRequest(request);
+    if (!auth) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    if (auth.role !== 'admin') {
+      return NextResponse.json(
+        { success: false, error: 'Admin access required' },
+        { status: 403 }
+      );
+    }
+
+    // Rate limit: 5 requests per minute per IP
+    const rateLimitKey = getRateLimitKey(request);
+    const rl = rateLimit({ windowMs: 60 * 1000, maxRequests: 5, key: `email-send:${rateLimitKey}` });
+    if (!rl.success) {
+      return NextResponse.json(
+        { success: false, error: 'Too many requests. Please try again later.' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetTime - Date.now()) / 1000)) } }
+      );
+    }
+
     if (!isEmailConfigured()) {
       return NextResponse.json(
         { success: false, error: 'Email service is not configured. Set RESEND_API_KEY environment variable.' },
@@ -63,4 +79,4 @@ export const POST = withCsrf(async (request: NextRequest) => {
       { status: 500 }
     );
   }
-})
+});

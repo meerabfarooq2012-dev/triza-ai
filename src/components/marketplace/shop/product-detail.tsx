@@ -36,6 +36,7 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
+import { ProductDetailSkeleton } from '@/components/marketplace/shared/loading-skeletons'
 import {
   Dialog,
   DialogContent,
@@ -68,6 +69,7 @@ import { countryCodeData } from '@/lib/country-codes'
 import { VariantSelector } from '@/components/marketplace/shared/variant-selector'
 import { ProductRecommendations } from '@/components/marketplace/shared/product-recommendations'
 import { ReportProductDialog } from '@/components/marketplace/shared/report-product-dialog'
+import { ImageLightbox } from '@/components/marketplace/shared/image-lightbox'
 import type { Product, CartItem, ProductVariantOption, ProductVariant, FlashSale, Wishlist } from '@/types'
 
 function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
@@ -104,6 +106,7 @@ export default function ProductDetail() {
   const [isFavorited, setIsFavorited] = useState(false)
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
   const [reportDialogOpen, setReportDialogOpen] = useState(false)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
 
   // Wishlist state
   const [wishlists, setWishlists] = useState<Wishlist[]>([])
@@ -343,16 +346,7 @@ export default function ProductDetail() {
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid md:grid-cols-2 gap-8">
-          <Skeleton className="aspect-square rounded-xl" />
-          <div className="space-y-4">
-            <Skeleton className="h-8 w-3/4" />
-            <Skeleton className="h-6 w-1/4" />
-            <Skeleton className="h-4 w-1/2" />
-            <Skeleton className="h-32 w-full" />
-            <Skeleton className="h-12 w-full" />
-          </div>
-        </div>
+        <ProductDetailSkeleton />
       </div>
     )
   }
@@ -422,8 +416,9 @@ export default function ProductDetail() {
         {/* Image Gallery */}
         <div className="space-y-3">
           <motion.div
-            className="aspect-square rounded-xl overflow-hidden bg-muted relative"
+            className="aspect-square rounded-xl overflow-hidden bg-muted relative cursor-zoom-in group"
             layoutId={`product-image-${productId}`}
+            onClick={() => galleryImages.length > 0 && setLightboxOpen(true)}
           >
             <AnimatePresence mode="wait">
               <motion.div
@@ -438,7 +433,7 @@ export default function ProductDetail() {
                   src={galleryImages[selectedImage] || '/placeholder.png'}
                   alt={product.name}
                   fill
-                  className="object-cover"
+                  className="object-cover transition-transform duration-300 group-hover:scale-105"
                   sizes="(max-width: 768px) 100vw, 50vw"
                   priority
                 />
@@ -454,6 +449,14 @@ export default function ProductDetail() {
               <Badge className="absolute top-3 left-3 bg-red-500 text-white">
                 -{discount}%
               </Badge>
+            )}
+            {/* Zoom hint overlay */}
+            {galleryImages.length > 0 && (
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 flex items-center justify-center">
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/50 text-white rounded-full p-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-zoom-in"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/><line x1="11" x2="11" y1="8" y2="14"/><line x1="8" x2="14" y1="11" y2="11"/></svg>
+                </div>
+              </div>
             )}
           </motion.div>
 
@@ -619,12 +622,12 @@ export default function ProductDetail() {
                 <span>
                   {product.hasVariants && selectedVariantId
                     ? effectiveStock > 0
-                      ? <span className="text-green-600 font-medium">{effectiveStock} in stock</span>
+                      ? <span className="text-amber-600 font-medium">{effectiveStock} in stock</span>
                       : <span className="text-red-600 font-medium">Out of stock</span>
                     : product.hasVariants
-                      ? <span className="text-emerald-600 font-medium">Select options for stock</span>
+                      ? <span className="text-amber-600 font-medium">Select options for stock</span>
                       : product.stock > 0
-                        ? <span className="text-green-600 font-medium">{product.stock} in stock</span>
+                        ? <span className="text-amber-600 font-medium">{product.stock} in stock</span>
                         : <span className="text-red-600 font-medium">Out of stock</span>
                   }
                 </span>
@@ -647,7 +650,7 @@ export default function ProductDetail() {
               )}
               <div className="flex items-center gap-2 text-sm">
                 <Zap size={16} className="text-yellow-500" />
-                <span className="text-green-600 font-medium">
+                <span className="text-amber-600 font-medium">
                   Instant delivery after purchase
                 </span>
               </div>
@@ -917,22 +920,22 @@ export default function ProductDetail() {
           {/* Trust badges */}
           <div className="grid grid-cols-2 gap-3">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <ShieldCheck size={14} className="text-green-500" />
+              <ShieldCheck size={14} className="text-amber-500" />
               <span>Secure Payment</span>
             </div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <CheckCircle size={14} className="text-green-500" />
+              <CheckCircle size={14} className="text-amber-500" />
               <span>Quality Guaranteed</span>
             </div>
             {product.type === 'physical' && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Truck size={14} className="text-green-500" />
+                <Truck size={14} className="text-amber-500" />
                 <span>Fast Shipping</span>
               </div>
             )}
             {product.type === 'digital' && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Download size={14} className="text-green-500" />
+                <Download size={14} className="text-amber-500" />
                 <span>Instant Download</span>
               </div>
             )}
@@ -981,6 +984,16 @@ export default function ProductDetail() {
         onOpenChange={setReportDialogOpen}
         productId={product.id}
         productName={product.name}
+      />
+
+      {/* Image Lightbox — key remounts when lightbox opens so state resets */}
+      <ImageLightbox
+        key={lightboxOpen ? `lb-${selectedImage}` : 'lb-closed'}
+        images={galleryImages}
+        initialIndex={selectedImage}
+        open={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+        alt={product.name}
       />
 
       {/* Product Recommendations — You Might Also Like */}

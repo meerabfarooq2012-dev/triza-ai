@@ -1,20 +1,27 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { rawSubcategories, toSlug as gigToSlug } from '@/lib/gig-subcategories';
 import { rawPhysicalSubcategories, toSlug as physicalToSlug } from '@/lib/physical-subcategories';
 import { rawDigitalSubcategories, toSlug as digitalToSlug } from '@/lib/digital-subcategories';
-
+import { authenticateRequest } from '@/lib/auth-middleware';
 import { withCsrf } from '@/lib/with-csrf';
-// Fast bulk seed using Prisma createMany - works on Vercel without timeout
-// Usage: POST /api/categories/bulk-seed?key=marketo-setup-2024&step=digital|physical|gigs|all
 
-export const POST = withCsrf(async (request: Request) => {
+// Fast bulk seed using Prisma createMany - works on Vercel without timeout
+// Usage: POST /api/categories/bulk-seed?step=digital|physical|gigs|all
+// Requires JWT admin authentication
+
+export const POST = withCsrf(async (request: NextRequest) => {
   try {
-    const { searchParams } = new URL(request.url);
-    const key = searchParams.get('key');
-    if (key !== 'marketo-setup-2024') {
-      return NextResponse.json({ error: 'Invalid key' }, { status: 403 });
+    // Require JWT admin authentication
+    const auth = authenticateRequest(request);
+    if (!auth) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
+    if (auth.role !== 'admin') {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(request.url);
 
     const step = searchParams.get('step') || 'all';
 
@@ -138,9 +145,9 @@ export const POST = withCsrf(async (request: Request) => {
     return NextResponse.json(
       {
         success: false,
-        error: 'Failed to bulk seed categories. Please check server logs for details.',
+        error: error instanceof Error ? error.message : 'Failed to bulk seed categories',
       },
       { status: 500 }
     );
   }
-})
+});

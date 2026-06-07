@@ -54,4 +54,8 @@ server.log
 # Skills directory
 /skills/.env
 db/*.db
+# Ignore PNG images except brand assets needed for PWA/favicon
 *.png
+!public/logo.png
+!public/icon-*.png
+!public/apple-touch-icon.png

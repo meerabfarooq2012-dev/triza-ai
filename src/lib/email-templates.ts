@@ -717,7 +717,95 @@ export function withdrawalNotificationEmail(data: WithdrawalNotificationData): s
 }
 
 // =============================================================================
-// 7. PASSWORD RESET EMAIL
+// 7. PAYMENT RECEIVED EMAIL (SELLER)
+// =============================================================================
+
+export interface PaymentReceivedSellerData {
+  sellerName: string;
+  amount: number;
+  orderNumber: string;
+  buyerName: string;
+  paymentMethod: string;
+  platformFee: number;
+  sellerPayout: number;
+}
+
+export function paymentReceivedSellerEmail(data: PaymentReceivedSellerData): string {
+  const content = `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${CARD_BG};border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+
+      <!-- Header -->
+      <tr>
+        <td style="background:linear-gradient(135deg,#f59e0b 0%,#d97706 100%);padding:32px;text-align:center;">
+          <h1 style="margin:0 0 8px 0;font-size:24px;font-weight:700;color:#ffffff;">
+            💳 Payment Received!
+          </h1>
+          <p style="margin:0;font-size:15px;color:rgba(255,255,255,0.95);">
+            You've received a payment for your order
+          </p>
+        </td>
+      </tr>
+
+      <!-- Body -->
+      <tr>
+        <td style="padding:32px;">
+          <p style="margin:0 0 20px 0;font-size:16px;color:${TEXT};">
+            Hi <strong>${data.sellerName}</strong>, great news! You've received a payment.
+          </p>
+
+          <!-- Payment Details Card -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#fef3c7;border-radius:8px;margin-bottom:24px;">
+            <tr>
+              <td style="padding:24px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="font-size:14px;color:#92400e;padding-bottom:4px;">Order Total</td>
+                    <td align="right" style="font-size:18px;font-weight:700;color:#78350f;padding-bottom:4px;">$${data.amount.toFixed(2)}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size:14px;color:#92400e;padding-top:4px;">Platform Fee</td>
+                    <td align="right" style="font-size:14px;color:#92400e;padding-top:4px;">-$${data.platformFee.toFixed(2)}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size:16px;font-weight:700;color:#78350f;padding-top:10px;border-top:1px solid #fde68a;">Your Payout</td>
+                    <td align="right" style="font-size:22px;font-weight:700;color:#78350f;padding-top:10px;border-top:1px solid #fde68a;">$${data.sellerPayout.toFixed(2)}</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Order Info -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
+            ${infoRow('Order Number', `#${data.orderNumber}`)}
+            ${infoRow('Buyer', data.buyerName)}
+            ${infoRow('Payment Method', data.paymentMethod)}
+          </table>
+
+          <!-- Escrow Notice -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#eff6ff;border-radius:8px;margin-bottom:16px;">
+            <tr>
+              <td style="padding:16px;text-align:center;">
+                <p style="margin:0 0 4px 0;font-size:14px;color:#1e40af;font-weight:500;">🔒 Escrow Protection</p>
+                <p style="margin:0;font-size:13px;color:#1e40af;">Funds are held in escrow and will be released to your wallet after the order is delivered and confirmed.</p>
+              </td>
+            </tr>
+          </table>
+
+          ${ctaButton('View Order Details', 'https://marketo.fun')}
+
+          <p style="margin:20px 0 0 0;font-size:14px;color:${TEXT_MUTED};text-align:center;line-height:1.5;">
+            Please process and ship the order promptly to ensure timely payout.
+          </p>
+        </td>
+      </tr>
+    </table>`;
+
+  return wrapEmail(content);
+}
+
+// =============================================================================
+// 8. PASSWORD RESET EMAIL
 // =============================================================================
 
 export function passwordResetEmail(name: string, resetUrl: string): string {
@@ -774,7 +862,7 @@ export function passwordResetEmail(name: string, resetUrl: string): string {
 }
 
 // =============================================================================
-// 8. EMAIL VERIFICATION EMAIL
+// 9. EMAIL VERIFICATION EMAIL
 // =============================================================================
 
 export function emailVerificationEmail(name: string, verifyUrl: string): string {

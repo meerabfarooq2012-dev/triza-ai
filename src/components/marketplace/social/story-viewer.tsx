@@ -154,7 +154,7 @@ export function StoryViewer({
                   className="flex-1 h-0.5 rounded-full bg-white/30 overflow-hidden"
                 >
                   <motion.div
-                    className="h-full bg-emerald-400 rounded-full"
+                    className="h-full bg-amber-400 rounded-full"
                     style={{
                       width:
                         i < currentIndex
@@ -176,7 +176,7 @@ export function StoryViewer({
                   {story?.shop?.logo ? (
                     <AvatarImage src={story.shop.logo} alt={story.shop.name} />
                   ) : null}
-                  <AvatarFallback className="text-[10px] font-bold bg-emerald-600 text-white">
+                  <AvatarFallback className="text-[10px] font-bold bg-amber-600 text-gray-900">
                     {story?.shop?.name ? getShopInitials(story.shop.name) : 'S'}
                   </AvatarFallback>
                 </Avatar>
@@ -251,8 +251,8 @@ export function StoryViewer({
                           story?.type === 'promotion'
                             ? 'bg-gradient-to-br from-amber-500 to-orange-600'
                             : story?.type === 'product_highlight'
-                              ? 'bg-gradient-to-br from-emerald-500 to-teal-600'
-                              : 'bg-gradient-to-br from-emerald-600 to-teal-700'
+                              ? 'bg-gradient-to-br from-amber-500 to-yellow-600'
+                              : 'bg-gradient-to-br from-amber-600 to-yellow-700'
                         }`}
                       >
                         <p className="text-white text-xl font-bold leading-relaxed">
@@ -282,7 +282,7 @@ export function StoryViewer({
                 {story?.productId && (
                   <Button
                     size="sm"
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                    className="bg-amber-600 hover:bg-amber-700 text-gray-900"
                     onClick={() => {
                       useMarketplaceStore.getState().setCurrentView('product-detail', { productId: story.productId! })
                       onClose()

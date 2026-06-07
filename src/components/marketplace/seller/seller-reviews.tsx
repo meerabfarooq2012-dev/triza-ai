@@ -84,8 +84,8 @@ function StatsBar({
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       <Card className="p-4 border-0 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center">
-            <Star size={18} className="text-emerald-600" />
+          <div className="w-10 h-10 rounded-full bg-amber-50 dark:bg-amber-950/30 flex items-center justify-center">
+            <Star size={18} className="text-amber-600" />
           </div>
           <div>
             <p className="text-2xl font-bold">{total}</p>
@@ -106,8 +106,8 @@ function StatsBar({
       </Card>
       <Card className="p-4 border-0 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-green-50 dark:bg-green-950/30 flex items-center justify-center">
-            <CheckCircle size={18} className="text-green-600" />
+          <div className="w-10 h-10 rounded-full bg-amber-50 dark:bg-amber-950/30 flex items-center justify-center">
+            <CheckCircle size={18} className="text-amber-600" />
           </div>
           <div>
             <p className="text-2xl font-bold">{fiveStarCount}</p>
@@ -120,9 +120,9 @@ function StatsBar({
           <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
             unrepliedCount > 0
               ? 'bg-amber-50 dark:bg-amber-950/30'
-              : 'bg-green-50 dark:bg-green-950/30'
+              : 'bg-amber-50 dark:bg-amber-950/30'
           }`}>
-            <MessageSquare size={18} className={unrepliedCount > 0 ? 'text-amber-600' : 'text-green-600'} />
+            <MessageSquare size={18} className={unrepliedCount > 0 ? 'text-amber-600' : 'text-amber-600'} />
           </div>
           <div>
             <p className="text-2xl font-bold">{unrepliedCount}</p>
@@ -186,7 +186,7 @@ function SellerReviewCard({
             {review.user?.avatar ? (
               <AvatarImage src={review.user.avatar} alt={review.user?.name || ''} />
             ) : (
-              <AvatarFallback className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
+              <AvatarFallback className="bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
                 {review.user?.name?.[0] || 'U'}
               </AvatarFallback>
             )}
@@ -200,7 +200,7 @@ function SellerReviewCard({
                   {review.user?.name || 'Anonymous'}
                 </span>
                 {review.isVerified && (
-                  <Badge variant="secondary" className="text-xs gap-1 bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                  <Badge variant="secondary" className="text-xs gap-1 bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300">
                     <ShieldCheck size={10} />
                     Verified
                   </Badge>
@@ -325,7 +325,7 @@ function SellerReviewCard({
                         size="sm"
                         onClick={handleSubmitReply}
                         disabled={!replyText.trim() || replying}
-                        className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+                        className="gap-1.5 bg-amber-600 hover:bg-amber-700 text-gray-900"
                       >
                         {replying ? (
                           <Loader2 size={14} className="animate-spin" />
@@ -404,8 +404,8 @@ function EmptySellerReviews() {
       animate={{ opacity: 1, y: 0 }}
       className="text-center py-16"
     >
-      <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-emerald-50 dark:bg-emerald-950/30 mb-4">
-        <StarOff size={40} className="text-emerald-400" />
+      <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-amber-50 dark:bg-amber-950/30 mb-4">
+        <StarOff size={40} className="text-amber-400" />
       </div>
       <h3 className="text-xl font-semibold mb-2">No Reviews Yet</h3>
       <p className="text-muted-foreground max-w-sm mx-auto">
@@ -580,7 +580,7 @@ export function SellerReviews({ shopId, userId }: SellerReviewsProps) {
               onClick={() => setFilterTab(tab.value)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
                 filterTab === tab.value
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-700'
+                  ? 'bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-700'
                   : 'bg-background text-muted-foreground border-border hover:bg-muted hover:text-foreground'
               }`}
             >

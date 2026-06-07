@@ -200,7 +200,7 @@ export function ProductQA({ productId, gigId, shopOwnerId }: ProductQAProps) {
       {/* Section Header — Fiverr style */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold flex items-center gap-2">
-          <HelpCircle size={22} className="text-emerald-600" />
+          <HelpCircle size={22} className="text-amber-600" />
           Questions & Answers
           {questions.length > 0 && (
             <Badge variant="secondary" className="font-normal">
@@ -212,9 +212,9 @@ export function ProductQA({ productId, gigId, shopOwnerId }: ProductQAProps) {
 
       {/* Ask a Question — prominent input at top */}
       {currentUser ? (
-        <Card className="border-0 shadow-sm bg-emerald-50/50 dark:bg-emerald-950/30">
+        <Card className="border-0 shadow-sm bg-amber-50/50 dark:bg-amber-950/30">
           <CardContent className="p-4 space-y-3">
-            <div className="flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">
+            <div className="flex items-center gap-2 text-sm font-medium text-amber-700 dark:text-amber-400">
               <MessageCircleQuestion size={16} />
               Have a question about {itemLabel}?
             </div>
@@ -233,7 +233,7 @@ export function ProductQA({ productId, gigId, shopOwnerId }: ProductQAProps) {
                 size="sm"
                 onClick={handleAskQuestion}
                 disabled={!questionText.trim() || submittingQuestion}
-                className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"
+                className="gap-1.5 bg-amber-600 hover:bg-amber-700"
               >
                 {submittingQuestion ? (
                   <Loader2 size={14} className="animate-spin" />
@@ -283,7 +283,7 @@ export function ProductQA({ productId, gigId, shopOwnerId }: ProductQAProps) {
                     <div className="flex-shrink-0 mt-0.5">
                       <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
                         question.isAnswered
-                          ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900 dark:text-emerald-400'
+                          ? 'bg-amber-100 text-amber-600 dark:bg-amber-900 dark:text-amber-400'
                           : 'bg-amber-100 text-amber-600 dark:bg-amber-900 dark:text-amber-400'
                       }`}>
                         <HelpCircle size={14} />
@@ -300,7 +300,7 @@ export function ProductQA({ productId, gigId, shopOwnerId }: ProductQAProps) {
                           {formatDate(question.createdAt)}
                         </span>
                         {question.isAnswered ? (
-                          <Badge className="text-[10px] px-1.5 py-0 bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900 dark:text-emerald-400">
+                          <Badge className="text-[10px] px-1.5 py-0 bg-amber-100 text-amber-700 hover:bg-amber-100 dark:bg-amber-900 dark:text-amber-400">
                             Answered
                           </Badge>
                         ) : (
@@ -317,7 +317,7 @@ export function ProductQA({ productId, gigId, shopOwnerId }: ProductQAProps) {
                       {/* Show seller answer preview when collapsed */}
                       {!isExpanded && sellerAnswer && (
                         <div className="mt-2 flex items-start gap-2">
-                          <Badge className="text-[9px] px-1 py-0 bg-emerald-600 text-white hover:bg-emerald-600 shrink-0">
+                          <Badge className="text-[9px] px-1 py-0 bg-amber-600 text-gray-900 hover:bg-amber-600 shrink-0">
                             Seller
                           </Badge>
                           <p className="text-xs text-muted-foreground line-clamp-1">
@@ -358,7 +358,7 @@ export function ProductQA({ productId, gigId, shopOwnerId }: ProductQAProps) {
                               <div className="flex items-center gap-2 flex-wrap">
                                 <span className="font-medium text-sm">{answer.user?.name || 'Anonymous'}</span>
                                 {answer.isSellerAnswer && (
-                                  <Badge className="text-[10px] px-1.5 py-0 bg-emerald-600 text-white hover:bg-emerald-600">
+                                  <Badge className="text-[10px] px-1.5 py-0 bg-amber-600 text-gray-900 hover:bg-amber-600">
                                     Seller
                                   </Badge>
                                 )}
@@ -370,7 +370,7 @@ export function ProductQA({ productId, gigId, shopOwnerId }: ProductQAProps) {
                               <button
                                 onClick={() => handleMarkHelpful(question.id, answer.id)}
                                 disabled={helpfulLoading[answer.id] || !currentUser}
-                                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-emerald-600 transition-colors disabled:opacity-50 mt-1.5"
+                                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-amber-600 transition-colors disabled:opacity-50 mt-1.5"
                               >
                                 <ThumbsUp size={11} />
                                 <span>Helpful ({answer.helpfulCount})</span>

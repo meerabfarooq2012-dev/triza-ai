@@ -107,7 +107,7 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
               animate={{ scale: 1 }}
               transition={{ type: 'spring', stiffness: 200, damping: 15 }}
             >
-              <CheckCircle2 className="h-16 w-16 text-emerald-500 mx-auto mb-4" />
+              <CheckCircle2 className="h-16 w-16 text-amber-500 mx-auto mb-4" />
             </motion.div>
             <h3 className="text-xl font-bold mb-2">Account Deleted</h3>
             <p className="text-muted-foreground text-sm mb-4">
@@ -198,7 +198,7 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
                     deleteConfirmation.length > 0 && deleteConfirmation !== 'DELETE'
                       ? 'border-red-400 focus-visible:ring-red-400'
                       : deleteConfirmation === 'DELETE'
-                      ? 'border-emerald-400 focus-visible:ring-emerald-400'
+                      ? 'border-amber-400 focus-visible:ring-amber-400'
                       : ''
                   }`}
                 />

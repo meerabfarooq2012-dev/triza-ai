@@ -330,7 +330,7 @@ export function VariantManager({
       <Card className="border-0 shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
-            <Layers size={18} className="text-emerald-600" />
+            <Layers size={18} className="text-amber-600" />
             Step 1 — Define Options
           </CardTitle>
         </CardHeader>
@@ -349,7 +349,7 @@ export function VariantManager({
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="rounded-lg border border-gray-100 p-4 bg-gray-50/50 space-y-3"
+                  className="rounded-lg border border-gray-100 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800/50/50 space-y-3"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex-1">
@@ -379,7 +379,7 @@ export function VariantManager({
                         <Badge
                           key={vi}
                           variant="outline"
-                          className="px-3 py-1 text-sm bg-white border-emerald-200 text-emerald-700 gap-1.5"
+                          className="px-3 py-1 text-sm bg-white border-amber-200 text-amber-700 gap-1.5"
                         >
                           {val}
                           <button
@@ -411,7 +411,7 @@ export function VariantManager({
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-8 gap-1 text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                        className="h-8 gap-1 text-amber-600 border-amber-200 hover:bg-amber-50"
                         onClick={() => addValue(gi)}
                         disabled={!(newValueInputs[gi] || '').trim()}
                       >
@@ -427,7 +427,7 @@ export function VariantManager({
 
           <Button
             variant="outline"
-            className="w-full gap-2 border-dashed border-emerald-300 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-400"
+            className="w-full gap-2 border-dashed border-amber-300 text-amber-600 hover:bg-amber-50 hover:border-amber-400"
             onClick={addOptionGroup}
           >
             <Plus size={16} />
@@ -446,7 +446,7 @@ export function VariantManager({
       <Card className="border-0 shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
-            <Settings2 size={18} className="text-emerald-600" />
+            <Settings2 size={18} className="text-amber-600" />
             Step 2 — Generate & Edit Combinations
           </CardTitle>
         </CardHeader>
@@ -454,7 +454,7 @@ export function VariantManager({
           {!combinationsGenerated ? (
             <div className="text-center py-6">
               <Button
-                className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+                className="gap-2 bg-amber-600 hover:bg-amber-700"
                 onClick={handleGenerateCombinations}
                 disabled={!canGenerate}
               >
@@ -582,7 +582,7 @@ export function VariantManager({
       {/* Save Button */}
       <div className="flex justify-end gap-3">
         <Button
-          className="gap-2 bg-emerald-600 hover:bg-emerald-700 min-w-[140px]"
+          className="gap-2 bg-amber-600 hover:bg-amber-700 min-w-[140px]"
           onClick={handleSave}
           disabled={!canSave}
         >

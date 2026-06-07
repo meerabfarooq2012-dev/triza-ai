@@ -1,59 +1,59 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { authenticateRequest } from '@/lib/auth-middleware';
+import { getSafeErrorMessage } from '@/lib/error-handler';
 
 /**
  * Database Diagnostic Endpoint
  *
  * GET /api/db-diagnostic
  *
- * Tests the database connection and reports diagnostics.
- * Requires admin JWT authentication.
- * Sensitive info (passwords, full hostnames) is masked.
+ * Tests the database connection and reports detailed diagnostics.
+ * Requires JWT admin authentication.
  */
-export async function GET(request: NextRequest) {
-  // Require admin JWT auth
-  const authPayload = authenticateRequest(request);
-  if (!authPayload) {
+export async function GET(request: Request) {
+  // Require JWT admin authentication
+  const auth = authenticateRequest(request);
+  if (!auth) {
     return NextResponse.json(
-      { error: 'Unauthorized. Admin JWT authentication required.' },
+      { error: 'Authentication required' },
       { status: 401 }
     );
   }
-
-  if (authPayload.role !== 'admin' && authPayload.role !== 'both') {
+  if (auth.role !== 'admin') {
     return NextResponse.json(
-      { error: 'Forbidden. Admin access required.' },
+      { error: 'Admin access required' },
       { status: 403 }
     );
   }
 
   const diagnostics: Record<string, unknown> = {};
 
-  // 1. Check environment variables (mask sensitive info)
+  // 1. Check environment variables
   const dbUrl = process.env.DATABASE_URL || '';
   const directUrl = process.env.DIRECT_URL || '';
 
   diagnostics.env = {
     DATABASE_URL_set: !!dbUrl,
-    DATABASE_URL_prefix: dbUrl ? dbUrl.substring(0, 15) + '...' : '(not set)',
+    DATABASE_URL_prefix: dbUrl ? dbUrl.substring(0, 15) + '***' : '(not set)',
     DATABASE_URL_is_postgresql: dbUrl.startsWith('postgresql://') || dbUrl.startsWith('postgres://'),
     DATABASE_URL_is_file: dbUrl.startsWith('file:'),
     DIRECT_URL_set: !!directUrl,
-    DIRECT_URL_prefix: directUrl ? directUrl.substring(0, 15) + '...' : '(not set)',
+    DIRECT_URL_prefix: directUrl ? directUrl.substring(0, 15) + '***' : '(not set)',
     NODE_ENV: process.env.NODE_ENV,
   };
 
-  // 2. Parse and analyze DATABASE_URL (mask sensitive fields)
+  // 2. Parse and analyze DATABASE_URL
   if (dbUrl) {
     try {
       const url = new URL(dbUrl);
+      // Mask sensitive details - never expose full connection strings or passwords
       diagnostics.parsedUrl = {
         protocol: url.protocol,
-        // Only show first 15 chars of hostname to avoid leaking full internal hostnames
-        hostname: url.hostname.length > 15 ? url.hostname.substring(0, 15) + '...' : url.hostname,
+        hostname: url.hostname,
         port: url.port || '(default)',
-        username: url.username ? '***' : '(empty)',
+        username: url.username ? url.username.substring(0, 3) + '***' : '(empty)',
         pathname: url.pathname,
+        passwordSet: !!url.password,
         isPooler: url.hostname.includes('pooler'),
         isDirect: url.hostname.includes('db.'),
       };
@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
     const err = error as Error;
     diagnostics.connection = {
       status: 'FAILED',
-      error: err.message,
+      error: getSafeErrorMessage(err),
       errorName: err.name,
     };
 
@@ -120,8 +120,7 @@ export async function GET(request: NextRequest) {
           const client = new Client({
             connectionString: dbUrl,
             // WARNING: rejectUnauthorized: false disables TLS certificate verification.
-            // This should only be used in development or with trusted networks.
-            // In production, proper SSL certificates should be configured instead.
+            // This is needed for some Supabase pooler connections but should be used with caution.
             ssl: { rejectUnauthorized: false },
             connectionTimeoutMillis: 5000,
           });
@@ -131,6 +130,7 @@ export async function GET(request: NextRequest) {
           diagnostics.rawConnectionTests.push({
             test: 'DATABASE_URL as-is',
             status: 'SUCCESS',
+            result: res.rows[0],
           });
         } catch (e) {
           diagnostics.rawConnectionTests.push({
@@ -144,8 +144,8 @@ export async function GET(request: NextRequest) {
         if (directUrl) {
           try {
             const client = new Client({
+              // WARNING: rejectUnauthorized: false disables TLS certificate verification
               connectionString: directUrl,
-              // WARNING: Same as above — rejectUnauthorized: false is insecure for production.
               ssl: { rejectUnauthorized: false },
               connectionTimeoutMillis: 5000,
             });
@@ -155,6 +155,7 @@ export async function GET(request: NextRequest) {
             diagnostics.rawConnectionTests.push({
               test: 'DIRECT_URL',
               status: 'SUCCESS',
+              result: res.rows[0],
             });
           } catch (e) {
             diagnostics.rawConnectionTests.push({
@@ -170,8 +171,8 @@ export async function GET(request: NextRequest) {
           try {
             const altUrl = dbUrl.replace(':6543', ':5432');
             const client = new Client({
+              // WARNING: rejectUnauthorized: false disables TLS certificate verification
               connectionString: altUrl,
-              // WARNING: Same as above — rejectUnauthorized: false is insecure for production.
               ssl: { rejectUnauthorized: false },
               connectionTimeoutMillis: 5000,
             });
@@ -181,6 +182,7 @@ export async function GET(request: NextRequest) {
             diagnostics.rawConnectionTests.push({
               test: 'Pooler port 5432 (session mode)',
               status: 'SUCCESS',
+              result: res.rows[0],
             });
           } catch (e) {
             diagnostics.rawConnectionTests.push({
@@ -205,10 +207,9 @@ export async function GET(request: NextRequest) {
           }
 
           if (projectRef) {
-            const directConnStr = `postgresql://postgres:${password}@db.${projectRef}.supabase.co:5432/postgres`;
             const client = new Client({
-              connectionString: directConnStr,
-              // WARNING: Same as above — rejectUnauthorized: false is insecure for production.
+              // WARNING: rejectUnauthorized: false disables TLS certificate verification
+              connectionString: `postgresql://postgres:${password}@db.${projectRef}.supabase.co:5432/postgres`,
               ssl: { rejectUnauthorized: false },
               connectionTimeoutMillis: 5000,
             });
@@ -218,6 +219,7 @@ export async function GET(request: NextRequest) {
             diagnostics.rawConnectionTests.push({
               test: 'Direct connection (db.*.supabase.co)',
               status: 'SUCCESS',
+              result: res.rows[0],
             });
           }
         } catch (e) {
@@ -239,13 +241,13 @@ export async function GET(request: NextRequest) {
   diagnostics.recommendations = [];
 
   if (!dbUrl) {
-    diagnostics.recommendations.push('DATABASE_URL is not set! Add it in your hosting Environment Variables.');
+    diagnostics.recommendations.push('DATABASE_URL is not set! Add it in Vercel Environment Variables.');
   } else if (dbUrl.startsWith('file:')) {
-    diagnostics.recommendations.push('DATABASE_URL is set to SQLite (file:). For production, you need a PostgreSQL URL.');
+    diagnostics.recommendations.push('DATABASE_URL is set to SQLite (file:). For Vercel, you need a PostgreSQL URL from Supabase.');
   }
 
   if (dbUrl && !directUrl) {
-    diagnostics.recommendations.push('DIRECT_URL is not set. Prisma needs this for migrations. Add the direct connection string.');
+    diagnostics.recommendations.push('DIRECT_URL is not set. Prisma needs this for Supabase migrations. Add the direct connection string.');
   }
 
   const connResult = diagnostics.connection as { status?: string; error?: string } | undefined;
@@ -254,12 +256,15 @@ export async function GET(request: NextRequest) {
 
     if (errMsg.includes('tenant') || errMsg.includes('ENOTFOUND')) {
       diagnostics.recommendations.push(
-        'SUPABASE PROJECT MAY BE PAUSED! Go to the dashboard and restore the project.'
+        '🔴 SUPABASE PROJECT MAY BE PAUSED! Go to https://supabase.com/dashboard → find your project → click "Restore project"'
+      );
+      diagnostics.recommendations.push(
+        'If project is active, the DATABASE_URL region might be wrong. Check Supabase Dashboard → Settings → Database → Connection string for the correct URL.'
       );
     }
 
     if (errMsg.includes('password') || errMsg.includes('authentication')) {
-      diagnostics.recommendations.push('Database password might be wrong. Check your database credentials.');
+      diagnostics.recommendations.push('Database password might be wrong. Check your Supabase database password.');
     }
   }
 

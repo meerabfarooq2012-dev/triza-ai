@@ -65,7 +65,7 @@ export function ReportProductDialog({ open, onOpenChange, productId, productName
       <DialogContent className="sm:max-w-md">
         {isSuccess ? (
           <div className="py-8 text-center">
-            <CheckCircle2 className="h-16 w-16 text-emerald-500 mx-auto mb-4" />
+            <CheckCircle2 className="h-16 w-16 text-amber-500 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Report Submitted</h3>
             <p className="text-sm text-slate-500 mt-2">
               Thank you for your report. Our team will review it and take appropriate action.

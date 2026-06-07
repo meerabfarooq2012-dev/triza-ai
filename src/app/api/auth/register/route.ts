@@ -2,13 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { sendEmailAsync } from '@/lib/email';
+import { getSafeErrorMessage } from '@/lib/error-handler';
 import { welcomeEmail, emailVerificationEmail } from '@/lib/email-templates';
 import { notifyWelcome } from '@/lib/notifications';
-import { rateLimit, getRateLimitKey, authRateLimit } from '@/lib/rate-limit';
-import { signToken, signRefreshToken, setAuthCookies } from '@/lib/auth-middleware';
+import { rateLimit, getFingerprintedRateLimitKey, registerRateLimit } from '@/lib/rate-limit';
+import { signToken } from '@/lib/auth-middleware';
 import { createSession } from '@/lib/session';
 import { withCsrf } from '@/lib/with-csrf';
-import { randomBytes } from 'crypto';
+import { randomBytes, createHash } from 'crypto';
+import { sanitizeString, normalizeEmail, isValidEmail, isStrongPassword } from '@/lib/sanitize';
+import { validateInput, registerSchema } from '@/lib/validation';
 
 function slugify(text: string): string {
   return text
@@ -19,11 +22,11 @@ function slugify(text: string): string {
 
 export const POST = withCsrf(async (request: NextRequest) => {
   try {
-    // Rate limiting
-    const rateLimitKey = getRateLimitKey(request);
+    // Rate limiting — use fingerprinted key (IP + User-Agent) for stricter registration limiting
+    const rateLimitKey = getFingerprintedRateLimitKey(request, 'register');
     const rateLimitResult = rateLimit({
-      ...authRateLimit,
-      key: `register:${rateLimitKey}`,
+      ...registerRateLimit,
+      key: rateLimitKey,
     });
 
     if (!rateLimitResult.success) {
@@ -39,11 +42,27 @@ export const POST = withCsrf(async (request: NextRequest) => {
     }
 
     const body = await request.json();
-    const { email, password, name, role = 'buyer', termsAccepted } = body;
 
-    if (!email || !password || !name) {
+    // Validate input with Zod schema
+    const validation = validateInput(registerSchema, body);
+    if (!validation.success) {
       return NextResponse.json(
-        { success: false, error: 'Email, password, and name are required' },
+        { success: false, error: validation.error },
+        { status: 400 }
+      );
+    }
+
+    const { password, termsAccepted } = validation.data;
+    const role = validation.data.role || 'buyer';
+
+    // Normalize and sanitize inputs from validated data
+    const email = normalizeEmail(validation.data.email);
+    const name = sanitizeString(validation.data.name);
+
+    // Additional domain-specific email validation
+    if (!isValidEmail(email)) {
+      return NextResponse.json(
+        { success: false, error: 'Please enter a valid email address' },
         { status: 400 }
       );
     }
@@ -62,9 +81,11 @@ export const POST = withCsrf(async (request: NextRequest) => {
       );
     }
 
-    if (password.length < 6) {
+    // Validate password strength
+    const passwordCheck = isStrongPassword(password);
+    if (!passwordCheck.valid) {
       return NextResponse.json(
-        { success: false, error: 'Password must be at least 6 characters' },
+        { success: false, error: `Password requirements not met: ${passwordCheck.errors.join(', ')}` },
         { status: 400 }
       );
     }
@@ -78,7 +99,8 @@ export const POST = withCsrf(async (request: NextRequest) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
-    const emailVerifyToken = randomBytes(32).toString('hex');
+    const verifyToken = randomBytes(32).toString('hex');
+    const hashedToken = createHash('sha256').update(verifyToken).digest('hex');
 
     const user = await db.user.create({
       data: {
@@ -87,7 +109,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
         name,
         role,
         emailVerified: false,
-        emailVerifyToken,
+        emailVerifyToken: hashedToken,
         termsAcceptedAt: new Date(),
       },
     });
@@ -119,19 +141,17 @@ export const POST = withCsrf(async (request: NextRequest) => {
 
     const { password: _, ...userWithoutPassword } = fullUser!;
 
-    // Generate JWT access token and refresh token
-    const authPayload = {
+    // Generate JWT token
+    const token = signToken({
       userId: user.id,
       email: user.email,
       role: user.role,
-    };
-    const token = signToken(authPayload);
-    const refreshToken = signRefreshToken(authPayload);
+    });
 
     // Create a session record in the database (token is hashed, never stored raw)
     const userAgent = request.headers.get('user-agent') || undefined;
     const ipAddress =
-      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      request.headers.get('x-forwarded-for')?.split(',').map(s => s.trim()).slice(-1)[0] ||
       undefined;
 
     await createSession(user.id, token, userAgent, ipAddress).catch((err) => {
@@ -147,7 +167,8 @@ export const POST = withCsrf(async (request: NextRequest) => {
     });
 
     // Send email verification (non-blocking)
-    const verifyUrl = `${process.env.NEXT_PUBLIC_PLATFORM_URL || 'https://marketo-alpha.vercel.app'}?verify=${emailVerifyToken}`;
+    // Note: we send the raw token in the email link, but store the hashed version
+    const verifyUrl = `${process.env.NEXT_PUBLIC_PLATFORM_URL || 'https://marketo-alpha.vercel.app'}?verify=${verifyToken}`;
     sendEmailAsync({
       to: email,
       subject: 'Verify your email — Marketo',
@@ -157,19 +178,14 @@ export const POST = withCsrf(async (request: NextRequest) => {
     // Send welcome notification (non-blocking)
     notifyWelcome(user.id, name).catch(() => {});
 
-    const response = NextResponse.json(
-      { success: true, data: userWithoutPassword, token, refreshToken },
+    return NextResponse.json(
+      { success: true, data: userWithoutPassword, token },
       { status: 201 }
     );
-
-    // Set httpOnly cookies for both tokens
-    setAuthCookies(response, token, refreshToken);
-
-    return response;
   } catch (error) {
     console.error('Registration error:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to register user' },
+      { success: false, error: getSafeErrorMessage(error, 'Failed to register user') },
       { status: 500 }
     );
   }

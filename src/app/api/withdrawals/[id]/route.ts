@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db'
-import { authenticateRequest } from '@/lib/auth-middleware';
-
+import { db } from '@/lib/db';
+import { sendEmailAsync } from '@/lib/email';
+import { withdrawalNotificationEmail } from '@/lib/email-templates';
 import { withCsrf } from '@/lib/with-csrf';
+
+// GET /api/withdrawals/[id] — Get withdrawal details
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -41,6 +43,7 @@ export async function GET(
       );
     }
 
+    // Parse accountDetails JSON
     const parsedWithdrawal = {
       ...withdrawal,
       accountDetails: JSON.parse(withdrawal.accountDetails || '{}'),
@@ -56,50 +59,53 @@ export async function GET(
   }
 }
 
-export const PUT = withCsrf(async (request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }) => {
-  const auth = authenticateRequest(request);
-  if (!auth) {
-    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
-  }
-  if (auth.role !== 'admin') {
-    return NextResponse.json({ success: false, error: 'Admin access required' }, { status: 403 });
-  }
+// PUT /api/withdrawals/[id] — Admin approve/reject/complete withdrawal
+export const PUT = withCsrf(async (
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) => {
   try {
     const { id } = await params;
     const body = await request.json();
-    const { adminId, userId, action, adminNote } = body;
-    const effectiveAdminId = adminId || userId;
+    const { action, adminId, adminNote } = body;
 
-    if (!effectiveAdminId || !action) {
+    if (!action || !['approve', 'reject', 'complete', 'cancel'].includes(action)) {
       return NextResponse.json(
-        { success: false, error: 'adminId (or userId) and action are required' },
+        { success: false, error: 'Invalid action. Must be approve, reject, complete, or cancel' },
         { status: 400 }
       );
     }
 
-    const validActions = ['approve', 'reject', 'complete'];
-    if (!validActions.includes(action)) {
+    // Cancel action does not require adminId — seller can cancel their own
+    if (action !== 'cancel' && !adminId) {
       return NextResponse.json(
-        { success: false, error: `Invalid action. Must be one of: ${validActions.join(', ')}` },
+        { success: false, error: 'adminId is required' },
         { status: 400 }
       );
     }
 
-    // Verify admin
-    const admin = await db.user.findUnique({
-      where: { id: effectiveAdminId },
-    });
+    // Verify admin for non-cancel actions
+    if (action !== 'cancel' && adminId) {
+      const admin = await db.user.findUnique({
+        where: { id: adminId },
+      });
 
-    if (!admin || !admin.isAdmin) {
-      return NextResponse.json(
-        { success: false, error: 'Only admins can process withdrawals' },
-        { status: 403 }
-      );
+      if (!admin?.isAdmin) {
+        return NextResponse.json(
+          { success: false, error: 'Only admins can process withdrawals' },
+          { status: 403 }
+        );
+      }
     }
 
     const withdrawal = await db.withdrawal.findUnique({
       where: { id },
+      include: {
+        wallet: true,
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+      },
     });
 
     if (!withdrawal) {
@@ -109,82 +115,54 @@ export const PUT = withCsrf(async (request: NextRequest,
       );
     }
 
-    if (action === 'approve') {
-      if (withdrawal.status !== 'pending' && withdrawal.status !== 'processing') {
-        return NextResponse.json(
-          { success: false, error: 'Withdrawal can only be approved from pending or processing state' },
-          { status: 400 }
-        );
-      }
-
-      const updatedWithdrawal = await db.withdrawal.update({
-        where: { id },
-        data: {
-          status: 'approved',
-          processedAt: new Date(),
-          adminNote: adminNote || undefined,
-        },
-        include: {
-          wallet: {
-            select: {
-              id: true,
-              balance: true,
-              pendingBalance: true,
-              currency: true,
-            },
-          },
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              avatar: true,
-            },
-          },
-        },
-      });
-
-      // Notify user
-      await db.notification.create({
-        data: {
-          userId: withdrawal.userId,
-          title: 'Withdrawal Approved',
-          message: `Your withdrawal of $${withdrawal.amount.toFixed(2)} via ${withdrawal.method} has been approved.`,
-          type: 'success',
-        },
-      });
-
-      const parsed = {
-        ...updatedWithdrawal,
-        accountDetails: JSON.parse(updatedWithdrawal.accountDetails || '{}'),
-      };
-
-      return NextResponse.json({ success: true, data: parsed });
+    // Validate state transitions
+    if (action === 'approve' && withdrawal.status !== 'pending' && withdrawal.status !== 'processing') {
+      return NextResponse.json(
+        { success: false, error: `Cannot approve withdrawal with status: ${withdrawal.status}` },
+        { status: 400 }
+      );
     }
 
-    if (action === 'reject') {
-      if (withdrawal.status !== 'pending' && withdrawal.status !== 'processing' && withdrawal.status !== 'approved') {
-        return NextResponse.json(
-          { success: false, error: 'Withdrawal can only be rejected from pending, processing, or approved state' },
-          { status: 400 }
-        );
-      }
+    if (action === 'cancel' && withdrawal.status !== 'pending') {
+      return NextResponse.json(
+        { success: false, error: 'Only pending withdrawals can be cancelled' },
+        { status: 400 }
+      );
+    }
 
-      const result = await db.$transaction(async (tx) => {
-        // Refund amount back to wallet balance
-        const wallet = await tx.wallet.findUnique({
+    if (action === 'reject' && withdrawal.status !== 'pending' && withdrawal.status !== 'processing') {
+      return NextResponse.json(
+        { success: false, error: `Cannot reject withdrawal with status: ${withdrawal.status}` },
+        { status: 400 }
+      );
+    }
+
+    if (action === 'complete' && withdrawal.status !== 'approved') {
+      return NextResponse.json(
+        { success: false, error: `Cannot complete withdrawal with status: ${withdrawal.status}. Must be approved first.` },
+        { status: 400 }
+      );
+    }
+
+    const now = new Date();
+
+    if (action === 'cancel') {
+      // Cancel: refund amount back to wallet (seller-initiated)
+      const updated = await db.$transaction(async (tx) => {
+        const freshWallet = await tx.wallet.findUnique({
           where: { id: withdrawal.walletId },
         });
 
-        if (!wallet) {
+        if (!freshWallet) {
           throw new Error('Wallet not found');
         }
 
-        const newBalance = Math.round((wallet.balance + withdrawal.amount) * 100) / 100;
-        const newTotalWithdrawn = Math.round((wallet.totalWithdrawn - withdrawal.amount) * 100) / 100;
+        // Refund amount back to wallet
+        const newBalance = Math.round((freshWallet.balance + withdrawal.amount) * 100) / 100;
+        const newTotalWithdrawn = Math.round((freshWallet.totalWithdrawn - withdrawal.netAmount) * 100) / 100;
 
         const updatedWallet = await tx.wallet.update({
-          where: { id: wallet.id },
+          where: { id: freshWallet.id },
           data: {
             balance: newBalance,
             totalWithdrawn: Math.max(0, newTotalWithdrawn),
@@ -194,24 +172,24 @@ export const PUT = withCsrf(async (request: NextRequest,
         // Create refund transaction
         await tx.transaction.create({
           data: {
-            walletId: wallet.id,
-            type: 'credit',
+            walletId: freshWallet.id,
+            type: 'refund',
             amount: withdrawal.amount,
             balance: updatedWallet.balance,
-            description: `Withdrawal rejection refund - $${withdrawal.amount.toFixed(2)} via ${withdrawal.method}`,
+            description: `Withdrawal cancelled — PKR ${withdrawal.amount.toFixed(0)} refunded`,
             status: 'completed',
             referenceType: 'withdrawal',
             referenceId: withdrawal.id,
           },
         });
 
-        // Update withdrawal
+        // Update withdrawal status
         const updatedWithdrawal = await tx.withdrawal.update({
           where: { id },
           data: {
-            status: 'rejected',
-            rejectedAt: new Date(),
-            adminNote: adminNote || undefined,
+            status: 'cancelled',
+            adminNote: 'Cancelled by seller',
+            rejectedAt: now,
           },
           include: {
             wallet: {
@@ -223,51 +201,41 @@ export const PUT = withCsrf(async (request: NextRequest,
               },
             },
             user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                avatar: true,
-              },
+              select: { id: true, name: true, email: true },
             },
+          },
+        });
+
+        // Create notification
+        await tx.notification.create({
+          data: {
+            userId: withdrawal.userId,
+            title: 'Withdrawal Cancelled',
+            message: `Your withdrawal of PKR ${withdrawal.amount.toFixed(0)} via ${withdrawal.method} has been cancelled. PKR ${withdrawal.amount.toFixed(0)} has been refunded to your wallet.`,
+            type: 'info',
+            category: 'payment',
           },
         });
 
         return updatedWithdrawal;
       });
 
-      // Notify user
-      await db.notification.create({
-        data: {
-          userId: withdrawal.userId,
-          title: 'Withdrawal Rejected',
-          message: `Your withdrawal of $${withdrawal.amount.toFixed(2)} via ${withdrawal.method} has been rejected. Amount has been refunded to your wallet.${adminNote ? ` Reason: ${adminNote}` : ''}`,
-          type: 'error',
-        },
-      });
-
       const parsed = {
-        ...result,
-        accountDetails: JSON.parse(result.accountDetails || '{}'),
+        ...updated,
+        accountDetails: JSON.parse(updated.accountDetails || '{}'),
       };
 
       return NextResponse.json({ success: true, data: parsed });
     }
 
-    if (action === 'complete') {
-      if (withdrawal.status !== 'approved') {
-        return NextResponse.json(
-          { success: false, error: 'Withdrawal can only be completed from approved state' },
-          { status: 400 }
-        );
-      }
-
-      const updatedWithdrawal = await db.withdrawal.update({
+    if (action === 'approve') {
+      // Approve: move to approved status, set processedAt
+      const updated = await db.withdrawal.update({
         where: { id },
         data: {
-          status: 'completed',
-          completedAt: new Date(),
-          adminNote: adminNote || undefined,
+          status: 'approved',
+          adminNote: adminNote || null,
+          processedAt: now,
         },
         include: {
           wallet: {
@@ -279,36 +247,212 @@ export const PUT = withCsrf(async (request: NextRequest,
             },
           },
           user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              avatar: true,
-            },
+            select: { id: true, name: true, email: true },
           },
         },
       });
 
-      // Notify user
+      // Create notification for the seller
+      await db.notification.create({
+        data: {
+          userId: withdrawal.userId,
+          title: 'Withdrawal Approved',
+          message: `Your withdrawal of PKR ${withdrawal.amount.toFixed(0)} via ${withdrawal.method} has been approved. Processing will begin shortly.`,
+          type: 'success',
+          category: 'payment',
+        },
+      });
+
+      // Send approval email
+      if (updated.user?.email) {
+        sendEmailAsync({
+          to: updated.user.email,
+          subject: `✅ Withdrawal Approved — PKR ${withdrawal.amount.toFixed(0)} — Marketo`,
+          html: withdrawalNotificationEmail({
+            userName: updated.user.name,
+            amount: withdrawal.amount,
+            method: withdrawal.method,
+            status: 'approved',
+            withdrawalId: withdrawal.id,
+            netAmount: withdrawal.netAmount,
+            fee: withdrawal.fee,
+            expectedTimeline: '1–2 business days',
+          }),
+        });
+      }
+
+      const parsed = {
+        ...updated,
+        accountDetails: JSON.parse(updated.accountDetails || '{}'),
+      };
+
+      return NextResponse.json({ success: true, data: parsed });
+    }
+
+    if (action === 'reject') {
+      // Reject: refund to wallet, update totalWithdrawn
+      const updated = await db.$transaction(async (tx) => {
+        // Re-fetch wallet inside transaction
+        const freshWallet = await tx.wallet.findUnique({
+          where: { id: withdrawal.walletId },
+        });
+
+        if (!freshWallet) {
+          throw new Error('Wallet not found');
+        }
+
+        // Refund amount back to wallet
+        const newBalance = Math.round((freshWallet.balance + withdrawal.amount) * 100) / 100;
+        // Adjust totalWithdrawn back down
+        const newTotalWithdrawn = Math.round((freshWallet.totalWithdrawn - withdrawal.netAmount) * 100) / 100;
+
+        const updatedWallet = await tx.wallet.update({
+          where: { id: freshWallet.id },
+          data: {
+            balance: newBalance,
+            totalWithdrawn: Math.max(0, newTotalWithdrawn),
+          },
+        });
+
+        // Create refund transaction
+        await tx.transaction.create({
+          data: {
+            walletId: freshWallet.id,
+            type: 'refund',
+            amount: withdrawal.amount,
+            balance: updatedWallet.balance,
+            description: `Withdrawal rejected — PKR ${withdrawal.amount.toFixed(0)} refunded via ${withdrawal.method}`,
+            status: 'completed',
+            referenceType: 'withdrawal',
+            referenceId: withdrawal.id,
+          },
+        });
+
+        // Update withdrawal status
+        const updatedWithdrawal = await tx.withdrawal.update({
+          where: { id },
+          data: {
+            status: 'rejected',
+            adminNote: adminNote || null,
+            rejectedAt: now,
+          },
+          include: {
+            wallet: {
+              select: {
+                id: true,
+                balance: true,
+                pendingBalance: true,
+                currency: true,
+              },
+            },
+            user: {
+              select: { id: true, name: true, email: true },
+            },
+          },
+        });
+
+        // Create notification
+        await tx.notification.create({
+          data: {
+            userId: withdrawal.userId,
+            title: 'Withdrawal Rejected',
+            message: `Your withdrawal of PKR ${withdrawal.amount.toFixed(0)} via ${withdrawal.method} has been rejected. PKR ${withdrawal.amount.toFixed(0)} has been refunded to your wallet.${adminNote ? ` Reason: ${adminNote}` : ''}`,
+            type: 'warning',
+            category: 'payment',
+          },
+        });
+
+        return updatedWithdrawal;
+      });
+
+      // Send rejection email
+      if (updated.user?.email) {
+        sendEmailAsync({
+          to: updated.user.email,
+          subject: `❌ Withdrawal Rejected — PKR ${withdrawal.amount.toFixed(0)} — Marketo`,
+          html: withdrawalNotificationEmail({
+            userName: updated.user.name,
+            amount: withdrawal.amount,
+            method: withdrawal.method,
+            status: 'rejected',
+            withdrawalId: withdrawal.id,
+            netAmount: withdrawal.netAmount,
+            fee: withdrawal.fee,
+            adminNote: adminNote || undefined,
+          }),
+        });
+      }
+
+      const parsed = {
+        ...updated,
+        accountDetails: JSON.parse(updated.accountDetails || '{}'),
+      };
+
+      return NextResponse.json({ success: true, data: parsed });
+    }
+
+    if (action === 'complete') {
+      // Complete: mock processing step, mark as completed
+      const updated = await db.withdrawal.update({
+        where: { id },
+        data: {
+          status: 'completed',
+          adminNote: adminNote || withdrawal.adminNote,
+          completedAt: now,
+        },
+        include: {
+          wallet: {
+            select: {
+              id: true,
+              balance: true,
+              pendingBalance: true,
+              currency: true,
+            },
+          },
+          user: {
+            select: { id: true, name: true, email: true },
+          },
+        },
+      });
+
+      // Create notification
       await db.notification.create({
         data: {
           userId: withdrawal.userId,
           title: 'Withdrawal Completed',
-          message: `Your withdrawal of $${withdrawal.netAmount.toFixed(2)} via ${withdrawal.method} has been completed and sent to your account.`,
+          message: `Your withdrawal of PKR ${withdrawal.amount.toFixed(0)} via ${withdrawal.method} has been completed. The funds should appear in your account within 1-3 business days.`,
           type: 'success',
+          category: 'payment',
         },
       });
 
+      // Send completion email
+      if (updated.user?.email) {
+        sendEmailAsync({
+          to: updated.user.email,
+          subject: `🎉 Withdrawal Complete — PKR ${withdrawal.amount.toFixed(0)} — Marketo`,
+          html: withdrawalNotificationEmail({
+            userName: updated.user.name,
+            amount: withdrawal.amount,
+            method: withdrawal.method,
+            status: 'completed',
+            withdrawalId: withdrawal.id,
+            netAmount: withdrawal.netAmount,
+            fee: withdrawal.fee,
+          }),
+        });
+      }
+
       const parsed = {
-        ...updatedWithdrawal,
-        accountDetails: JSON.parse(updatedWithdrawal.accountDetails || '{}'),
+        ...updated,
+        accountDetails: JSON.parse(updated.accountDetails || '{}'),
       };
 
       return NextResponse.json({ success: true, data: parsed });
     }
 
     return NextResponse.json(
-      { success: false, error: 'Unhandled action' },
+      { success: false, error: 'Invalid action' },
       { status: 400 }
     );
   } catch (error) {
@@ -318,4 +462,4 @@ export const PUT = withCsrf(async (request: NextRequest,
       { status: 500 }
     );
   }
-})
+});

@@ -1,19 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { authenticateRequest } from '@/lib/auth-middleware';
 import { withCsrf } from '@/lib/with-csrf';
+
 // POST /api/disputes/[id]/escalate — Escalate a dispute
-export const POST = withCsrf(async (request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }) => {
-  const auth = authenticateRequest(request);
-  if (!auth) {
-    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
-  }
+export const POST = withCsrf(async (
+  request: NextRequest,
+  context?: unknown
+) => {
+  const { params } = context as { params: Promise<{ id: string }> };
   try {
     const { id } = await params;
     const body = await request.json();
-    const { reason } = body;
-    const escalatedBy = auth.userId;
+    const { escalatedBy, reason } = body;
+
+    // Validate required fields
+    if (!escalatedBy) {
+      return NextResponse.json(
+        { success: false, error: 'Missing required field: escalatedBy' },
+        { status: 400 }
+      );
+    }
 
     // Verify dispute exists
     const dispute = await db.dispute.findUnique({ where: { id } });
@@ -46,7 +52,8 @@ export const POST = withCsrf(async (request: NextRequest,
     // Only buyer or seller can escalate, or admin
     const isBuyer = dispute.userId === escalatedBy;
     const isSeller = dispute.sellerId === escalatedBy;
-    const isAdmin = auth.role === 'admin';
+    const escalator = await db.user.findUnique({ where: { id: escalatedBy } });
+    const isAdmin = escalator?.isAdmin || false;
 
     if (!isBuyer && !isSeller && !isAdmin) {
       return NextResponse.json(
@@ -179,4 +186,4 @@ export const POST = withCsrf(async (request: NextRequest,
       { status: 500 }
     );
   }
-})
+});

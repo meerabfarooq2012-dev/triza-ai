@@ -49,21 +49,21 @@ export function ThemeToggle() {
           <Sun className="h-4 w-4" />
           <span>Light</span>
           {theme === 'light' && (
-            <span className="ml-auto text-xs text-emerald-600 dark:text-emerald-400">Active</span>
+            <span className="ml-auto text-xs text-amber-600 dark:text-amber-400">Active</span>
           )}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setTheme('dark')} className="gap-2">
           <Moon className="h-4 w-4" />
           <span>Dark</span>
           {theme === 'dark' && (
-            <span className="ml-auto text-xs text-emerald-600 dark:text-emerald-400">Active</span>
+            <span className="ml-auto text-xs text-amber-600 dark:text-amber-400">Active</span>
           )}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setTheme('system')} className="gap-2">
           <Monitor className="h-4 w-4" />
           <span>System</span>
           {theme === 'system' && (
-            <span className="ml-auto text-xs text-emerald-600 dark:text-emerald-400">Active</span>
+            <span className="ml-auto text-xs text-amber-600 dark:text-amber-400">Active</span>
           )}
         </DropdownMenuItem>
       </DropdownMenuContent>

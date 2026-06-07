@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db'
-import { authenticateRequest } from '@/lib/auth-middleware';
+import { db } from '@/lib/db';
 import { Prisma } from '@prisma/client';
-import { rateLimit, getRateLimitKey, productRateLimit } from '@/lib/rate-limit';
 import { withCsrf } from '@/lib/with-csrf';
 import { cache } from '@/lib/cache';
-import { validateInput, productCreateSchema } from '@/lib/validation';
+import { authenticateRequestWithSession } from '@/lib/auth-middleware';
+import { isPositiveNumber } from '@/lib/sanitize';
 
 function slugify(text: string): string {
   return text
@@ -15,16 +14,6 @@ function slugify(text: string): string {
 }
 
 export async function GET(request: NextRequest) {
-  // Rate limiting
-  const rlKey = getRateLimitKey(request);
-  const rlResult = rateLimit({ ...productRateLimit, key: `products:${rlKey}` });
-  if (!rlResult.success) {
-    return NextResponse.json(
-      { success: false, error: 'Too many requests. Please try again later.' },
-      { status: 429 }
-    );
-  }
-
   try {
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search') || searchParams.get('query') || '';
@@ -312,34 +301,25 @@ export async function GET(request: NextRequest) {
 }
 
 export const POST = withCsrf(async (request: NextRequest) => {
-  // Rate limiting
-  const rlKey = getRateLimitKey(request);
-  const rlResult = rateLimit({ ...productRateLimit, key: `products:${rlKey}` });
-  if (!rlResult.success) {
-    return NextResponse.json(
-      { success: false, error: 'Too many requests. Please try again later.' },
-      { status: 429 }
-    );
-  }
-
-  const auth = authenticateRequest(request);
-  if (!auth) {
-    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
-  }
-  if (auth.role !== 'seller' && auth.role !== 'admin' && auth.role !== 'both') {
-    return NextResponse.json({ success: false, error: 'Seller access required' }, { status: 403 });
-  }
   try {
-    const body = await request.json();
-
-    // Validate input with Zod
-    const validation = validateInput(productCreateSchema, body);
-    if (!validation.success) {
+    // Authenticate the request (with session validation)
+    const auth = await authenticateRequestWithSession(request);
+    if (!auth) {
       return NextResponse.json(
-        { success: false, error: validation.error },
-        { status: 400 }
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
       );
     }
+
+    // Check that the authenticated user is actually a seller
+    if (auth.role !== 'seller' && auth.role !== 'both' && auth.role !== 'admin') {
+      return NextResponse.json(
+        { success: false, error: 'Only sellers can create products' },
+        { status: 403 }
+      );
+    }
+
+    const body = await request.json();
     const {
       shopId,
       categoryId,
@@ -348,7 +328,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
       shortDesc,
       price,
       comparePrice,
-      type,
+      type = 'digital',
       images,
       fileUrl,
       fileSize,
@@ -359,7 +339,31 @@ export const POST = withCsrf(async (request: NextRequest) => {
       deliveryInfo,
       deliveryCountries,
       requirements,
-    } = validation.data;
+    } = body;
+
+    if (!shopId || !name || !description || price === undefined) {
+      return NextResponse.json(
+        { success: false, error: 'shopId, name, description, and price are required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate price is a positive number
+    if (!isPositiveNumber(price)) {
+      return NextResponse.json(
+        { success: false, error: 'Price must be a positive number' },
+        { status: 400 }
+      );
+    }
+
+    // Validate product type
+    const validTypes = ['digital', 'physical', 'freelance'];
+    if (!validTypes.includes(type)) {
+      return NextResponse.json(
+        { success: false, error: `Invalid type. Must be one of: ${validTypes.join(', ')}` },
+        { status: 400 }
+      );
+    }
 
     const shop = await db.shop.findUnique({ where: { id: shopId } });
     if (!shop) {
@@ -369,9 +373,8 @@ export const POST = withCsrf(async (request: NextRequest) => {
       );
     }
 
-    // Verify the requesting user owns the shop
-    const requestUserId = validation.data.userId;
-    if (requestUserId && shop.userId !== requestUserId) {
+    // Verify the authenticated user owns the shop (server-extracted userId)
+    if (shop.userId !== auth.userId) {
       return NextResponse.json(
         { success: false, error: 'You can only create products in your own shop' },
         { status: 403 }

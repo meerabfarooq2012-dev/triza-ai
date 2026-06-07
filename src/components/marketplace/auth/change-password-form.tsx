@@ -167,8 +167,8 @@ export function ChangePasswordForm() {
           >
             {hasMinLength ? (
               <>
-                <Check className="h-3.5 w-3.5 text-green-500 dark:text-green-400" />
-                <span className="text-xs text-green-600 dark:text-green-400">Minimum 6 characters</span>
+                <Check className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
+                <span className="text-xs text-amber-600 dark:text-amber-400">Minimum 6 characters</span>
               </>
             ) : (
               <>
@@ -197,7 +197,7 @@ export function ChangePasswordForm() {
               passwordsMismatch
                 ? 'border-red-400 dark:border-red-500 focus-visible:ring-red-500/30'
                 : passwordsMatch
-                ? 'border-green-400 dark:border-green-500 focus-visible:ring-green-500/30'
+                ? 'border-amber-400 dark:border-amber-500 focus-visible:ring-amber-500/30'
                 : ''
             }`}
             disabled={isLoading}
@@ -218,8 +218,8 @@ export function ChangePasswordForm() {
           >
             {passwordsMatch ? (
               <>
-                <Check className="h-3.5 w-3.5 text-green-500 dark:text-green-400" />
-                <span className="text-xs text-green-600 dark:text-green-400">Passwords match</span>
+                <Check className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
+                <span className="text-xs text-amber-600 dark:text-amber-400">Passwords match</span>
               </>
             ) : passwordsMismatch ? (
               <>

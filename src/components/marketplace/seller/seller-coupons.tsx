@@ -131,13 +131,13 @@ function getCouponStatusBadge(coupon: Coupon) {
   if (start && start > now) {
     return { label: 'Scheduled', className: 'bg-sky-50 text-sky-700 border-sky-200' }
   }
-  return { label: 'Active', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
+  return { label: 'Active', className: 'bg-amber-50 text-amber-700 border-amber-200' }
 }
 
 function getTypeBadgeClass(type: CouponType) {
   switch (type) {
     case 'percentage':
-      return 'bg-emerald-50 text-emerald-700 border-emerald-200'
+      return 'bg-amber-50 text-amber-700 border-amber-200'
     case 'fixed':
       return 'bg-amber-50 text-amber-700 border-amber-200'
     case 'free_shipping':
@@ -374,11 +374,11 @@ export function SellerCoupons() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100">
-            <Ticket className="h-5 w-5 text-emerald-600" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100">
+            <Ticket className="h-5 w-5 text-amber-600" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Coupons & Promo Codes</h1>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Coupons & Promo Codes</h1>
             <p className="text-sm text-gray-500">Create and manage discount codes for your shop</p>
           </div>
         </div>
@@ -388,7 +388,7 @@ export function SellerCoupons() {
             Refresh
           </Button>
           <Button
-            className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+            className="gap-2 bg-amber-600 hover:bg-amber-700"
             onClick={handleOpenCreate}
             disabled={!shopId}
           >
@@ -404,12 +404,12 @@ export function SellerCoupons() {
           <Card className="border-0 shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50">
-                  <Ticket className="h-4 w-4 text-emerald-600" />
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50">
+                  <Ticket className="h-4 w-4 text-amber-600" />
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Total Coupons</p>
-                  <p className="text-lg font-bold text-gray-900">{stats.total}</p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{stats.total}</p>
                 </div>
               </div>
             </CardContent>
@@ -419,12 +419,12 @@ export function SellerCoupons() {
           <Card className="border-0 shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-50">
-                  <Power className="h-4 w-4 text-green-600" />
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50">
+                  <Power className="h-4 w-4 text-amber-600" />
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Active</p>
-                  <p className="text-lg font-bold text-gray-900">{stats.active}</p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{stats.active}</p>
                 </div>
               </div>
             </CardContent>
@@ -439,7 +439,7 @@ export function SellerCoupons() {
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Redemptions</p>
-                  <p className="text-lg font-bold text-gray-900">{stats.totalRedemptions}</p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{stats.totalRedemptions}</p>
                 </div>
               </div>
             </CardContent>
@@ -454,7 +454,7 @@ export function SellerCoupons() {
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Total Savings</p>
-                  <p className="text-lg font-bold text-gray-900">${stats.totalSavings.toFixed(2)}</p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-gray-100">${stats.totalSavings.toFixed(2)}</p>
                 </div>
               </div>
             </CardContent>
@@ -484,17 +484,17 @@ export function SellerCoupons() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 py-16"
+          className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 py-16"
         >
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 mb-4">
-            <Ticket className="h-8 w-8 text-emerald-300" />
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50 mb-4">
+            <Ticket className="h-8 w-8 text-amber-300" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900">No coupons yet</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">No coupons yet</h3>
           <p className="mt-1 text-sm text-gray-500 max-w-sm text-center">
             Create your first coupon to attract more buyers and boost sales
           </p>
           <Button
-            className="mt-4 gap-2 bg-emerald-600 hover:bg-emerald-700"
+            className="mt-4 gap-2 bg-amber-600 hover:bg-amber-700"
             onClick={handleOpenCreate}
           >
             <Plus className="h-4 w-4" />
@@ -548,7 +548,7 @@ export function SellerCoupons() {
                           </div>
 
                           {/* Value display */}
-                          <p className="text-lg font-bold text-gray-900">
+                          <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
                             {formatValue(coupon)}
                           </p>
 
@@ -606,7 +606,7 @@ export function SellerCoupons() {
                             {coupon.isActive ? (
                               <PowerOff className="h-4 w-4 text-amber-500" />
                             ) : (
-                              <Power className="h-4 w-4 text-green-500" />
+                              <Power className="h-4 w-4 text-amber-500" />
                             )}
                           </Button>
                           <Button
@@ -634,7 +634,7 @@ export function SellerCoupons() {
         <DialogContent className="max-h-[90vh] overflow-y-auto max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-emerald-500" />
+              <Sparkles className="h-5 w-5 text-amber-500" />
               {editingCoupon ? 'Edit Coupon' : 'Create New Coupon'}
             </DialogTitle>
           </DialogHeader>
@@ -697,11 +697,11 @@ export function SellerCoupons() {
                       className={`flex flex-col items-center gap-1.5 rounded-lg border-2 p-3 transition-all ${
                         isSelected
                           ? t === 'percentage'
-                            ? 'border-emerald-400 bg-emerald-50 text-emerald-700'
+                            ? 'border-amber-400 bg-amber-50 text-amber-700'
                             : t === 'fixed'
                               ? 'border-amber-400 bg-amber-50 text-amber-700'
                               : 'border-sky-400 bg-sky-50 text-sky-700'
-                          : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
+                          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600'
                       }`}
                     >
                       <Icon className="h-5 w-5" />
@@ -876,7 +876,7 @@ export function SellerCoupons() {
             </div>
 
             {/* Active Toggle */}
-            <div className="flex items-center justify-between rounded-lg border border-gray-200 p-3">
+            <div className="flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 p-3">
               <div>
                 <Label htmlFor="coupon-active" className="cursor-pointer">Active</Label>
                 <p className="text-xs text-gray-500">Enable this coupon for buyers to use</p>
@@ -896,7 +896,7 @@ export function SellerCoupons() {
               Cancel
             </Button>
             <Button
-              className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+              className="gap-2 bg-amber-600 hover:bg-amber-700"
               onClick={handleSubmit}
               disabled={submitting}
             >

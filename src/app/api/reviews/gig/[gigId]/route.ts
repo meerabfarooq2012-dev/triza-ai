@@ -14,6 +14,7 @@ export async function GET(
     const sort = searchParams.get('sort') || 'newest';
     const ratingFilter = searchParams.get('rating');
     const hasImages = searchParams.get('hasImages');
+    const isVerified = searchParams.get('isVerified');
     const userId = searchParams.get('userId') || '';
     const skip = (page - 1) * limit;
 
@@ -54,6 +55,11 @@ export async function GET(
     // Has images filter
     if (hasImages === 'true') {
       where.images = { not: '[]' };
+    }
+
+    // Verified only filter
+    if (isVerified === 'true') {
+      where.isVerified = true;
     }
 
     const [reviews, total] = await Promise.all([

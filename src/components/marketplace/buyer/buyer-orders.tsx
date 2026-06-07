@@ -50,14 +50,14 @@ import type { Order, OrderStatus, Payment, EscrowStatus } from '@/types'
 const PAYMENT_STATUS_BADGE: Record<string, { label: string; color: string }> = {
   pending: { label: 'Payment Pending', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
   processing: { label: 'Processing', color: 'bg-blue-100 text-blue-800 border-blue-200' },
-  completed: { label: 'Payment Completed', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+  completed: { label: 'Payment Completed', color: 'bg-amber-100 text-amber-800 border-amber-200' },
   failed: { label: 'Payment Failed', color: 'bg-red-100 text-red-800 border-red-200' },
-  refunded: { label: 'Refunded', color: 'bg-gray-100 text-gray-800 border-gray-200' },
+  refunded: { label: 'Refunded', color: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-700' },
 }
 
 const ESCROW_STATUS_BADGE: Record<string, { label: string; color: string }> = {
   held: { label: 'Held in Escrow', color: 'bg-amber-100 text-amber-800 border-amber-200' },
-  released: { label: 'Released', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+  released: { label: 'Released', color: 'bg-amber-100 text-amber-800 border-amber-200' },
   refunded: { label: 'Refunded', color: 'bg-amber-100 text-amber-800 border-amber-200' },
 }
 
@@ -230,10 +230,10 @@ export function BuyerOrders() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 py-16"
+          className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 py-16"
         >
           <Package className="mb-4 h-16 w-16 text-gray-300" />
-          <h3 className="text-lg font-semibold text-gray-900">No orders found</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">No orders found</h3>
           <p className="mt-1 text-sm text-gray-500">
             {statusFilter !== 'all'
               ? `You don't have any ${statusFilter} orders`
@@ -269,7 +269,7 @@ export function BuyerOrders() {
                             <Package className="h-5 w-5 text-gray-500" />
                           </div>
                           <div>
-                            <p className="font-semibold text-gray-900">
+                            <p className="font-semibold text-gray-900 dark:text-gray-100">
                               Order #{order.id.slice(-8)}
                             </p>
                             <p className="text-xs text-gray-500">
@@ -324,7 +324,7 @@ export function BuyerOrders() {
                           return (
                             <div
                               key={item.id}
-                              className="flex items-center gap-3 rounded-lg bg-gray-50 p-3"
+                              className="flex items-center gap-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 p-3"
                             >
                               <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-white">
                                 {productImages[0] ? (
@@ -340,14 +340,14 @@ export function BuyerOrders() {
                                 )}
                               </div>
                               <div className="min-w-0 flex-1">
-                                <p className="truncate text-sm font-medium text-gray-900">
+                                <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
                                   {item.product?.name || 'Product'}
                                 </p>
                                 <p className="text-xs text-gray-500">
                                   Qty: {item.quantity} × ${(item.price ?? 0).toFixed(2)}
                                 </p>
                               </div>
-                              <p className="text-sm font-semibold text-gray-900">
+                              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                                 ${((item.price ?? 0) * (item.quantity ?? 1)).toFixed(2)}
                               </p>
                             </div>
@@ -360,7 +360,7 @@ export function BuyerOrders() {
                         <div className="flex items-center gap-4 text-sm text-gray-500">
                           <span>
                             Total:{' '}
-                            <span className="font-bold text-gray-900">
+                            <span className="font-bold text-gray-900 dark:text-gray-100">
                               ${(order.totalAmount ?? 0).toFixed(2)}
                             </span>
                           </span>
@@ -384,7 +384,7 @@ export function BuyerOrders() {
                             variant="outline"
                             size="sm"
                             onClick={() => setCurrentView('order-tracking', { orderId: order.id })}
-                            className="gap-1.5 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 border-emerald-200"
+                            className="gap-1.5 text-amber-600 hover:bg-amber-50 hover:text-amber-700 border-amber-200"
                           >
                             <Truck className="h-3.5 w-3.5" />
                             Track
@@ -482,7 +482,7 @@ export function BuyerOrders() {
                 {selectedOrder.items?.map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-center gap-3 rounded-lg bg-gray-50 p-3"
+                    className="flex items-center gap-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 p-3"
                   >
                     <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-white">
                       <Package className="h-5 w-5 text-gray-300" />
@@ -520,7 +520,7 @@ export function BuyerOrders() {
               )}
 
               {/* Totals */}
-              <div className="space-y-1 rounded-lg bg-gray-50 p-3">
+              <div className="space-y-1 rounded-lg bg-gray-50 dark:bg-gray-800/50 p-3">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Subtotal</span>
                   <span>${(selectedOrder.totalAmount ?? 0).toFixed(2)}</span>
@@ -542,8 +542,8 @@ export function BuyerOrders() {
                 <div className="space-y-3">
                   <Separator />
                   <div className="flex items-center gap-2">
-                    <ShieldCheck className="h-4 w-4 text-emerald-600" />
-                    <h4 className="text-sm font-semibold text-gray-900">Payment Status</h4>
+                    <ShieldCheck className="h-4 w-4 text-amber-600" />
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Payment Status</h4>
                   </div>
 
                   {/* Payment & Escrow Badges */}
@@ -570,7 +570,7 @@ export function BuyerOrders() {
                   </div>
 
                   {/* Payment Amount Breakdown */}
-                  <div className="rounded-lg bg-gray-50 p-3 space-y-1.5">
+                  <div className="rounded-lg bg-gray-50 dark:bg-gray-800/50 p-3 space-y-1.5">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-500">Amount</span>
                       <span className="font-medium">${(selectedOrder.payment?.amount ?? 0).toFixed(2)}</span>
@@ -579,7 +579,7 @@ export function BuyerOrders() {
                       <span>Platform Fee (10%)</span>
                       <span>-${(selectedOrder.payment?.platformFee ?? 0).toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between text-sm text-emerald-600">
+                    <div className="flex justify-between text-sm text-amber-600">
                       <span>Seller Payout (90%)</span>
                       <span>+${(selectedOrder.payment?.sellerPayout ?? 0).toFixed(2)}</span>
                     </div>
@@ -598,14 +598,14 @@ export function BuyerOrders() {
                   {/* Confirm Delivery & Release Payment Button */}
                   {canConfirmDelivery(selectedOrder) && (
                     <div className="space-y-3">
-                      <div className="flex items-start gap-2 rounded-lg bg-emerald-50 border border-emerald-200 p-3">
-                        <PackageCheck className="h-4 w-4 text-emerald-600 mt-0.5 flex-shrink-0" />
-                        <p className="text-xs text-emerald-700">
+                      <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 p-3">
+                        <PackageCheck className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                        <p className="text-xs text-amber-700">
                           Your order has been {selectedOrder.status}. Confirm delivery to release the payment from escrow to the seller.
                         </p>
                       </div>
                       <Button
-                        className="w-full bg-emerald-600 hover:bg-emerald-700"
+                        className="w-full bg-amber-600 hover:bg-amber-700"
                         disabled={confirmingDelivery}
                         onClick={handleConfirmDeliveryFromDialog}
                       >
@@ -632,7 +632,7 @@ export function BuyerOrders() {
               {/* Track Order Button */}
               <Button
                 variant="outline"
-                className="w-full gap-2 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 border-emerald-200"
+                className="w-full gap-2 text-amber-600 hover:bg-amber-50 hover:text-amber-700 border-amber-200"
                 onClick={() => {
                   setSelectedOrder(null)
                   setCurrentView('order-tracking', { orderId: selectedOrder.id })

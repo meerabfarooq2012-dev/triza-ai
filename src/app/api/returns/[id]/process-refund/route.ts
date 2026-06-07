@@ -1,21 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { createNotification } from '@/lib/notifications';
-import { authenticateRequest } from '@/lib/auth-middleware';
 import { withCsrf } from '@/lib/with-csrf';
+
 // POST /api/returns/[id]/process-refund — Process the actual refund
-export const POST = withCsrf(async (request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }) => {
-  const auth = authenticateRequest(request);
-  if (!auth) {
-    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
-  }
-  if (auth.role !== 'admin' && auth.role !== 'seller' && auth.role !== 'both') {
-    return NextResponse.json({ success: false, error: 'Seller or admin access required' }, { status: 403 });
-  }
+export const POST = withCsrf(async (
+  request: NextRequest,
+  context?: unknown
+) => {
+  const { params } = context as { params: Promise<{ id: string }> };
   try {
     const { id } = await params;
-    const adminId = auth.userId;
+    const body = await request.json();
+    const { adminId } = body;
 
     // Find the return request
     const returnRequest = await db.returnRequest.findUnique({
@@ -264,4 +261,4 @@ export const POST = withCsrf(async (request: NextRequest,
       { status: 500 }
     );
   }
-})
+});

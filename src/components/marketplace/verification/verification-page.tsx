@@ -150,7 +150,7 @@ const STATUS_ICONS: Record<string, React.ReactNode> = {
   none: <AlertCircle className="h-5 w-5 text-gray-400" />,
   pending: <Clock className="h-5 w-5 text-amber-500" />,
   under_review: <ShieldQuestion className="h-5 w-5 text-amber-500" />,
-  verified: <CheckCircle className="h-5 w-5 text-emerald-500" />,
+  verified: <CheckCircle className="h-5 w-5 text-amber-500" />,
   rejected: <XCircle className="h-5 w-5 text-red-500" />,
 }
 
@@ -388,7 +388,7 @@ export function VerificationPage() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5 text-emerald-500" />
+              <ShieldCheck className="h-5 w-5 text-amber-500" />
               Verification Status
             </CardTitle>
             <CardDescription>Track your seller verification progress</CardDescription>
@@ -405,15 +405,15 @@ export function VerificationPage() {
                       <div
                         className={cn(
                           'absolute top-4 right-1/2 left-[-50%] h-0.5',
-                          i <= statusIndex ? 'bg-emerald-500' : 'bg-muted'
+                          i <= statusIndex ? 'bg-amber-500' : 'bg-muted'
                         )}
                       />
                     )}
                     <div
                       className={cn(
                         'h-8 w-8 rounded-full flex items-center justify-center z-10 transition-colors',
-                        isActive ? 'bg-emerald-500 text-white' : 'bg-muted text-muted-foreground',
-                        isCurrent && 'ring-2 ring-emerald-500 ring-offset-2'
+                        isActive ? 'bg-amber-500 text-gray-900' : 'bg-muted text-muted-foreground',
+                        isCurrent && 'ring-2 ring-amber-500 ring-offset-2'
                       )}
                     >
                       {i <= statusIndex ? (
@@ -424,7 +424,7 @@ export function VerificationPage() {
                     </div>
                     <span className={cn(
                       'text-[10px] mt-1 font-medium text-center',
-                      isCurrent ? 'text-emerald-600' : 'text-muted-foreground'
+                      isCurrent ? 'text-amber-600' : 'text-muted-foreground'
                     )}>
                       {STATUS_LABELS[step]}
                     </span>
@@ -446,11 +446,11 @@ export function VerificationPage() {
             )}
 
             {currentStatus === 'verified' && (
-              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex items-start gap-2">
-                <CheckCircle className="h-5 w-5 text-emerald-500 mt-0.5 flex-shrink-0" />
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-2">
+                <CheckCircle className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="text-sm font-medium text-emerald-700">Verified Seller</p>
-                  <p className="text-xs text-emerald-600 mt-0.5">
+                  <p className="text-sm font-medium text-amber-700">Verified Seller</p>
+                  <p className="text-xs text-amber-600 mt-0.5">
                     Your identity has been verified. You now have access to all seller features and trust badges.
                   </p>
                 </div>
@@ -467,7 +467,7 @@ export function VerificationPage() {
           <Card className="h-full">
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-emerald-500" />
+                <TrendingUp className="h-5 w-5 text-amber-500" />
                 Trust Score
               </CardTitle>
             </CardHeader>
@@ -498,7 +498,7 @@ export function VerificationPage() {
           <Card className="h-full">
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
-                <Award className="h-5 w-5 text-emerald-500" />
+                <Award className="h-5 w-5 text-amber-500" />
                 Trust Level
               </CardTitle>
             </CardHeader>
@@ -590,7 +590,7 @@ export function VerificationPage() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <Upload className="h-5 w-5 text-emerald-500" />
+              <Upload className="h-5 w-5 text-amber-500" />
               Submit Verification Document
             </CardTitle>
             <CardDescription>Upload documents to verify your identity and business</CardDescription>
@@ -653,7 +653,7 @@ export function VerificationPage() {
               <Button
                 onClick={handleSubmit}
                 disabled={submitting || !docType}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                className="bg-amber-600 hover:bg-amber-700 text-gray-900"
               >
                 {submitting ? (
                   <><RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Submitting...</>
@@ -675,7 +675,7 @@ export function VerificationPage() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <FileText className="h-5 w-5 text-emerald-500" />
+              <FileText className="h-5 w-5 text-amber-500" />
               Submitted Documents
               {documents.length > 0 && (
                 <Badge variant="secondary" className="ml-1">{documents.length}</Badge>
@@ -695,7 +695,7 @@ export function VerificationPage() {
                   {documents.map(doc => {
                     const docTypeLabel = DOC_TYPES.find(d => d.value === doc.documentType)?.label || doc.documentType
                     const statusColor = doc.status === 'approved' || doc.status === 'verified'
-                      ? 'text-emerald-600 bg-emerald-50 border-emerald-200'
+                      ? 'text-amber-600 bg-amber-50 border-amber-200'
                       : doc.status === 'rejected'
                         ? 'text-red-600 bg-red-50 border-red-200'
                         : doc.status === 'under_review'
@@ -752,7 +752,7 @@ export function VerificationPage() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <Award className="h-5 w-5 text-emerald-500" />
+              <Award className="h-5 w-5 text-amber-500" />
               Trust Badges
               {badgesData && (
                 <Badge variant="secondary" className="ml-1">
@@ -777,7 +777,7 @@ export function VerificationPage() {
                     className={cn(
                       'p-3 rounded-xl border text-center transition-colors',
                       badge.earned
-                        ? 'bg-card border-emerald-200 hover:border-emerald-300'
+                        ? 'bg-card border-amber-200 hover:border-amber-300'
                         : 'bg-muted/30 border-muted opacity-60'
                     )}
                   >
@@ -803,7 +803,7 @@ export function VerificationPage() {
                       {badge.description}
                     </p>
                     {badge.earned && (
-                      <Badge className="mt-1 text-[9px] bg-emerald-50 text-emerald-700 border-emerald-200">
+                      <Badge className="mt-1 text-[9px] bg-amber-50 text-amber-700 border-amber-200">
                         Earned
                       </Badge>
                     )}

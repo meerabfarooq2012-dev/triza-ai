@@ -3,6 +3,8 @@ import { db } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { rateLimit, getRateLimitKey, passwordResetRateLimit } from '@/lib/rate-limit';
 import { withCsrf } from '@/lib/with-csrf';
+import { validateInput, resetPasswordSchema } from '@/lib/validation';
+import { getSafeErrorMessage } from '@/lib/error-handler';
 
 export const POST = withCsrf(async (request: NextRequest) => {
   try {
@@ -26,21 +28,17 @@ export const POST = withCsrf(async (request: NextRequest) => {
     }
 
     const body = await request.json();
-    const { token, password } = body;
 
-    if (!token || !password) {
+    // Validate input with Zod schema
+    const validation = validateInput(resetPasswordSchema, body);
+    if (!validation.success) {
       return NextResponse.json(
-        { success: false, error: 'Token and new password are required' },
+        { success: false, error: validation.error },
         { status: 400 }
       );
     }
 
-    if (password.length < 6) {
-      return NextResponse.json(
-        { success: false, error: 'Password must be at least 6 characters' },
-        { status: 400 }
-      );
-    }
+    const { token, password } = validation.data;
 
     // Find user by reset token where the token has not expired
     const user = await db.user.findFirst({
@@ -81,7 +79,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
   } catch (error) {
     console.error('Reset password error:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to reset password' },
+      { success: false, error: getSafeErrorMessage(error, 'Failed to reset password') },
       { status: 500 }
     );
   }

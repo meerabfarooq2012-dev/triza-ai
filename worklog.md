@@ -2465,709 +2465,1508 @@ Stage Summary:
 - All features browser-verified with zero runtime errors
 
 ---
+Task ID: fix-1
+Agent: subagent
+Task: Fix social links persistence in shop settings API
 
-## Task 3 — Critical Security Fixes (Agent: main)
+Work Log:
+- Read the current PUT handler at `/home/z/my-project/src/app/api/shops/[slug]/route.ts` and identified the root cause: `socialLinks` was destructured into `updateData` but not included in `allowedFields`, so it was silently dropped during the field filtering loop.
+- Modified the destructuring to extract `socialLinks` separately from the request body: `const { userId, socialLinks, ...updateData } = body;`
+- Added social links persistence logic after the shop update: delete existing social links with `db.socialLink.deleteMany({ where: { shopId } })`, then create new ones with `db.socialLink.createMany()` using `userId`, `shopId`, `platform`, and `url` from each link in the array.
+- Added a re-fetch of the shop with `include: { socialLinks: true }` so the PUT response includes the persisted social links.
+- Verified the GET handler already includes `socialLinks: true` in its `include` — no changes needed there.
+- Ran `bun run lint` — 0 errors (3 pre-existing warnings unrelated to this change).
+- Checked dev server log — no compilation errors.
 
-### Summary
-Fixed 9 critical security gaps: hardcoded setup keys, admin password leakage, DB diagnostic info exposure, unverified payment callback GET handler, JWT/CSRF secret enforcement, debug info in login errors, and stack trace leakage in error pages.
+Stage Summary:
+- Root cause: `socialLinks` was included in the request body but the `allowedFields` array in the PUT handler did not include it, so social link data was silently dropped on every save.
+- Fix: Extract `socialLinks` from the body separately, use `deleteMany` + `createMany` pattern to replace social links for the shop, and return the updated shop with social links included in the response.
+- The end-to-end flow now works: save shop settings → social links are persisted via `deleteMany`/`createMany` → fetch shop → social links returned in GET response.
 
-### Changes
+---
+Task ID: fix-2
+Agent: subagent
+Task: Fix mini-services auto-start with Next.js instrumentation
 
-#### Fix 1: Remove hardcoded setup keys → env vars
-- `src/app/api/setup/admin/route.ts`: `marketo-setup-2024` → `process.env.ADMIN_SETUP_KEY`, 503 if not set
-- `src/app/api/admin/sync-schema/route.ts`: `marketo-sync-schema-2024` → `process.env.ADMIN_SETUP_KEY`, 503 if not set
-- `src/app/api/db-diagnostic/route.ts`: Replaced key auth with admin JWT auth (see Fix 3)
+Work Log:
+- Inspected mini-service setup: chat-service (port 3003) and notification-service (port 3004/3005) both exist with `bun --hot index.ts` dev scripts
+- Reviewed `mini-services/start-services.sh` — manual shell script that runs services in background, not auto-started with Next.js
+- Checked `next.config.ts` — `experimental.instrumentationHook` was NOT set; added it
+- Verified frontend hooks already use correct XTransformPort pattern: `io('/?XTransformPort=3003')` for chat, `io('/?XTransformPort=3004')` for notifications
+- Created `src/instrumentation.ts` with `register()` export that:
+  - Guards with `process.env.NEXT_RUNTIME !== 'nodejs'` check (skips Edge runtime)
+  - Spawns chat-service with `bun --hot index.ts` in its working directory
+  - Spawns notification-service with `bun --hot index.ts` in its working directory
+  - Pipes stdout/stderr to log files via `fs.createWriteStream` with append mode
+  - Handles process errors and exit events with logging
+  - Registers SIGTERM/SIGINT cleanup handlers to kill child processes and close log streams
+- Verified lint passes with 0 errors (3 pre-existing warnings only)
+- Confirmed dev server log shows no compilation errors
+- Verified mini-service processes are currently running on ports 3003, 3004, 3005
 
-#### Fix 2: Remove admin password from API response
-- `src/app/api/setup/admin/route.ts`: Removed `credentials` object from response; now returns `{ success: true, message: "Admin account created/updated successfully" }`
-
-#### Fix 3: Mask DB diagnostic info
-- `src/app/api/db-diagnostic/route.ts`: Requires admin JWT auth, masks passwords/usernames/hostnames, adds WARNING comments on `ssl: { rejectUnauthorized: false }`, removes sensitive connection strings from output
-
-#### Fix 4: Fix payment callback GET handler
-- `src/app/api/payments/callback/route.ts`: Replaced insecure GET handler with 405 Method Not Allowed; only POST with cryptographic verification accepted. Also fixed broken withCsrf wrapper on POST.
-
-#### Fix 5: JWT production secret enforcement
-- `src/lib/auth-middleware.ts`: Throws fatal error if JWT_SECRET not set in production; dev fallback only in non-production
-
-#### Fix 6: CSRF secret separate from JWT secret
-- `src/lib/csrf.ts`: CSRF_SECRET must be set independently in production; no longer falls back to JWT_SECRET
-
-#### Fix 7: Remove debug info from login error
-- `src/app/api/auth/login/route.ts`: Removed `debug` field and `errMsg` variable from 500 response
-
-#### Fix 8: Fix error pages leaking stack traces
-- `src/app/error.tsx` and `src/app/global-error.tsx`: Hide error.message, error.digest, and error.stack in production; show generic messages only
-
-#### Fix 9: Remove GET handler from admin setup
-- `src/app/api/setup/admin/route.ts`: Removed GET handler entirely; setup only via POST
-
-### Lint Results
-- 0 new errors; pre-existing errors in unrelated files remain
+Stage Summary:
+- Created `/home/z/my-project/src/instrumentation.ts` — Next.js instrumentation hook that auto-spawns chat-service and notification-service on server startup
+- Added `experimental.instrumentationHook: true` to `/home/z/my-project/next.config.ts`
+- Frontend hooks (`use-chat-socket.ts` and `use-realtime-notifications.tsx`) already use correct Caddy gateway pattern with XTransformPort query params — no changes needed
+- Mini-services will now auto-start when Next.js server starts, eliminating the need for manual `start-services.sh` execution
 
 ---
 
-## Task 2 — Add CSRF Protection to All API Mutation Routes (Agent: csrf-security)
+Task ID: fix-1
+Agent: main
+Task: Fix social links persistence in shop settings API
+
+Work Log:
+- Identified that `PUT /api/shops/[slug]` had `allowedFields` that didn't include `socialLinks`
+- Social links sent from `seller-shop-settings.tsx` were silently dropped on save
+- Fixed by extracting `socialLinks` separately from the request body destructuring
+- Added `db.socialLink.deleteMany()` + `db.socialLink.createMany()` pattern to replace social links
+- Enhanced PUT response to re-fetch shop with social links included
+- Verified lint passes with 0 errors
+
+Stage Summary:
+- Social links now persist correctly when sellers save shop settings
+- Shop PUT handler at `/api/shops/[slug]/route.ts` updated with social link CRUD
+- GET handler already included `socialLinks: true` in Prisma include
+
+---
+
+Task ID: fix-2
+Agent: main
+Task: Fix mini-services auto-start with Next.js instrumentation
+
+Work Log:
+- Created `src/instrumentation.ts` with `register()` export (Next.js convention)
+- Created `src/instrumentation.node.ts` with Node.js-specific service spawning logic
+- Uses port-checking (`net.createServer`) to avoid spawning duplicates
+- Spawns chat-service (port 3003) and notification-service (port 3004) with `bun --hot`
+- Logs to respective `log.txt` files in each mini-service folder
+- Added SIGTERM/SIGINT cleanup handlers for graceful shutdown
+- Removed `experimental.instrumentationHook` from next.config.ts (not needed in Next.js 16)
+- Verified mini-services auto-start when Next.js server starts
+- Frontend hooks already use correct `XTransformPort` query params for Caddy gateway
+
+Stage Summary:
+- Mini-services now auto-start with the Next.js server via instrumentation hook
+- Port-checking prevents duplicate service processes on restart
+- All 4 ports verified listening: 3000 (Next.js), 3003 (chat), 3004 (notifications), 3005 (HTTP push)
+- Server memory constraint noted: dev server uses ~1.5GB+ with Turbopack during first page compile
+
+---
+
+## Task 4 — Dynamic SEO Meta Tags for Product, Shop, and Gig Pages
+
+**Date:** 2025-03-05
+**Agent:** main
 
 ### Summary
-Added CSRF protection via the `withCsrf` wrapper to ALL API mutation routes (POST, PUT, PATCH, DELETE) that were missing it. The `withCsrf` function from `@/lib/with-csrf` validates CSRF tokens on mutating requests using the double-submit cookie pattern, while passing through safe GET requests without checks.
-
-### Approach
-1. Identified all route files in `src/app/api/` that export mutation handlers (POST, PUT, PATCH, DELETE)
-2. Checked each file to see if it already used `withCsrf`
-3. Wrote an automated Node.js script (`add-csrf.js`) to convert `export async function METHOD(...)` declarations to `export const METHOD = withCsrf(async (...) => { ... })` pattern
-4. Manually fixed edge cases (broken imports, special exemption for payment callback)
+Created a client-side DynamicSEO component that dynamically updates `document.title`, meta description, Open Graph tags, Twitter Card tags, and canonical URL when the user navigates between views in the SPA. Since Marketo uses Zustand-based client-side routing (not Next.js file-based routing), `generateMetadata` cannot be used in the traditional way. Instead, this component manipulates the DOM `<head>` directly via `useEffect`.
 
 ### Changes Made
 
-#### Conversion Pattern
-- **Before**: `export async function POST(request: NextRequest) { ... }`
-- **After**: `export const POST = withCsrf(async (request: NextRequest) => { ... })`
-- Added `import { withCsrf } from '@/lib/with-csrf';` to each file
-- GET handlers left unchanged (no CSRF needed for safe methods)
-- When a file had both GET and mutation handlers, only the mutation handlers were wrapped
+#### 1. DynamicSEO Component (`src/components/marketplace/shared/dynamic-seo.tsx`) — NEW
+- `'use client'` component with no visual output (returns `null`)
+- Subscribes to `currentView` and `viewParams` from the Zustand marketplace store
+- **Product detail view** (`'product-detail'`):
+  - Fetches product data from `GET /api/products/[id]`
+  - Sets title: `"Product Name — Marketo"`
+  - Sets meta description: product `shortDesc` or `description` (truncated to 160 chars)
+  - Sets `og:type` to `'product'`, `og:image` to first product image
+  - Sets canonical URL: `{origin}?product={productId}`
+  - Shows "Loading Product…" title while data fetches
+- **Shop view** (`'shop-view'`):
+  - Fetches shop data from `GET /api/shops/[slug]`
+  - Sets title: `"Shop Name — Marketo"`
+  - Sets meta description: shop `description` or `about` (truncated to 160 chars)
+  - Sets `og:image` to shop logo or banner
+  - Sets canonical URL: `{origin}?shop={slug}`
+  - Shows "Loading Shop…" title while data fetches
+- **Gig detail view** (`'gig-detail'`):
+  - Fetches gig data from `GET /api/gigs/[id]`
+  - Sets title: `"Gig Title — Marketo"`
+  - Sets meta description: gig description (truncated to 160 chars)
+  - Sets `og:image` to first gig image
+  - Sets canonical URL: `{origin}?gig={gigId}`
+  - Shows "Loading Service…" title while data fetches
+- **Static views**: Pre-defined SEO data for `landing`, `gigs-browse`, `search`, `privacy`, `terms`, `buyer-dashboard`, `seller-dashboard`, `admin`
+- **Fallback**: Default Marketo SEO for any unhandled view
+- **Meta tags managed**:
+  - `<title>` (document.title)
+  - `<meta name="description">`
+  - `<meta name="keywords">`
+  - Open Graph: `og:title`, `og:description`, `og:image`, `og:type`, `og:url`, `og:site_name`
+  - Twitter Card: `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`
+  - `<link rel="canonical">`
+- **Performance features**:
+  - 150ms debounce on view changes to skip rapid navigation
+  - Cache key (`view + JSON(params)`) to skip no-op re-fetches
+  - `mountedRef` to avoid state updates after unmount
+  - Shows generic loading title immediately while data fetches
+- **Cleanup**: Removes all dynamically-managed meta tags on unmount
+- **Helper functions**:
+  - `truncate()` — truncates strings to max length with ellipsis
+  - `extractFirstImage()` — safely extracts first image from JSON-encoded image string or array
+  - `setMetaTag()` / `removeMetaTag()` — DOM helpers to create/update/remove meta elements
+  - `setCanonical()` / `removeCanonical()` — DOM helpers for canonical link
+  - `applySEO()` — applies full SEO data to `<head>`
+  - `applyDefaultSEO()` — resets to Marketo defaults
+  - `cleanupDynamicTags()` — removes all injected tags
 
-#### Files Modified (67 route files)
-
-**Coupons**:
-- `coupons/[id]/route.ts` — PATCH, DELETE wrapped
-- `coupons/validate/route.ts` — POST wrapped
-- `coupons/route.ts` — POST wrapped (GET left as-is)
-
-**Admin**:
-- `admin/sync-schema/route.ts` — POST wrapped (GET left as-is)
-- `admin/disputes/route.ts` — PUT wrapped (GET left as-is)
-- `admin/products/[id]/approve/route.ts` — PATCH wrapped
-- `admin/users/route.ts` — PUT wrapped
-- `admin/settings/route.ts` — PATCH wrapped
-- `admin/shops/[id]/approve/route.ts` — PATCH wrapped
-
-**Auth**:
-- `auth/google/route.ts` — POST wrapped
-- `auth/sessions/[id]/route.ts` — DELETE wrapped
-- `auth/sessions/route.ts` — DELETE wrapped
-
-**Seller**:
-- `seller-tier/calculate/route.ts` — POST wrapped
-
-**Reviews**:
-- `reviews/[id]/helpful/route.ts` — POST wrapped
-- `reviews/[id]/route.ts` — DELETE, PATCH wrapped
-- `reviews/[id]/reply/route.ts` — POST wrapped
-
-**Categories**:
-- `categories/seed/route.ts` — POST wrapped
-- `categories/[id]/route.ts` — PATCH, DELETE wrapped
-- `categories/bulk-seed/route.ts` — POST wrapped
-- `categories/manage/route.ts` — POST wrapped
-
-**Wishlist**:
-- `wishlist/[id]/route.ts` — DELETE, PATCH wrapped
-- `wishlist/collections/[id]/route.ts` — PATCH, DELETE wrapped
-- `wishlist/collections/route.ts` — POST wrapped
-- `wishlist/check-prices/route.ts` — POST wrapped
-
-**Notifications**:
-- `notifications/route.ts` — POST, PUT, DELETE wrapped (GET left as-is)
-- `notifications/preferences/route.ts` — PUT wrapped
-
-**Disputes**:
-- `disputes/[id]/messages/route.ts` — POST wrapped
-- `disputes/[id]/resolve/route.ts` — POST wrapped
-- `disputes/[id]/evidence/route.ts` — POST wrapped
-- `disputes/[id]/route.ts` — PUT wrapped (GET left as-is)
-- `disputes/[id]/escalate/route.ts` — POST wrapped
-
-**Search & AI**:
-- `search/route.ts` — POST wrapped
-- `ai/generate-description/route.ts` — POST wrapped
-
-**Favorites**:
-- `favorites/route.ts` — POST wrapped
-
-**Tax**:
-- `tax/calculate/route.ts` — POST wrapped (was importing withCsrf but not using it; now properly uses it)
-
-**Returns**:
-- `returns/[id]/route.ts` — PUT wrapped
-- `returns/[id]/process-refund/route.ts` — POST wrapped
-- `returns/policy/route.ts` — POST wrapped
-
-**Products**:
-- `products/[id]/questions/route.ts` — POST wrapped
-- `products/[id]/questions/[questionId]/answers/route.ts` — POST wrapped
-- `products/[id]/questions/[questionId]/answers/[answerId]/helpful/route.ts` — POST wrapped
-- `products/[id]/variants/[variantId]/route.ts` — PATCH, DELETE wrapped
-- `products/[id]/variants/route.ts` — POST wrapped
-- `products/import/route.ts` — POST wrapped
-
-**Payment Info**:
-- `payment-info/[id]/route.ts` — PUT, DELETE wrapped
-- `payment-info/route.ts` — POST wrapped
-
-**Verification**:
-- `verification/seed-badges/route.ts` — POST wrapped
-- `verification/review/route.ts` — POST wrapped
-- `verification/submit/route.ts` — POST wrapped
-- `verification/award-badge/route.ts` — POST wrapped
-
-**Users**:
-- `users/[id]/avatar/route.ts` — POST wrapped
-- `users/[id]/route.ts` — PATCH wrapped
-
-**Flash Sales**:
-- `flash-sales/[id]/route.ts` — PATCH, DELETE wrapped
-- `flash-sales/route.ts` — POST wrapped
-
-**Withdrawals**:
-- `withdrawals/[id]/route.ts` — PUT wrapped
-
-**Gigs**:
-- `gigs/[id]/route.ts` — PATCH, DELETE wrapped
-- `gigs/[id]/questions/route.ts` — POST wrapped
-- `gigs/[id]/questions/[questionId]/answers/route.ts` — POST wrapped
-- `gigs/[id]/questions/[questionId]/answers/[answerId]/helpful/route.ts` — POST wrapped
-- `gigs/route.ts` — POST wrapped
-
-**Shipping**:
-- `shipping/shipments/route.ts` — POST, PUT wrapped
-- `shipping/zones/[id]/route.ts` — PUT, DELETE wrapped
-- `shipping/zones/route.ts` — POST wrapped
-- `shipping/calculate/route.ts` — POST wrapped
-- `shipping/rates/[id]/route.ts` — PUT, DELETE wrapped
-- `shipping/rates/route.ts` — POST wrapped
-- `shipping/addresses/[id]/route.ts` — PUT, DELETE wrapped
-- `shipping/addresses/route.ts` — POST, PUT, DELETE wrapped
-
-**Shipments**:
-- `shipments/[id]/route.ts` — PUT, DELETE wrapped
-- `shipments/route.ts` — POST wrapped
-
-**Messages**:
-- `messages/route.ts` — POST wrapped
-
-**Payments**:
-- `payments/[id]/route.ts` — PUT wrapped
-- `payments/verify/route.ts` — POST wrapped
-- `payments/route.ts` — POST wrapped
-
-**Wishlists**:
-- `wishlists/[id]/route.ts` — PATCH, DELETE wrapped
-- `wishlists/[id]/items/route.ts` — POST, DELETE wrapped
-- `wishlists/route.ts` — POST wrapped
-
-**Social**:
-- `social/share/route.ts` — POST wrapped
-- `social/activities/route.ts` — POST wrapped
-- `social/stories/[id]/route.ts` — POST wrapped
-- `social/stories/route.ts` — POST wrapped
-- `social/follow/route.ts` — POST wrapped
-
-**Other**:
-- `email/send/route.ts` — POST wrapped
-- `downloads/create/route.ts` — POST wrapped
-- `addresses/[id]/route.ts` — PUT, DELETE wrapped
-- `addresses/route.ts` — POST wrapped
-- `orders/[id]/route.ts` — PUT, PATCH wrapped
-- `setup/admin/route.ts` — POST wrapped
-
-#### Special Exemption: Payment Callback Route
-- `payments/callback/route.ts` — **NOT wrapped with withCsrf** (intentionally exempted)
-  - This route receives server-to-server callbacks from external payment gateways (Easypaisa, JazzCash)
-  - External gateways cannot provide CSRF tokens
-  - Security is already ensured via cryptographic signature verification of callback data
-  - Added a comment explaining the exemption
-
-#### Files Already Protected (no changes needed)
-39 route files were already using `withCsrf` before this task:
-- auth/register, auth/login, auth/logout, auth/forgot-password, auth/reset-password, auth/change-password, auth/verify-email, auth/resend-verification, auth/2fa/*, cart/*, orders, products, products/[id], products/[id]/report, shops, shops/[slug], disputes (root), reviews (root), returns (root), wishlist (root), favorites/toggle, coupons/apply, coupons/redeem, feedback, withdrawals (root), payments/initiate, users/delete, admin/reports/[id]
+#### 2. Page Wiring (`src/app/page.tsx`)
+- Added dynamic import for `DynamicSEO` with `withChunkRetry` wrapper
+- Added `<DynamicSEO />` component in the `MarketplaceApp` JSX (after `<CompareBar />`, before `<FeedbackWidget />`)
 
 ### Lint Results
-- 0 errors, 3 pre-existing warnings (unrelated to this task)
+- 0 errors, 4 pre-existing warnings (all unrelated to this task)
+- All new and modified files pass ESLint cleanly
+
+---
+
+## Task 3 — Email Notifications for Order Status Changes (Agent: main)
+
+### Summary
+Integrated email notifications into the order lifecycle by centralizing email sending inside `src/lib/notifications.ts`. Previously, emails were sent ad-hoc in API route handlers; now each `notifyOrder*` function handles both in-app notifications AND email sending. Added a new `paymentReceivedSellerEmail` template. Removed duplicate email-sending code from the order API routes.
+
+### Changes Made
+
+#### 1. New Email Template: `paymentReceivedSellerEmail` (`src/lib/email-templates.ts`)
+- **Added `PaymentReceivedSellerData` interface**: sellerName, amount, orderNumber, buyerName, paymentMethod, platformFee, sellerPayout
+- **Added `paymentReceivedSellerEmail()` function**: Gold/amber header (matching seller theme), payment breakdown card (order total, platform fee, seller payout), order info section, escrow protection notice, CTA button to view order details
+- Section numbering updated (new section 7, password reset → 8, email verification → 9)
+
+#### 2. Email Helper Functions (`src/lib/notifications.ts`)
+- **Added `getVerifiedUserEmail(userId)`**: Fetches user email, name, and emailVerified from DB. Returns null if user not found, has no email, or email is not verified. This enforces the "only send email if user has verified email address" requirement.
+- **Added `getOrderItems(orderId)`**: Fetches order items with product names for email templates. Returns `OrderItem[]` suitable for all email templates.
+
+#### 3. Integrated Email into `notifyOrderCreated` (`src/lib/notifications.ts`)
+- After creating in-app notifications for buyer and seller, now also:
+  - Fetches buyer info, seller info, order items, and order details in parallel
+  - Sends `orderConfirmationBuyerEmail` to buyer (if email verified)
+  - Sends `newOrderSellerEmail` to seller (if email verified)
+  - All email sending is fire-and-forget via `sendEmailAsync`
+
+#### 4. Integrated Email into `notifyOrderStatusUpdate` (`src/lib/notifications.ts`)
+- After creating in-app notification, now also:
+  - Fetches user info, order items, and order details in parallel
+  - Sends `orderStatusUpdateEmail` to the user (if email verified)
+  - Supports all status types: processing, shipped, delivered, cancelled, refunded
+  - Tracking number automatically included when available
+  - When called for both buyer AND seller (e.g., cancelled orders), each gets their own email
+
+#### 5. Integrated Email into `notifyPaymentReceived` (`src/lib/notifications.ts`)
+- After creating in-app notification, now also:
+  - Fetches seller info and order details (including buyer name) in parallel
+  - Sends `paymentReceivedSellerEmail` to seller (if email verified)
+  - Includes payment breakdown with platform fee and seller payout
+
+#### 6. Removed Duplicate Email Code from `src/app/api/orders/route.ts`
+- Removed imports: `sendEmailAsync`, `orderConfirmationBuyerEmail`, `newOrderSellerEmail`
+- Removed inline email-sending block (lines that fetched buyer/seller emails and called `sendEmailAsync`)
+- Email sending is now handled entirely inside `notifyOrderCreated`
+- Updated comment to clarify email is handled inside the notification function
+
+#### 7. Removed Duplicate Email Code from `src/app/api/orders/[id]/route.ts`
+- Removed imports: `sendEmailAsync`, `orderStatusUpdateEmail`
+- Removed inline email-sending block (lines that fetched target user, built email items, and called `sendEmailAsync`)
+- Email sending is now handled entirely inside `notifyOrderStatusUpdate`
+- Updated comment to clarify email is handled inside the notification function
+- No change to notification call pattern (still calls `notifyOrderStatusUpdate` for buyer, and additionally for seller when cancelled)
+
+### Design Decisions
+- **Centralized email in notifications.ts**: Rather than having each API route handle its own email logic, email sending is now co-located with notification creation. This ensures consistency and reduces code duplication.
+- **DB queries in notification functions**: The notification functions now fetch additional data (user emails, order items) from the DB. This keeps function signatures simple and makes the notification layer self-contained. The extra queries are acceptable since they run in a fire-and-forget context.
+- **emailVerified check**: The `getVerifiedUserEmail()` helper enforces that emails are only sent to users with verified email addresses, matching the requirement.
+- **No behavioral change**: The existing notification behavior is preserved. Emails are sent asynchronously and non-blocking. Errors are caught and logged but never throw.
+
+### Lint Results
+- 0 errors, 0 warnings in all modified/created files
+- 3 pre-existing errors in `image-lightbox.tsx` (unrelated)
+- 3 pre-existing warnings in other files (unrelated)
+
+---
+
+## Task 2 — Product Image Lightbox/Zoom Feature (Agent: code)
+
+### Summary
+Created a full-featured ImageLightbox component and integrated it into the product detail page. The lightbox supports zoom (scroll + buttons), pan (drag when zoomed), keyboard navigation, touch swipe gestures, double-tap-to-zoom on mobile, thumbnail strip, and smooth Framer Motion animations.
+
+### Changes Made
+
+#### 1. ImageLightbox Component (`src/components/marketplace/shared/image-lightbox.tsx`) — NEW
+- `'use client'` component with props: `images`, `initialIndex`, `open`, `onClose`, `alt`
+- **Zoom capability**: Scroll to zoom (0.3 increments), zoom in/out buttons (0.5 increments), max 5x, reset button when zoomed
+- **Pan/drag**: Drag to pan when zoomed in, with grab/grabbing cursor feedback
+- **Navigation**: Left/right arrow buttons (circular wrap), keyboard arrow keys
+- **Close**: X button, Escape key, click on backdrop area
+- **Thumbnail strip**: Bottom strip with amber-500 highlight on active thumbnail, scrollable
+- **Framer Motion animations**: Fade+scale enter/exit on lightbox, fade+scale transition between images, slide-up animation on thumbnail strip
+- **Mobile support**: Touch swipe for navigation (when not zoomed), double-tap to zoom (2.5x), proper touch-action CSS
+- **Keyboard shortcuts**: Escape (close), Arrow Left/Right (navigate), +/- (zoom), 0 (reset)
+- **Zoom percentage display**: Shows current zoom level (e.g., "150%")
+- **Body scroll lock**: Prevents background scrolling when lightbox is open
+- **Combined ViewState**: Zoom, panX, panY stored in single state object to avoid `react-hooks/set-state-in-effect` lint errors and ensure atomic updates
+- **Image counter**: Shows "2 / 5" style indicator in top bar
+- **Obsidian & Gold theme**: Amber-500 active thumbnails and ring highlights
+
+#### 2. Product Detail Integration (`src/components/marketplace/shop/product-detail.tsx`) — MODIFIED
+- Imported `ImageLightbox` from `@/components/marketplace/shared/image-lightbox`
+- Added `lightboxOpen` state
+- Main product image now has `cursor-zoom-in` class and `group` hover effects
+- Clicking the main image opens the lightbox (`setLightboxOpen(true)`)
+- Added zoom hint overlay: on hover, a subtle dark overlay appears with a zoom-in icon centered
+- Image has `group-hover:scale-105` transition for a subtle zoom-on-hover preview effect
+- Rendered `<ImageLightbox>` with `key={lightboxOpen ? `lb-${selectedImage}` : 'lb-closed'}` pattern — the key ensures the component remounts with correct initial state when the lightbox opens, avoiding `useEffect`-based state sync (React-recommended pattern)
+- Passes `galleryImages`, `selectedImage` as `initialIndex`, `lightboxOpen`, close handler, and product name
+
+### Lint Results
+- 0 errors in new/modified files
+- 3 pre-existing warnings in unrelated files remain unchanged
+
+
+---
+
+## Task 5 — Server-Side Cart Sync & Abandoned Cart Recovery (Agent: main)
+
+### Summary
+Connected the existing client-side Zustand cart with the server-side cart API, enabling server-side persistence and abandoned cart recovery. Added `syncCartToServer` (debounced) and `loadCartFromServer` actions to the Zustand store, hooked sync into all cart actions, created a `CartSync` component that loads the server cart on auth change, updated logout to preserve cart in localStorage for guest fallback, and added CartSync to the app root.
+
+### Changes Made
+
+#### 1. Zustand Store Updates (`src/store/use-marketplace-store.ts`) — MODIFIED
+
+**New imports:**
+- Added `ProductType` from `@/types`
+
+**New module-level state:**
+- `cartSyncTimer` — module-level debounce timer (300ms) for `syncCartToServer`
+
+**New types:**
+- `ServerCartItem` interface — mirrors the enriched cart item shape returned by `GET /api/cart` (productId, quantity, variantId, addedAt, name, price, image, stock, isActive, type, shopId, shopName, shopSlug)
+- `mapServerItemToClient()` helper — maps `ServerCartItem` → `CartItem` for the client store
+
+**New store interface fields:**
+- `syncCartToServer: () => void` — debounced (300ms) POST to `/api/cart/sync`
+- `loadCartFromServer: () => Promise<void>` — GET `/api/cart`, merge with local cart (server priority)
+
+**`syncCartToServer` action:**
+- Only runs when `currentUser` exists and `authToken` exists
+- Debounces calls (300ms) via `cartSyncTimer` to avoid hammering the API on rapid adds
+- Calls `POST /api/cart/sync` with `items: cart.map(item => ({ productId, quantity, variantId: variantId || null }))`
+- Reads the latest cart state from `get()` at the time the debounced timer fires (not at call time)
+- Includes `Authorization: Bearer <token>` header
+- Handles errors silently (non-blocking, just `console.warn`)
+
+**`loadCartFromServer` action:**
+- Only runs when `currentUser` exists and `authToken` exists
+- Calls `GET /api/cart` with auth header
+- Maps server-enriched items to client `CartItem` format via `mapServerItemToClient`
+- Merges server items with existing localStorage cart:
+  - Server items take priority for conflicts (same productId + variantId)
+  - Local-only items (not on server) are preserved
+  - If server returns empty items, keeps local cart as-is (guest fallback)
+- Sets the merged cart and recalculates `cartTotal`
+
+**Modified cart actions — hooked `syncCartToServer`:**
+- `addToCart` — calls `get().syncCartToServer()` after updating state (fire-and-forget)
+- `removeFromCart` — calls `get().syncCartToServer()` after updating state
+- `updateCartQuantity` — calls `get().syncCartToServer()` after updating state (both branches: remove if qty ≤ 0, and update)
+- `clearCart` — calls `get().syncCartToServer()` after clearing state
+
+**Modified `logout` action:**
+- Added cancellation of any pending cart sync timer (`clearTimeout(cartSyncTimer)`)
+- Cart is intentionally **NOT cleared** on logout — this preserves cart in localStorage for guest users
+- When logging IN, `loadCartFromServer` (via CartSync component) takes priority and merges server cart data
+
+#### 2. CartSync Component (`src/components/marketplace/shared/cart-sync.tsx`) — NEW
+- `'use client'` component that renders nothing (purely a side-effect)
+- Subscribes to `currentUser`, `isAuthenticated`, and `loadCartFromServer` from the store
+- Uses `useRef` to track `loadedForUserId` — only loads once per auth change
+- On auth change (user logs in): calls `loadCartFromServer()` to fetch server cart
+- On logout: resets `loadedForUserId` so next login triggers a fresh load
+- Ensures cross-device cart recovery: if user logs in from a different device, they get their server cart
+
+#### 3. Page Wiring (`src/app/page.tsx`) — MODIFIED
+- Added dynamic import for `CartSync` with `ssr: false`
+- Added `<CartSync />` component in the `MarketplaceApp` JSX (between `CookieConsent` and `EmailVerificationDialog`)
+
+### Lint Results
+- 0 errors, 3 pre-existing warnings (unrelated to this task — unused eslint-disable directives in other files)
+- All new and modified files pass ESLint cleanly
+
+### Key Design Decisions
+- **Debounce at 300ms**: Prevents API flooding during rapid cart operations (e.g., adding multiple items quickly)
+- **Module-level timer**: Stores debounce timer outside Zustand to avoid persistence issues
+- **Server priority on merge**: When both server and local have the same product+variant, server data wins (more authoritative — includes latest price, stock, etc.)
+- **Preserve local-only items**: If a guest added items to cart, then logged in, those local items are kept alongside server items
+- **Cart preserved on logout**: Guest users retain their cart in localStorage; server cart takes priority on next login
+- **Fire-and-forget sync**: `syncCartToServer` never blocks the UI — errors are logged but don't disrupt the user experience
+
+---
+
+## Task: 4 Remaining LOW Priority Items Verification
+
+**Date:** 2025-06-06
+**Agent:** main
+
+### Summary
+Verified all 4 remaining LOW priority items from the original audit. All were already fully implemented by previous agents. Fixed a critical route conflict that was preventing the Next.js server from starting.
+
+### Items Verified
+
+#### LOW 7: Review Sorting — ✅ ALREADY IMPLEMENTED
+- API (`/api/reviews`) supports `sort` parameter with values: `newest`, `highest`, `lowest`, `helpful`
+- Frontend has `Select` dropdown with 4 sort options (Most Recent, Highest Rating, Lowest Rating, Most Helpful)
+- Sort state is properly passed to API calls via `buildFilterParams()`
+- Filter chips (All, 5★-1★, With Photos, Verified Only) also work with sort
+
+#### LOW 8: Digital Download Flow — ✅ ALREADY IMPLEMENTED
+- `digital-download.ts` library with token generation, validation, count increment
+- API routes: `/api/downloads` (list), `/api/downloads/[id]` (download), `/api/downloads/create` (create), `/api/downloads/order/[orderId]` (order downloads)
+- `MyDownloads` component with active/expired sections, download progress, request new link
+- `BuyerDownloads` component wired into buyer dashboard Downloads tab
+- Order delivery auto-creates download links for digital products (in `/api/orders/[id]`)
+- Download tokens: 30-day expiry, max 5 downloads, Supabase signed URL support
+
+#### LOW 9: Seller Payout Processing — ✅ ALREADY IMPLEMENTED
+- Withdrawal API: POST `/api/withdrawals` (create), PUT `/api/withdrawals/[id]` (admin approve/reject/complete/cancel)
+- Seller wallet component with: Available Balance, Pending Escrow, Lifetime Earnings, Total Withdrawn
+- Withdrawal form with 5 methods: Easypaisa, JazzCash, Payoneer, Wise, Bank Transfer
+- Admin approval flow: pending → approved → completed (or rejected/cancelled)
+- Fee calculation: 2% or PKR 50 (whichever is greater)
+- Min withdrawal: PKR 500, Max 3 pending withdrawals
+- Email + notification on approval/rejection/completion
+
+#### LOW 10: Real Payment Gateway — ✅ ALREADY IMPLEMENTED
+- Easypaisa integration: OAuth2 token caching, HMAC-SHA256 signature, payment initiation + verification + callback verification
+- JazzCash integration: HMAC-SHA256 secure hash, paisa amount format, form-encoded POST, HTML redirect handling
+- Sandbox mode (default): Simulated payments with 90% success rate, auto-confirmation after 5-10s
+- Live mode: Automatic when `PAYMENT_GATEWAY_MODE=live` and credentials are set in env vars
+- Callback endpoint handles both POST (webhook) and GET (redirect) callbacks
+- Gateway status endpoint: `/api/payments/status?checkGateway=true`
+
+### Bug Fix: Route Conflict in Downloads API
+**Problem:** Two dynamic route directories at the same level with different slug names:
+- `src/app/api/downloads/[id]/route.ts`
+- `src/app/api/downloads/[token]/route.ts`
+
+Next.js error: "You cannot use different slug names for the same dynamic path ('id' !== 'token')"
+
+This was preventing the entire Next.js server from starting.
+
+**Fix:** Merged both routes into a single `src/app/api/downloads/[id]/route.ts` that:
+1. Checks if the ID looks like a 64-char hex download token → uses token-based validation
+2. Otherwise, if `userId` query param is provided → uses ID + userId verification
+3. Falls back to token-based validation for non-standard tokens
+4. Removed the `src/app/api/downloads/[token]/` directory entirely
+
+### Lint Results
+- 0 errors, 3 pre-existing warnings (unrelated)
 - All modified files pass ESLint cleanly
 
+### Verification
+- Dev server starts successfully (confirmed: `GET / 200`)
+- Landing page renders: "Marketo - Your Marketplace, Your Way"
+- Review API responds to sort parameter
+- Downloads API correctly requires authentication
+- Wallet API correctly requires authentication
+- Payment gateway status API responds with sandbox mode
+
+---
+Task ID: 5
+Agent: pwa-agent
+Task: Add PWA support with manifest and service worker
+
+Work Log:
+- Created `/public/manifest.json` with Marketo branding: name, short_name, description, start_url, display: standalone, theme_color: #d97706 (amber-600), orientation: portrait-primary, icons referencing /logo.svg for 192x192 and 512x512 sizes (both any and maskable purposes), categories: shopping & business
+- Created `/public/sw.js` service worker with three caching strategies: cache-first for static assets (CSS, JS, images, fonts), network-first for API calls (/api/*), stale-while-revalidate for same-origin pages; includes cache versioning (STATIC_CACHE, DYNAMIC_CACHE, API_CACHE), offline fallback to /offline.html, skipWaiting on install, clients.claim on activate, old cache cleanup on activate
+- Created `/public/offline.html` — Branded offline page with dark background, amber/gold gradient title "You're Offline", WiFi-off SVG icon, descriptive message, and "Try Again" button
+- Created `src/components/marketplace/shared/pwa-install-prompt.tsx` — Client component that listens for beforeinstallprompt event, shows a dismissible banner at the bottom of the screen with amber/gold theme, "Install" button triggers native install prompt, "Not now" button dismisses and stores timestamp in localStorage (7-day suppression), hides if already in standalone mode, auto-hides on appinstalled event
+- Created `src/components/providers/pwa-provider.tsx` — Client component that registers the service worker on mount, checks for updates every hour, detects standalone mode, tracks online/offline status, listens for beforeinstallprompt, exports usePwa() hook with isInstalled/isOnline/canInstall/promptInstall/registration, renders PwaInstallPrompt as child
+- Updated `src/app/layout.tsx` — Added Viewport export with themeColor #d97706, added manifest: "/manifest.json" to metadata, added appleWebApp metadata (capable, statusBarStyle, title), added <link rel="manifest">, <meta name="theme-color">, <meta name="apple-mobile-web-app-capable">, <meta name="apple-mobile-web-app-status-bar-style">, <link rel="apple-touch-icon"> in <head>, wrapped children in PwaProvider
+- Ran lint: 0 new errors, 3 pre-existing warnings in unrelated files
+- Dev server running successfully
+
+Stage Summary:
+- PWA manifest, service worker, and offline page created in /public/
+- Service worker implements cache-first (static), network-first (API), stale-while-revalidate (pages)
+- Install prompt banner with 7-day dismissal persistence and amber/gold theme
+- PwaProvider registers SW, tracks online/offline state, provides usePwa() hook
+- Layout updated with all PWA meta tags and provider wrapper
+- App is now installable as a PWA on supported browsers
+
+---
+Task ID: 1
+Agent: skeleton-agent
+Task: Add loading skeletons to data-heavy pages
+
+Work Log:
+- Read worklog.md and existing skeleton component (src/components/ui/skeleton.tsx)
+- Read all key data-heavy components: search-page, product-detail, seller-dashboard, seller-overview, seller-analytics, buyer-overview, admin-dashboard, order-tracking-page, seller-wallet, shop-view, review-section
+- Found existing basic skeleton at src/components/marketplace/shared/loading-skeleton.tsx (ProductCardSkeleton, ShopCardSkeleton, TableRowSkeleton, DashboardCardSkeleton, DetailPageSkeleton)
+- Created new comprehensive loading-skeletons.tsx at src/components/marketplace/shared/loading-skeletons.tsx with 12 new skeleton components:
+  - ProductCardSkeleton (image, type badges, title, rating, price, shop name)
+  - ProductGridSkeleton (8 ProductCardSkeleton in responsive grid)
+  - SearchPageSkeleton (sidebar filters + product grid + pagination)
+  - ProductDetailSkeleton (image gallery + info + reviews with rating summary)
+  - DashboardSkeleton (stat cards + charts + recent orders table)
+  - OrderListSkeleton (multiple order rows with status badges)
+  - WalletSkeleton (balance cards + earnings chart + transactions + withdrawal form)
+  - AdminSkeleton (6 stat cards + payment stats + charts + recent activity)
+  - ReviewListSkeleton (review cards with avatars, ratings, text)
+  - ChartSkeleton (animated chart placeholder with period toggle)
+  - TableSkeleton (configurable rows and columns)
+  - ShopViewSkeleton (banner + header + tabs + product grid)
+  - StatCardSkeleton (single stat card)
+- Integrated skeletons into 7 data-heavy page components:
+  - Search page: Replaced bare aspect-square skeleton grid with ProductGridSkeleton for products and detailed gig card skeletons for gigs
+  - Product detail: Replaced basic 5-skeleton layout with full ProductDetailSkeleton (gallery, info, reviews, seller card)
+  - Seller dashboard: Replaced spinner loader with DashboardSkeleton in proper layout container
+  - Seller overview: Replaced 4 gray box cards with DashboardSkeleton (stat cards + charts + order rows)
+  - Buyer overview: Replaced 4 gray box cards with DashboardSkeleton
+  - Admin dashboard: Replaced 6 simple skeleton rectangles with full AdminSkeleton
+  - Order tracking: Replaced 3 simple muted rectangles with detailed timeline + order items + totals skeleton
+  - Wallet: Replaced 4 gray cards + single chart skeleton with full WalletSkeleton
+- All skeletons use the existing shadcn/ui Skeleton component with animate-pulse, dark mode compatible classes, and amber/gold theme accents
+- Lint: 0 errors, 3 pre-existing warnings (unrelated)
+- Dev server: Running cleanly on port 3000
+
+Stage Summary:
+- Created src/components/marketplace/shared/loading-skeletons.tsx with 13 exportable skeleton components
+- Integrated into 8 page components replacing basic loading spinners and gray boxes
+- Skeletons match actual content layouts for seamless transition from loading to loaded state
+- All skeleton components are reusable and composable (e.g., ProductGridSkeleton uses ProductCardSkeleton)
+- Dark mode compatible throughout with proper muted/foreground color classes
+
+---
+Task ID: 7
+Agent: security-agent
+Task: Security hardening - rate limiting and CSRF
+
+Work Log:
+- Reviewed existing security files: rate-limit.ts, csrf.ts, auth-middleware.ts, with-csrf.ts, use-csrf.ts, session.ts
+- Verified all 5 auth routes already had rate limiting and CSRF protection
+- Enhanced rate limiter with new presets: loginRateLimit (5/15min), registerRateLimit (3/hour)
+- Added progressive delay for failed login attempts: exponential backoff after 3 failures (1s, 2s, 4s, etc., capped at 60s)
+- Added IP + User-Agent fingerprinting functions: getRequestFingerprint(), getFingerprintedRateLimitKey()
+- Updated login route to use loginRateLimit preset, fingerprinted rate limiting, progressive delay, and 30-minute lockout (enhanced from 15)
+- Updated register route to use registerRateLimit preset with fingerprinted rate limiting
+- Added CSRF protection (withCsrf wrapper) to 14 routes that were missing it:
+  - orders/[id] (PUT, PATCH)
+  - payments/verify (POST)
+  - users/[id] (PATCH)
+  - notifications (POST, PUT, DELETE)
+  - addresses (POST)
+  - addresses/[id] (PUT, DELETE)
+  - social/stories (POST)
+  - social/follow (POST)
+  - returns/[id] (PUT)
+  - returns/[id]/process-refund (POST)
+  - disputes/[id] (PUT)
+  - disputes/[id]/messages (POST)
+  - disputes/[id]/resolve (POST)
+  - disputes/[id]/evidence (POST)
+  - disputes/[id]/escalate (POST)
+  - messages (POST)
+  - notifications/preferences (PUT)
+- Created src/middleware.ts (Next.js middleware) with security headers:
+  - X-Content-Type-Options: nosniff
+  - X-Frame-Options: DENY
+  - X-XSS-Protection: 1; mode=block
+  - Referrer-Policy: strict-origin-when-cross-origin
+  - Permissions-Policy: camera=(), microphone=(), geolocation=()
+  - Content-Security-Policy (allows self, inline scripts/styles for Next.js, Supabase images)
+
+Stage Summary:
+- Rate limiter now has 5 presets: auth (10/15min), api (60/min), passwordReset (5/15min), login (5/15min), register (3/hour)
+- Progressive delay on failed logins slows brute-force attacks exponentially
+- IP+User-Agent fingerprinting makes rate limiting harder to bypass via IP rotation
+- Account lockout extended from 15 to 30 minutes after 5 failed attempts
+- CSRF protection added to all critical state-changing endpoints (14 routes)
+- Security headers middleware protects all routes with CSP, XSS protection, framing prevention, etc.
+- All changes pass lint (0 errors)
+
+---
+Task ID: 6
+Agent: darkmode-agent
+Task: Dark mode polish audit and fixes
+
+Work Log:
+- Read globals.css to understand CSS variable setup: dark mode uses `.dark` class with oklch colors, card bg = oklch(0.17), border = oklch(0.25)
+- Searched entire codebase for common dark mode anti-patterns: `bg-white` without `dark:bg-*`, `text-gray-900` without `dark:text-gray-100`, `border-gray-200` without `dark:border-gray-700`, `bg-gray-50` without dark variant
+- Identified 50+ files with dark mode issues across all component categories
+- Fixed messages page (worst offender): 30+ targeted fixes including bg-white→dark:bg-gray-900, border-gray-100→dark:border-gray-800, text-gray-900→dark:text-gray-100, bg-gray-50→dark:bg-gray-800, message bubbles, input fields, conversation list, avatar fallbacks, and context panels
+- Fixed seller analytics: tooltip containers bg-white→dark:bg-gray-800, stat labels text-gray-900→dark:text-gray-100 (5 tooltips + stats)
+- Fixed seller overview: all text-gray-900→dark:text-gray-100, border-gray-100→dark:border-gray-700, hover states
+- Fixed seller orders: text-gray-900→dark:text-gray-100, bg-white→dark:bg-gray-800, bg-gray-50→dark:bg-gray-800/50, border-gray-200→dark:border-gray-700
+- Fixed seller products: text-gray-900→dark:text-gray-100, table container bg-white→dark:bg-gray-800, tag input/select dropdowns, dashed borders, status badges
+- Fixed seller gigs: same patterns as seller products, plus table rows with hover states
+- Fixed seller coupons: text-gray-900→dark:text-gray-100, borders, inactive badges, dashed empty states
+- Fixed seller messages: border-r→dark:border-gray-800, bg-gray-50→dark:bg-gray-800/50, message bubbles, unread indicators
+- Fixed seller reviews, QA, shop settings, bulk upload, flash sales: text-gray-900→dark:text-gray-100 throughout
+- Fixed seller variant manager: border-gray-100→dark:border-gray-700, bg-gray-50→dark:bg-gray-800/50
+- Fixed buyer overview: text-gray-900→dark:text-gray-100, border-gray-100→dark:border-gray-700, hover states
+- Fixed buyer orders: text-gray-900→dark:text-gray-100, bg-gray-50→dark:bg-gray-800/50, refunded badge, status colors
+- Fixed buyer payments: text-gray-900→dark:text-gray-100, borders, status badges, detail panels
+- Fixed buyer favorites/wishlists/wishlist-page: text-gray-900→dark:text-gray-100, dashed empty states, borders
+- Fixed buyer messages: same patterns as seller messages
+- Fixed product card type badges: bg-amber-100→dark:bg-amber-900/50, text-amber-700→dark:text-amber-300, same for orange variant
+- Fixed product card variant badge: bg-amber-50→dark:bg-amber-950/40, border/text dark variants
+- Fixed cart drawer: variant label text-amber-600→dark:text-amber-400
+- Fixed header: gold-gradient buttons text-white→dark:text-gray-900 (signup buttons, cart badge), logout hover red-50→dark:red-950/30
+- Fixed hero section: gold-gradient button text-white→dark:text-gray-900
+- Fixed CTA section: white button on gold bg→dark:bg-gray-900 dark:text-amber-400
+- Fixed auth modal: gradient buttons text-white→dark:text-gray-900
+- Fixed gigs browse: search button bg-white→dark:bg-gray-800, bottom badge dark variant
+- Fixed search page: text-gray-900→dark:text-gray-100 throughout
+- Fixed gig detail/shop view/product detail: text-gray-900→dark:text-gray-100 throughout
+- Fixed verification page, trust badge, tier card: text-gray-900→dark:text-gray-100, borders
+- Fixed review section: text-gray-900→dark:text-gray-100, carousel dots dark variants
+- Fixed product QA: text-gray-900→dark:text-gray-100
+- Fixed variant selector: text-gray-900→dark:text-gray-100
+- Fixed dispute center/detail pages: text-gray-900→dark:text-gray-100, bg-gray-50→dark:bg-gray-800/50, borders
+- Fixed admin components: reports bg-white, verifications textarea, categories badge, transactions stats
+- Fixed shipment tracker: step indicators bg-white→dark:bg-gray-800
+- Fixed payment settings/info/checkout/order-payment-status: text-gray-900→dark:text-gray-100
+- Fixed notifications page, order tracking, returns pages: text-gray-900→dark:text-gray-100
+- Fixed profile user-profile, social components: text-gray-900→dark:text-gray-100
+- Fixed browse-by-type section: button text explicitly dark:text-gray-900
+- Fixed wishlist button: bg-white/80→dark:bg-gray-900/80
+- Fixed share-shop-url: hover text dark variant
+- Fixed activity feed: bg-gray-50→dark:bg-gray-800
+- Fixed 2FA setup: QR code container bg-white→dark:bg-gray-800
+
+Stage Summary:
+- 0 lint errors, 3 pre-existing warnings (unchanged)
+- Added 95 dark:text-gray-100, 77 dark:bg-gray-800, 43 dark:border-gray-700, 7 dark:bg-gray-900 across 50+ component files
+- Fixed all major dark mode visibility issues: text-gray-900 on dark backgrounds, white containers without dark bg, light borders invisible in dark mode, amber/gold badges without dark variants
+- Key patterns fixed: bg-white→dark:bg-gray-900 for panels, bg-gray-50→dark:bg-gray-800/50 for sections, text-gray-900→dark:text-gray-100 for all headings/values, border-gray-200→dark:border-gray-700 for borders, gold-gradient buttons→dark:text-gray-900 for button text on amber backgrounds
+
+---
+Task ID: 2
+Agent: search-agent
+Task: Enhanced search with advanced filters
+
+Work Log:
+- Read worklog.md and existing search page component, API route, and types
+- Updated SearchFilters type in `src/types/index.ts` to add new filter fields: sellerVerified, onSale, minDiscount, dateAdded, and new DateAddedFilter type
+- Created `src/components/ui/range-slider.tsx` — A custom dual-thumb range slider with amber/gold theming, tooltips on hover/drag, and gradient track between thumbs
+- Rewrote `src/app/api/search/route.ts` to support all new filter parameters (sellerVerified, onSale, minDiscount, dateAdded, location, delivery) with proper Prisma query building
+- Completely rewrote `src/components/marketplace/search/search-page.tsx` with enhanced price range (dual-thumb slider), visual star-rating filter, region-grouped location filter with flag emojis, seller verification toggle, discount/on-sale filter, shipping filter, date added filter, and color-coded active filter tags bar
+- All new components use amber/gold theme and support dark mode
+- 0 new lint errors introduced
+
+Stage Summary:
+- Created 1 new UI component: `src/components/ui/range-slider.tsx`
+- Updated 1 type file: `src/types/index.ts` (added DateAddedFilter type and 4 new SearchFilters fields)
+- Rewrote 1 API route: `src/app/api/search/route.ts` (6 new filter parameters)
+- Rewrote 1 major component: `src/components/marketplace/search/search-page.tsx` (comprehensive filter enhancement)
 
 ---
 
-## Task 1 — JWT Authentication for All API Mutation Routes (Agent: main)
+## Task 4 — Migrate WebSocket to Supabase Realtime for Vercel (Agent: realtime-agent)
 
 ### Summary
-Added JWT authentication via `authenticateRequest` to ALL API mutation routes (POST/PUT/PATCH/DELETE) that previously had no authentication. This is a critical security fix ensuring that only authenticated users can perform data-modifying operations, with role-based access control (admin, seller) enforced where appropriate.
+Added Supabase Realtime as a Vercel-compatible alternative to the existing Socket.io microservices for real-time chat and notifications. Implemented a strategy pattern that automatically selects the best transport (Supabase Realtime on Vercel, Socket.io on local dev, REST polling as fallback). All Socket.io microservices remain intact for local development.
 
 ### Changes Made
 
-#### Authentication Pattern Applied
-Every mutation route now follows this pattern:
-```typescript
-const auth = authenticateRequest(request);
-if (!auth) {
-  return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
-}
-// Role checks where needed:
-if (auth.role !== 'admin') { ... 403 }
-if (auth.role !== 'seller' && auth.role !== 'admin' && auth.role !== 'both') { ... 403 }
-```
+#### 1. Realtime Strategy Module (`src/lib/realtime-strategy.ts`) — NEW
+- **`getRealtimeStrategy()`** — Synchronous strategy detection
+  - Vercel + Supabase configured → `'supabase'`
+  - Local (localhost) → `'socketio'`
+  - Neither → `'polling'`
+- **`getRealtimeStrategyAsync()`** — Async strategy detection that probes Socket.io health endpoints
+- **`resetRealtimeStrategy()`** — Reset cached strategy (useful after env changes or HMR)
+- Strategy is cached after first detection to avoid repeated checks
+- Exported `RealtimeStrategy` type: `'supabase' | 'socketio' | 'polling'`
 
-#### Routes Fixed (79 routes total)
+#### 2. Supabase Realtime Manager (`src/lib/supabase-realtime.ts`) — NEW
+- **`SupabaseRealtimeManager`** class (singleton pattern) with:
+  - `subscribeToChat(conversationId, onMessage)` — Listens for INSERT events on Message table via Postgres Changes
+  - `subscribeToNotifications(userId, onNotification)` — Listens for INSERT events on Notification table via Postgres Changes
+  - `subscribeToTyping(conversationId, onTyping)` — Uses Supabase Broadcast for ephemeral typing indicators
+  - `subscribeToPresence(conversationId, userId, onPresenceChange)` — Uses Supabase Presence for online status tracking
+  - `emitTyping(conversationId, event)` — Broadcasts typing events
+  - `updatePresence(conversationId, data)` — Updates user's presence data
+  - `unsubscribe(channelName)` — Leave a specific channel
+  - `unsubscribeAll()` — Clean up all subscriptions
+  - `getActiveChannels()` — Debug helper
+- Uses environment variables `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` with fallback to hardcoded values from `supabase.ts`
+- Exported types: `ChatMessage`, `NotificationPayload`, `TypingEvent`, `PresenceState`
 
-1. **Notifications** — POST/PUT/DELETE: Uses `auth.userId` instead of body `userId`
-2. **Notification Preferences** — PUT: Uses `auth.userId`
-3. **Coupons** — POST/PATCH/DELETE: Seller or admin access required
-4. **Social Follow** — POST: Uses `auth.userId`
-5. **Social Stories** — POST: Seller access required; story view POST uses `auth.userId`
-6. **Social Activities** — POST: Uses `auth.userId`
-7. **Social Share** — POST: Uses `auth.userId`
-8. **Verification Seed Badges** — POST: Admin only
-9. **Verification Review** — POST: Admin only, uses `auth.userId` as `reviewedBy`
-10. **Verification Award Badge** — POST: Admin only
-11. **Disputes** — POST: Uses `auth.userId`; PUT: Uses `auth.userId` as `changedBy`; Messages/Resolve/Escalate/Evidence POSTs: Uses `auth.userId` for sender/resolver/escalator/uploader
-12. **Returns** — POST: Uses `auth.userId`; PUT: Uses `auth.userId` with role from JWT; Process Refund: Seller/admin only; Policy POST: Seller/admin only
-13. **Flash Sales** — POST: Seller/admin; PATCH/DELETE: Uses `auth.userId`, admin can override ownership
-14. **Wishlists** — POST/PATCH/DELETE/Items POST/DELETE: Auth required with `auth.userId`
-15. **Wishlist** — POST/DELETE/PATCH/Collections POST/PATCH/DELETE/Check-prices POST: Auth required
-16. **Reviews** — POST: Uses `auth.userId`; Helpful POST: Auth required; DELETE/PATCH: Auth required; Reply POST: Seller access required
-17. **Shipping Addresses** — POST/PUT/DELETE: Auth required with `auth.userId`
-18. **Shipping Zones/Rates** — POST/PUT/DELETE: Admin only
-19. **Shipping Shipments** — POST/PUT: Auth required
-20. **Shipments** — POST/PUT/DELETE: Auth required
-21. **Addresses** — POST: Auth required; PUT/DELETE: Auth required
-22. **Payment Info** — POST/PUT/DELETE: Auth required
-23. **Gigs** — POST: Seller access; PATCH/DELETE: Auth required; Questions/Answers POST: Auth required
-24. **Products** — POST: Seller access; PUT/PATCH/DELETE: Auth required with ownership check; Variants: Auth required; Import: Admin only
-25. **Shops** — POST: Auth required; PUT/DELETE: Auth required with ownership/admin override
-26. **Withdrawals** — POST: Auth required; PUT: Admin only
-27. **Orders** — POST already had auth; PUT/PATCH: Auth required
-28. **Messages** — POST: Auth required; Conversations Create: Auth required
-29. **Favorites** — POST: Auth required
-30. **Cart** — Already had auth; Cart Items/Sync: Already had auth
-31. **Payments** — POST: Auth required; PUT: Admin only; Verify: Auth required
-32. **Downloads Create** — POST: Auth required
-33. **AI Generate Description** — POST: Auth required
-34. **Feedback** — POST: Auth required
-35. **Tax Calculate** — POST: Auth required
-36. **Categories** — PATCH/DELETE: Admin only
+#### 3. Supabase Chat Hook (`src/hooks/use-supabase-chat.ts`) — NEW
+- Drop-in replacement for `useChatSocket` with identical interface
+- Uses Supabase Realtime Manager for:
+  - New message events via Postgres Changes (INSERT on Message table)
+  - Typing indicators via Broadcast
+  - Online presence via Presence
+- Auto-clears typing state after 3 seconds of no new typing events
+- `sendMessage()` is a no-op in Supabase mode — messages sent via REST API trigger Postgres Changes automatically
+- `markRead()` is a no-op — handled through REST API
+- `socket` property returns `null` (no Socket.io socket in Supabase mode)
+- Added `_strategy` debug property
 
-#### Key Security Improvements
-- **Eliminated unauthenticated mutation endpoints**: Every POST/PUT/PATCH/DELETE now requires a valid JWT
-- **Role-based access control**: Admin-only routes enforce `auth.role !== 'admin'`; seller routes enforce seller/admin/both roles
-- **User identity from JWT**: Routes that previously accepted `userId` from request body now use `auth.userId` from the verified JWT token, preventing impersonation
-- **Ownership verification**: Routes that check resource ownership (e.g., shop.userId === auth.userId) now also allow admin override
-- **Removed DB user lookups for role checks**: Where we previously queried the database to verify admin/seller status, we now trust the JWT role claim (set at login/registration time)
+#### 4. Supabase Notifications Hook (`src/hooks/use-supabase-notifications.tsx`) — NEW
+- Drop-in replacement for `useRealtimeNotifications` with identical interface
+- Uses Supabase Realtime Manager for:
+  - New notification events via Postgres Changes (INSERT on Notification table)
+- Maps Supabase `NotificationPayload` to app `Notification` type
+- Same toast notification UI as Socket.io version (category icons, click-to-navigate)
+- Same 60-second polling fallback for unread count
+- Added `_strategy` debug property
+
+#### 5. Updated Chat Hook (`src/hooks/use-chat-socket.ts`) — MODIFIED
+- Strategy-aware: checks `getRealtimeStrategy()` on mount via `useMemo`
+- If `'socketio'`: Uses existing Socket.io code (unchanged)
+- If `'supabase'`: Uses `SupabaseRealtimeManager` directly (inline Supabase logic)
+- If `'polling'`: No-op actions, messages fetched via REST
+- All three code paths coexist in the same hook — no conditional hook calls
+- Socket.io singleton and all Socket.io effects guarded by `strategy !== 'socketio'` early returns
+- Supabase refs (manager, active conversations, typing timeouts) added for Supabase path
+- `_strategy` debug property exposed in return value
+- Backward compatible — existing Socket.io consumers work unchanged on local dev
+
+#### 6. Updated Notifications Hook (`src/hooks/use-realtime-notifications.tsx`) — MODIFIED
+- Strategy-aware: checks `getRealtimeStrategy()` on mount via `useMemo`
+- If `'socketio'`: Uses existing Socket.io code (unchanged)
+- If `'supabase'`: Uses `SupabaseRealtimeManager` directly (inline Supabase logic)
+- If `'polling'`: Relies on 60-second polling fallback
+- All three code paths coexist in the same hook — no conditional hook calls
+- Socket.io effects guarded by `strategy !== 'socketio'` early returns
+- Supabase subscription effect guarded by `strategy !== 'supabase'` early return
+- `_strategy` debug property exposed in return value
+- Backward compatible — existing Socket.io consumers work unchanged on local dev
+
+#### 7. SQL Setup Script (`scripts/enable-realtime.sql`) — NEW
+- `ALTER PUBLICATION supabase_realtime ADD TABLE "Message"` — Enable Realtime on Message table
+- `ALTER PUBLICATION supabase_realtime ADD TABLE "Notification"` — Enable Realtime on Notification table
+- Includes optional RLS policy examples for secure access
+- Includes verification query to confirm setup
+- Comprehensive comments explaining prerequisites and post-setup steps
+
+### Key Design Decisions
+
+1. **Strategy pattern over conditional imports**: The hooks check the strategy at runtime, allowing all code paths to coexist without conditional hook calls (which violate React's rules of hooks).
+
+2. **Inline Supabase logic in existing hooks**: Rather than switching between two different hook implementations (which would require conditional hook calls), the strategy-aware logic is embedded directly in the existing hooks.
+
+3. **Separate Supabase-specific hooks**: `use-supabase-chat.ts` and `use-supabase-notifications.tsx` exist as standalone hooks that can be used directly by consumers who know they want Supabase Realtime exclusively.
+
+4. **Singleton SupabaseRealtimeManager**: Ensures only one Supabase client instance is created, with channel reuse across different subscription calls.
+
+5. **Postgres Changes for persistent data, Broadcast for ephemeral data**: New messages and notifications use Postgres Changes (INSERT events) since they persist in the database. Typing indicators use Broadcast since they're ephemeral.
+
+6. **Graceful degradation**: If Supabase Realtime fails to initialize, the system falls back to REST polling. The 60-second unread count polling always runs as a safety net.
 
 ### Lint Results
-- 0 errors, 3 pre-existing warnings (unrelated to auth changes)
-- All 79+ modified route files pass ESLint cleanly
+- 0 errors in new/modified files
+- 3 pre-existing warnings (unrelated to this task)
+- Dev server running successfully on port 3000
 
 ---
 
-## Task 4 — JWT Authentication for WebSocket Services + CORS Restriction
+Task ID: 8
+Agent: carrier-agent
+Task: Order tracking with TCS/Leopards carrier integration
+
+Work Log:
+- Read worklog.md, Prisma schema, existing shipping API routes, order tracking page, shipment tracker component, types
+- Verified Prisma Shipment model already has carrier, trackingNumber, trackingUrl, estimatedDelivery fields — no schema changes needed
+- Created src/lib/pakistan-cities.ts — 60+ Pakistani cities with TCS and Leopards city codes, province info, helper functions
+- Created src/lib/carriers/types.ts — CarrierProvider interface, ShipmentRequest, ShipmentResponse, TrackingResponse, CancelResponse, TrackingEvent types
+- Created src/lib/carriers/tcs.ts — Full TCS carrier integration with sandbox/mock mode, live API integration with retry logic
+- Created src/lib/carriers/leopards.ts — Full Leopards Courier integration with sandbox/mock mode, live API integration with retry logic
+- Created src/lib/carriers/index.ts — Carrier abstraction layer with getCarrier(), getAvailableCarriers(), getCarrierProviders(), getDefaultCarrier(), plus Self-Delivery provider
+- Created src/app/api/shipping/carriers/route.ts — GET endpoint to list available carriers
+- Created src/app/api/shipping/book/route.ts — POST endpoint to book a shipment with a carrier (calls carrier API, creates Shipment record, updates Order)
+- Created src/app/api/shipping/track/[trackingNumber]/route.ts — GET endpoint for live tracking with 5-minute cache, auto-syncs carrier status to DB
+- Created src/app/api/shipping/cancel-shipment/route.ts — POST endpoint to cancel a shipment (calls carrier API + updates DB)
+- Created src/components/marketplace/shipping/book-shipment-dialog.tsx — Carrier selection dialog with TCS/Leopards/Self-delivery options
+- Created src/components/marketplace/shipping/live-tracking-section.tsx — Live tracking timeline with carrier data, history, cancel button
+- Enhanced order-tracking-page.tsx with Book Shipment button, LiveTrackingSection integration, Track Package button for buyers
+
+Stage Summary:
+- Full TCS and Leopards Courier carrier integration with sandbox/mock mode for development
+- Carrier abstraction layer with 3 providers: TCS, Leopards, Self-Delivery
+- 4 new API routes: /shipping/carriers, /shipping/book, /shipping/track/[trackingNumber], /shipping/cancel-shipment
+- 2 new UI components: BookShipmentDialog, LiveTrackingSection
+- Enhanced order tracking page with carrier booking and live tracking features
+- Pakistan cities database with 60+ cities and carrier-specific city codes
+- Lint passes with 0 errors (3 pre-existing warnings unrelated to this task)
+- Dev server running successfully on port 3000
+
+---
+Task ID: 3
+Agent: analytics-agent
+Task: Enhanced seller analytics dashboard with charts
+
+Work Log:
+- Read existing seller-analytics.tsx, API route, and dashboard route to understand current state
+- Enhanced `/api/analytics/seller/route.ts` with 7 new data endpoints: conversion funnel, revenue forecast, hourly sales, day-of-week analysis, customer retention, AOV trend, sales heatmap, and auto-generated insights
+- Extended daily revenue data from 30 to 90 days
+- Added linear regression function for revenue forecasting (3 months projection)
+- Created new dynamic Recharts components: RechartsForecastChart (ComposedChart), RechartsRadarChart, RechartsAOVChart
+- Built SalesHeatmap component with calendar-style layout (GitHub contribution graph style), amber intensity levels, click-to-select day details
+- Built ConversionFunnel component with animated horizontal bars, amber gradient (light→dark), rates & drop-off percentages
+- Built InsightCard component for auto-generated insights (positive/negative/info types)
+- Built DateRangePicker component with 4 options: 7D, 30D, 90D, 12M
+- Added CSV export functionality on Revenue, Orders, AOV, and Top Products charts
+- Enhanced Top Products table with Conversion Rate column and color-coded badges
+- Added Customer Retention visualization (donut chart + stat cards)
+- Added Key Insights section at the top with 3-5 auto-generated insight cards
+- Updated all chart colors to amber/gold palette (#d97706, #f59e0b, #fbbf24)
+- Ensured full dark mode support across all new components
+- Fixed TypeScript errors: typed arrays in API route, forecast chart rendering, tooltip type compatibility
+- All files pass ESLint cleanly
+
+Stage Summary:
+- API route now returns 7 additional data sets (conversion funnel, revenue forecast, hourly sales, day-of-week analysis, customer retention, AOV trend, heatmap data, insights)
+- 7 new chart/visualization components added to the seller analytics page
+- Full interactivity: date range picker, CSV export, heatmap click-to-select, animated funnel
+- Key Insights section auto-generates 3-5 data-driven insight cards
+- All charts use amber/gold color palette with dark mode support
+- Zero new lint errors introduced
+---
+Task ID: 1
+Agent: skeleton-agent
+Task: Add loading skeletons to data-heavy pages
+
+Work Log:
+- Created src/components/marketplace/shared/loading-skeletons.tsx with 13 skeleton components
+- Integrated skeletons into 8 page components (search, product detail, seller/buyer dashboard, admin, order tracking, wallet)
+- All skeletons use animate-pulse with dark mode support
+
+Stage Summary:
+- 13 reusable skeleton components created (ProductCardSkeleton, ProductGridSkeleton, SearchPageSkeleton, ProductDetailSkeleton, DashboardSkeleton, OrderListSkeleton, WalletSkeleton, AdminSkeleton, ReviewListSkeleton, ChartSkeleton, TableSkeleton, ShopViewSkeleton, StatCardSkeleton)
+- Integrated into 8 data-heavy page components
+
+---
+Task ID: 2
+Agent: search-agent
+Task: Enhanced search with advanced filters
+
+Work Log:
+- Created src/components/ui/range-slider.tsx — dual-thumb range slider with amber gradient
+- Enhanced search API with new filter params (sellerVerified, onSale, minDiscount, dateAdded)
+- Updated search-page.tsx with all new filters and active filter tags bar
+
+Stage Summary:
+- Price range: dual-thumb slider with tooltips + preset buttons
+- Rating filter: visual star rows with count badges
+- Location filter: region-grouped selector with search and multi-select
+- New filters: Seller Verification toggle, Discount filter, Date Added filter
+- Active filter tags bar with color-coded removable chips
+
+---
+Task ID: 3
+Agent: analytics-agent
+Task: Enhanced seller analytics dashboard
+
+Work Log:
+- Extended analytics API with 7 new data endpoints (conversion funnel, revenue forecast, hourly sales, day of week, customer retention, AOV trend, sales heatmap)
+- Created 8 new chart components (Sales Heatmap, Revenue Forecast, Conversion Funnel, Peak Hours, Day of Week, AOV Trend, Customer Retention, Top Products Comparison)
+- Added CSV export and Key Insights section
+
+Stage Summary:
+- 8 new chart types with amber/gold theme
+- Auto-generated key insights cards
+- Date range picker (7D/30D/90D/12M) for all charts
+- CSV export for revenue, orders, AOV, and top products data
+
+---
+Task ID: 4
+Agent: realtime-agent
+Task: Migrate to Supabase Realtime for Vercel
+
+Work Log:
+- Created src/lib/realtime-strategy.ts — environment detection (Vercel vs local)
+- Created src/lib/supabase-realtime.ts — Supabase Realtime manager
+- Created src/hooks/use-supabase-chat.ts and use-supabase-notifications.tsx
+- Updated existing hooks to use strategy pattern (Socket.io local, Supabase on Vercel)
+- Created scripts/enable-realtime.sql for Supabase setup
+
+Stage Summary:
+- Supabase Realtime used on Vercel, Socket.io on local, polling as fallback
+- No breaking changes to existing Socket.io functionality
+- Proper cleanup and channel management
+
+---
+Task ID: 5
+Agent: pwa-agent
+Task: Add PWA support with manifest and service worker
+
+Work Log:
+- Created public/manifest.json, public/sw.js, public/offline.html
+- Created src/components/marketplace/shared/pwa-install-prompt.tsx
+- Created src/components/providers/pwa-provider.tsx
+- Updated layout.tsx with PWA metadata and PwaProvider wrapper
+
+Stage Summary:
+- PWA manifest with amber theme color (#d97706)
+- Service worker with cache-first (static), network-first (API), stale-while-revalidate (pages)
+- Install prompt banner with 7-day dismissal
+- Offline fallback page
+
+---
+Task ID: 6
+Agent: darkmode-agent
+Task: Dark mode polish audit and fixes
+
+Work Log:
+- Audited 50+ files for dark mode issues
+- Fixed 95 text-gray-900 without dark variant instances
+- Fixed 77 bg-white without dark variant instances
+- Fixed 43 border issues
+- Fixed amber/gold badge dark mode variants
+
+Stage Summary:
+- 200+ dark mode fixes across all component areas
+- Messages, seller/buyer dashboards, product cards, landing page, auth, search, admin all polished
+- Amber buttons now have dark:text-gray-900 for readability
+
+---
+Task ID: 7
+Agent: security-agent
+Task: Security hardening - rate limiting and CSRF
+
+Work Log:
+- Enhanced rate-limit.ts with new presets (login: 5/15min, register: 3/hour) and progressive delay
+- Updated login and register routes with stricter rate limiting
+- Added CSRF protection to 14 additional state-changing API routes
+- Created src/proxy.ts with security headers (X-Content-Type-Options, X-Frame-Options, CSP, etc.)
+- Extended account lockout from 15 to 30 minutes
+
+Stage Summary:
+- Progressive delay on failed login attempts (1s → 2s → 4s → ... capped at 60s)
+- IP + User-Agent fingerprinting for rate limiting
+- 14 additional routes protected with CSRF
+- Security headers: nosniff, DENY frame, XSS protection, CSP, Permissions-Policy
+
+---
+Task ID: 8
+Agent: carrier-agent
+Task: Order tracking with TCS/Leopards carrier integration
+
+Work Log:
+- Created src/lib/carriers/ with types.ts, tcs.ts, leopards.ts, index.ts
+- Created src/lib/pakistan-cities.ts with 60+ cities
+- Created 4 new API routes (carriers, book, track, cancel-shipment)
+- Created BookShipmentDialog and LiveTrackingSection UI components
+- Enhanced order tracking page with carrier integration
+
+Stage Summary:
+- TCS and Leopards Courier integration with sandbox/mock mode
+- Carrier abstraction layer (CarrierProvider interface)
+- Book shipment dialog for sellers
+- Live tracking section with carrier status timeline
+- 60+ Pakistani cities with carrier-specific city codes
+
+---
+Task ID: security-fix
+Agent: security-agent
+Task: Fix all critical security vulnerabilities
+
+Work Log:
+- Removed hardcoded secret fallbacks in auth-middleware.ts (JWT_SECRET), csrf.ts (CSRF_SECRET), two-factor.ts (hashBackupCode) — now throw FATAL errors if env vars missing
+- Added twoFactorPending field to AuthPayload interface and enforced it in both authenticateRequest() and authenticateRequestWithSession() — rejects tokens with 2FA still pending
+- Added authenticateRequestWithSession to product POST route, replaced body.userId with server-extracted auth.userId, added seller role check, price positive number validation, product type allowlist validation
+- Created src/lib/sanitize.ts with sanitizeString, sanitizeHtml, isValidEmail, isStrongPassword, normalizeEmail, isPositiveNumber utilities
+- Fixed register route: normalized email, validated email format with isValidEmail, strengthened password policy with isStrongPassword (8+ chars, uppercase, lowercase, number), sanitized name with sanitizeString, hashed emailVerifyToken with SHA-256 before storage
+- Fixed login route: normalized email with normalizeEmail, removed remaining attempts info leakage, removed debug info from 500 error response, changed "Invalid email or password" to generic "Invalid credentials" for user-not-found case
+- Added server-side file upload validation in supabase-storage.ts: MIME type allowlist (5 image types), 5MB max file size, folder allowlist validation, replaced Math.random() with crypto.randomBytes(16) for secure file paths, added validateFile() export
+- Fixed security headers in proxy.ts: added HSTS header (max-age=63072000; includeSubDomains; preload), removed unsafe-eval from script-src CSP, added object-src none to CSP
+- Added authenticateRequestWithSession to shops POST route (replaced body.userId with auth.userId), wallet GET route (with ownership verification), withdrawals POST route (replaced body.userId with auth.userId), disputes POST route (replaced body.userId with auth.userId)
+- Hashed email verification tokens in verify-email route (SHA-256 hashes incoming token before comparison) and resend-verification route (stores hashed token, sends raw in email)
+- Updated resend-verification route: uses ?verify= query param instead of ?token= for consistency with register flow
+
+Stage Summary:
+- All 10 critical security vulnerabilities fixed across 11 files
+- Zero lint errors (0 errors, 3 pre-existing warnings in unrelated files)
+- Dev server running without issues
+- No hardcoded secrets remain — all throw FATAL errors if env vars missing
+- All critical API routes now require authenticated sessions with server-extracted user IDs
+- Email verification tokens are hashed (SHA-256) before database storage
+- File uploads are validated server-side (MIME type allowlist, size limit, folder allowlist, crypto-secure paths)
+- CSP tightened (no unsafe-eval, object-src none), HSTS added
+- Login no longer leaks user existence or remaining attempt counts
+
+
+---
+
+## Task 3 — Security Fix: Add Authentication to Dangerous Endpoints (Agent: main)
 
 **Date:** 2025-03-04
-**Agent:** security-agent
+**Agent:** main
 
 ### Summary
-
-Added JWT authentication to both WebSocket mini-services (chat on port 3003, notifications on port 3004), restricted CORS origins from wildcard `*` to a whitelist, added userId verification on all socket events to prevent impersonation, and added Bearer token authentication to the HTTP /push endpoint (port 3005). Updated all 4 frontend Socket.io connection points to pass the JWT auth token, and updated the server-side notification push to include auth headers.
+Fixed 6 dangerous API endpoints that had weak or no authentication. Added JWT admin authentication, rate limiting, and masked sensitive data across all affected endpoints.
 
 ### Changes Made
 
-#### 1. Chat Service (`mini-services/chat-service/index.ts`) — MAJOR REWRITE
+#### 1. Admin Setup Endpoint (`src/app/api/setup/admin/route.ts`)
+- **Removed hardcoded password from response body**: Both `GET` and `POST` handlers previously returned `{ credentials: { email, password: 'Admin123!' } }` in the response. Now returns only `{ success: true, message: 'Admin account created successfully' }` / `'Admin account updated successfully'` without any credentials.
+- **Added rate limiting**: Max 3 attempts per hour per IP using `rateLimit` and `getRateLimitKey` from `@/lib/rate-limit`. Returns 429 with Retry-After header when exceeded.
+- **Kept key-based protection** as an additional layer (removed the hint "Use ?key=marketo-setup-2024" from error message to avoid leaking the expected key format).
+- Rate limiting applied to both GET and POST handlers.
 
-- **CORS Restriction**: Replaced `origin: "*"` with `ALLOWED_ORIGINS` array:
-  - `process.env.FRONTEND_URL || 'http://localhost:3000'`
-  - `'https://marketo-vercel-app.vercel.app'`
-- **JWT Authentication Middleware**: Added `io.use()` middleware that:
-  - Extracts token from `socket.handshake.auth.token` or `socket.handshake.query.token`
-  - Verifies the token using the same JWT secret as the main Next.js app (`marketo-dev-secret-change-in-production`)
-  - Stores decoded user payload in `socket.data.user`
-  - Rejects connections without valid JWT with "Authentication required" or "Invalid token" errors
-- **User ID Verification**: Added verification on all socket events:
-  - `register-user`: Verifies `socket.data.user?.userId !== userId` → emits error + returns
-  - `join-conversation`: Verifies `socket.data.user?.userId !== userId` → emits error + returns
-  - `send-message`: Verifies `socket.data.user?.userId !== message.senderId` → emits error + returns
-  - `typing`, `stop-typing`, `mark-read`: Silently return if userId doesn't match
-- **Installed**: `jsonwebtoken@9.0.3` dependency
+#### 2. DB Diagnostic Endpoint (`src/app/api/db-diagnostic/route.ts`)
+- **Replaced key-based auth with JWT admin authentication**: Removed the `?key=marketo-setup-2024` query param check entirely. Now requires `authenticateRequest` from `@/lib/auth-middleware` with admin role.
+- **Masked sensitive connection details**:
+  - `DATABASE_URL_prefix`: Now shows only first 15 chars + `***` (was 30 chars + `...`)
+  - `DIRECT_URL_prefix`: Now shows only first 15 chars + `***` (was 30 chars + `...`)
+  - `parsedUrl.username`: Now shows only first 3 chars + `***` (was full username)
+  - Added `passwordSet: boolean` instead of exposing the actual password
+  - Removed unused `directConnStr` variable that would have leaked the connection string
+- **Added WARNING comments** on all `ssl: { rejectUnauthorized: false }` usages noting that TLS certificate verification is disabled and should be used with caution.
 
-#### 2. Notification Service (`mini-services/notification-service/index.ts`) — MAJOR REWRITE
+#### 3. Schema Sync Endpoint (`src/app/api/admin/sync-schema/route.ts`)
+- **Added JWT admin authentication** to both `POST` and `GET` handlers using `authenticateRequest` from `@/lib/auth-middleware`.
+- **Kept key-based protection** as an additional layer (dual authentication: JWT + key).
+- Auth check runs before key check to reject unauthenticated requests early.
 
-- **CORS Restriction**: Same `ALLOWED_ORIGINS` array as chat service
-- **JWT Authentication Middleware**: Same `io.use()` middleware as chat service
-- **User ID Verification**: Added verification on socket events:
-  - `register-user`: Verifies `socket.data.user?.userId !== userId` → emits error + returns
-  - `notification-read`, `all-notifications-read`, `unread-count-update`, `notification-deleted`: Silently return if userId doesn't match
-- **HTTP /push Endpoint Authentication**:
-  - Extracts `Authorization: Bearer <token>` header
-  - Returns 401 with `{"error": "Authentication required"}` if no auth header
-  - Returns 401 with `{"error": "Invalid token"}` if JWT verification fails
-  - Only processes push request after successful JWT verification
-- **Installed**: `jsonwebtoken@9.0.3` dependency
+#### 4. Email Send Endpoint (`src/app/api/email/send/route.ts`)
+- **Added JWT admin authentication**: Requires `authenticateRequest` with admin role. Previously had ZERO authentication — was an open email relay.
+- **Added rate limiting**: 5 requests per minute per IP using `rateLimit` and `getRateLimitKey` from `@/lib/rate-limit`. Returns 429 with Retry-After header when exceeded.
+- Endpoint now restricted to admin-only use (system emails).
 
-#### 3. Frontend: Chat Socket Hook (`src/hooks/use-chat-socket.ts`)
+#### 5. Category Seed Endpoint (`src/app/api/categories/seed/route.ts`)
+- **Added JWT admin authentication**: Requires `authenticateRequest` with admin role. Previously had ZERO authentication.
+- Updated function signature from `POST()` to `POST(request: NextRequest)` to accept the request parameter.
+- Updated import from `NextResponse` to include `NextRequest`.
 
-- Updated `getChatSocket()` to accept `authToken?: string | null` parameter
-- Added `auth: { token: authToken || undefined }` to the `io()` connection options
-- Added `connect_error` event handler to log authentication failures
-- Updated `useChatSocket()` hook to destructure `authToken` from store
-- Added token refresh logic: updates `socket.auth.token` on each reconnection attempt
-
-#### 4. Frontend: Notification Socket Hook (`src/hooks/use-realtime-notifications.tsx`)
-
-- Updated `getNotificationSocket()` to accept `authToken?: string | null` parameter
-- Added `auth: { token: authToken || undefined }` to the `io()` connection options
-- Added `connect_error` event handler to log authentication failures
-- Updated `useRealtimeNotifications()` hook to destructure `authToken` from store
-- Added token refresh logic: updates `socket.auth.token` on each reconnection attempt
-
-#### 5. Frontend: Seller Messages (`src/components/marketplace/seller/seller-messages.tsx`)
-
-- Added `authToken` extraction from `useMarketplaceStore()`
-- Added `auth: { token: authToken || undefined }` to the `io()` connection options
-
-#### 6. Frontend: Buyer Messages (`src/components/marketplace/buyer/buyer-messages.tsx`)
-
-- Added `authToken` extraction from `useMarketplaceStore()`
-- Added `auth: { token: authToken || undefined }` to the `io()` connection options
-
-#### 7. Backend: Notification Push (`src/lib/notifications.ts`)
-
-- Updated `pushNotificationSocket()` to include `Authorization: Bearer <token>` header
-- Signs a short-lived (1-minute) service token using the same JWT secret
-- Token payload: `{ userId: 'service', email: 'system', role: 'service' }`
-- Uses dynamic `import('jsonwebtoken')` since the main app already has jsonwebtoken installed
-
-### Test Results
-
-- **Unauthenticated /push**: Returns `401 {"success":false,"error":"Authentication required"}` ✅
-- **Authenticated /push with valid JWT**: Returns `200 {"success":true}` ✅
-- **Invalid JWT**: Returns `401 {"success":false,"error":"Invalid token"}` ✅
-- **Health endpoint**: Returns `200 {"status":"ok","connections":0}` ✅
+#### 6. Category Bulk-Seed Endpoint (`src/app/api/categories/bulk-seed/route.ts`)
+- **Replaced key-based auth with JWT admin authentication**: Removed the `?key=marketo-setup-2024` query param check. Now requires `authenticateRequest` with admin role.
+- Updated function signature from `POST(request: Request)` to `POST(request: NextRequest)`.
+- Updated docstring to remove key reference and note JWT admin auth requirement.
 
 ### Lint Results
-
-- 0 errors, 3 pre-existing warnings (unrelated to this task)
-- All new and modified files pass ESLint cleanly
+- 0 errors, 3 pre-existing warnings (all in unrelated files)
+- All modified files pass ESLint cleanly
 
 ---
 
-## Task 5 — Zod Input Validation for All API Routes (Agent: validation)
+## Task 2 — Admin API Security Fix: JWT Auth for All Admin Routes
+
+**Date:** 2025-03-05
+**Agent:** security-fix
 
 ### Summary
+Fixed critical security vulnerability in all admin API routes. Routes were using query-param or body-param `userId` for authentication instead of proper JWT verification, allowing anyone who knows an admin's userId to access admin endpoints. Also fixed insecure `startsWith('admin')` admin check pattern and broken auth implementations in audit-log/reports routes.
 
-Added comprehensive Zod input validation to ALL critical API routes across the Marketo marketplace. Created a centralized validation module (`src/lib/validation.ts`) with 25+ Zod schemas and a generic `validateInput()` helper function, then integrated validation into 19 route files covering 25+ API endpoints.
+### Vulnerabilities Fixed
+
+#### 1. No Authentication (`/api/admin/settings/route.ts`)
+- **Before**: GET and PATCH had NO auth at all — anyone could read/modify platform settings
+- **After**: Added `authenticateRequest(request)` + `auth.role !== 'admin'` check on both handlers
+- Added `userId: auth.userId` to audit log
+
+#### 2. Query/Body Param userId Auth — 4 Routes
+- `/api/admin/stats/route.ts` — Used `searchParams.get('userId')` + DB `user.isAdmin` check
+- `/api/admin/users/route.ts` — GET: query param userId; PUT: body param userId
+- `/api/admin/disputes/route.ts` — GET: query param userId; PUT: body param userId
+- `/api/admin/transactions/route.ts` — Used `searchParams.get('userId')` + DB `user.isAdmin` check
+- `/api/admin/withdrawals/route.ts` — Used `searchParams.get('userId')` + DB `user.isAdmin` check (also allowed unauthenticated access when no userId provided!)
+- **Before**: Anyone who knew an admin's userId could pass it as a query/body parameter
+- **After**: Replaced with `authenticateRequest(request)` + `auth.role !== 'admin'` check; uses `auth.userId` from JWT
+
+#### 3. Insecure `startsWith('admin')` Pattern — 4 Files
+- `/api/admin/abandoned-carts/route.ts`
+- `/api/admin/data-export/route.ts`
+- `/api/admin/reports/[id]/route.ts`
+- `/api/cart/send-reminder/route.ts`
+- **Before**: `auth.role !== 'admin' && !auth.userId.startsWith('admin')` — any userId starting with "admin" passed the check
+- **After**: `auth.role !== 'admin'` — only JWT role claim determines admin access
+
+#### 4. Broken Auth Implementation — 2 Routes
+- `/api/admin/audit-log/route.ts`
+- `/api/admin/reports/route.ts`
+- **Before**: `await authenticateRequest(request)` (function is synchronous, await is wrong) + `auth.isAdmin` (property doesn't exist on `AuthPayload`, has `role` instead)
+- **After**: `authenticateRequest(request)` (sync) + proper `auth.role !== 'admin'` check with separate 401/403 responses
+
+#### 5. Hardcoded Key Auth — 1 Route
+- `/api/admin/sync-schema/route.ts`
+- **Before**: Used hardcoded key `marketo-sync-schema-2024` for auth
+- **After**: JWT admin auth via `authenticateRequest` + `auth.role !== 'admin'`; removed hardcoded key check
+
+### Files Modified (13 total)
+1. `src/app/api/admin/settings/route.ts`
+2. `src/app/api/admin/stats/route.ts`
+3. `src/app/api/admin/users/route.ts`
+4. `src/app/api/admin/disputes/route.ts`
+5. `src/app/api/admin/transactions/route.ts`
+6. `src/app/api/admin/withdrawals/route.ts`
+7. `src/app/api/admin/abandoned-carts/route.ts`
+8. `src/app/api/admin/data-export/route.ts`
+9. `src/app/api/admin/reports/[id]/route.ts`
+10. `src/app/api/cart/send-reminder/route.ts`
+11. `src/app/api/admin/audit-log/route.ts`
+12. `src/app/api/admin/reports/route.ts`
+13. `src/app/api/admin/sync-schema/route.ts`
+
+### Routes NOT Modified (already secure with JWT + DB check)
+- `/api/admin/shops/route.ts`
+- `/api/admin/shops/[id]/approve/route.ts`
+- `/api/admin/products/[id]/approve/route.ts`
+
+### Lint Results
+- 0 errors, 3 pre-existing warnings (all in unrelated files)
+- All modified files pass ESLint cleanly
+
+---
+
+## Task 1 — Comprehensive Security Proxy (middleware) (Agent: main)
+
+### Summary
+Enhanced the existing `src/proxy.ts` (Next.js 16's middleware equivalent) with comprehensive security headers, admin route protection via JWT verification, request size limiting, and HTTP method validation. Installed `jose` for Edge Runtime-compatible JWT verification since `jsonwebtoken` is Node.js-only and cannot run in the Edge Runtime.
+
+**Important**: The task originally asked for `src/middleware.ts`, but Next.js 16 uses the `proxy.ts` convention instead. Creating both files causes a build error ("Both middleware file and proxy file are detected"). The functionality was implemented in `src/proxy.ts` instead.
 
 ### Changes Made
 
-#### 1. Centralized Validation Module (`src/lib/validation.ts`) — NEW
+#### 1. Installed `jose` package (Edge Runtime JWT verification)
+- `jose@6.2.3` — Edge Runtime-compatible JWT library
+- Needed because `jsonwebtoken` (used in `src/lib/auth-middleware.ts`) relies on Node.js `crypto` module which is unavailable in Edge Runtime
+- Uses `jwtVerify()` from `jose` with the same HS256 algorithm and JWT_SECRET
 
-- **`validateInput<T>(schema, input)`** — Generic validation helper returning `{ success: true, data: T }` or `{ success: false, error: string }`
-- Flattens ZodError issues into a human-readable string (path + message)
-- **25+ Zod Schemas** defined for all route inputs (productCreateSchema, orderCreateSchema, reviewCreateSchema, messageSendSchema, disputeCreateSchema, returnCreateSchema, addressCreateSchema, addressUpdateSchema, addressDeleteSchema, socialFollowSchema, socialShareSchema, storyCreateSchema, couponCreateSchema, couponValidateSchema, notificationCreateSchema, notificationUpdateSchema, notificationDeleteSchema, wishlistCreateSchema, wishlistItemAddSchema, wishlistItemRemoveSchema, flashSaleCreateSchema, gigCreateSchema, shopCreateSchema, verificationSubmitSchema, withdrawalCreateSchema, paymentInfoCreateSchema, cartItemAddSchema, aiDescriptionSchema)
+#### 2. Rewrote `src/proxy.ts` — Comprehensive Security Proxy
 
-#### 2. Route Files Updated (19 files)
+**Security Headers** (applied to ALL responses):
+- `Content-Security-Policy`: Restrictive CSP with:
+  - `script-src 'self' 'unsafe-eval'` (dev mode) / `script-src 'self'` (production) — no `unsafe-inline` for scripts
+  - `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com` — `unsafe-inline` required for Tailwind CSS
+  - `font-src 'self' https://fonts.gstatic.com data:` — Google Fonts support
+  - `img-src 'self' data: blob: https:` — data URIs, blob, and remote images
+  - `connect-src 'self' ws: wss: https: http:` — WebSocket (Socket.io) + API calls
+  - `worker-src 'self' blob:` — worker scripts
+  - `frame-ancestors 'none'` — prevents clickjacking
+  - `base-uri 'self'; form-action 'self'; object-src 'none'`
+- `X-Frame-Options: DENY` — prevents framing
+- `X-Content-Type-Options: nosniff` — prevents MIME sniffing
+- `Referrer-Policy: strict-origin-when-cross-origin` — referrer leakage control
+- `Permissions-Policy: camera=(), microphone=(), geolocation=()` — disables sensitive APIs
+- `X-DNS-Prefetch-Control: on` — enables DNS prefetching
+- `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload` — **only in production** (not dev over HTTP)
 
-Each route replaced manual `if (!field)` checks with `validateInput(schema, body)`, returning 400 with Zod error messages on failure, and using `validation.data` for all subsequent logic:
+**Route Protection** (admin API routes):
+- All `/api/admin/*` routes require valid JWT in `Authorization: Bearer <token>` header
+- JWT verified using `jose` (Edge Runtime compatible) with HS256 algorithm
+- Checks `role` claim — only `'admin'` or `'both'` roles are allowed
+- Rejects tokens with `twoFactorPending: true`
+- Returns 401 for missing/invalid tokens, 403 for non-admin roles
+- **Whitelisted routes** (bypass JWT check, have own key-based auth):
+  - `/api/admin/sync-schema` — uses `key` parameter auth
+  - `/api/admin/setup` — uses setup key auth
+- Passes authenticated user info via custom headers: `x-mw-user-id`, `x-mw-user-email`, `x-mw-user-role`
 
-- `src/app/api/products/route.ts` — POST: product creation validation
-- `src/app/api/orders/route.ts` — POST: order creation with items array
-- `src/app/api/reviews/route.ts` — POST: review creation + helpful vote
-- `src/app/api/messages/route.ts` — POST: message sending
-- `src/app/api/disputes/route.ts` — POST: dispute creation
-- `src/app/api/returns/route.ts` — POST: return request
-- `src/app/api/shipping/addresses/route.ts` — POST, PUT, DELETE: address CRUD
-- `src/app/api/social/follow/route.ts` — POST: shop follow toggle
-- `src/app/api/social/share/route.ts` — POST: product share
-- `src/app/api/social/stories/route.ts` — POST: story creation
-- `src/app/api/coupons/route.ts` — POST: coupon creation
-- `src/app/api/coupons/validate/route.ts` — POST: coupon validation
-- `src/app/api/notifications/route.ts` — POST, PUT, DELETE: notification CRUD
-- `src/app/api/wishlists/route.ts` — POST: wishlist creation
-- `src/app/api/wishlists/[id]/items/route.ts` — POST, DELETE: wishlist item operations
-- `src/app/api/flash-sales/route.ts` — POST: flash sale creation
-- `src/app/api/gigs/route.ts` — POST: gig creation
-- `src/app/api/shops/route.ts` — POST: shop creation
-- `src/app/api/verification/submit/route.ts` — POST: verification submission
-- `src/app/api/withdrawals/route.ts` — POST: withdrawal request
-- `src/app/api/payment-info/route.ts` — POST: payment info creation
-- `src/app/api/cart/items/route.ts` — POST: cart item addition
-- `src/app/api/ai/generate-description/route.ts` — POST: AI description generation
+**Request Size Limiting**:
+- Checks `Content-Length` header on API routes (non-GET/HEAD)
+- Maximum: 10MB (10,485,760 bytes)
+- Returns 413 with descriptive error message if exceeded
 
-#### 3. Validation Patterns
+**HTTP Method Validation**:
+- For API routes, only allows: GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS
+- Returns 405 for any other HTTP method
 
-- **Fail-fast**: Validation runs before auth checks and DB queries
-- **Type-safe**: `validation.data` is fully typed, replacing raw `body`
-- **Enum validation**: All enum fields use `z.enum()` (product type, dispute type, return reason, priority, payment method, etc.)
-- **String length limits**: All string fields have `max()` constraints
-- **Array constraints**: Arrays have `min()`/`max()` bounds with item-level validation
-- **Number bounds**: Prices positive with max caps, quantities positive integers with limits
-- **Consistent error format**: Returns `{ success: false, error: "<field>: <message>; ..." }` with 400 status
+**Matcher Configuration**:
+- Matches all routes except: `_next/static`, `_next/image`, `favicon.ico`, and common static file extensions (ico, png, jpg, jpeg, gif, svg, webp, woff, woff2, ttf, eot, otf)
+
+#### 3. Removed `src/middleware.ts` (initially created, then deleted)
+- Creating both `middleware.ts` and `proxy.ts` causes Next.js 16 build error
+- All functionality moved to `proxy.ts`
+
+### Testing Results
+- ✅ Homepage loads correctly with all security headers
+- ✅ API routes receive security headers
+- ✅ Admin routes return 401 without auth token
+- ✅ Admin routes return 401 with invalid JWT
+- ✅ Whitelisted admin routes (sync-schema) pass through (not blocked by JWT check)
+- ✅ Invalid HTTP methods (e.g., PROPFIND) on API routes return 405
+- ✅ CSP includes `unsafe-eval` only in dev mode
+- ✅ HSTS header only in production (not in dev)
+- ✅ Non-admin API routes (e.g., /api/categories) work normally
+
+### Lint Results
+- 0 errors, 3 pre-existing warnings (all in unrelated files)
+- All modified files pass ESLint cleanly
+
+---
+
+## Task 6 — Security Fix: next.config.ts Wildcard Image Domain + reactStrictMode (Agent: security)
+
+### Summary
+Fixed two security issues in `next.config.ts` and added an SSRF warning comment to the `Caddyfile`:
+1. Removed wildcard `hostname: '**'` from `images.remotePatterns` that allowed images from ANY hostname — replaced with specific allowed domains
+2. Enabled `reactStrictMode: true` (was `false`)
+3. Added SSRF risk warning comment to Caddyfile (functionality unchanged)
+
+### Investigation
+Before fixing the image config, searched the codebase for all image domain sources:
+- **Supabase Storage**: `veplxumszgotnkassotw.supabase.co` — primary image hosting (avatars, products, shops, reviews, evidence, stories)
+- Found hardcoded in: `src/lib/supabase.ts`, `src/lib/supabase-storage.ts`, `src/lib/supabase-realtime.ts`, `src/app/api/downloads/[id]/route.ts`
+- **Cloudinary**: Listed in `package.json` but no Cloudinary URLs found in app source code
+- **Other CDNs**: No `ui-avatars.com`, `via.placeholder.com`, `placehold.co`, `picsum.photos`, or `unsplash` URLs found in the codebase
+- **`.env` / `.env.example`**: Only `DATABASE_URL` in `.env`; `.env.example` references Supabase but no other image CDNs
+
+### Changes Made
+
+#### 1. `next.config.ts` — Replaced wildcard image domain
+**Before:**
+```js
+images: {
+  remotePatterns: [
+    { protocol: 'https', hostname: 'veplxumszgotnkassotw.supabase.co' },
+    { protocol: 'https', hostname: '**' },  // SECURITY RISK: allows ANY hostname
+  ],
+},
+```
+
+**After:**
+```js
+images: {
+  remotePatterns: [
+    // Supabase Storage — primary image hosting for avatars, products, shops, reviews, etc.
+    { protocol: 'https', hostname: 'veplxumszgotnkassotw.supabase.co' },
+    // Allow any Supabase project subdomain (in case project changes or multi-project setup)
+    { protocol: 'https', hostname: '*.supabase.co' },
+    // Local development (e.g. local Supabase or asset server)
+    { protocol: 'http', hostname: 'localhost' },
+    { protocol: 'https', hostname: 'localhost' },
+  ],
+},
+```
+
+- Replaced `hostname: '**'` (wildcard allowing ANY domain) with specific patterns
+- `*.supabase.co` covers all Supabase projects (current and future) without opening to arbitrary hosts
+- Added `localhost` for both `http` and `https` for local development
+- Kept the specific `veplxumszgotnkassotw.supabase.co` entry for clarity/explicit allowlisting
+- No `ui-avatars.com`, `placehold.co`, etc. — none are used in the codebase
+
+#### 2. `next.config.ts` — Enabled reactStrictMode
+- Changed `reactStrictMode: false` → `reactStrictMode: true`
+- React StrictMode helps identify unsafe lifecycles, legacy context API, deprecated findDOMNode usage, and detects unexpected side effects
+- This is the recommended default for new Next.js projects
+
+#### 3. `Caddyfile` — Added SSRF warning comment
+Added a prominent security warning comment at the top of the `:81` block explaining:
+- The `XTransformPort` parameter allows clients to specify arbitrary ports for reverse proxy
+- This creates an SSRF vulnerability (attacker can proxy to metadata endpoints, internal APIs, databases)
+- Listed 3 mitigation options: whitelist ports, add auth, restrict upstream services
+- Noted it's kept as-is for gateway functionality but should be locked down in production
+- No functional changes to the Caddyfile
+
+#### 4. Kept `ignoreBuildErrors: true`
+- Per instructions, removing this could break the build — lower priority item, left as-is
+
+### Lint Results
+- 0 errors, 3 pre-existing warnings (all in unrelated files)
+- All modified files pass ESLint cleanly
+
+### Dev Server Verification
+- Dev server auto-restarted after `next.config.ts` change
+- Server started successfully: `✓ Ready in 1013ms`
+
+---
+
+## Task 7 — CSRF Protection for Unprotected Mutation Routes (Agent: main)
+
+**Date:** 2025-03-04
+
+### Summary
+Added CSRF protection (`withCsrf` wrapper) to 7 API route files that had mutation handlers (POST/PATCH/PUT/DELETE) but were not using the `withCsrf` middleware. This closes a security gap where cross-site request forgery attacks could have been performed against these endpoints.
+
+### Changes Made
+
+#### 1. `/src/app/api/admin/settings/route.ts` — PATCH handler
+- Added `import { withCsrf } from '@/lib/with-csrf'`
+- Changed `export async function PATCH(request: NextRequest) {` → `export const PATCH = withCsrf(async (request: NextRequest) => {`
+- Changed closing `}` → `})`
+- GET handler left untouched (safe method, no CSRF needed)
+
+#### 2. `/src/app/api/categories/seed/route.ts` — POST handler
+- Added `import { withCsrf } from '@/lib/with-csrf'`
+- Changed `export async function POST(request: NextRequest) {` → `export const POST = withCsrf(async (request: NextRequest) => {`
+- Changed closing `}` → `})`
+
+#### 3. `/src/app/api/categories/bulk-seed/route.ts` — POST handler
+- Added `import { withCsrf } from '@/lib/with-csrf'`
+- Changed `export async function POST(request: NextRequest) {` → `export const POST = withCsrf(async (request: NextRequest) => {`
+- Changed closing `}` → `})`
+
+#### 4. `/src/app/api/categories/manage/route.ts` — POST handler
+- Added `import { withCsrf } from '@/lib/with-csrf'`
+- Changed `export async function POST(request: NextRequest) {` → `export const POST = withCsrf(async (request: NextRequest) => {`
+- Changed closing `}` → `})`
+
+#### 5. `/src/app/api/email/send/route.ts` — POST handler
+- Added `import { withCsrf } from '@/lib/with-csrf'`
+- Changed `export async function POST(request: NextRequest) {` → `export const POST = withCsrf(async (request: NextRequest) => {`
+- Changed closing `}` → `})`
+
+#### 6. `/src/app/api/search/route.ts` — POST handler
+- Added `import { withCsrf } from '@/lib/with-csrf'`
+- Changed `export async function POST(request: NextRequest) {` → `export const POST = withCsrf(async (request: NextRequest) => {`
+- Changed closing `}` → `})`
+- GET handler left untouched (safe method, no CSRF needed)
+
+#### 7. `/src/app/api/products/import/route.ts` — POST handler
+- Added `import { withCsrf } from '@/lib/with-csrf'`
+- Changed `export async function POST(req: NextRequest) {` → `export const POST = withCsrf(async (req: NextRequest) => {`
+- Changed closing `}` → `})`
+
+### Routes Audited but Not Changed
+- Confirmed `/src/app/api/search/route.ts` and `/src/app/api/products/import/route.ts` do exist and were updated
+- All other API routes with mutation handlers already had `withCsrf` protection from prior work
 
 ### Lint Results
 - 0 errors, 3 pre-existing warnings (unrelated to this task)
-- All modified files pass ESLint cleanly
+- All 7 modified files pass ESLint cleanly
 
-## Task 6+7 — JWT Token Improvements, httpOnly Cookie Auth, and RBAC Middleware (Agent: main)
+
+---
+
+## Task 5 — Security Fix: Replace Regex HTML Sanitizer with DOMPurify (Agent: security-agent)
+
+**Date:** 2025-03-05
 
 ### Summary
-Implemented three major security improvements to the Marketo marketplace authentication system:
-1. **JWT Token Improvements** — Reduced access token expiry from 7 days to 15 minutes, added refresh token support (7-day expiry)
-2. **httpOnly Cookie Auth** — Added httpOnly cookie support alongside Authorization header for XSS protection
-3. **RBAC Middleware** — Created role-based access control middleware for API routes
+Replaced the regex-based `sanitizeHtml` function with DOMPurify (via `isomorphic-dompurify`) for proper HTML sanitization resistant to XSS bypass techniques. Also added a new `sanitizeUrl` function for URL protocol validation.
+
+### Problem
+The original `sanitizeHtml` used three regex replacements which are trivially bypassed:
+- `<script>` tag removal via regex can be bypassed with malformed tags, nested tags, or encoding tricks
+- `on\w+="..."` only catches double-quoted event handlers (not unquoted or backtick-wrapped)
+- `javascript:` removal does not handle `data:`, `vbscript:`, or mixed-case schemes
 
 ### Changes Made
 
-#### 1. Auth Middleware (`src/lib/auth-middleware.ts`) — MAJOR UPDATE
-- Reduced access token expiry from `'7d'` to `'15m'`
-- Added `signRefreshToken()`: Signs JWT with `type: 'refresh'` claim and 7-day expiry
-- Added `verifyRefreshToken()`: Verifies refresh tokens; rejects tokens without `type: 'refresh'`
-- Updated `verifyToken()`: Rejects tokens that have `type: 'refresh'` (prevents misuse)
-- Updated `extractToken()`: Falls back to `auth-token` httpOnly cookie if no Authorization header
-- Added `setAuthCookies()`: Helper to set httpOnly cookies for access + refresh tokens
-- Added `clearAuthCookies()`: Helper to clear both auth cookies (for logout)
+#### 1. Installed `isomorphic-dompurify` (v3.16.0)
+- Works on both server (Node.js) and client (browser)
+- Includes its own TypeScript types (no separate `@types/` package needed)
+- DOMPurify is the industry-standard HTML sanitizer (used by Google, Microsoft, Meta)
 
-#### 2. Refresh Token API (`src/app/api/auth/refresh/route.ts`) — NEW
-- POST /api/auth/refresh — Refreshes access tokens using refresh token
-- Accepts `{ refreshToken }` in body or falls back to `refresh-token` cookie
-- Returns new `{ token, refreshToken }` pair (refresh token rotation)
-- Sets httpOnly cookies with new tokens
+#### 2. Updated `sanitizeHtml` function (`src/lib/sanitize.ts`)
+- **Same function signature**: `(input: string) => string` — no breaking changes for existing callers
+- **DOMPurify config** (applied on every call for thread safety):
+  - `ALLOW_TAGS`: b, i, em, strong, a, p, br, ul, ol, li, h1-h6, blockquote, code, pre, span, div, img, hr, table, thead, tbody, tr, th, td
+  - `ALLOW_ATTR`: href, src, alt, title, class, target, rel
+  - `FORBID_TAGS`: style, script, iframe, object, embed, form, input, textarea, button, base, link, meta
+  - `FORBID_ATTR`: onerror, onload, onclick, onmouseover, onfocus, onblur, onmousedown, onmouseup, onkeydown, onkeyup, onkeypress, onchange, onsubmit, onreset, onabort, onresize
+  - `ALLOW_DATA_ATTR: false` — strips all `data-*` attributes
+- **Style attribute stripping**: Added a DOMPurify `uponSanitizeElement` hook that removes the `style` attribute from all elements (prevents CSS injection)
+- **Security improvement**: DOMPurify strips `target` attribute by default unless `rel="noopener"` is also present — prevents tab-nabbing attacks
 
-#### 3. Set-Cookie API (`src/app/api/auth/set-cookie/route.ts`) — NEW
-- POST /api/auth/set-cookie — Sets httpOnly auth cookies from client-side
-- Accepts `{ token, refreshToken }` in body
-- Sets `auth-token` (httpOnly, 15 min, strict sameSite) and `refresh-token` (httpOnly, 7 days)
+#### 3. Added `sanitizeUrl` function
+- Validates URLs use only safe protocols: `http:`, `https:`, `mailto:`
+- Blocks dangerous protocols: `javascript:`, `data:`, `vbscript:`
+- Case-insensitive protocol matching (blocks `JAVASCRIPT:`, `JavaScript:`, etc.)
+- Strips leading control characters that could mask dangerous schemes
+- Allows relative URLs (no protocol) like `/path/to/page`
+- Returns the cleaned URL if safe, empty string if dangerous
 
-#### 4. Login Route (`src/app/api/auth/login/route.ts`) — UPDATED
-- Now generates both access token and refresh token
-- Returns `{ token, refreshToken }` in response body
-- Sets httpOnly cookies via `setAuthCookies()`
+#### 4. All other functions unchanged
+- `sanitizeString`, `isValidEmail`, `isStrongPassword`, `normalizeEmail`, `isPositiveNumber` — unchanged
 
-#### 5. Register Route (`src/app/api/auth/register/route.ts`) — UPDATED
-- Now generates both access token and refresh token
-- Returns `{ token, refreshToken }` in response body
-- Sets httpOnly cookies via `setAuthCookies()`
+### XSS Protection Verification
 
-#### 6. 2FA Verify Route (`src/app/api/auth/2fa/verify/route.ts`) — UPDATED
-- Returns `{ token, refreshToken }` on successful 2FA verification
-- Sets httpOnly cookies via `setAuthCookies()`
+All test cases pass:
 
-#### 7. Change Password Route (`src/app/api/auth/change-password/route.ts`) — UPDATED
-- Returns `{ token, refreshToken }` after password change
-- Sets httpOnly cookies via `setAuthCookies()`
+| Input | Result |
+|-------|--------|
+| `<img onerror=alert(1)>` | `<img>` ✅ (onerror stripped) |
+| `<script>alert(1)</script>` | `` ✅ (script tag removed) |
+| `<a href="javascript:alert(1)">` | `<a>click</a>` ✅ (javascript: href stripped) |
+| `<a href="JAVASCRIPT:alert(1)">` | `<a>click</a>` ✅ (case-insensitive) |
+| `<div style="background:url(javascript:alert(1))">` | `<div>test</div>` ✅ (style stripped) |
+| `<iframe src="https://evil.com">` | `` ✅ (iframe removed) |
+| `<form><input><button>` | `submit` ✅ (form elements removed) |
+| `<div data-custom="evil">` | `<div>test</div>` ✅ (data attrs removed) |
+| `<p onclick="alert(1)">` | `<p>click me</p>` ✅ (onclick stripped) |
+| Safe HTML (`<p><strong>`, `<a href="https://...">`, `<img src/alt>`) | Preserved ✅ |
 
-#### 8. Google Auth Route (`src/app/api/auth/google/route.ts`) — UPDATED
-- Generates tokens for both existing and new Google users
-- Returns `{ token, refreshToken }` in response
-- Sets httpOnly cookies via `setAuthCookies()`
+### Lint Results
+- 0 new errors, 0 new warnings
+- 3 pre-existing warnings in unrelated files
 
-#### 9. Logout Route (`src/app/api/auth/logout/route.ts`) — UPDATED
-- Clears both `auth-token` and `refresh-token` httpOnly cookies via `clearAuthCookies()`
 
-#### 10. Zustand Store (`src/store/use-marketplace-store.ts`) — UPDATED
-- Added `refreshToken: string | null` to store state
-- Added `setRefreshToken: (token: string | null) => void` action
-- `refreshToken` persisted in localStorage via `partialize`
-- `logout()` clears both `authToken` and `refreshToken`
+---
 
-#### 11. API Client (`src/lib/api.ts`) — MAJOR UPDATE
-- Auto-refresh logic: On 401 response, automatically refreshes access token using stored refresh token
-- Queues concurrent requests while refreshing (prevents race conditions)
-- Retries original request with new token after successful refresh
-- If refresh fails, clears both tokens and forces re-login
-- Added `auth.refreshToken()` method
-- Added `auth.setAuthCookies()` method
+## Task 8 — Zod Input Validation for Critical API Routes (Agent: main)
 
-#### 12. Auth Modal (`src/components/marketplace/auth/auth-modal.tsx`) — UPDATED
-- Stores both `authToken` and `refreshToken` from login/register/Google responses
-- Calls `api.auth.setAuthCookies()` after auth to set httpOnly cookies
+### Summary
+Added centralized Zod input validation to all critical API routes. Created a shared validation schemas file and integrated Zod validation into 6 security-critical routes, replacing error-prone manual field checks with type-safe schema validation.
 
-#### 13. 2FA Verify Component (`src/components/marketplace/auth/two-factor-verify.tsx`) — UPDATED
-- Stores both `authToken` and `refreshToken` from 2FA verify response
-- Calls `api.auth.setAuthCookies()` to set httpOnly cookies
+### Changes Made
 
-#### 14. Change Password Form (`src/components/marketplace/auth/change-password-form.tsx`) — UPDATED
-- Updates both `authToken` and `refreshToken` after password change
-- Calls `api.auth.setAuthCookies()` to set httpOnly cookies
+#### 1. Central Validation Schemas (`src/lib/validation.ts`) — NEW
+- **`loginSchema`**: Validates email (format + max 255) and password (min 1, max 255)
+- **`registerSchema`**: Validates name (min 2, max 100), email (format + max 255), password (min 8, max 255), role (enum: buyer/seller/both), termsAccepted (boolean optional)
+- **`forgotPasswordSchema`**: Validates email (format + max 255)
+- **`resetPasswordSchema`**: Validates token (min 32, max 128) and password (min 8, max 255)
+- **`changePasswordSchema`**: Validates userId (min 1), currentPassword (min 1, max 255), newPassword (min 8, max 255)
+- **`verifyEmailSchema`**: Validates token (min 32, max 128)
+- **`paginationSchema`**: Validates page (coerced int, 1-10000, default 1) and limit (coerced int, 1-100, default 20)
+- **`productCreateSchema`**: Validates product creation fields with proper constraints
+- **`orderCreateSchema`**: Validates buyerId, items array (1-50 items with productId, quantity, variantId), and all shipping/payment fields
+- **`reviewCreateSchema`**: Validates rating (1-5), comment, and optional images
+- **`messageSendSchema`**: Validates conversationId and content (max 5000)
+- **`userUpdateSchema`**: Validates optional user profile fields
+- **`shopCreateSchema`**: Validates shop name, description, and optional branding URLs
+- **`disputeCreateSchema`**: Validates orderId, reason, and type enum
+- **`returnCreateSchema`**: Validates orderId, orderItemId, reason, and optional evidence
+- **`idParamSchema`**: Generic ID parameter validation (min 1, max 100)
+- **`validateInput<T>()` helper**: Generic function that takes a Zod schema and unknown data, returns `{ success: true, data: T }` or `{ success: false, error: string }`. Uses `z.ZodType<T>` (Zod v4 compatible) and extracts the first issue message on failure.
 
-#### 15. Session Management (`src/lib/session.ts`) — UPDATED
-- Updated session expiry constants to match new token lifetimes
-- Session uses `JWT_REFRESH_TOKEN_EXPIRY_DAYS` (7 days) for session record expiry
+#### 2. Login Route (`src/app/api/auth/login/route.ts`) — UPDATED
+- Added `validateInput, loginSchema` import from `@/lib/validation`
+- Replaced manual `!email || !password` check with Zod schema validation
+- Validated email is now extracted from `validation.data.email` and passed through `normalizeEmail()`
+- Password extracted from `validation.data` (already validated to be non-empty, max 255)
+- All existing rate limiting, lockout checks, 2FA flow, and session creation preserved
 
-#### 16. With-Session Middleware (`src/lib/with-session.ts`) — UPDATED
-- Uses `extractToken()` which now checks both headers and cookies
+#### 3. Register Route (`src/app/api/auth/register/route.ts`) — UPDATED
+- Added `validateInput, registerSchema` import from `@/lib/validation`
+- Replaced manual `!email || !password || !name` check with Zod schema validation
+- All fields now extracted from `validation.data` (password, termsAccepted, role)
+- Email and name still normalized/sanitized after Zod validation passes
+- Kept existing domain-specific checks: `isValidEmail()`, `termsAccepted`, role validation, `isStrongPassword()`
+- All existing user creation, shop creation, email sending, and session logic preserved
 
-#### 17. RBAC Middleware (`src/lib/rbac.ts`) — NEW
-- `requireRole(...roles)`: Validates authenticated user has one of the required roles
-  - Returns 401 if not authenticated, 403 if wrong role
-  - Handles `both` role: passes checks for `seller` or `buyer`
-- `withRole(...roles, handler)`: Convenience wrapper combining RBAC check with handler
+#### 4. Forgot Password Route (`src/app/api/auth/forgot-password/route.ts`) — UPDATED
+- Added `validateInput, forgotPasswordSchema` import from `@/lib/validation`
+- Replaced manual `!email` check with Zod schema validation
+- Email now extracted from `validation.data` (already validated as proper email format)
+- All existing rate limiting, user lookup, reset token generation, and email sending preserved
+
+#### 5. Reset Password Route (`src/app/api/auth/reset-password/route.ts`) — UPDATED
+- Added `validateInput, resetPasswordSchema` import from `@/lib/validation`
+- Replaced manual `!token || !password` and `password.length < 6` checks with Zod schema validation
+- Token now validated to be 32-128 chars (matching `randomBytes(32).toString('hex')` length of 64)
+- Password now validated to be min 8 chars (security improvement from previous min 6)
+- All existing rate limiting, user lookup by token, password hashing, and user update preserved
+
+#### 6. Change Password Route (`src/app/api/auth/change-password/route.ts`) — UPDATED
+- Added `validateInput, changePasswordSchema` import from `@/lib/validation`
+- Replaced manual `!userId || !currentPassword || !newPassword` and `newPassword.length < 6` checks with Zod schema validation
+- All fields extracted from `validation.data` (userId, currentPassword, newPassword)
+- New password now validated to be min 8 chars (security improvement from previous min 6)
+- All existing rate limiting, auth check, user ID verification, password comparison, and token generation preserved
+
+#### 7. Orders Route (`src/app/api/orders/route.ts`) — UPDATED (POST handler only)
+- Added `validateInput, orderCreateSchema` import from `@/lib/validation`
+- Replaced manual `!buyerId || !items || !items.length` check with Zod schema validation
+- All fields now destructured from `validation.data` instead of raw body
+- Items array now validated: each item must have productId (min 1), quantity (int, 1-100), optional variantId
+- Shipping/payment fields validated with proper max lengths
+- GET handler unchanged (uses query params, not body)
+- All existing auth checks, product validation, shop grouping, order creation, and notifications preserved
 
 ### Security Improvements
-1. **Reduced attack window**: Access tokens expire in 15 min instead of 7 days
-2. **Refresh token rotation**: Each refresh generates new refresh token
-3. **httpOnly cookie protection**: Tokens stored as httpOnly cookies (not JS-accessible)
-4. **Strict sameSite**: Cookies use `sameSite: 'strict'` to prevent CSRF
-5. **Secure flag**: Cookies use `secure: true` in production
-6. **Token type segregation**: Access/refresh tokens are distinct and non-interchangeable
-7. **Backward compatibility**: Authorization header still works alongside cookies
+- **Stricter password minimums**: Reset password and change password now enforce min 8 chars (was 6)
+- **Token length validation**: Reset/verify tokens must be 32-128 chars, preventing malformed token injection
+- **Input length limits**: All string fields now have max length constraints, preventing oversized payload attacks
+- **Type safety**: All validated fields are properly typed through Zod inference, reducing runtime type errors
+- **Defense in depth**: Register route still has `isValidEmail()`, `isStrongPassword()`, and role validation after Zod validation passes
+
+### Compatibility Notes
+- Uses `z.ZodType<T>` instead of `z.ZodSchema<T>` for Zod v4 compatibility
+- Error structure uses `result.error.issues[0].message` (Zod v4 format)
+- `z.coerce.number()` used in pagination schema for query string coercion
 
 ### Lint Results
-- 0 new errors introduced
-- 3 pre-existing warnings (unrelated to this task)
+- 0 errors, 3 pre-existing warnings (unrelated to this task)
 - All new and modified files pass ESLint cleanly
 
 ---
 
----
-
-## Task 9 — Security Fix: .env.example, Unused Dependencies, CORS Config (Agent: main)
+## Task 9 — Security Fixes: CSRF, Rate Limiting, Error Leakage (Agent: main)
 
 ### Summary
-Created a documented `.env.example` file for onboarding, removed the unused `next-auth` dependency, added CORS configuration utility and Next.js middleware to apply CORS headers to all API routes with OPTIONS preflight handling, and updated `.gitignore` to allow `.env.example` while keeping `.env` ignored.
+Fixed three medium-priority security issues: (1) Conflicting CSRF token endpoints with inconsistent cookie security settings, (2) Rate limit header spoofing via X-Forwarded-For, and (3) Error information leakage in API routes.
 
 ### Changes Made
 
-#### 1. Created `.env.example`
-- Comprehensive documentation of all required environment variables
-- Sections: Database, Authentication (JWT_SECRET, CSRF_SECRET, ADMIN_SETUP_KEY), Supabase, Email (Resend), Storage, Payment Gateways (Easypaisa, JazzCash, Payoneer, Wise), Shipping Carriers (TCS, Leopards), AI (Google Generative AI), OAuth (Google), URLs, Rate Limiting, Node Environment
-- Placeholder values clearly indicate they must be changed in production
-- Serves as a reference for developers setting up the project
+#### Issue 1: Conflicting CSRF Token Endpoints
+- **`/api/csrf-token/route.ts`** — Changed cookie settings to match the secure `/api/auth/csrf` endpoint:
+  - `httpOnly: false` → `httpOnly: true` (prevents XSS token exfiltration)
+  - `sameSite: 'lax'` → `sameSite: 'strict'` (stronger CSRF protection)
+  - `maxAge: 86400` (24h) → `maxAge: 3600` (1h, matching the other endpoint)
+  - Updated comments to document the double-submit cookie pattern
+- **`/src/hooks/use-csrf.ts`** — Updated REFRESH_INTERVAL from 23h to 50min to match new 1h cookie expiry. The hook reads the token from the response body (`data.token`), not the cookie, so HttpOnly change is fully compatible.
 
-#### 2. Removed Unused `next-auth` Dependency
-- Searched entire `src/` directory: `next-auth` is NOT imported anywhere
-- The project uses custom JWT auth (`src/lib/auth-middleware.ts`) instead
-- Removed via `bun remove next-auth` — reduces attack surface and bundle size
-- Also checked other potentially unused packages: `cloudinary`, `pg`, `sharp`, `next-intl` are unused but not security-relevant, so left them for a future cleanup task
+#### Issue 2: Rate Limit Header Spoofing
+- **`/src/lib/rate-limit.ts`** — Created `extractClientIp()` function (exported for reuse):
+  - Parses `X-Forwarded-For` and trusts the LAST IP based on `TRUSTED_PROXY_COUNT` env var (default: 1)
+  - With `TRUSTED_PROXY_COUNT=1`, the last IP (set by trusted reverse proxy) is used as real client IP
+  - Falls back to `request.ip` (Next.js) when available, then `'unknown'`
+  - Updated `getRateLimitKey()` to use `extractClientIp()` instead of insecure `split(',')[0]`
+  - Updated `getRequestFingerprint()` to use the same trusted-proxy-aware IP extraction
+- **`/api/auth/login/route.ts`** and **`/api/auth/register/route.ts`** — Updated direct X-Forwarded-For reads for session recording to use the last IP instead of the first
 
-#### 3. Created CORS Configuration (`src/lib/cors.ts`)
-- `getCorsHeaders(requestOrigin?)` function returns proper CORS headers
-- Allowed origins: `FRONTEND_URL` and `NEXT_PUBLIC_APP_URL` from environment variables
-- Also allows any `.vercel.app` origin for deployments
-- Returns first allowed origin as fallback if request origin is not permitted
-- Headers include: Allow-Origin, Allow-Methods (GET, POST, PUT, PATCH, DELETE, OPTIONS), Allow-Headers (Content-Type, Authorization, X-CSRF-Token), Allow-Credentials, Max-Age (86400)
+#### Issue 3: Error Information Leakage
+- **Created `/src/lib/error-handler.ts`** — New utility module with:
+  - `getSafeErrorMessage(error, fallbackMessage?)` — Returns generic message in production, actual error in development
+  - `getSafeErrorBody(error, fallbackMessage?)` — Returns a full `{ success: false, error: string }` object
+- **Updated 13 critical API routes** to use `getSafeErrorMessage`:
+  1. `/api/auth/login/route.ts`
+  2. `/api/auth/register/route.ts`
+  3. `/api/auth/change-password/route.ts`
+  4. `/api/auth/reset-password/route.ts`
+  5. `/api/auth/forgot-password/route.ts`
+  6. `/api/auth/me/route.ts`
+  7. `/api/admin/settings/route.ts` (GET & PATCH)
+  8. `/api/admin/sync-schema/route.ts` (3 places previously exposed `error.message`)
+  9. `/api/db-diagnostic/route.ts` (previously exposed `err.message`)
+  10. `/api/orders/route.ts` (GET & POST)
+  11. `/api/payments/initiate/route.ts`
+  12. `/api/payments/verify/route.ts`
+  13. `/api/payments/route.ts` (GET & POST)
 
-#### 4. Created Next.js Middleware (`src/middleware.ts`)
-- Applies to all `/api/:path*` routes
-- Handles OPTIONS preflight requests: returns 204 with CORS headers
-- Adds CORS headers to all other API route responses via `NextResponse.next()` header injection
-- Uses `getCorsHeaders()` from `src/lib/cors.ts`
-- Note: The original task referenced `src/proxy.ts` but no such file exists in the project; Next.js middleware is the correct approach for this
-
-#### 5. Updated `.gitignore`
-- Added `!.env.example` exception so the example file can be committed
-- `.env` remains ignored (protected from accidental secret leaks)
-- Pattern: `.env*` ignores all env files, `!.env.example` un-ignores the example
+### Environment Variables
+- Added `JWT_SECRET` and `CSRF_SECRET` to `.env` (required for CSRF token generation)
+- Added `TRUSTED_PROXY_COUNT` (optional, default: 1) — determines how many proxies to trust for IP extraction
 
 ### Lint Results
 - 0 errors, 3 pre-existing warnings (unrelated to this task)
-- All new files pass ESLint cleanly
 
 ---
+Task ID: Security Hardening
+Agent: Main
+Task: Comprehensive security hardening of the Marketo platform
 
-## Task 8 — Security Hardening: Rate Limiting, File Upload Security, Error Leakage Fix (Agent: main)
+Work Log:
+- Performed thorough security audit identifying 25+ vulnerabilities across critical, high, medium, and low severity
+- Created Next.js proxy.ts (middleware) with comprehensive security headers (CSP, X-Frame-Options, HSTS, X-Content-Type-Options, Referrer-Policy, Permissions-Policy)
+- Added admin route protection at the proxy level using JWT verification via jose (Edge Runtime compatible)
+- Fixed 13 admin API routes that used query-param or body-param userId for auth instead of proper JWT verification
+- Removed insecure `userId.startsWith('admin')` check from 4 routes, replaced with `auth.role !== 'admin'`
+- Locked down admin setup endpoint - removed password from response, added rate limiting
+- Locked down DB diagnostic endpoint - added JWT admin auth, masked sensitive connection info
+- Locked down schema sync endpoint - added JWT admin auth alongside key-based protection
+- Locked down email send endpoint - added JWT admin auth, rate limiting, CSRF protection (was open email relay)
+- Locked down category seed/bulk-seed endpoints - added JWT admin auth
+- Installed isomorphic-dompurify and replaced weak regex HTML sanitizer with DOMPurify (blocks 13 XSS vectors)
+- Added sanitizeUrl() function for URL protocol validation
+- Fixed wildcard image domain in next.config.ts - restricted to specific Supabase domains
+- Enabled reactStrictMode in next.config.ts
+- Added SSRF warning comment to Caddyfile
+- Added CSRF protection (withCsrf) to 7 unprotected mutation routes
+- Created centralized validation.ts with 15 Zod schemas
+- Added Zod input validation to 6 critical API routes (login, register, forgot-password, reset-password, change-password, orders)
+- Fixed CSRF cookie security - made /api/csrf-token also use HttpOnly + SameSite=Strict
+- Fixed rate limit IP spoofing - now trusts last IP in X-Forwarded-For based on TRUSTED_PROXY_COUNT
+- Created error-handler.ts with getSafeErrorMessage() for production-safe error responses
+- Updated 13 critical API routes to use safe error messages
+- Fixed CSP to allow Next.js RSC inline scripts (required for hydration)
 
-### Summary
-Comprehensive security hardening across the Marketo marketplace API: added rate limiting to all unprotected API routes, enhanced file upload security with sharp-based image validation and magic byte verification, and fixed error message leakage across all API routes.
-
-### Changes Made
-
-#### Part 1: Rate Limiting — New Presets and Route Coverage
-
-**1. Rate Limit Presets (`src/lib/rate-limit.ts`) — UPDATED**
-- Added 17 new rate limit presets for specific route categories:
-  - `aiRateLimit` (5/min) — AI generation endpoints
-  - `emailRateLimit` (3/min) — Email sending
-  - `couponValidateRateLimit` (10/min) — Coupon validation (anti brute-force)
-  - `couponRedeemRateLimit` (5/min) — Coupon redemption
-  - `searchRateLimit` (20/min) — Search endpoints
-  - `reviewRateLimit` (10/min) — Review operations
-  - `disputeRateLimit` (5/min) — Dispute operations
-  - `notificationRateLimit` (30/min) — Notification CRUD
-  - `socialRateLimit` (20/min) — Social features (activities, feed, follow, share, stories)
-  - `shippingRateLimit` (30/min) — Shipping address/zone/rate/calculate
-  - `productRateLimit` (20/min) — Product listing and creation
-  - `gigRateLimit` (20/min) — Gig listing and creation
-  - `wishlistRateLimit` (20/min) — Wishlist operations
-  - `flashSaleRateLimit` (10/min) — Flash sale operations
-  - `paymentRateLimit` (10/min) — Payment operations
-  - `orderRateLimit` (10/min) — Order operations
-  - `messageRateLimit` (20/min) — Messaging
-  - `feedbackRateLimit` (5/min) — Feedback/AI chat
-  - `taxRateLimit` (20/min) — Tax calculation
-
-**2. Routes with NEW Rate Limiting Added (22 route files)**
-
-| Route | Preset | Key |
-|-------|--------|-----|
-| `/api/ai/generate-description` | `aiRateLimit` (5/min) | `ai-desc:{ip}` |
-| `/api/email/send` | `emailRateLimit` (3/min) | `email-send:{ip}` |
-| `/api/coupons/validate` | `couponValidateRateLimit` (10/min) | `coupon-validate:{ip}` |
-| `/api/coupons/redeem` | `couponRedeemRateLimit` (5/min) | `coupon-redeem:{ip}` |
-| `/api/search` (GET+POST) | `searchRateLimit` (20/min) | `search:{ip}` |
-| `/api/search/suggestions` | `searchRateLimit` (20/min) | `search-suggest:{ip}` |
-| `/api/reviews` (GET+POST) | `reviewRateLimit` (10/min) | `reviews:{ip}` |
-| `/api/disputes` (GET+POST) | `disputeRateLimit` (5/min) | `disputes:{ip}` |
-| `/api/notifications` (GET/POST/PUT/DELETE) | `notificationRateLimit` (30/min) | `notifications:{ip}` |
-| `/api/social/activities` (GET+POST) | `socialRateLimit` (20/min) | `social-activities:{ip}` |
-| `/api/social/feed` (GET) | `socialRateLimit` (20/min) | `social-feed:{ip}` |
-| `/api/social/follow` (GET+POST) | `socialRateLimit` (20/min) | `social-follow:{ip}` |
-| `/api/social/followers` (GET) | `socialRateLimit` (20/min) | `social-followers:{ip}` |
-| `/api/social/share` (POST) | `socialRateLimit` (20/min) | `social-share:{ip}` |
-| `/api/social/stories` (GET+POST) | `socialRateLimit` (20/min) | `social-stories:{ip}` |
-| `/api/products` (GET+POST) | `productRateLimit` (20/min) | `products:{ip}` |
-| `/api/gigs` (GET+POST) | `gigRateLimit` (20/min) | `gigs:{ip}` |
-| `/api/wishlists` (GET+POST) | `wishlistRateLimit` (20/min) | `wishlists:{ip}` |
-| `/api/flash-sales` (GET+POST) | `flashSaleRateLimit` (10/min) | `flash-sales:{ip}` |
-| `/api/payments` (GET+POST) | `paymentRateLimit` (10/min) | `payments:{ip}` |
-| `/api/orders` (GET+POST) | `orderRateLimit` (10/min) | `orders:{ip}` |
-| `/api/messages` (GET+POST) | `messageRateLimit` (20/min) | `messages:{ip}` |
-| `/api/feedback` (GET+POST) | `feedbackRateLimit` (5/min) | `feedback:{ip}` |
-| `/api/shipping/calculate` (POST) | `shippingRateLimit` (30/min) | `shipping-calc:{ip}` |
-| `/api/shipping/addresses` (GET/POST/PUT/DELETE) | `shippingRateLimit` (30/min) | `shipping-addr:{ip}` |
-| `/api/shipping/zones` (GET+POST) | `shippingRateLimit` (30/min) | `shipping-zones:{ip}` |
-| `/api/shipping/rates` (GET+POST) | `shippingRateLimit` (30/min) | `shipping-rates:{ip}` |
-
-**3. Routes with UPDATED Rate Limiting (1 route file)**
-- `/api/tax/calculate` — Changed from `apiRateLimit` (60/min) to `taxRateLimit` (20/min)
-- `/api/users/[id]/avatar` — Changed from `apiRateLimit` (60/min) to `avatarUploadRateLimit` (10 per 15 min, stricter)
-
-#### Part 2: File Upload Security
-
-**4. Avatar Upload Security (`src/app/api/users/[id]/avatar/route.ts`) — MAJOR REWRITE**
-
-New security measures:
-- **Magic byte verification**: Added `verifyMagicBytes()` function that checks file signatures (JPEG: `FF D8 FF`, PNG: `89 50 4E 47`, WebP: `52 49 46 46`, GIF: `47 49 46 38`) before accepting the file — prevents MIME type spoofing
-- **Sharp-based image validation**: Added `validateAndProcessImage()` function that:
-  - Verifies the buffer is a valid image using `sharp(buffer).metadata()`
-  - Strips all metadata (EXIF, GPS data, thumbnails, etc.) via sharp re-encoding
-  - Resizes to max 2048x2048 (fit inside, no enlargement)
-  - Re-encodes as JPEG at 90% quality for consistency and smaller size
-  - Returns `Invalid image file` error if sharp cannot process the buffer
-- **Filename sanitization**: Added `sanitizeFilename()` function that:
-  - Removes directory path components (prevents path traversal)
-  - Replaces unsafe characters with underscores
-  - Truncates filenames over 255 characters while preserving extension
-- **Max filename length check**: Returns 400 if filename exceeds 255 characters
-- **Stricter rate limit**: Changed from `apiRateLimit` (60/min) to custom `avatarUploadRateLimit` (10 per 15 min)
-- **Safe error responses**: Uses `getSafeErrorMessage()` from error-handler.ts in catch blocks
-
-**5. Error Handler Utility (`src/lib/error-handler.ts`) — NEW**
-- `getSafeErrorMessage(error, fallback)` — Returns safe error messages; in development shows actual error, in production returns the fallback string
-- `handleApiError(error, context, fallback)` — Logs error server-side and returns safe message for client response
-
-#### Part 3: Error Leakage Fixes
-
-**6. Routes with Error Leakage Fixed (5 route files)**
-
-| Route | Issue | Fix |
-|-------|-------|-----|
-| `/api/admin/sync-schema` (POST) | Exposed `error.message` in 500 response | Replaced with safe generic message |
-| `/api/admin/sync-schema` (GET) | Exposed `error.message`, `env`, `databaseUrlSet` in error response | Removed env info, replaced with safe message |
-| `/api/auth/google` | Exposed `debug:` field with error details (up to 200 chars) | Removed `debug` field entirely |
-| `/api/setup/sync-schema` | Exposed `error.message` / `String(error)` in response | Replaced with safe generic message |
-| `/api/setup/categories` | Exposed `error.message` / `String(error)` in response | Replaced with safe generic message |
-| `/api/categories/bulk-seed` | Exposed `error.message` in response | Replaced with safe generic message |
-| `/api/flash-sales` (GET) | Exposed `error.message` in 500 response | Replaced with static safe message |
-
-### Lint Results
-- 0 errors, 3 pre-existing warnings (unrelated to this task)
-- All modified files pass ESLint cleanly
-
+Stage Summary:
+- 25+ security vulnerabilities identified and fixed
+- All admin routes now use proper JWT authentication
+- All dangerous endpoints locked down with admin-only access
+- HTML sanitizer upgraded from regex to DOMPurify
+- Input validation added via Zod schemas
+- Security headers applied to all responses
+- CSRF protection expanded to all mutation routes
+- Error information leakage prevented in production
+- Rate limit IP spoofing fixed
+- Lint: 0 errors, 3 pre-existing warnings
+- Application verified working with Agent Browser

@@ -272,7 +272,7 @@ export default function AdminProducts() {
                           variant="outline"
                           className={`text-xs ${
                             product.isApproved
-                              ? 'bg-green-100 text-green-800'
+                              ? 'bg-amber-100 text-amber-800'
                               : 'bg-yellow-100 text-yellow-800'
                           }`}
                         >

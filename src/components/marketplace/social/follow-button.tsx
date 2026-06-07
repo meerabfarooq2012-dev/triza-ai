@@ -85,9 +85,9 @@ export function FollowButton({
           className={cn(
             sizeClasses[size],
             'relative font-medium transition-all',
-            following && !hovered && 'border-emerald-200 text-emerald-700 hover:border-red-300 hover:text-red-600 hover:bg-red-50',
+            following && !hovered && 'border-amber-200 text-amber-700 hover:border-red-300 hover:text-red-600 hover:bg-red-50',
             following && hovered && 'border-red-300 text-red-600 bg-red-50',
-            !following && 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 hover:border-emerald-700'
+            !following && 'bg-amber-600 hover:bg-amber-700 text-gray-900 border-amber-600 hover:border-amber-700'
           )}
           onClick={handleToggleFollow}
           onMouseEnter={() => setHovered(true)}

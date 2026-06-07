@@ -212,7 +212,7 @@ export function RequestReturnDialog({
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <RotateCcw className="h-5 w-5 text-emerald-600" />
+            <RotateCcw className="h-5 w-5 text-amber-600" />
             Request Return / Refund
           </DialogTitle>
           <DialogDescription>
@@ -222,8 +222,8 @@ export function RequestReturnDialog({
 
         {/* Order Info */}
         <div className="rounded-lg bg-muted/50 border p-3 flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-50">
-            <Package className="h-5 w-5 text-emerald-600" />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-50">
+            <Package className="h-5 w-5 text-amber-600" />
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium truncate">
@@ -273,14 +273,14 @@ export function RequestReturnDialog({
                 onClick={() => setType(opt.value)}
                 className={`flex items-start gap-3 rounded-lg border p-3 text-left transition-all ${
                   type === opt.value
-                    ? 'border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500'
-                    : 'border-border hover:border-emerald-300 hover:bg-muted/30'
+                    ? 'border-amber-500 bg-amber-50 ring-1 ring-amber-500'
+                    : 'border-border hover:border-amber-300 hover:bg-muted/30'
                 }`}
               >
                 <div
                   className={`flex h-5 w-5 mt-0.5 shrink-0 items-center justify-center rounded-full border-2 ${
                     type === opt.value
-                      ? 'border-emerald-600 bg-emerald-600'
+                      ? 'border-amber-600 bg-amber-600'
                       : 'border-muted-foreground/40'
                   }`}
                 >
@@ -289,7 +289,7 @@ export function RequestReturnDialog({
                   )}
                 </div>
                 <div>
-                  <p className={`text-sm font-medium ${type === opt.value ? 'text-emerald-700' : ''}`}>
+                  <p className={`text-sm font-medium ${type === opt.value ? 'text-amber-700' : ''}`}>
                     {opt.label}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
@@ -332,7 +332,7 @@ export function RequestReturnDialog({
                   className="h-full w-full object-cover"
                 />
                 {img.startsWith('http') && (
-                  <span className="absolute bottom-0.5 left-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 text-white">
+                  <span className="absolute bottom-0.5 left-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-500 text-gray-900">
                     <Cloud className="h-2 w-2" />
                   </span>
                 )}
@@ -346,15 +346,15 @@ export function RequestReturnDialog({
               </div>
             ))}
             {uploadingEvidence && (
-              <div className="flex h-16 w-16 items-center justify-center rounded-lg border-2 border-dashed border-emerald-300 bg-emerald-50/50">
-                <Loader2 className="h-5 w-5 animate-spin text-emerald-500" />
+              <div className="flex h-16 w-16 items-center justify-center rounded-lg border-2 border-dashed border-amber-300 bg-amber-50/50">
+                <Loader2 className="h-5 w-5 animate-spin text-amber-500" />
               </div>
             )}
             {images.length < 5 && !uploadingEvidence && (
               <button
                 type="button"
                 onClick={handleImageAdd}
-                className="flex h-16 w-16 items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 hover:border-emerald-500 hover:bg-emerald-50 transition-colors"
+                className="flex h-16 w-16 items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 hover:border-amber-500 hover:bg-amber-50 transition-colors"
               >
                 <ImagePlus className="h-5 w-5 text-muted-foreground" />
               </button>
@@ -393,7 +393,7 @@ export function RequestReturnDialog({
             Cancel
           </Button>
           <Button
-            className="bg-emerald-600 hover:bg-emerald-700"
+            className="bg-amber-600 hover:bg-amber-700"
             onClick={handleSubmit}
             disabled={submitting || !reason || !description.trim()}
           >

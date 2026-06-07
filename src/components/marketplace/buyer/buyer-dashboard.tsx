@@ -39,7 +39,7 @@ export function BuyerDashboard() {
           className="mb-6"
         >
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-amber-500 to-yellow-600 text-white">
               {currentUser?.avatar ? (
                 <img
                   src={currentUser.avatar}
@@ -79,7 +79,7 @@ export function BuyerDashboard() {
                 <CreditCard className="h-3.5 w-3.5" />
                 Payments
               </TabsTrigger>
-              <TabsTrigger value="payment-settings" className="gap-1.5 data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+              <TabsTrigger value="payment-settings" className="gap-1.5 data-[state=active]:bg-amber-600 data-[state=active]:text-white">
                 <Settings className="h-3.5 w-3.5" />
                 Payment Info
               </TabsTrigger>

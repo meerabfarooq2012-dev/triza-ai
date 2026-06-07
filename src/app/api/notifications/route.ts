@@ -1,21 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { authenticateRequest } from '@/lib/auth-middleware';
-import { rateLimit, getRateLimitKey, notificationRateLimit } from '@/lib/rate-limit';
-
 import { withCsrf } from '@/lib/with-csrf';
-import { validateInput, notificationCreateSchema, notificationUpdateSchema, notificationDeleteSchema } from '@/lib/validation';
-export async function GET(request: NextRequest) {
-  // Rate limiting
-  const rlKey = getRateLimitKey(request);
-  const rlResult = rateLimit({ ...notificationRateLimit, key: `notifications:${rlKey}` });
-  if (!rlResult.success) {
-    return NextResponse.json(
-      { success: false, error: 'Too many requests. Please try again later.' },
-      { status: 429 }
-    );
-  }
 
+export async function GET(request: NextRequest) {
   try {
     const userId = request.nextUrl.searchParams.get('userId');
     const category = request.nextUrl.searchParams.get('category');
@@ -75,33 +62,16 @@ export async function GET(request: NextRequest) {
 }
 
 export const POST = withCsrf(async (request: NextRequest) => {
-  // Rate limiting
-  const rlKey = getRateLimitKey(request);
-  const rlResult = rateLimit({ ...notificationRateLimit, key: `notifications:${rlKey}` });
-  if (!rlResult.success) {
-    return NextResponse.json(
-      { success: false, error: 'Too many requests. Please try again later.' },
-      { status: 429 }
-    );
-  }
-
-  const auth = authenticateRequest(request);
-  if (!auth) {
-    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
-  }
   try {
     const body = await request.json();
+    const { userId, title, message, type, category, link, image, priority, metadata } = body;
 
-    // Validate input with Zod
-    const validation = validateInput(notificationCreateSchema, body);
-    if (!validation.success) {
+    if (!userId || !title || !message) {
       return NextResponse.json(
-        { success: false, error: validation.error },
+        { success: false, error: 'userId, title, and message are required' },
         { status: 400 }
       );
     }
-    const { title, message, type, category, link, image, priority, metadata } = validation.data;
-    const userId = auth.userId;
 
     const notification = await db.notification.create({
       data: {
@@ -117,31 +87,33 @@ export const POST = withCsrf(async (request: NextRequest) => {
       },
     });
 
-    // Try to push notification via Socket.io
-    try {
-      await fetch(`http://localhost:3004/?XTransformPort=3004`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          event: 'push-notification',
-          data: {
-            userId,
-            notification: {
-              id: notification.id,
-              title: notification.title,
-              message: notification.message,
-              type: notification.type,
-              category: notification.category,
-              link: notification.link,
-              image: notification.image,
-              priority: notification.priority,
-              createdAt: notification.createdAt,
+    // Try to push notification via Socket.io (skip on Vercel)
+    if (!(process.env.VERCEL || process.env.VERCEL_ENV)) {
+      try {
+        await fetch(`http://localhost:3004/?XTransformPort=3004`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            event: 'push-notification',
+            data: {
+              userId,
+              notification: {
+                id: notification.id,
+                title: notification.title,
+                message: notification.message,
+                type: notification.type,
+                category: notification.category,
+                link: notification.link,
+                image: notification.image,
+                priority: notification.priority,
+                createdAt: notification.createdAt,
+              },
             },
-          },
-        }),
-      });
-    } catch {
-      // Socket.io push is non-critical; if it fails, the notification is still in DB
+          }),
+        });
+      } catch {
+        // Socket.io push is non-critical; if it fails, the notification is still in DB
+      }
     }
 
     return NextResponse.json({
@@ -155,36 +127,12 @@ export const POST = withCsrf(async (request: NextRequest) => {
       { status: 500 }
     );
   }
-})
+});
 
 export const PUT = withCsrf(async (request: NextRequest) => {
-  // Rate limiting
-  const rlKey = getRateLimitKey(request);
-  const rlResult = rateLimit({ ...notificationRateLimit, key: `notifications:${rlKey}` });
-  if (!rlResult.success) {
-    return NextResponse.json(
-      { success: false, error: 'Too many requests. Please try again later.' },
-      { status: 429 }
-    );
-  }
-
-  const auth = authenticateRequest(request);
-  if (!auth) {
-    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
-  }
   try {
     const body = await request.json();
-
-    // Validate input with Zod
-    const validation = validateInput(notificationUpdateSchema, body);
-    if (!validation.success) {
-      return NextResponse.json(
-        { success: false, error: validation.error },
-        { status: 400 }
-      );
-    }
-    const { notificationId, markAll } = validation.data;
-    const userId = auth.userId;
+    const { notificationId, markAll, userId } = body;
 
     if (markAll && userId) {
       await db.notification.updateMany({
@@ -232,36 +180,12 @@ export const PUT = withCsrf(async (request: NextRequest) => {
       { status: 500 }
     );
   }
-})
+});
 
 export const DELETE = withCsrf(async (request: NextRequest) => {
-  // Rate limiting
-  const rlKey = getRateLimitKey(request);
-  const rlResult = rateLimit({ ...notificationRateLimit, key: `notifications:${rlKey}` });
-  if (!rlResult.success) {
-    return NextResponse.json(
-      { success: false, error: 'Too many requests. Please try again later.' },
-      { status: 429 }
-    );
-  }
-
-  const auth = authenticateRequest(request);
-  if (!auth) {
-    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
-  }
   try {
     const body = await request.json();
-
-    // Validate input with Zod
-    const validation = validateInput(notificationDeleteSchema, body);
-    if (!validation.success) {
-      return NextResponse.json(
-        { success: false, error: validation.error },
-        { status: 400 }
-      );
-    }
-    const { notificationId } = validation.data;
-    const userId = auth.userId;
+    const { notificationId, userId } = body;
 
     if (notificationId) {
       const notification = await db.notification.findUnique({
@@ -308,4 +232,4 @@ export const DELETE = withCsrf(async (request: NextRequest) => {
       { status: 500 }
     );
   }
-})
+});

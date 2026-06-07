@@ -344,7 +344,7 @@ export function WishlistButton({
       variant="ghost"
       size="icon"
       className={cn(
-        'rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-colors',
+        'rounded-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-800 transition-colors',
         iconSizeConfig.button,
         wishlisted && 'text-red-500 hover:text-red-600 hover:bg-red-50',
         isDisabled && 'cursor-not-allowed opacity-50',

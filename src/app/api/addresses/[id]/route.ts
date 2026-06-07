@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db'
-import { authenticateRequest } from '@/lib/auth-middleware';
-
+import { db } from '@/lib/db';
 import { withCsrf } from '@/lib/with-csrf';
+
 // GET — Get a single address
 export async function GET(
   request: NextRequest,
@@ -34,13 +33,11 @@ export async function GET(
 
 // PUT — Update a delivery address
 // If isDefault is being set to true, unset any existing defaults first
-export const PUT = withCsrf(async (request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }) => {
-  const auth = authenticateRequest(request);
-  if (!auth) {
-    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
-  }
-  const userId = auth.userId;
+export const PUT = withCsrf(async (
+  request: NextRequest,
+  context?: unknown
+) => {
+  const { params } = context as { params: Promise<{ id: string }> };
   try {
     const { id } = await params;
     const body = await request.json();
@@ -106,16 +103,14 @@ export const PUT = withCsrf(async (request: NextRequest,
       { status: 500 }
     );
   }
-})
+});
 
 // DELETE — Delete a delivery address
-export const DELETE = withCsrf(async (request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }) => {
-  const auth = authenticateRequest(request);
-  if (!auth) {
-    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
-  }
-  const userId = auth.userId;
+export const DELETE = withCsrf(async (
+  request: NextRequest,
+  context?: unknown
+) => {
+  const { params } = context as { params: Promise<{ id: string }> };
   try {
     const { id } = await params;
 
@@ -154,4 +149,4 @@ export const DELETE = withCsrf(async (request: NextRequest,
       { status: 500 }
     );
   }
-})
+});

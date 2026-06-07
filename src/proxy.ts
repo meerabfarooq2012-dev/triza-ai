@@ -1,12 +1,11 @@
 // =============================================================================
-// Marketo Next.js Proxy — Security Headers, Admin JWT Gate, CORS, Size Limiting
+// Marketo Next.js Proxy — Security Headers, Route Protection, Size Limiting
 // Next.js 16 uses the "proxy" convention instead of "middleware"
 // Runs on the Edge Runtime; uses `jose` for JWT verification (Edge-compatible)
 // =============================================================================
 
 import { NextResponse, type NextRequest } from 'next/server'
 import { jwtVerify } from 'jose'
-import { getCorsHeaders } from '@/lib/cors'
 
 // ---------------------------------------------------------------------------
 // JWT Configuration — must match the secret used by `jsonwebtoken` in
@@ -149,23 +148,17 @@ function buildSecurityHeaders(isDev: boolean): Record<string, string> {
 }
 
 // ---------------------------------------------------------------------------
-// Helper: extract Bearer token from Authorization header or cookie
+// Helper: extract Bearer token from Authorization header
 // ---------------------------------------------------------------------------
 
 function extractBearerToken(request: NextRequest): string | null {
-  // Try Authorization header first
   const authHeader = request.headers.get('authorization')
-  if (authHeader?.startsWith('Bearer ')) {
-    return authHeader.substring(7)
-  }
+  if (!authHeader) return null
 
-  // Fall back to httpOnly cookie
-  const cookieToken = request.cookies.get('auth-token')?.value
-  if (cookieToken) {
-    return cookieToken
-  }
+  const parts = authHeader.split(' ')
+  if (parts.length !== 2 || parts[0] !== 'Bearer') return null
 
-  return null
+  return parts[1]
 }
 
 // ---------------------------------------------------------------------------
@@ -178,23 +171,7 @@ export async function proxy(request: NextRequest) {
   const isApiRoute = pathname.startsWith('/api/')
 
   // -----------------------------------------------------------------------
-  // 1. CORS for API routes
-  // -----------------------------------------------------------------------
-  if (isApiRoute) {
-    const requestOrigin = request.headers.get('origin')
-    const corsHeaders = getCorsHeaders(requestOrigin)
-
-    // Handle OPTIONS preflight requests
-    if (request.method === 'OPTIONS') {
-      return new NextResponse(null, {
-        status: 204,
-        headers: corsHeaders,
-      })
-    }
-  }
-
-  // -----------------------------------------------------------------------
-  // 2. Method Validation for API Routes
+  // 1. Method Validation for API Routes
   // -----------------------------------------------------------------------
   if (isApiRoute && !ALLOWED_API_METHODS.has(request.method)) {
     return NextResponse.json(
@@ -204,7 +181,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // -----------------------------------------------------------------------
-  // 3. Request Size Limiting for API Routes
+  // 2. Request Size Limiting for API Routes
   // -----------------------------------------------------------------------
   if (isApiRoute && request.method !== 'GET' && request.method !== 'HEAD') {
     const contentLength = request.headers.get('content-length')
@@ -220,7 +197,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // -----------------------------------------------------------------------
-  // 4. Route Protection — Admin API Routes
+  // 3. Route Protection — Admin API Routes
   // -----------------------------------------------------------------------
   if (pathname.startsWith('/api/admin/')) {
     // Check whitelist — routes with their own key-based auth
@@ -229,12 +206,6 @@ export async function proxy(request: NextRequest) {
       const response = NextResponse.next()
       const secHeaders = buildSecurityHeaders(isDev)
       for (const [key, value] of Object.entries(secHeaders)) {
-        response.headers.set(key, value)
-      }
-      // Add CORS headers
-      const requestOrigin = request.headers.get('origin')
-      const corsHeaders = getCorsHeaders(requestOrigin)
-      for (const [key, value] of Object.entries(corsHeaders)) {
         response.headers.set(key, value)
       }
       return response
@@ -277,34 +248,16 @@ export async function proxy(request: NextRequest) {
       response.headers.set(key, value)
     }
 
-    // Add CORS headers
-    const requestOrigin = request.headers.get('origin')
-    const corsHeaders = getCorsHeaders(requestOrigin)
-    for (const [key, value] of Object.entries(corsHeaders)) {
-      response.headers.set(key, value)
-    }
-
     return response
   }
 
   // -----------------------------------------------------------------------
-  // 5. All Other Routes — Add Security Headers + CORS
+  // 4. All Other Routes — Add Security Headers
   // -----------------------------------------------------------------------
   const response = NextResponse.next()
-
-  // Add security headers to all responses
   const secHeaders = buildSecurityHeaders(isDev)
   for (const [key, value] of Object.entries(secHeaders)) {
     response.headers.set(key, value)
-  }
-
-  // Add CORS headers to API routes
-  if (isApiRoute) {
-    const requestOrigin = request.headers.get('origin')
-    const corsHeaders = getCorsHeaders(requestOrigin)
-    for (const [key, value] of Object.entries(corsHeaders)) {
-      response.headers.set(key, value)
-    }
   }
 
   return response
@@ -315,10 +268,14 @@ export async function proxy(request: NextRequest) {
 // ---------------------------------------------------------------------------
 
 export const config = {
-  matchers: [
-    {
-      regexp: '^/(?!_next/static|_next/image|favicon\\.ico|.*\\.(?:ico|png|jpg|jpeg|gif|svg|webp|woff|woff2|ttf|eot|otf)$).*',
-      originalSource: '/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:ico|png|jpg|jpeg|gif|svg|webp|woff|woff2|ttf|eot|otf)$).*)',
-    },
+  matcher: [
+    /*
+     * Match all request paths except:
+     * - _next/static (static files)
+     * - _next/image (image optimization)
+     * - favicon.ico (favicon file)
+     * - Other common static asset extensions
+     */
+    '/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:ico|png|jpg|jpeg|gif|svg|webp|woff|woff2|ttf|eot|otf)$).*)',
   ],
 }

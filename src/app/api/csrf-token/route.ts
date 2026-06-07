@@ -1,7 +1,9 @@
 // =============================================================================
 // CSRF Token API — Generates and serves CSRF tokens (double-submit cookie)
 // GET /api/csrf-token → { success: true, token: "..." }
-// Sets a non-HttpOnly cookie so JS can read it for the x-csrf-token header.
+// Sets an HttpOnly cookie for server-side verification.
+// The token is also returned in the response body for client-side use
+// in the x-csrf-token header (double-submit cookie pattern).
 // =============================================================================
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -23,13 +25,15 @@ export async function GET(request: NextRequest) {
     token,
   })
 
-  // Set the CSRF token as a cookie (non-HttpOnly so JS can read it)
+  // Set the CSRF token as an HttpOnly cookie (inaccessible to JS — prevents XSS exfil)
+  // The double-submit pattern works because the client reads the token from the
+  // response body and sends it back in the x-csrf-token header on mutating requests.
   response.cookies.set(cookieName, token, {
-    httpOnly: false,
+    httpOnly: true,
     secure: isSecure,
-    sameSite: 'lax',
+    sameSite: 'strict',
     path: '/',
-    maxAge: 86400, // 24 hours
+    maxAge: 60 * 60, // 1 hour (matches /api/auth/csrf)
   })
 
   return response

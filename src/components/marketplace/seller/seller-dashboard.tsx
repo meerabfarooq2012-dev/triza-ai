@@ -6,6 +6,7 @@ import { Store, Settings, Loader2, AlertCircle, Star } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { DashboardSkeleton } from '@/components/marketplace/shared/loading-skeletons'
 import { SellerOverview } from './seller-overview'
 import { SellerTierCard } from '@/components/marketplace/verification/seller-tier-card'
 import { SellerProducts } from './seller-products'
@@ -143,10 +144,9 @@ export function SellerDashboard() {
   // Loading state while checking for shop
   if (shopLoading) {
     return (
-      <div className="min-h-screen bg-muted/30 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-600" />
-          <p className="text-sm text-muted-foreground">Loading your dashboard...</p>
+      <div className="min-h-screen bg-muted/30">
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          <DashboardSkeleton cardCount={4} />
         </div>
       </div>
     )
@@ -163,7 +163,7 @@ export function SellerDashboard() {
           className="mb-6"
         >
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-amber-500 to-yellow-600 text-white">
               {shopData?.logo || currentUser?.shop?.logo ? (
                 <img
                   src={(shopData?.logo || currentUser?.shop?.logo) as string}
@@ -225,7 +225,7 @@ export function SellerDashboard() {
               <Button
                 onClick={handleCreateShop}
                 disabled={creatingShop}
-                className="gap-2 bg-emerald-600 hover:bg-emerald-700 shrink-0"
+                className="gap-2 bg-amber-600 hover:bg-amber-700 shrink-0"
               >
                 {creatingShop ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -253,7 +253,7 @@ export function SellerDashboard() {
                 <TabsTrigger value="gigs">Gigs</TabsTrigger>
                 <TabsTrigger value="orders">Orders</TabsTrigger>
                 <TabsTrigger value="wallet">Wallet</TabsTrigger>
-                <TabsTrigger value="payment-settings" className="gap-1 data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+                <TabsTrigger value="payment-settings" className="gap-1 data-[state=active]:bg-amber-600 data-[state=active]:text-white">
                   <Settings className="h-3.5 w-3.5" />
                   Payment Info
                 </TabsTrigger>

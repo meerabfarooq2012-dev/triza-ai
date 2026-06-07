@@ -1,32 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { authenticateRequest } from '@/lib/auth-middleware';
 import { db } from '@/lib/db';
 import { createAuditLog } from '@/lib/audit-log';
 
 import { withCsrf } from '@/lib/with-csrf';
 export async function GET(request: NextRequest) {
   try {
+    // Authenticate and verify admin role
+    const auth = authenticateRequest(request);
+    if (!auth) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    if (auth.role !== 'admin') {
+      return NextResponse.json(
+        { success: false, error: 'Admin access required' },
+        { status: 403 }
+      );
+    }
+
     const searchParams = request.nextUrl.searchParams;
-    const userId = searchParams.get('userId') || '';
     const search = searchParams.get('search') || '';
     const role = searchParams.get('role') || '';
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '20', 10);
     const skip = (page - 1) * limit;
-
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, error: 'userId is required' },
-        { status: 400 }
-      );
-    }
-
-    const adminUser = await db.user.findUnique({ where: { id: userId } });
-    if (!adminUser || !adminUser.isAdmin) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized - admin access required' },
-        { status: 403 }
-      );
-    }
 
     const where: Record<string, unknown> = {};
 
@@ -94,21 +94,28 @@ export async function GET(request: NextRequest) {
 
 export const PUT = withCsrf(async (request: NextRequest) => {
   try {
-    const body = await request.json();
-    const { userId, targetUserId, action, value } = body;
-
-    if (!userId || !targetUserId || !action) {
+    // Authenticate and verify admin role
+    const auth = authenticateRequest(request);
+    if (!auth) {
       return NextResponse.json(
-        { success: false, error: 'userId, targetUserId, and action are required' },
-        { status: 400 }
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    if (auth.role !== 'admin') {
+      return NextResponse.json(
+        { success: false, error: 'Admin access required' },
+        { status: 403 }
       );
     }
 
-    const adminUser = await db.user.findUnique({ where: { id: userId } });
-    if (!adminUser || !adminUser.isAdmin) {
+    const body = await request.json();
+    const { targetUserId, action, value } = body;
+
+    if (!targetUserId || !action) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized - admin access required' },
-        { status: 403 }
+        { success: false, error: 'targetUserId and action are required' },
+        { status: 400 }
       );
     }
 
@@ -180,7 +187,7 @@ export const PUT = withCsrf(async (request: NextRequest) => {
       updateRole: 'user.role_change',
     };
     await createAuditLog({
-      userId,
+      userId: auth.userId,
       action: actionMap[action] || `user.${action}`,
       entityType: 'user',
       entityId: targetUserId,

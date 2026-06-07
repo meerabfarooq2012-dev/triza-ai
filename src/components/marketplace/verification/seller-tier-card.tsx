@@ -286,7 +286,7 @@ function FullTierCard({
               <span className="font-medium text-foreground">{data.metrics.totalReviews}</span> reviews
             </span>
             {data.metrics.isVerified ? (
-              <Badge variant="outline" className="gap-1 border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-950 dark:text-emerald-400">
+              <Badge variant="outline" className="gap-1 border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-400">
                 <Check className="h-3 w-3" />
                 Verified
               </Badge>
@@ -363,7 +363,7 @@ function FullTierCard({
                     className={cn(
                       'flex items-start gap-2 rounded-md px-3 py-1.5 text-sm',
                       req.met
-                        ? 'bg-emerald-50/50 dark:bg-emerald-950/30'
+                        ? 'bg-amber-50/50 dark:bg-amber-950/30'
                         : 'bg-red-50/50 dark:bg-red-950/20',
                     )}
                     initial={{ opacity: 0, x: -10 }}
@@ -371,11 +371,11 @@ function FullTierCard({
                     transition={{ delay: 0.7 + idx * 0.1, duration: 0.3 }}
                   >
                     {req.met ? (
-                      <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-600 dark:text-emerald-400" />
+                      <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600 dark:text-amber-400" />
                     ) : (
                       <X className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500 dark:text-red-400" />
                     )}
-                    <span className={req.met ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300'}>
+                    <span className={req.met ? 'text-amber-700 dark:text-amber-300' : 'text-red-700 dark:text-red-300'}>
                       {formatMetricLabel(req.metric, req.current, req.required)}
                     </span>
                   </motion.div>

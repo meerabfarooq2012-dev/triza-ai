@@ -121,9 +121,9 @@ function CategoryTypeBadge({ slug }: { slug: string }) {
     case 'physical':
       return <Badge variant="outline" className="text-xs gap-1 bg-orange-50 text-orange-700 border-orange-200"><Package size={12} /> Physical</Badge>
     case 'gig':
-      return <Badge variant="outline" className="text-xs gap-1 bg-teal-50 text-teal-700 border-teal-200"><Briefcase size={12} /> Gig</Badge>
+      return <Badge variant="outline" className="text-xs gap-1 bg-yellow-50 text-yellow-700 border-yellow-200"><Briefcase size={12} /> Gig</Badge>
     default:
-      return <Badge variant="outline" className="text-xs bg-gray-50 text-gray-600 border-gray-200">Other</Badge>
+      return <Badge variant="outline" className="text-xs bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700">Other</Badge>
   }
 }
 

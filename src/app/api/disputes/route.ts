@@ -1,22 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { authenticateRequest } from '@/lib/auth-middleware';
-import { rateLimit, getRateLimitKey, disputeRateLimit } from '@/lib/rate-limit';
 import { withCsrf } from '@/lib/with-csrf';
-import { validateInput, disputeCreateSchema } from '@/lib/validation';
+import { authenticateRequestWithSession } from '@/lib/auth-middleware';
 
 // GET /api/disputes — List disputes with filters and pagination
 export async function GET(request: NextRequest) {
-  // Rate limiting
-  const rlKey = getRateLimitKey(request);
-  const rlResult = rateLimit({ ...disputeRateLimit, key: `disputes:${rlKey}` });
-  if (!rlResult.success) {
-    return NextResponse.json(
-      { success: false, error: 'Too many requests. Please try again later.' },
-      { status: 429 }
-    );
-  }
-
   try {
     const url = new URL(request.url);
     const searchParams = url.searchParams;
@@ -131,31 +119,17 @@ export async function GET(request: NextRequest) {
 
 // POST /api/disputes — Create a new dispute
 export const POST = withCsrf(async (request: NextRequest) => {
-  // Rate limiting
-  const rlKey = getRateLimitKey(request);
-  const rlResult = rateLimit({ ...disputeRateLimit, key: `disputes:${rlKey}` });
-  if (!rlResult.success) {
-    return NextResponse.json(
-      { success: false, error: 'Too many requests. Please try again later.' },
-      { status: 429 }
-    );
-  }
-
-  const auth = authenticateRequest(request);
-  if (!auth) {
-    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
-  }
   try {
-    const body = await request.json();
-
-    // Validate input with Zod
-    const validation = validateInput(disputeCreateSchema, body);
-    if (!validation.success) {
+    // Authenticate the request (with session validation)
+    const auth = await authenticateRequestWithSession(request);
+    if (!auth) {
       return NextResponse.json(
-        { success: false, error: validation.error },
-        { status: 400 }
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
       );
     }
+
+    const body = await request.json();
     const {
       orderId,
       sellerId: bodySellerId,
@@ -164,8 +138,33 @@ export const POST = withCsrf(async (request: NextRequest) => {
       category,
       description,
       priority,
-    } = validation.data;
+    } = body;
+
+    // Use server-extracted userId from JWT instead of body
     const userId = auth.userId;
+
+    // Validate required fields
+    if (!orderId || !reason || !description) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Missing required fields: orderId, reason, description',
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate priority if provided
+    const validPriorities = ['low', 'normal', 'high', 'urgent'];
+    if (priority && !validPriorities.includes(priority)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Invalid priority. Must be one of: ${validPriorities.join(', ')}`,
+        },
+        { status: 400 }
+      );
+    }
 
     // Validate the order exists and belongs to the user
     const order = await db.order.findUnique({

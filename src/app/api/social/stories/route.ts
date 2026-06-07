@@ -1,20 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { authenticateRequest } from '@/lib/auth-middleware';
-import { rateLimit, getRateLimitKey, socialRateLimit } from '@/lib/rate-limit';
 import { withCsrf } from '@/lib/with-csrf';
-import { validateInput, storyCreateSchema } from '@/lib/validation';
-export async function GET(request: NextRequest) {
-  // Rate limiting
-  const rlKey = getRateLimitKey(request);
-  const rlResult = rateLimit({ ...socialRateLimit, key: `social-stories:${rlKey}` });
-  if (!rlResult.success) {
-    return NextResponse.json(
-      { success: false, error: 'Too many requests. Please try again later.' },
-      { status: 429 }
-    );
-  }
 
+// GET: Get active stories
+export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
@@ -110,37 +99,17 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST: Create a story
 export const POST = withCsrf(async (request: NextRequest) => {
-  // Rate limiting
-  const rlKey = getRateLimitKey(request);
-  const rlResult = rateLimit({ ...socialRateLimit, key: `social-stories:${rlKey}` });
-  if (!rlResult.success) {
-    return NextResponse.json(
-      { success: false, error: 'Too many requests. Please try again later.' },
-      { status: 429 }
-    );
-  }
-
-  const auth = authenticateRequest(request);
-  if (!auth) {
-    return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
-  }
-  if (auth.role !== 'seller' && auth.role !== 'admin' && auth.role !== 'both') {
-    return NextResponse.json({ success: false, error: 'Seller access required' }, { status: 403 });
-  }
   try {
     const body = await request.json();
+    const { shopId, type, content, imageUrl, productId, expiresAt } = body;
 
-    // Validate input with Zod
-    const validation = validateInput(storyCreateSchema, body);
-    if (!validation.success) {
+    if (!shopId) {
       return NextResponse.json(
-        { success: false, error: validation.error },
+        { success: false, error: 'shopId is required' },
         { status: 400 }
       );
     }
-    const { shopId, type, content, imageUrl, productId, expiresAt } = validation.data;
 
     // Verify the shop exists
     const shop = await db.shop.findUnique({
@@ -198,4 +167,4 @@ export const POST = withCsrf(async (request: NextRequest) => {
       { status: 500 }
     );
   }
-})
+});

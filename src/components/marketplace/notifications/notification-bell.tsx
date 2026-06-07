@@ -35,8 +35,8 @@ function NotificationCategoryIcon({ category }: { category: string }) {
   const props = { size: 16 }
   switch (category) {
     case 'order': return <ShoppingCart {...props} className="text-amber-500" />
-    case 'payment': return <CreditCard {...props} className="text-emerald-500" />
-    case 'message': return <MessageSquare {...props} className="text-cyan-500" />
+    case 'payment': return <CreditCard {...props} className="text-amber-500" />
+    case 'message': return <MessageSquare {...props} className="text-orange-500" />
     case 'review': return <Star {...props} className="text-amber-500" />
     case 'shop': return <Store {...props} className="text-amber-500" />
     case 'promotion': return <Tag {...props} className="text-orange-500" />

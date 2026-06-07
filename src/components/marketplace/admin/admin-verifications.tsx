@@ -250,7 +250,7 @@ export default function AdminVerifications() {
     const statusConfig: Record<string, { label: string; className: string }> = {
       pending: { label: 'Pending', className: 'bg-amber-50 text-amber-700 border-amber-200' },
       under_review: { label: 'Under Review', className: 'bg-blue-50 text-blue-700 border-blue-200' },
-      approved: { label: 'Approved', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+      approved: { label: 'Approved', className: 'bg-amber-50 text-amber-700 border-amber-200' },
       rejected: { label: 'Rejected', className: 'bg-red-50 text-red-700 border-red-200' },
       expired: { label: 'Expired', className: 'bg-orange-50 text-orange-700 border-orange-200' },
     }
@@ -296,10 +296,10 @@ export default function AdminVerifications() {
     {
       label: 'Approved',
       count: stats.approved,
-      icon: <ShieldCheck size={20} className="text-emerald-600" />,
-      bgColor: 'bg-emerald-50',
-      borderColor: 'border-emerald-200',
-      textColor: 'text-emerald-700',
+      icon: <ShieldCheck size={20} className="text-amber-600" />,
+      bgColor: 'bg-amber-50',
+      borderColor: 'border-amber-200',
+      textColor: 'text-amber-700',
     },
     {
       label: 'Rejected',
@@ -692,7 +692,7 @@ export default function AdminVerifications() {
                         value={rejectionReason}
                         onChange={(e) => setRejectionReason(e.target.value)}
                         rows={3}
-                        className="bg-white"
+                        className="bg-white dark:bg-gray-800"
                       />
                       <p className="text-xs text-muted-foreground mt-2">
                         The seller will receive this reason via notification.
@@ -706,7 +706,7 @@ export default function AdminVerifications() {
               <Separator />
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button
-                  className="flex-1 gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+                  className="flex-1 gap-2 bg-amber-600 hover:bg-amber-700 text-gray-900"
                   onClick={() => handleReviewAction('approve')}
                   disabled={submitting || (showRejectForm && !rejectionReason.trim())}
                 >

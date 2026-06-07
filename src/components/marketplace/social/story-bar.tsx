@@ -131,8 +131,8 @@ export function StoryBar() {
     )
   }
 
-  // Don't render if no stories and no user interaction possible
-  if (groupedStories.length === 0 && !isAuthenticated) {
+  // Don't render if no stories and user is not a seller with a shop
+  if (groupedStories.length === 0 && !(isSeller && userShop)) {
     return null
   }
 
@@ -208,7 +208,7 @@ export function StoryBar() {
                 <span className="text-[9px] text-amber-600 font-medium">🏷️ Deal</span>
               )}
               {latestStory?.type === 'product_highlight' && (
-                <span className="text-[9px] text-emerald-600 font-medium">⭐ New</span>
+                <span className="text-[9px] text-amber-600 font-medium">⭐ New</span>
               )}
             </motion.button>
           )

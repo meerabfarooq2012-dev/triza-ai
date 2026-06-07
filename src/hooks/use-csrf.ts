@@ -11,7 +11,7 @@ interface CsrfState {
   fetchedAt: number | null
 }
 
-const REFRESH_INTERVAL = 23 * 60 * 60 * 1000 // 23 hours in ms
+const REFRESH_INTERVAL = 50 * 60 * 1000 // 50 minutes (cookie expires in 1 hour)
 
 let state: CsrfState = { token: null, fetchedAt: null }
 let listeners: Set<() => void> = new Set()
@@ -43,7 +43,8 @@ function setCsrfState(next: CsrfState) {
 }
 
 /**
- * Check if the cached token is stale (older than 23 hours).
+ * Check if the cached token is stale (older than 50 minutes).
+ * The server cookie expires in 1 hour, so we refresh before that.
  */
 function isStale(): boolean {
   if (!state.fetchedAt) return true
@@ -67,7 +68,7 @@ interface CsrfResponse {
  * Features:
  * - Fetches from /api/csrf-token on mount
  * - Caches the token in external store (hydration-safe via useSyncExternalStore)
- * - Auto-refreshes when token is stale (every 23 hours)
+ * - Auto-refreshes when token is stale (every 50 minutes, before 1h cookie expiry)
  * - Returns `{ csrfToken, fetchCsrfToken }`
  *
  * @returns `{ csrfToken, fetchCsrfToken }` — the current token and a refetch function

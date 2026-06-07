@@ -1,6 +1,7 @@
 // =============================================================================
 // Marketo Rate Limiting Utility — In-memory rate limiter
 // Tracks requests by IP or userId with configurable window and max requests
+// Includes progressive delay for repeated failed attempts and IP+UA fingerprinting
 // =============================================================================
 
 interface RateLimitEntry {
@@ -8,13 +9,26 @@ interface RateLimitEntry {
   resetTime: number
 }
 
+/** Tracks failed login attempts for progressive delay */
+interface FailedAttemptEntry {
+  count: number
+  lastAttemptAt: number
+}
+
 const limits = new Map<string, RateLimitEntry>()
+
+/** Map of fingerprint -> failed login attempt tracking for progressive delay */
+const failedLoginAttempts = new Map<string, FailedAttemptEntry>()
 
 // Clean up expired entries every 5 minutes
 setInterval(() => {
   const now = Date.now()
   for (const [key, entry] of limits) {
     if (now > entry.resetTime) limits.delete(key)
+  }
+  // Clean up stale failed login attempt entries (older than 1 hour)
+  for (const [key, entry] of failedLoginAttempts) {
+    if (now - entry.lastAttemptAt > 60 * 60 * 1000) failedLoginAttempts.delete(key)
   }
 }, 5 * 60 * 1000)
 
@@ -54,24 +68,140 @@ export function rateLimit(options: {
 }
 
 /**
- * Extract a rate limit key from a Next.js Request object
- * Uses X-Forwarded-For IP or falls back to 'unknown'
+ * Extract the client IP from X-Forwarded-For, respecting trusted proxy count.
+ *
+ * X-Forwarded-For format: client, proxy1, proxy2, ...
+ * When behind a trusted reverse proxy, the RIGHTMOST IPs are set by trusted
+ * proxies and the leftmost is the (potentially spoofed) client value.
+ *
+ * With TRUSTED_PROXY_COUNT=1 (default), we trust the LAST entry (set by our
+ * reverse proxy), which is the real client IP.
+ *
+ * With TRUSTED_PROXY_COUNT=2 (e.g., CDN + load balancer), we trust the
+ * second-to-last entry, and so on.
+ */
+export function extractClientIp(request: Request): string {
+  const forwarded = request.headers.get('x-forwarded-for')
+  const trustedProxyCount = parseInt(
+    process.env.TRUSTED_PROXY_COUNT || '1',
+    10
+  )
+
+  if (forwarded) {
+    const ips = forwarded.split(',').map((ip) => ip.trim()).filter(Boolean)
+    if (ips.length > 0) {
+      // Pick the IP at position `ips.length - trustedProxyCount`.
+      // This is the IP that was set by the last trusted proxy.
+      const idx = Math.max(0, ips.length - trustedProxyCount)
+      const ip = ips[idx]
+      if (ip) return ip
+    }
+  }
+
+  // Fall back to Next.js request.ip (available when trustProxy is configured)
+  // or connection remote address
+  const nextReq = request as Request & { ip?: string }
+  if (nextReq.ip) return nextReq.ip
+
+  return 'unknown'
+}
+
+/**
+ * Extract a rate limit key from a Next.js Request object.
+ * Uses the client IP extracted with trusted proxy awareness.
  */
 export function getRateLimitKey(request: Request): string {
-  const forwarded = request.headers.get('x-forwarded-for')
-  if (forwarded) {
-    // X-Forwarded-For may contain multiple IPs; use the first one
-    const ip = forwarded.split(',')[0]?.trim()
-    if (ip) return `ip:${ip}`
+  const ip = extractClientIp(request)
+  return `ip:${ip}`
+}
+
+/**
+ * Generate a fingerprint from the request using IP + User-Agent.
+ * This provides more accurate rate limiting by combining both identifiers,
+ * making it harder for attackers to bypass rate limits by changing just IP or UA.
+ * Uses the same trusted-proxy-aware IP extraction as getRateLimitKey.
+ */
+export function getRequestFingerprint(request: Request): string {
+  const ip = extractClientIp(request)
+  const userAgent = request.headers.get('user-agent') || 'unknown'
+
+  // Combine IP and a truncated UA hash for a stable fingerprint
+  // We use a simple combination rather than crypto to keep it fast
+  const uaShort = userAgent.slice(0, 64)
+  return `${ip}:${uaShort}`
+}
+
+/**
+ * Get a rate limit key that includes both IP and User-Agent fingerprint.
+ * More resistant to IP rotation and UA spoofing than IP alone.
+ */
+export function getFingerprintedRateLimitKey(request: Request, prefix: string): string {
+  const fingerprint = getRequestFingerprint(request)
+  return `${prefix}:${fingerprint}`
+}
+
+// =============================================================================
+// Progressive Delay for Failed Login Attempts
+// =============================================================================
+
+/**
+ * Record a failed login attempt and return the progressive delay in milliseconds.
+ * After 3 failed attempts, the delay doubles with each additional failure:
+ * - Attempt 1-2: No delay (0ms)
+ * - Attempt 3: 1 second
+ * - Attempt 4: 2 seconds
+ * - Attempt 5: 4 seconds
+ * - Attempt 6: 8 seconds
+ * - And so on (exponential backoff, capped at 60 seconds)
+ *
+ * @param fingerprint - The request fingerprint (IP + User-Agent)
+ * @returns The delay in milliseconds that should be applied before processing
+ */
+export function recordFailedLoginAttempt(fingerprint: string): number {
+  const now = Date.now()
+  const entry = failedLoginAttempts.get(fingerprint)
+
+  if (!entry || now - entry.lastAttemptAt > 60 * 60 * 1000) {
+    // No recent failures or older than 1 hour — start fresh
+    failedLoginAttempts.set(fingerprint, { count: 1, lastAttemptAt: now })
+    return 0
   }
-  return 'ip:unknown'
+
+  entry.count++
+  entry.lastAttemptAt = now
+
+  // Progressive delay starts after 3 failures
+  if (entry.count >= 3) {
+    const exponentialDelay = Math.pow(2, entry.count - 3) * 1000 // 1s, 2s, 4s, 8s...
+    return Math.min(exponentialDelay, 60 * 1000) // Cap at 60 seconds
+  }
+
+  return 0
+}
+
+/**
+ * Clear failed login attempts for a fingerprint (called on successful login).
+ */
+export function clearFailedLoginAttempts(fingerprint: string): void {
+  failedLoginAttempts.delete(fingerprint)
+}
+
+/**
+ * Get the current failed login attempt count for a fingerprint.
+ */
+export function getFailedLoginAttemptCount(fingerprint: string): number {
+  const entry = failedLoginAttempts.get(fingerprint)
+  if (!entry || Date.now() - entry.lastAttemptAt > 60 * 60 * 1000) {
+    return 0
+  }
+  return entry.count
 }
 
 // =============================================================================
 // Convenience presets
 // =============================================================================
 
-/** Auth endpoints: 10 requests per 15 minutes */
+/** Auth endpoints: 10 requests per 15 minutes (general auth) */
 export const authRateLimit = { windowMs: 15 * 60 * 1000, maxRequests: 10 }
 
 /** General API: 60 requests per minute */
@@ -80,66 +210,8 @@ export const apiRateLimit = { windowMs: 60 * 1000, maxRequests: 60 }
 /** Password reset: 5 requests per 15 minutes */
 export const passwordResetRateLimit = { windowMs: 15 * 60 * 1000, maxRequests: 5 }
 
-// =============================================================================
-// Custom rate limit presets for specific route categories
-// =============================================================================
+/** Login: 5 attempts per 15 minutes (stricter than general auth) */
+export const loginRateLimit = { windowMs: 15 * 60 * 1000, maxRequests: 5 }
 
-/** AI generation: 5 requests per minute (costly operations) */
-export const aiRateLimit = { windowMs: 60 * 1000, maxRequests: 5 }
-
-/** Email sending: 3 requests per minute */
-export const emailRateLimit = { windowMs: 60 * 1000, maxRequests: 3 }
-
-/** Coupon validation: 10 requests per minute (prevent brute force) */
-export const couponValidateRateLimit = { windowMs: 60 * 1000, maxRequests: 10 }
-
-/** Coupon redemption: 5 requests per minute */
-export const couponRedeemRateLimit = { windowMs: 60 * 1000, maxRequests: 5 }
-
-/** Search: 20 requests per minute */
-export const searchRateLimit = { windowMs: 60 * 1000, maxRequests: 20 }
-
-/** Reviews: 10 requests per minute */
-export const reviewRateLimit = { windowMs: 60 * 1000, maxRequests: 10 }
-
-/** Disputes: 5 requests per minute */
-export const disputeRateLimit = { windowMs: 60 * 1000, maxRequests: 5 }
-
-/** Notifications: 30 requests per minute */
-export const notificationRateLimit = { windowMs: 60 * 1000, maxRequests: 30 }
-
-/** Social endpoints: 20 requests per minute */
-export const socialRateLimit = { windowMs: 60 * 1000, maxRequests: 20 }
-
-/** Shipping endpoints: 30 requests per minute */
-export const shippingRateLimit = { windowMs: 60 * 1000, maxRequests: 30 }
-
-/** Products: 20 requests per minute */
-export const productRateLimit = { windowMs: 60 * 1000, maxRequests: 20 }
-
-/** Gigs: 20 requests per minute */
-export const gigRateLimit = { windowMs: 60 * 1000, maxRequests: 20 }
-
-/** Wishlists: 20 requests per minute */
-export const wishlistRateLimit = { windowMs: 60 * 1000, maxRequests: 20 }
-
-/** Flash sales: 10 requests per minute */
-export const flashSaleRateLimit = { windowMs: 60 * 1000, maxRequests: 10 }
-
-/** Cart: 30 requests per minute */
-export const cartRateLimit = { windowMs: 60 * 1000, maxRequests: 30 }
-
-/** Payments: 10 requests per minute */
-export const paymentRateLimit = { windowMs: 60 * 1000, maxRequests: 10 }
-
-/** Orders: 10 requests per minute */
-export const orderRateLimit = { windowMs: 60 * 1000, maxRequests: 10 }
-
-/** Messages: 20 requests per minute */
-export const messageRateLimit = { windowMs: 60 * 1000, maxRequests: 20 }
-
-/** Feedback/AI chat: 5 requests per minute */
-export const feedbackRateLimit = { windowMs: 60 * 1000, maxRequests: 5 }
-
-/** Tax calculation: 20 requests per minute */
-export const taxRateLimit = { windowMs: 60 * 1000, maxRequests: 20 }
+/** Registration: 3 registrations per hour */
+export const registerRateLimit = { windowMs: 60 * 60 * 1000, maxRequests: 3 }

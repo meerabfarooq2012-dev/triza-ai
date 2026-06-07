@@ -404,7 +404,7 @@ export function AuthModal() {
     if (!touchedFields[fieldName]) return ''
     return fieldValue.trim() === ''
       ? 'border-red-400 dark:border-red-500 focus-visible:ring-red-500/30'
-      : 'border-green-400 dark:border-green-500 focus-visible:ring-green-500/30'
+      : 'border-amber-400 dark:border-amber-500 focus-visible:ring-amber-500/30'
   }
 
   // Helper for inline hint text
@@ -662,7 +662,7 @@ export function AuthModal() {
 
                 <Button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white shadow-lg"
+                  className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white dark:text-gray-900 shadow-lg"
                   disabled={isLoading}
                   size="lg"
                 >
@@ -705,13 +705,13 @@ export function AuthModal() {
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="rounded-lg border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/30 p-6 text-center space-y-4"
+                    className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 p-6 text-center space-y-4"
                   >
-                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/50">
-                      <MailCheck className="h-6 w-6 text-green-600 dark:text-green-400" />
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/50">
+                      <MailCheck className="h-6 w-6 text-amber-600 dark:text-amber-400" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-green-800 dark:text-green-300">
+                      <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
                         If an account with that email exists, we&apos;ve sent a reset link.
                       </p>
                       <p className="text-xs text-muted-foreground mt-2">
@@ -721,7 +721,7 @@ export function AuthModal() {
                     <Button
                       type="button"
                       onClick={() => { setTab('login'); setError(''); setTouchedFields({}); setForgotSuccess(false) }}
-                      className="bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white shadow-lg"
+                      className="bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white dark:text-gray-900 shadow-lg"
                       size="lg"
                     >
                       <ArrowLeft className="h-4 w-4 mr-2" />
@@ -750,7 +750,7 @@ export function AuthModal() {
 
                     <Button
                       type="submit"
-                      className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white shadow-lg"
+                      className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white dark:text-gray-900 shadow-lg"
                       disabled={isLoading}
                       size="lg"
                     >
@@ -901,8 +901,8 @@ export function AuthModal() {
                     >
                       {hasMinLength ? (
                         <>
-                          <Check className="h-3.5 w-3.5 text-green-500 dark:text-green-400" />
-                          <span className="text-xs text-green-600 dark:text-green-400">Minimum 6 characters</span>
+                          <Check className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
+                          <span className="text-xs text-amber-600 dark:text-amber-400">Minimum 6 characters</span>
                         </>
                       ) : (
                         <>
@@ -930,7 +930,7 @@ export function AuthModal() {
                       className={`pl-10 pr-10 ${
                         getInputValidationClass(regConfirmPassword, 'regConfirmPassword') ||
                         (passwordsMismatch ? 'border-red-400 dark:border-red-500 focus-visible:ring-red-500/30' : '') ||
-                        (passwordsMatch ? 'border-green-400 dark:border-green-500 focus-visible:ring-green-500/30' : '')
+                        (passwordsMatch ? 'border-amber-400 dark:border-amber-500 focus-visible:ring-amber-500/30' : '')
                       }`}
                       disabled={isLoading}
                     />
@@ -952,8 +952,8 @@ export function AuthModal() {
                     >
                       {passwordsMatch ? (
                         <>
-                          <Check className="h-3.5 w-3.5 text-green-500 dark:text-green-400" />
-                          <span className="text-xs text-green-600 dark:text-green-400">Passwords match</span>
+                          <Check className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
+                          <span className="text-xs text-amber-600 dark:text-amber-400">Passwords match</span>
                         </>
                       ) : passwordsMismatch ? (
                         <>
@@ -1063,7 +1063,7 @@ export function AuthModal() {
 
                 <Button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white shadow-lg"
+                  className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white dark:text-gray-900 shadow-lg"
                   disabled={isLoading}
                   size="lg"
                 >

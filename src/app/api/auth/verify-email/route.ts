@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { rateLimit, getRateLimitKey, authRateLimit } from '@/lib/rate-limit';
 import { withCsrf } from '@/lib/with-csrf';
+import { createHash } from 'crypto';
 
 export const POST = withCsrf(async (request: NextRequest) => {
   try {
@@ -34,10 +35,13 @@ export const POST = withCsrf(async (request: NextRequest) => {
       );
     }
 
-    // Find user by email verify token
+    // Hash the incoming token to compare with the stored hashed version
+    const hashedToken = createHash('sha256').update(token).digest('hex');
+
+    // Find user by hashed email verify token
     const user = await db.user.findFirst({
       where: {
-        emailVerifyToken: token,
+        emailVerifyToken: hashedToken,
       },
     });
 

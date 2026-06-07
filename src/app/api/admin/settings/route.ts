@@ -3,16 +3,17 @@ import { db } from '@/lib/db'
 import { rateLimit, apiRateLimit, getRateLimitKey } from '@/lib/rate-limit'
 import { createAuditLog } from '@/lib/audit-log'
 import { authenticateRequest } from '@/lib/auth-middleware'
-import { withCsrf } from '@/lib/with-csrf';
+import { withCsrf } from '@/lib/with-csrf'
+import { getSafeErrorMessage } from '@/lib/error-handler'
 
 // GET /api/admin/settings — Get platform settings
 export async function GET(request: NextRequest) {
-  // Verify admin authentication
-  const auth = await authenticateRequest(request)
+  // Authenticate and verify admin role
+  const auth = authenticateRequest(request)
   if (!auth) {
     return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
   }
-  if (auth.role !== 'admin' && auth.role !== 'both') {
+  if (auth.role !== 'admin') {
     return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
   }
 
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('[Admin Settings GET] Error:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch platform settings' },
+      { error: getSafeErrorMessage(error, 'Failed to fetch platform settings') },
       { status: 500 }
     )
   }
@@ -45,12 +46,12 @@ export async function GET(request: NextRequest) {
 
 // PATCH /api/admin/settings — Update platform settings
 export const PATCH = withCsrf(async (request: NextRequest) => {
-  // Verify admin authentication
-  const auth = await authenticateRequest(request)
+  // Authenticate and verify admin role
+  const auth = authenticateRequest(request)
   if (!auth) {
     return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
   }
-  if (auth.role !== 'admin' && auth.role !== 'both') {
+  if (auth.role !== 'admin') {
     return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
   }
 
@@ -109,6 +110,7 @@ export const PATCH = withCsrf(async (request: NextRequest) => {
 
     // Audit log
     await createAuditLog({
+      userId: auth.userId,
       action: 'settings.update',
       entityType: 'settings',
       entityId: 'default',
@@ -121,7 +123,7 @@ export const PATCH = withCsrf(async (request: NextRequest) => {
   } catch (error) {
     console.error('[Admin Settings PATCH] Error:', error)
     return NextResponse.json(
-      { error: 'Failed to update platform settings' },
+      { error: getSafeErrorMessage(error, 'Failed to update platform settings') },
       { status: 500 }
     )
   }

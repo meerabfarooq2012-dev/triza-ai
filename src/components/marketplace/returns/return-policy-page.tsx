@@ -215,7 +215,7 @@ export function ReturnPolicyPage({ shopId }: ReturnPolicyPageProps) {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-              <ShieldCheck className="h-6 w-6 text-emerald-600" />
+              <ShieldCheck className="h-6 w-6 text-amber-600" />
               Return Policy Settings
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
@@ -224,7 +224,7 @@ export function ReturnPolicyPage({ shopId }: ReturnPolicyPageProps) {
           </div>
           <Button
             size="sm"
-            className="bg-emerald-600 hover:bg-emerald-700 w-fit"
+            className="bg-amber-600 hover:bg-amber-700 w-fit"
             onClick={handleSave}
             disabled={saving}
           >
@@ -251,8 +251,8 @@ export function ReturnPolicyPage({ shopId }: ReturnPolicyPageProps) {
               <CardContent className="p-4 sm:p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50">
-                      <RotateCcw className="h-4 w-4 text-emerald-600" />
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50">
+                      <RotateCcw className="h-4 w-4 text-amber-600" />
                     </div>
                     <div>
                       <p className="text-sm font-semibold">Accept Returns</p>
@@ -272,7 +272,7 @@ export function ReturnPolicyPage({ shopId }: ReturnPolicyPageProps) {
                     {/* Return Period */}
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-emerald-600" />
+                        <Clock className="h-4 w-4 text-amber-600" />
                         <Label className="text-sm font-semibold">Return Period</Label>
                       </div>
                       <div className="space-y-2">
@@ -286,15 +286,15 @@ export function ReturnPolicyPage({ shopId }: ReturnPolicyPageProps) {
                         />
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-muted-foreground">1 day</span>
-                          <Badge variant="outline" className="text-emerald-700 bg-emerald-50 border-emerald-200">
+                          <Badge variant="outline" className="text-amber-700 bg-amber-50 border-amber-200">
                             {returnPeriodDays} day{returnPeriodDays !== 1 ? 's' : ''}
                           </Badge>
                           <span className="text-xs text-muted-foreground">30 days</span>
                         </div>
                       </div>
-                      <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-2.5 flex items-start gap-2">
-                        <Info className="h-3.5 w-3.5 text-emerald-600 mt-0.5 shrink-0" />
-                        <p className="text-[11px] text-emerald-700">
+                      <div className="rounded-lg bg-amber-50 border border-amber-200 p-2.5 flex items-start gap-2">
+                        <Info className="h-3.5 w-3.5 text-amber-600 mt-0.5 shrink-0" />
+                        <p className="text-[11px] text-amber-700">
                           Buyers have {returnPeriodDays} days from delivery to request a return.
                         </p>
                       </div>
@@ -329,7 +329,7 @@ export function ReturnPolicyPage({ shopId }: ReturnPolicyPageProps) {
               <Card className="border-0 shadow-sm">
                 <CardContent className="p-4 sm:p-6 space-y-4">
                   <div className="flex items-center gap-2">
-                    <CreditCard className="h-4 w-4 text-emerald-600" />
+                    <CreditCard className="h-4 w-4 text-amber-600" />
                     <Label className="text-sm font-semibold">Refund Methods</Label>
                   </div>
 
@@ -342,15 +342,15 @@ export function ReturnPolicyPage({ shopId }: ReturnPolicyPageProps) {
                           key={opt.value}
                           className={`flex items-start gap-3 rounded-lg border p-3 transition-all cursor-pointer ${
                             checked
-                              ? 'border-emerald-500 bg-emerald-50'
-                              : 'border-border hover:border-emerald-300'
+                              ? 'border-amber-500 bg-amber-50'
+                              : 'border-border hover:border-amber-300'
                           }`}
                           onClick={() => toggleRefundMethod(opt.value)}
                         >
                           <Checkbox
                             checked={checked}
                             onCheckedChange={() => toggleRefundMethod(opt.value)}
-                            className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 mt-0.5"
+                            className="data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600 mt-0.5"
                           />
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
@@ -380,7 +380,7 @@ export function ReturnPolicyPage({ shopId }: ReturnPolicyPageProps) {
                   {/* Return Shipping Paid By */}
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <Truck className="h-4 w-4 text-emerald-600" />
+                      <Truck className="h-4 w-4 text-amber-600" />
                       <Label className="text-sm font-semibold">Return Shipping Paid By</Label>
                     </div>
                     <RadioGroup
@@ -393,14 +393,14 @@ export function ReturnPolicyPage({ shopId }: ReturnPolicyPageProps) {
                           key={opt.value}
                           className={`flex items-start gap-3 rounded-lg border p-3 transition-all cursor-pointer ${
                             returnShippingPaidBy === opt.value
-                              ? 'border-emerald-500 bg-emerald-50'
-                              : 'border-border hover:border-emerald-300'
+                              ? 'border-amber-500 bg-amber-50'
+                              : 'border-border hover:border-amber-300'
                           }`}
                           onClick={() => setReturnShippingPaidBy(opt.value)}
                         >
                           <RadioGroupItem
                             value={opt.value}
-                            className="data-[state=checked]:text-emerald-600 mt-0.5"
+                            className="data-[state=checked]:text-amber-600 mt-0.5"
                           />
                           <div>
                             <p className="text-sm font-medium">{opt.label}</p>
@@ -416,7 +416,7 @@ export function ReturnPolicyPage({ shopId }: ReturnPolicyPageProps) {
                   {/* Restocking Fee */}
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <Percent className="h-4 w-4 text-emerald-600" />
+                      <Percent className="h-4 w-4 text-amber-600" />
                       <Label className="text-sm font-semibold">Restocking Fee</Label>
                     </div>
                     <div className="flex items-center gap-3">
@@ -460,7 +460,7 @@ export function ReturnPolicyPage({ shopId }: ReturnPolicyPageProps) {
               <Card className="border-0 shadow-sm">
                 <CardContent className="p-4 sm:p-6 space-y-3">
                   <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-emerald-600" />
+                    <FileText className="h-4 w-4 text-amber-600" />
                     <Label className="text-sm font-semibold">Custom Policy Description</Label>
                   </div>
                   <Textarea
@@ -513,7 +513,7 @@ export function ReturnPolicyPage({ shopId }: ReturnPolicyPageProps) {
             <Card className="border-0 shadow-sm sticky top-4">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Eye className="h-4 w-4 text-emerald-600" />
+                  <Eye className="h-4 w-4 text-amber-600" />
                   Buyer Preview
                 </CardTitle>
                 <CardDescription>
@@ -523,7 +523,7 @@ export function ReturnPolicyPage({ shopId }: ReturnPolicyPageProps) {
               <CardContent className="space-y-4">
                 <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
                   <div className="flex items-center gap-2">
-                    <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                    <ShieldCheck className="h-5 w-5 text-amber-600" />
                     <h4 className="font-semibold">Return Policy</h4>
                   </div>
 
@@ -531,7 +531,7 @@ export function ReturnPolicyPage({ shopId }: ReturnPolicyPageProps) {
                     <>
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                          <CheckCircle2 className="h-4 w-4 text-amber-500 shrink-0" />
                           <span className="text-sm">
                             Returns accepted within <strong>{returnPeriodDays} day{returnPeriodDays !== 1 ? 's' : ''}</strong> of delivery
                           </span>
@@ -539,13 +539,13 @@ export function ReturnPolicyPage({ shopId }: ReturnPolicyPageProps) {
 
                         {acceptsExchanges && (
                           <div className="flex items-center gap-2">
-                            <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                            <CheckCircle2 className="h-4 w-4 text-amber-500 shrink-0" />
                             <span className="text-sm">Exchanges accepted</span>
                           </div>
                         )}
 
                         <div className="flex items-center gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                          <CheckCircle2 className="h-4 w-4 text-amber-500 shrink-0" />
                           <span className="text-sm">
                             Refund via {refundMethods.map((m) => REFUND_METHOD_OPTIONS.find((o) => o.value === m)?.label).join(', ')}
                           </span>
@@ -592,9 +592,9 @@ export function ReturnPolicyPage({ shopId }: ReturnPolicyPageProps) {
                 </div>
 
                 {/* Info notes */}
-                <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 flex items-start gap-2">
-                  <Info className="h-3.5 w-3.5 text-emerald-600 mt-0.5 shrink-0" />
-                  <p className="text-[11px] text-emerald-700">
+                <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 flex items-start gap-2">
+                  <Info className="h-3.5 w-3.5 text-amber-600 mt-0.5 shrink-0" />
+                  <p className="text-[11px] text-amber-700">
                     {acceptsReturns
                       ? 'Your return policy is clearly displayed on your shop page and product listings.'
                       : 'Enabling returns can increase buyer confidence and improve sales.'}
@@ -609,7 +609,7 @@ export function ReturnPolicyPage({ shopId }: ReturnPolicyPageProps) {
       {/* Save button at bottom for mobile */}
       <div className="lg:hidden sticky bottom-4 z-10">
         <Button
-          className="w-full bg-emerald-600 hover:bg-emerald-700 shadow-lg"
+          className="w-full bg-amber-600 hover:bg-amber-700 shadow-lg"
           onClick={handleSave}
           disabled={saving}
           size="lg"
