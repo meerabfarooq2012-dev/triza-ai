@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
         { status: 401 }
       );
     }
-    if (auth.role !== 'admin') {
+    if (auth.role !== 'admin' && auth.role !== 'both') {
       return NextResponse.json(
         { success: false, error: 'Admin access required' },
         { status: 403 }
@@ -103,7 +103,7 @@ export const PUT = withCsrf(async (request: NextRequest) => {
         { status: 401 }
       );
     }
-    if (auth.role !== 'admin') {
+    if (auth.role !== 'admin' && auth.role !== 'both') {
       return NextResponse.json(
         { success: false, error: 'Admin access required' },
         { status: 403 }

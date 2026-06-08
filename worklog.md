@@ -19,3 +19,27 @@ Stage Summary:
 - Added /api/health endpoint for easier Vercel debugging
 - Local environment works correctly: login returns JSON, admin user exists
 - User needs to push these changes to Vercel and set up database schema + admin user
+
+---
+Task ID: 2
+Agent: Main
+Task: Fix admin settings "Authentication Required" and Vercel deployment issues
+
+Work Log:
+- Diagnosed root cause of admin settings auth failure: login API returned `token` at top level of JSON response, but frontend read `res.data.token` which was always `undefined`
+- Fixed login API (route.ts) to nest token/refreshToken inside `data` object: `data: { user, token, refreshToken }`
+- Fixed register API (route.ts) with same response format change + added refresh token generation
+- Fixed Google auth API (route.ts) with same response format change for both existing user and new user paths
+- Added missing `refreshToken` and `setRefreshToken` to Zustand store (interface, initial state, action, partialize)
+- Fixed Google auth handler in auth-modal.tsx to read token from `data.data.token` instead of `data.token`
+- Added middleware.ts but then removed it due to conflict with existing proxy.ts (Next.js 16 uses proxy convention)
+- Committed and pushed all changes to GitHub to trigger Vercel deployment
+- Verified login API responds correctly locally (returns JSON, not HTML)
+
+Stage Summary:
+- PRIMARY BUG FIXED: Login/Register/Google auth endpoints now return token inside `data` object, matching what the frontend expects
+- Store now properly stores both `authToken` and `refreshToken` for API authentication
+- All auth endpoints now generate and return refresh tokens
+- All auth endpoints now set httpOnly cookies for both access and refresh tokens
+- Removed conflicting middleware.ts (proxy.ts already handles security headers, CORS, JWT verification)
+- Code pushed to GitHub (2 commits) to trigger Vercel deployment

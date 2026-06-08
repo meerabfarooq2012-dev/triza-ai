@@ -21,7 +21,7 @@ async function handler(request: NextRequest, context: { params: Promise<{ id: st
       );
     }
 
-    if (auth.role !== 'admin') {
+    if (auth.role !== 'admin' && auth.role !== 'both') {
       return NextResponse.json(
         { success: false, error: 'Admin access required' },
         { status: 403 }

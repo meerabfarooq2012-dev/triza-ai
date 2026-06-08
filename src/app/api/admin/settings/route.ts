@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   if (!auth) {
     return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
   }
-  if (auth.role !== 'admin') {
+  if (auth.role !== 'admin' && auth.role !== 'both') {
     return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
   }
 
@@ -51,7 +51,7 @@ export const PATCH = withCsrf(async (request: NextRequest) => {
   if (!auth) {
     return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
   }
-  if (auth.role !== 'admin') {
+  if (auth.role !== 'admin' && auth.role !== 'both') {
     return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
   }
 

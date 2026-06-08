@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
     }
 
-    if (auth.role !== 'admin') {
+    if (auth.role !== 'admin' && auth.role !== 'both') {
       return NextResponse.json({ success: false, error: 'Admin access required' }, { status: 403 });
     }
 
