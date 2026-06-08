@@ -347,8 +347,8 @@ export function AuthModal() {
             .then((res) => res.json())
             .then((data) => {
               if (data.success && data.data) {
-                const token = data.token
-                const refreshToken = data.refreshToken
+                const token = data.data.token
+                const refreshToken = data.data.refreshToken
                 if (token) {
                   setAuthToken(token)
                   api.auth.setAuthCookies(token, refreshToken).catch(() => {})
@@ -356,8 +356,9 @@ export function AuthModal() {
                 if (refreshToken) {
                   setRefreshToken(refreshToken)
                 }
-                login(data.data)
-                navigateAfterAuth(data.data)
+                const user = data.data.user || data.data
+                login(user)
+                navigateAfterAuth(user)
               } else {
                 showError(data.error || 'Google sign-in failed')
               }

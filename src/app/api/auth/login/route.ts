@@ -9,7 +9,7 @@ import {
   recordFailedLoginAttempt,
   clearFailedLoginAttempts,
 } from '@/lib/rate-limit';
-import { signToken } from '@/lib/auth-middleware';
+import { signToken, signRefreshToken, setAuthCookies } from '@/lib/auth-middleware';
 import { createSession } from '@/lib/session';
 import { normalizeEmail } from '@/lib/sanitize';
 import { getSafeErrorMessage } from '@/lib/error-handler';
@@ -171,12 +171,14 @@ export const POST = async (request: NextRequest) => {
       });
     }
 
-    // Generate JWT token
-    const token = signToken({
+    // Generate JWT token and refresh token
+    const authPayload = {
       userId: user.id,
       email: user.email,
       role: user.role,
-    });
+    };
+    const token = signToken(authPayload);
+    const refreshToken = signRefreshToken(authPayload);
 
     // Create a session record in the database (token is hashed, never stored raw)
     const userAgent = request.headers.get('user-agent') || undefined;
@@ -191,11 +193,19 @@ export const POST = async (request: NextRequest) => {
 
     const { password: _, ...userWithoutPassword } = user;
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
-      data: userWithoutPassword,
-      token,
+      data: {
+        user: userWithoutPassword,
+        token,
+        refreshToken,
+      },
     });
+
+    // Set httpOnly cookies for both tokens
+    setAuthCookies(response, token, refreshToken);
+
+    return response;
   } catch (error) {
     console.error('Login error:', error);
 

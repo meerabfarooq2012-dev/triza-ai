@@ -114,9 +114,11 @@ export const POST = async (request: NextRequest) => {
 
       const response = NextResponse.json({
         success: true,
-        data: userWithoutPassword,
-        token,
-        refreshToken,
+        data: {
+          user: userWithoutPassword,
+          token,
+          refreshToken,
+        },
       });
 
       // Set httpOnly cookies
@@ -194,7 +196,14 @@ export const POST = async (request: NextRequest) => {
     });
 
     const response = NextResponse.json(
-      { success: true, data: userWithoutPassword, token, refreshToken },
+      {
+        success: true,
+        data: {
+          user: userWithoutPassword,
+          token,
+          refreshToken,
+        },
+      },
       { status: 201 }
     );
 
