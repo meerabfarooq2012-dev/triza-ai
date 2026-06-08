@@ -1,19 +1,21 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { NextRequest, NextResponse } from 'next/server'
+import { db } from '@/lib/db'
+import { authenticateRequest } from '@/lib/auth-middleware'
 
-// GET /api/messages/conversations?userId=string
-// Fetch all conversations for a user using the Conversation model
+// GET /api/messages/conversations — Fetch conversations for authenticated user
+// SECURITY: Uses JWT to identify the user, not query params
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const userId = searchParams.get('userId') || '';
-
-    if (!userId) {
+    // SECURITY: Authenticate and extract userId from JWT
+    const auth = authenticateRequest(request)
+    if (!auth) {
       return NextResponse.json(
-        { success: false, error: 'userId is required' },
-        { status: 400 }
-      );
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      )
     }
+
+    const userId = auth.userId
 
     // Find all conversations where the user is participant1 or participant2
     const conversations = await db.conversation.findMany({
