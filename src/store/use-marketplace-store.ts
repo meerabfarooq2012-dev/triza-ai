@@ -491,6 +491,23 @@ export const useMarketplaceStore = create<MarketplaceState>()(
     }),
     {
       name: 'marketo-storage',
+      // Storage version — increment when the store schema changes.
+      // This forces a migration that clears potentially corrupted data
+      // (e.g., old localStorage where action functions were serialized as null,
+      // causing "TypeError: X is not a function" / "ew is not a function").
+      version: 2,
+      // Migration: when the version changes, clear old corrupted data.
+      // This prevents "ew is not a function" errors from old localStorage
+      // where action functions were serialized as null values.
+      migrate: (persistedState, version) => {
+        if (version < 2) {
+          // Old storage format — clear everything and start fresh.
+          // The merge function will still sanitize, but this ensures
+          // we don't carry over any corrupted keys from version 1.
+          return {} as Partial<MarketplaceState>
+        }
+        return persistedState as Partial<MarketplaceState>
+      },
       // Only persist auth and cart state, not transient UI state
       partialize: (state) => ({
         currentUser: state.currentUser,

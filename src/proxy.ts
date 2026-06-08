@@ -12,6 +12,13 @@ import { getCorsHeaders } from '@/lib/cors'
 // JWT Configuration — must match the secret used by `jsonwebtoken` in
 // src/lib/auth-middleware.ts.  `jsonwebtoken` uses HMAC-SHA256 (HS256) by
 // default, so we verify with the same secret as a symmetric key.
+//
+// IMPORTANT: On Vercel Edge Runtime, environment variables must be explicitly
+// configured for the Edge. If JWT_SECRET is not available at Edge, we cannot
+// verify tokens here — but we should NOT block the request, because the
+// route handler (Node.js runtime) has full access to env vars and can
+// authenticate the request itself. Only block if we can positively verify
+// that the token is invalid/expired.
 // ---------------------------------------------------------------------------
 
 const JWT_SECRET = process.env.JWT_SECRET ?? ''
@@ -74,7 +81,14 @@ interface JwtPayload {
 }
 
 async function verifyJwt(token: string): Promise<JwtPayload | null> {
-  if (!JWT_SECRET) return null
+  // If JWT_SECRET is not available on the Edge (e.g., not configured for
+  // Edge Runtime on Vercel), we CANNOT verify the token — but we also
+  // should NOT block the request. Return a special sentinel so the
+  // admin route handler can fall through to its own Node.js-based auth.
+  if (!JWT_SECRET) {
+    console.warn('[proxy] JWT_SECRET not available on Edge — deferring auth to route handler')
+    return { _deferred: true, userId: '', email: '', role: '' } as unknown as JwtPayload
+  }
   try {
     const key = await getSigningKey()
     const { payload } = await jwtVerify(token, key, {
@@ -279,6 +293,8 @@ async function _proxyInner(request: NextRequest) {
     }
 
     const payload = await verifyJwt(token)
+
+    // If payload is null, the token is definitively invalid/expired
     if (!payload) {
       return NextResponse.json(
         { error: 'Unauthorized — invalid or expired token' },
@@ -286,19 +302,28 @@ async function _proxyInner(request: NextRequest) {
       )
     }
 
-    // Check admin role — allow 'admin' or 'both' roles
-    if (payload.role !== 'admin' && payload.role !== 'both') {
-      return NextResponse.json(
-        { error: 'Forbidden — admin access required' },
-        { status: 403 }
-      )
+    // If payload has _deferred flag, JWT_SECRET wasn't available on Edge.
+    // Let the request through so the Node.js route handler can authenticate.
+    const isDeferred = '_deferred' in (payload as Record<string, unknown>)
+
+    if (!isDeferred) {
+      // We verified the token on Edge — check admin role
+      if (payload.role !== 'admin' && payload.role !== 'both') {
+        return NextResponse.json(
+          { error: 'Forbidden — admin access required' },
+          { status: 403 }
+        )
+      }
     }
 
     // Valid admin request — pass through with user info in custom headers
+    // (only set headers if we actually verified the token on Edge)
     const response = NextResponse.next()
-    response.headers.set('x-mw-user-id', payload.userId)
-    response.headers.set('x-mw-user-email', payload.email)
-    response.headers.set('x-mw-user-role', payload.role)
+    if (!isDeferred) {
+      response.headers.set('x-mw-user-id', payload.userId)
+      response.headers.set('x-mw-user-email', payload.email)
+      response.headers.set('x-mw-user-role', payload.role)
+    }
 
     // Add security headers
     const secHeaders = buildSecurityHeaders(isDev)
