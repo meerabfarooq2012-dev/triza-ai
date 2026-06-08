@@ -43,3 +43,24 @@ Stage Summary:
 - All auth endpoints now set httpOnly cookies for both access and refresh tokens
 - Removed conflicting middleware.ts (proxy.ts already handles security headers, CORS, JWT verification)
 - Code pushed to GitHub (2 commits) to trigger Vercel deployment
+
+---
+Task ID: 3
+Agent: Main
+Task: Fix admin route role checks - accept 'both' role
+
+Work Log:
+- Discovered that admin user has role='both' and isAdmin=true in database
+- But all admin API route handlers only accepted role='admin', blocking the admin user
+- Updated 11 admin route files (13 occurrences) to accept both 'admin' AND 'both' roles
+- Files fixed: users, audit-log, disputes, transactions, reports, data-export, withdrawals, abandoned-carts, stats, sync-schema
+- Settings route was already fixed in previous task
+- Lint passes: 0 errors
+- Tested locally: login returns correct format, admin settings API works with token
+
+Stage Summary:
+- All admin API routes now accept both 'admin' and 'both' roles (matching proxy.ts behavior)
+- Login API verified: returns { success: true, data: { user, token, refreshToken } }
+- Admin settings API verified: works with Authorization Bearer token
+- Code pushed to GitHub (3 total commits) to trigger Vercel deployment
+- All auth fixes confirmed working locally
