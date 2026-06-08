@@ -527,6 +527,26 @@ export const useMarketplaceStore = create<MarketplaceState>()(
           }
         }
 
+        // CRITICAL: Never allow persisted data to override action functions with
+        // non-function values. Corrupted localStorage (e.g., from a previous app
+        // version) may store stale keys like { login: null, setAuthToken: null },
+        // which would override the real functions from currentState and cause
+        // "TypeError: X is not a function" at runtime (minified to "ew is not a function").
+        const actionKeys = [
+          'login', 'logout', 'setLoadingAuth', 'setAuthToken', 'setRefreshToken',
+          'setCurrentView', 'setActiveRole', 'addToCart', 'removeFromCart',
+          'updateCartQuantity', 'clearCart', 'syncCartToServer', 'loadCartFromServer',
+          'setSearchQuery', 'setSearchCategory', 'setSearchType',
+          'setUnreadNotifications', 'setFavoriteIds', 'toggleFavoriteId',
+          'toggleSidebar', 'setSidebarOpen', 'toggleMobileMenu', 'setMobileMenuOpen',
+          'setSelectedAddress', 'setSelectedShippingMethod', 'setLanguage',
+        ]
+        for (const key of actionKeys) {
+          if (key in p && typeof p[key] !== 'function') {
+            delete p[key]
+          }
+        }
+
         // Ensure viewParams is a plain object
         if (!p.viewParams || typeof p.viewParams !== 'object' || Array.isArray(p.viewParams)) {
           p.viewParams = {}
@@ -552,7 +572,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         }
       },
       onRehydrateStorage: () => {
-        return (_state, error) => {
+        return (state, error) => {
           if (error) {
             console.error('Zustand rehydration error:', error)
             // Clear corrupted localStorage
@@ -568,6 +588,17 @@ export const useMarketplaceStore = create<MarketplaceState>()(
               cartTotal: 0,
               favoriteIds: [],
             })
+            return
+          }
+          // Validate action functions survived hydration — if any are missing,
+          // the localStorage data is corrupted and we need to clear it.
+          if (state && typeof state.login !== 'function') {
+            console.warn('[Marketo] Store corrupted — action functions missing after rehydration. Clearing storage.')
+            try { localStorage.removeItem('marketo-storage') } catch {}
+            // Force reload to get a clean state
+            if (typeof window !== 'undefined') {
+              window.location.reload()
+            }
           }
         }
       },

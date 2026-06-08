@@ -450,7 +450,14 @@ export default function Home() {
 }
 
 function MarketplaceApp() {
-  const { currentView, isAuthenticated, currentUser, setCurrentView, viewParams, activeRole } = useMarketplaceStore()
+  // Use individual selectors (Zustand best practice) — prevents corrupted localStorage
+  // from overriding action functions with non-function values
+  const currentView = useMarketplaceStore((s) => s.currentView)
+  const isAuthenticated = useMarketplaceStore((s) => s.isAuthenticated)
+  const currentUser = useMarketplaceStore((s) => s.currentUser)
+  const setCurrentView = useMarketplaceStore((s) => s.setCurrentView)
+  const viewParams = useMarketplaceStore((s) => s.viewParams)
+  const activeRole = useMarketplaceStore((s) => s.activeRole)
   const searchParams = useSearchParams()
   const [showEmailVerify, setShowEmailVerify] = useState(() => {
     // Initialize from URL params on first render (avoids setState in effect)

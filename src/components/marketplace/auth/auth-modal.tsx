@@ -87,7 +87,13 @@ export function AuthModal() {
   // Ref for auto-scrolling to error
   const errorRef = useRef<HTMLDivElement>(null)
 
-  const { login, setAuthToken, setRefreshToken, setCurrentView } = useMarketplaceStore()
+  // Use individual selectors (Zustand best practice) — prevents corrupted localStorage
+  // from overriding action functions with non-function values, which causes
+  // "TypeError: X is not a function" in production (minified to "ew is not a function")
+  const login = useMarketplaceStore((s) => s.login)
+  const setAuthToken = useMarketplaceStore((s) => s.setAuthToken)
+  const setRefreshToken = useMarketplaceStore((s) => s.setRefreshToken)
+  const setCurrentView = useMarketplaceStore((s) => s.setCurrentView)
 
   const { t } = useLanguage()
 
@@ -154,6 +160,14 @@ export function AuthModal() {
       showError('Please fill in all fields')
       return
     }
+    // Defensive: verify store actions are available (prevents corrupted localStorage crash)
+    if (typeof login !== 'function' || typeof setAuthToken !== 'function') {
+      showError('Session error. Please refresh the page and try again.')
+      // Clear corrupted storage and reload
+      try { localStorage.removeItem('marketo-storage') } catch {}
+      setTimeout(() => window.location.reload(), 1500)
+      return
+    }
     setIsLoading(true)
     try {
       const res = await api.auth.login(loginEmail, loginPassword)
@@ -186,7 +200,14 @@ export function AuthModal() {
         showError(res.error || 'Login failed')
       }
     } catch (err: unknown) {
+      // If the error looks like a corrupted store issue, clear localStorage
       const message = err instanceof Error ? err.message : 'Login failed'
+      if (message.includes('is not a function')) {
+        try { localStorage.removeItem('marketo-storage') } catch {}
+        showError('Session error. Refreshing...')
+        setTimeout(() => window.location.reload(), 1500)
+        return
+      }
       showError(message)
     } finally {
       setIsLoading(false)

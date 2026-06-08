@@ -55,7 +55,10 @@ export default function AdminSettings() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [authError, setAuthError] = useState(false)
-  const { isAuthenticated, currentUser, setCurrentView } = useMarketplaceStore()
+  const isAuthenticated = useMarketplaceStore((s) => s.isAuthenticated)
+  const currentUser = useMarketplaceStore((s) => s.currentUser)
+  const setCurrentView = useMarketplaceStore((s) => s.setCurrentView)
+  const authToken = useMarketplaceStore((s) => s.authToken)
 
   // Platform settings state
   const [platformName, setPlatformName] = useState('Marketo')
@@ -82,10 +85,15 @@ export default function AdminSettings() {
     setAuthError(false)
 
     // Check if user is authenticated and is admin
-    if (!isAuthenticated || (currentUser?.role !== 'admin' && currentUser?.role !== 'both')) {
-      setAuthError(true)
-      setLoading(false)
-      return
+    // Use both isAuthenticated flag AND presence of authToken for reliability
+    if (!isAuthenticated || !authToken || (currentUser?.role !== 'admin' && currentUser?.role !== 'both')) {
+      // If we have an auth token but no user, try the API anyway — the token
+      // may be valid even if the store hasn't fully rehydrated yet
+      if (!authToken) {
+        setAuthError(true)
+        setLoading(false)
+        return
+      }
     }
 
     try {
@@ -118,7 +126,7 @@ export default function AdminSettings() {
     } finally {
       setLoading(false)
     }
-  }, [isAuthenticated, currentUser?.role])
+  }, [isAuthenticated, authToken, currentUser?.role])
 
   useEffect(() => {
     fetchSettings()
