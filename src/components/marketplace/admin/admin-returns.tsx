@@ -47,6 +47,7 @@ import {
 } from '@/components/ui/table'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { api, ApiError } from '@/lib/api'
 import { toast } from 'sonner'
 import type { ReturnRequest, ReturnStatus, RefundMethod } from '@/types'
 
@@ -82,18 +83,16 @@ export default function AdminReturns() {
   const fetchReturns = useCallback(async () => {
     setLoading(true)
     try {
-      const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: '12',
+      const json = await api.admin.getReturns({
+        status: statusFilter !== '__all__' ? statusFilter : undefined,
+        page: currentPage,
+        limit: 12,
       })
-      if (statusFilter !== '__all__') params.set('status', statusFilter)
-
-      const res = await fetch(`/api/returns?${params.toString()}`)
-      const json = await res.json()
       if (json.success) {
-        setReturns(json.data.returns || [])
-        setTotalPages(json.data.pagination?.totalPages || 1)
-        setTotalReturns(json.data.pagination?.total || 0)
+        const data = json.data as { returns: ReturnRequest[]; pagination?: { totalPages?: number; total?: number } }
+        setReturns(data.returns || [])
+        setTotalPages(data.pagination?.totalPages || 1)
+        setTotalReturns(data.pagination?.total || 0)
       }
     } catch {
       setReturns([])
@@ -145,12 +144,10 @@ export default function AdminReturns() {
         body.refundAmount = parseFloat(adminRefundAmount)
         body.refundMethod = adminRefundMethod
       }
-      const res = await fetch(`/api/returns/${resolveReturnId}`, {
+      const json = await api.request<{ success: boolean; error?: string }>(`/returns/${resolveReturnId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
-      const json = await res.json()
       if (json.success) {
         toast.success(`Escalation resolved: return ${adminResolution === 'approve' ? 'approved' : 'rejected'}`)
         setResolveDialogOpen(false)
@@ -160,8 +157,12 @@ export default function AdminReturns() {
       } else {
         toast.error(json.error || 'Failed to resolve escalation')
       }
-    } catch {
-      toast.error('Network error. Please try again.')
+    } catch (error) {
+      if (error instanceof ApiError) {
+        toast.error(error.message || 'Failed to resolve escalation')
+      } else {
+        toast.error('Network error. Please try again.')
+      }
     } finally {
       setActionLoading(false)
     }

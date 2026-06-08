@@ -55,6 +55,7 @@ import {
   SelectItem,
 } from '@/components/ui/select'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { api, ApiError } from '@/lib/api'
 import { toast } from 'sonner'
 import type { Dispute, DisputeStatus, DisputePriority, DisputeCategory, DisputeResolutionType } from '@/types'
 
@@ -229,32 +230,40 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`/api/disputes/${disputeId}`)
-      const json = await res.json()
+      const json = await api.request<{ success: boolean; data?: { dispute?: Dispute } | Dispute; error?: string }>(`/disputes/${disputeId}`)
       if (json.success) {
-        setDispute(json.data?.dispute ?? json.data)
+        const disputeData = json.data as { dispute?: Dispute } | Dispute | undefined
+        setDispute(disputeData?.dispute ?? disputeData ?? null as unknown as Dispute)
       } else {
         // Fallback: try admin disputes
-        const adminRes = await fetch(`/api/admin/disputes?userId=${userId}`)
-        const adminJson = await adminRes.json()
-        if (adminJson.success) {
-          const allDisputes = adminJson.data?.disputes ?? []
-          const found = Array.isArray(allDisputes) ? allDisputes.find((d: Dispute) => d.id === disputeId) : null
-          if (found) {
-            setDispute(found)
+        try {
+          const adminJson = await api.admin.getDisputes()
+          if (adminJson.success) {
+            const adminData = adminJson.data as { disputes?: Dispute[] } | undefined
+            const allDisputes = adminData?.disputes ?? []
+            const found = Array.isArray(allDisputes) ? allDisputes.find((d) => d.id === disputeId) : null
+            if (found) {
+              setDispute(found)
+            } else {
+              setError(json.error || 'Dispute not found')
+            }
           } else {
-            setError(json.error || 'Dispute not found')
+            setError(json.error || 'Failed to load dispute details')
           }
-        } else {
+        } catch {
           setError(json.error || 'Failed to load dispute details')
         }
       }
-    } catch {
-      setError('Failed to fetch dispute details. Please try again.')
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setError(error.message || 'Failed to fetch dispute details. Please try again.')
+      } else {
+        setError('Failed to fetch dispute details. Please try again.')
+      }
     } finally {
       setLoading(false)
     }
-  }, [disputeId, userId])
+  }, [disputeId])
 
   useEffect(() => {
     fetchDispute()
@@ -270,9 +279,8 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
     if (!messageText.trim()) return
     setSendingMessage(true)
     try {
-      const res = await fetch(`/api/disputes/${disputeId}/messages`, {
+      const json = await api.request<{ success: boolean; error?: string }>(`/disputes/${disputeId}/messages`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           senderId: userId,
           senderRole: isAdmin ? 'admin' : isSeller ? 'seller' : 'buyer',
@@ -280,15 +288,18 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
           isInternal: false,
         }),
       })
-      const json = await res.json()
       if (json.success) {
         setMessageText('')
         fetchDispute()
       } else {
         toast.error(json.error || 'Failed to send message')
       }
-    } catch {
-      toast.error('Failed to send message')
+    } catch (error) {
+      if (error instanceof ApiError) {
+        toast.error(error.message || 'Failed to send message')
+      } else {
+        toast.error('Failed to send message')
+      }
     } finally {
       setSendingMessage(false)
     }
@@ -302,15 +313,13 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
     }
     setResponding(true)
     try {
-      const res = await fetch(`/api/disputes/${disputeId}`, {
+      const json = await api.request<{ success: boolean; error?: string }>(`/disputes/${disputeId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           sellerResponse: sellerResponse.trim(),
           changedBy: userId,
         }),
       })
-      const json = await res.json()
       if (json.success) {
         toast.success('Response submitted')
         setSellerResponse('')
@@ -318,8 +327,12 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
       } else {
         toast.error(json.error || 'Failed to submit response')
       }
-    } catch {
-      toast.error('Network error')
+    } catch (error) {
+      if (error instanceof ApiError) {
+        toast.error(error.message || 'Network error')
+      } else {
+        toast.error('Network error')
+      }
     } finally {
       setResponding(false)
     }
@@ -329,15 +342,13 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
   const handleEscalate = async () => {
     setEscalating(true)
     try {
-      const res = await fetch(`/api/disputes/${disputeId}/escalate`, {
+      const json = await api.request<{ success: boolean; error?: string }>(`/disputes/${disputeId}/escalate`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           escalatedBy: userId,
           reason: escalateNote.trim() || undefined,
         }),
       })
-      const json = await res.json()
       if (json.success) {
         toast.success('Dispute escalated successfully')
         setEscalateDialogOpen(false)
@@ -346,8 +357,12 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
       } else {
         toast.error(json.error || 'Failed to escalate')
       }
-    } catch {
-      toast.error('Network error')
+    } catch (error) {
+      if (error instanceof ApiError) {
+        toast.error(error.message || 'Network error')
+      } else {
+        toast.error('Network error')
+      }
     } finally {
       setEscalating(false)
     }
@@ -361,9 +376,8 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
     }
     setResolving(true)
     try {
-      const res = await fetch(`/api/disputes/${disputeId}/resolve`, {
+      const json = await api.request<{ success: boolean; error?: string }>(`/disputes/${disputeId}/resolve`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           resolvedBy: userId,
           resolution: resolutionText.trim(),
@@ -371,7 +385,6 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
           refundAmount: refundAmount ? parseFloat(refundAmount) : undefined,
         }),
       })
-      const json = await res.json()
       if (json.success) {
         toast.success('Dispute resolved successfully')
         setResolveDialogOpen(false)
@@ -379,8 +392,12 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
       } else {
         toast.error(json.error || 'Failed to resolve')
       }
-    } catch {
-      toast.error('Network error')
+    } catch (error) {
+      if (error instanceof ApiError) {
+        toast.error(error.message || 'Network error')
+      } else {
+        toast.error('Network error')
+      }
     } finally {
       setResolving(false)
     }
@@ -390,12 +407,10 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
   const handleClose = async () => {
     setClosing(true)
     try {
-      const res = await fetch(`/api/disputes/${disputeId}`, {
+      const json = await api.request<{ success: boolean; error?: string }>(`/disputes/${disputeId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'closed', changedBy: userId }),
       })
-      const json = await res.json()
       if (json.success) {
         toast.success('Dispute closed')
         setCloseDialogOpen(false)
@@ -403,8 +418,12 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
       } else {
         toast.error(json.error || 'Failed to close dispute')
       }
-    } catch {
-      toast.error('Network error')
+    } catch (error) {
+      if (error instanceof ApiError) {
+        toast.error(error.message || 'Network error')
+      } else {
+        toast.error('Network error')
+      }
     } finally {
       setClosing(false)
     }
@@ -414,23 +433,25 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
   const handleAssignToMe = async () => {
     setActionLoading(true)
     try {
-      const res = await fetch(`/api/disputes/${disputeId}`, {
+      const json = await api.request<{ success: boolean; error?: string }>(`/disputes/${disputeId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           assignedAdminId: userId,
           changedBy: userId,
         }),
       })
-      const json = await res.json()
       if (json.success) {
         toast.success('Dispute assigned to you')
         fetchDispute()
       } else {
         toast.error(json.error || 'Failed to assign')
       }
-    } catch {
-      toast.error('Network error')
+    } catch (error) {
+      if (error instanceof ApiError) {
+        toast.error(error.message || 'Network error')
+      } else {
+        toast.error('Network error')
+      }
     } finally {
       setActionLoading(false)
     }
@@ -440,20 +461,22 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
   const handleChangePriority = async (newPriority: DisputePriority) => {
     setActionLoading(true)
     try {
-      const res = await fetch(`/api/disputes/${disputeId}`, {
+      const json = await api.request<{ success: boolean; error?: string }>(`/disputes/${disputeId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ priority: newPriority, changedBy: userId }),
       })
-      const json = await res.json()
       if (json.success) {
         toast.success(`Priority changed to ${newPriority}`)
         fetchDispute()
       } else {
         toast.error(json.error || 'Failed to change priority')
       }
-    } catch {
-      toast.error('Network error')
+    } catch (error) {
+      if (error instanceof ApiError) {
+        toast.error(error.message || 'Network error')
+      } else {
+        toast.error('Network error')
+      }
     } finally {
       setActionLoading(false)
     }
@@ -467,9 +490,8 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
     }
     setAddingEvidence(true)
     try {
-      const res = await fetch(`/api/disputes/${disputeId}/evidence`, {
+      const json = await api.request<{ success: boolean; error?: string }>(`/disputes/${disputeId}/evidence`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           uploadedBy: userId,
           type: evType,
@@ -477,7 +499,6 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
           description: evDescription.trim(),
         }),
       })
-      const json = await res.json()
       if (json.success) {
         toast.success('Evidence added')
         setEvidenceDialogOpen(false)
@@ -487,8 +508,12 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
       } else {
         toast.error(json.error || 'Failed to add evidence')
       }
-    } catch {
-      toast.error('Network error')
+    } catch (error) {
+      if (error instanceof ApiError) {
+        toast.error(error.message || 'Network error')
+      } else {
+        toast.error('Network error')
+      }
     } finally {
       setAddingEvidence(false)
     }

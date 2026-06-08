@@ -49,6 +49,7 @@ import {
 } from '@/components/ui/table'
 import { EmptyState } from '@/components/marketplace/shared/empty-state'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { api, ApiError } from '@/lib/api'
 import { toast } from 'sonner'
 import type { AdminTransactionsData, Payment, Withdrawal } from '@/types'
 
@@ -92,7 +93,7 @@ type PaymentTabFilter = 'all' | 'pending' | 'processing' | 'escrow' | 'completed
 type WithdrawalTabFilter = 'all' | 'pending' | 'processing' | 'approved' | 'rejected' | 'completed'
 
 export function AdminTransactions() {
-  const { currentUser } = useMarketplaceStore()
+  const { currentUser, authToken } = useMarketplaceStore()
   const [data, setData] = useState<AdminTransactionsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -124,19 +125,22 @@ export function AdminTransactions() {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`/api/admin/transactions?userId=${currentUser.id}`)
-      const json = await res.json()
-      if (json.success) {
-        setData(json.data)
+      const res = await api.admin.getTransactions()
+      if (res.success && res.data) {
+        setData(res.data)
       } else {
-        setError(json.error || 'Failed to load transactions')
+        setError('Failed to load transactions')
       }
-    } catch {
-      setError('Network error. Please try again.')
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message)
+      } else {
+        setError('Network error. Please try again.')
+      }
     } finally {
       setLoading(false)
     }
-  }, [currentUser?.id])
+  }, [currentUser?.id, authToken])
 
   useEffect(() => {
     fetchData()
@@ -148,7 +152,7 @@ export function AdminTransactions() {
   ) => {
     setProcessingAction(withdrawalId)
     try {
-      const body: Record<string, string> = { action }
+      const body: { action: 'approve' | 'reject' | 'complete'; adminId?: string; adminNote?: string } = { action }
       if (currentUser?.id) {
         body.adminId = currentUser.id
       }
@@ -156,14 +160,8 @@ export function AdminTransactions() {
         body.adminNote = adminNotes[withdrawalId]
       }
 
-      const res = await fetch(`/api/withdrawals/${withdrawalId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
-
-      const json = await res.json()
-      if (json.success) {
+      const res = await api.admin.processWithdrawal(withdrawalId, body)
+      if (res.success) {
         toast.success(
           action === 'approve'
             ? 'Withdrawal approved'
@@ -173,10 +171,14 @@ export function AdminTransactions() {
         )
         fetchData()
       } else {
-        toast.error(json.error || `Failed to ${action} withdrawal`)
+        toast.error(`Failed to ${action} withdrawal`)
       }
-    } catch {
-      toast.error('Network error. Please try again.')
+    } catch (err) {
+      if (err instanceof ApiError) {
+        toast.error(err.message)
+      } else {
+        toast.error('Network error. Please try again.')
+      }
     } finally {
       setProcessingAction(null)
     }
@@ -191,27 +193,25 @@ export function AdminTransactions() {
 
     setRefundSubmitting(true)
     try {
-      const res = await fetch(`/api/payments/${refundPaymentId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'refund',
-          userId: currentUser.id,
-        }),
+      const res = await api.admin.processRefund(refundPaymentId, {
+        userId: currentUser.id,
+        reason: refundReason,
       })
-
-      const json = await res.json()
-      if (json.success) {
+      if (res.success) {
         toast.success('Payment refunded successfully')
         setRefundDialogOpen(false)
         setRefundPaymentId(null)
         setRefundReason('')
         fetchData()
       } else {
-        toast.error(json.error || 'Failed to refund payment')
+        toast.error('Failed to refund payment')
       }
-    } catch {
-      toast.error('Network error. Please try again.')
+    } catch (err) {
+      if (err instanceof ApiError) {
+        toast.error(err.message)
+      } else {
+        toast.error('Network error. Please try again.')
+      }
     } finally {
       setRefundSubmitting(false)
     }
@@ -222,26 +222,23 @@ export function AdminTransactions() {
 
     setReleaseSubmitting(true)
     try {
-      const res = await fetch(`/api/payments/${releasePaymentId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'release',
-          userId: currentUser.id,
-        }),
+      const res = await api.admin.releaseEscrow(releasePaymentId, {
+        userId: currentUser.id,
       })
-
-      const json = await res.json()
-      if (json.success) {
+      if (res.success) {
         toast.success('Escrow released successfully')
         setReleaseDialogOpen(false)
         setReleasePaymentId(null)
         fetchData()
       } else {
-        toast.error(json.error || 'Failed to release escrow')
+        toast.error('Failed to release escrow')
       }
-    } catch {
-      toast.error('Network error. Please try again.')
+    } catch (err) {
+      if (err instanceof ApiError) {
+        toast.error(err.message)
+      } else {
+        toast.error('Network error. Please try again.')
+      }
     } finally {
       setReleaseSubmitting(false)
     }

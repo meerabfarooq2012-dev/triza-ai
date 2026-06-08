@@ -13,7 +13,6 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Shield,
-  Clock,
   Banknote,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -39,20 +38,6 @@ import type { AdminStats, User, Order } from '@/types'
 
 // Empty placeholder chart data for when API data is not available
 const emptyChartData: Array<{ date: string; revenue: number }> = []
-
-interface PaymentStats {
-  totalEscrowHeld: number
-  totalCommissionEarned: number
-  activeWithdrawals: number
-  activeWithdrawalsAmount: number
-}
-
-interface PaymentActivity {
-  month: string
-  payments: number
-  commission: number
-  count: number
-}
 
 interface StatCardProps {
   title: string
@@ -123,8 +108,8 @@ export default function AdminDashboard() {
   const [recentUsers, setRecentUsers] = useState<User[]>([])
   const [recentOrders, setRecentOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
-  const [paymentStats, setPaymentStats] = useState<PaymentStats | null>(null)
-  const [paymentActivity, setPaymentActivity] = useState<PaymentActivity[]>([])
+  const [paymentStats, setPaymentStats] = useState<AdminStats['paymentStats'] | null>(null)
+  const [paymentActivity, setPaymentActivity] = useState<AdminStats['paymentActivity']>([])
 
   useEffect(() => {
     let cancelled = false
@@ -135,7 +120,16 @@ export default function AdminDashboard() {
     ])
       .then(([statsRes, usersRes, ordersRes]) => {
         if (cancelled) return
-        if (statsRes?.data) setStats(statsRes.data)
+        if (statsRes?.data) {
+          setStats(statsRes.data)
+          // Extract payment stats from the same authenticated API call
+          if (statsRes.data.paymentStats) {
+            setPaymentStats(statsRes.data.paymentStats)
+          }
+          if (statsRes.data.paymentActivity) {
+            setPaymentActivity(statsRes.data.paymentActivity)
+          }
+        }
         if (usersRes?.data) {
           const items = 'items' in usersRes.data ? usersRes.data.items : usersRes.data
           setRecentUsers(Array.isArray(items) ? (items as User[]) : [])
@@ -149,31 +143,6 @@ export default function AdminDashboard() {
         if (!cancelled) setLoading(false)
       })
 
-    // Fetch payment stats from admin/stats endpoint
-    const fetchPaymentStats = async () => {
-      try {
-        // Read from Zustand's persisted storage key
-        const stored = localStorage.getItem('marketo-storage')
-        const parsed = stored ? JSON.parse(stored) : {}
-        const userId = parsed?.state?.currentUser?.id
-        if (userId) {
-          const res = await fetch(`/api/admin/stats?userId=${userId}`)
-          const json = await res.json()
-          if (json.success && json.data) {
-            if (json.data.paymentStats) {
-              setPaymentStats(json.data.paymentStats)
-            }
-            if (json.data.paymentActivity) {
-              setPaymentActivity(json.data.paymentActivity)
-            }
-          }
-        }
-      } catch {
-        // Silently fail - payment stats are supplementary
-      }
-    }
-    fetchPaymentStats()
-
     return () => { cancelled = true }
   }, [])
 
@@ -181,10 +150,8 @@ export default function AdminDashboard() {
     return <AdminSkeleton />
   }
 
-  const platformStats = stats?.platformStats
-  const revenueData = stats?.revenueChart?.length
-    ? stats.revenueChart
-    : emptyChartData
+  const overview = stats?.overview
+  const revenueData = emptyChartData
 
   return (
     <div className="space-y-6">
@@ -197,10 +164,10 @@ export default function AdminDashboard() {
         >
           <StatCard
             title="Total Users"
-            value={platformStats?.totalUsers?.toLocaleString() ?? '0'}
+            value={overview?.totalUsers?.toLocaleString() ?? '0'}
             icon={<Users size={24} />}
-            change={platformStats?.totalUsers ? undefined : undefined}
-            subtitle={`${stats?.recentSignups ?? 0} new this week`}
+            change={overview?.totalUsers ? undefined : undefined}
+            subtitle={`${overview?.pendingShops ?? 0} pending approvals`}
           />
         </motion.div>
         <motion.div
@@ -210,7 +177,7 @@ export default function AdminDashboard() {
         >
           <StatCard
             title="Total Sellers"
-            value={platformStats?.totalSellers?.toLocaleString() ?? '0'}
+            value={overview?.totalSellers?.toLocaleString() ?? '0'}
             icon={<Store size={24} />}
           />
         </motion.div>
@@ -221,7 +188,7 @@ export default function AdminDashboard() {
         >
           <StatCard
             title="Total Products"
-            value={platformStats?.totalProducts?.toLocaleString() ?? '0'}
+            value={overview?.totalProducts?.toLocaleString() ?? '0'}
             icon={<Package size={24} />}
           />
         </motion.div>
@@ -232,7 +199,7 @@ export default function AdminDashboard() {
         >
           <StatCard
             title="Total Orders"
-            value={platformStats?.totalOrders?.toLocaleString() ?? '0'}
+            value={overview?.totalOrders?.toLocaleString() ?? '0'}
             icon={<ShoppingCart size={24} />}
           />
         </motion.div>
@@ -243,7 +210,7 @@ export default function AdminDashboard() {
         >
           <StatCard
             title="Revenue"
-            value={`$${(platformStats?.totalRevenue ?? 0).toLocaleString()}`}
+            value={`$${(overview?.totalRevenue ?? 0).toLocaleString()}`}
             icon={<DollarSign size={24} />}
           />
         </motion.div>
@@ -254,9 +221,9 @@ export default function AdminDashboard() {
         >
           <StatCard
             title="Open Disputes"
-            value={stats?.openDisputes ?? 0}
+            value={overview?.openDisputes ?? 0}
             icon={<AlertTriangle size={24} />}
-            subtitle={`${stats?.pendingShops ?? 0} pending approvals`}
+            subtitle={`${overview?.pendingProducts ?? 0} pending products`}
           />
         </motion.div>
       </div>

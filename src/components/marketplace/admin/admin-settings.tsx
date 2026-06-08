@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion } from 'framer-motion'
 import {
   Save,
@@ -59,6 +59,8 @@ export default function AdminSettings() {
   const currentUser = useMarketplaceStore((s) => s.currentUser)
   const setCurrentView = useMarketplaceStore((s) => s.setCurrentView)
   const authToken = useMarketplaceStore((s) => s.authToken)
+  const isLoadingAuth = useMarketplaceStore((s) => s.isLoadingAuth)
+  const prevIsLoadingAuthRef = useRef(isLoadingAuth)
 
   // Platform settings state
   const [platformName, setPlatformName] = useState('Marketo')
@@ -80,6 +82,13 @@ export default function AdminSettings() {
   // Load settings from the database via API on mount
   // Uses the api client so the auth token and CSRF cookie are included automatically
   const fetchSettings = useCallback(async () => {
+    // If the store is still rehydrating from localStorage, don't check auth yet —
+    // authToken will be null on first render before rehydration completes.
+    // Just return and wait; the useEffect below will re-trigger when rehydration finishes.
+    if (isLoadingAuth) {
+      return
+    }
+
     setLoading(true)
     setError(null)
     setAuthError(false)
@@ -126,11 +135,20 @@ export default function AdminSettings() {
     } finally {
       setLoading(false)
     }
-  }, [isAuthenticated, authToken, currentUser?.role])
+  }, [isAuthenticated, authToken, currentUser?.role, isLoadingAuth])
 
   useEffect(() => {
     fetchSettings()
   }, [fetchSettings])
+
+  // When isLoadingAuth transitions from true → false (rehydration complete),
+  // trigger fetchSettings so we can now safely check the auth token.
+  useEffect(() => {
+    if (prevIsLoadingAuthRef.current && !isLoadingAuth) {
+      fetchSettings()
+    }
+    prevIsLoadingAuthRef.current = isLoadingAuth
+  }, [isLoadingAuth, fetchSettings])
 
   const handleSave = async () => {
     setSaving(true)

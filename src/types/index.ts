@@ -754,11 +754,30 @@ export interface AdminUserListParams {
 }
 
 export interface AdminStats {
-  platformStats: PlatformStats
-  recentSignups: number
-  pendingShops: number
-  openDisputes: number
-  revenueChart: { date: string; revenue: number }[]
+  overview: {
+    totalUsers: number
+    totalSellers: number
+    totalProducts: number
+    totalOrders: number
+    totalRevenue: number
+    pendingShops: number
+    pendingProducts: number
+    openDisputes: number
+  }
+  recentOrders: Array<Order>
+  recentUsers: Array<User>
+  paymentStats: {
+    totalEscrowHeld: number
+    totalCommissionEarned: number
+    activeWithdrawals: number
+    activeWithdrawalsAmount: number
+  }
+  paymentActivity: Array<{
+    month: string
+    payments: number
+    commission: number
+    count: number
+  }>
 }
 
 // ----- Payment System Types -----

@@ -41,6 +41,7 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from 'sonner'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { api, ApiError } from '@/lib/api'
 import type { AdminVerificationItem } from '@/types'
 import { VERIFICATION_STATUS_LABELS, DOCUMENT_TYPE_LABELS } from '@/types'
 
@@ -142,14 +143,11 @@ export default function AdminVerifications() {
     if (!currentUser?.id) return
     setLoading(true)
     try {
-      const params = new URLSearchParams({
-        userId: currentUser.id,
-        status: statusFilter,
-        page: String(currentPage),
-        limit: '20',
+      const json = await api.admin.getVerifications({
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+        page: currentPage,
+        limit: 20,
       })
-      const res = await fetch(`/api/verification/admin/list?${params}`)
-      const json = await res.json()
 
       if (json.success && json.data) {
         const data = json.data as {
@@ -163,9 +161,13 @@ export default function AdminVerifications() {
       } else {
         setVerifications([])
       }
-    } catch {
+    } catch (error) {
       setVerifications([])
-      toast.error('Failed to load verifications')
+      if (error instanceof ApiError) {
+        toast.error(error.message || 'Failed to load verifications')
+      } else {
+        toast.error('Failed to load verifications')
+      }
     } finally {
       setLoading(false)
     }
@@ -198,9 +200,11 @@ export default function AdminVerifications() {
 
     setSubmitting(true)
     try {
-      const res = await fetch('/api/verification/review', {
+      const json = await api.request<{
+        success: boolean
+        error?: string
+      }>('/verification/review', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           verificationId: reviewingItem.id,
           status: action === 'under_review' ? 'under_review' : action,
@@ -208,7 +212,6 @@ export default function AdminVerifications() {
           rejectionReason: action === 'reject' ? rejectionReason : undefined,
         }),
       })
-      const json = await res.json()
 
       if (json.success) {
         const actionLabel = action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'marked under review'
@@ -221,8 +224,12 @@ export default function AdminVerifications() {
       } else {
         toast.error(json.error || 'Failed to update verification')
       }
-    } catch {
-      toast.error('Failed to update verification')
+    } catch (error) {
+      if (error instanceof ApiError) {
+        toast.error(error.message || 'Failed to update verification')
+      } else {
+        toast.error('Failed to update verification')
+      }
     } finally {
       setSubmitting(false)
     }

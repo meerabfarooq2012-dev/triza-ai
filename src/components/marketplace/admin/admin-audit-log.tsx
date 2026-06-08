@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useMarketplaceStore } from '@/store/use-marketplace-store';
+import { api, ApiError } from '@/lib/api';
 import { toast } from 'sonner';
 
 interface AuditLogEntry {
@@ -101,7 +101,6 @@ function formatRelativeTime(dateStr: string): string {
 }
 
 export function AdminAuditLog() {
-  const { authToken } = useMarketplaceStore();
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -116,29 +115,30 @@ export function AdminAuditLog() {
 
   const fetchLogs = useCallback(async () => {
     try {
-      const params: Record<string, string> = { page: String(page), limit: '30' };
-      if (actionFilter) params.action = actionFilter;
-      if (entityTypeFilter) params.entityType = entityTypeFilter;
-      if (startDate) params.startDate = startDate;
-      if (endDate) params.endDate = endDate;
-
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-      if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
-
-      const res = await fetch(`/api/admin/audit-log?${new URLSearchParams(params)}`, { headers });
-      const data = await res.json();
+      const data = await api.auditLog.getLogs({
+        page,
+        limit: 30,
+        action: actionFilter || undefined,
+        entityType: entityTypeFilter || undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+      });
       if (data.success) {
-        setLogs(data.data || data.logs || []);
-        setTotalPages(data.pagination?.totalPages || 1);
+        const logsData = (data.data as AuditLogEntry[] | undefined) || [];
+        setLogs(logsData);
+        const pagination = (data as Record<string, unknown>).pagination as { totalPages?: number } | undefined;
+        setTotalPages(pagination?.totalPages || 1);
       }
     } catch (error) {
-      console.error('Failed to fetch audit logs:', error);
+      if (error instanceof ApiError) {
+        console.error('Failed to fetch audit logs:', error.message);
+      } else {
+        console.error('Failed to fetch audit logs:', error);
+      }
     } finally {
       setLoading(false);
     }
-  }, [page, actionFilter, entityTypeFilter, startDate, endDate, authToken]);
+  }, [page, actionFilter, entityTypeFilter, startDate, endDate]);
 
   useEffect(() => {
     setLoading(true);
@@ -159,21 +159,7 @@ export function AdminAuditLog() {
   const handleExportCSV = async () => {
     setExporting(true);
     try {
-      const params: Record<string, string> = { format: 'csv', limit: '10000' };
-      if (actionFilter) params.action = actionFilter;
-      if (entityTypeFilter) params.entityType = entityTypeFilter;
-      if (startDate) params.startDate = startDate;
-      if (endDate) params.endDate = endDate;
-
-      const headers: Record<string, string> = {};
-      if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
-
-      const res = await fetch(`/api/admin/audit-log?${new URLSearchParams(params)}`, { headers });
-      if (!res.ok) {
-        throw new Error('Export failed');
-      }
-
-      const blob = await res.blob();
+      const blob = await api.admin.dataExport('audit-log', 'csv');
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -184,8 +170,11 @@ export function AdminAuditLog() {
       window.URL.revokeObjectURL(url);
       toast.success('Audit log exported successfully');
     } catch (err) {
-      console.error('Failed to export audit log:', err);
-      toast.error('Failed to export audit log');
+      if (err instanceof ApiError) {
+        toast.error(err.message || 'Failed to export audit log');
+      } else {
+        toast.error('Failed to export audit log');
+      }
     } finally {
       setExporting(false);
     }

@@ -51,17 +51,33 @@ export function verifyToken(token: string): AuthPayload | null {
 }
 
 /**
- * Extract the JWT token from an Authorization header
- * Expected format: "Bearer <token>"
+ * Extract the JWT token from an Authorization header or httpOnly cookie
+ * Expected format: "Bearer <token>" or cookie "auth-token=<value>"
  */
 export function extractToken(request: Request): string | null {
+  // 1. Check Authorization header first (preferred)
   const authHeader = request.headers.get('authorization')
-  if (!authHeader) return null
+  if (authHeader) {
+    const parts = authHeader.split(' ')
+    if (parts.length === 2 && parts[0] === 'Bearer') {
+      return parts[1]
+    }
+  }
 
-  const parts = authHeader.split(' ')
-  if (parts.length !== 2 || parts[0] !== 'Bearer') return null
+  // 2. Fallback: check httpOnly cookie (auth-token)
+  const cookieHeader = request.headers.get('cookie')
+  if (cookieHeader) {
+    const cookies = cookieHeader.split(';')
+    for (const cookie of cookies) {
+      const trimmed = cookie.trim()
+      if (trimmed.startsWith('auth-token=')) {
+        const token = trimmed.slice('auth-token='.length)
+        if (token) return token
+      }
+    }
+  }
 
-  return parts[1]
+  return null
 }
 
 /**

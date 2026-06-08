@@ -36,6 +36,7 @@ import type {
   Conversation,
   SellerDashboardStats,
   BuyerDashboardStats,
+  AdminTransactionsData,
 } from '@/types'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 
@@ -860,6 +861,70 @@ const adminApi = {
     return request<ApiResponse<Record<string, unknown>[]>>(`/admin/abandoned-carts${qs ? `?${qs}` : ''}`)
   },
 
+  getTransactions: (params?: {
+    paymentPage?: number
+    paymentLimit?: number
+    withdrawalPage?: number
+    withdrawalLimit?: number
+    status?: string
+    escrowStatus?: string
+    search?: string
+  }) => {
+    const searchParams = new URLSearchParams()
+    if (params?.paymentPage) searchParams.set('paymentPage', String(params.paymentPage))
+    if (params?.paymentLimit) searchParams.set('paymentLimit', String(params.paymentLimit))
+    if (params?.withdrawalPage) searchParams.set('withdrawalPage', String(params.withdrawalPage))
+    if (params?.withdrawalLimit) searchParams.set('withdrawalLimit', String(params.withdrawalLimit))
+    if (params?.status) searchParams.set('status', params.status)
+    if (params?.escrowStatus) searchParams.set('escrowStatus', params.escrowStatus)
+    if (params?.search) searchParams.set('search', params.search)
+    const qs = searchParams.toString()
+    return request<ApiResponse<AdminTransactionsData>>(
+      `/admin/transactions${qs ? `?${qs}` : ''}`
+    )
+  },
+
+  getVerifications: (params?: { status?: string; page?: number; limit?: number; search?: string }) => {
+    const searchParams = new URLSearchParams()
+    if (params?.status) searchParams.set('status', params.status)
+    if (params?.page) searchParams.set('page', String(params.page))
+    if (params?.limit) searchParams.set('limit', String(params.limit))
+    if (params?.search) searchParams.set('search', params.search)
+    const qs = searchParams.toString()
+    return request<ApiResponse>(
+      `/verification/admin/list${qs ? `?${qs}` : ''}`
+    )
+  },
+
+  getReturns: (params?: { status?: string; page?: number; limit?: number }) => {
+    const searchParams = new URLSearchParams()
+    if (params?.status) searchParams.set('status', params.status)
+    if (params?.page) searchParams.set('page', String(params.page))
+    if (params?.limit) searchParams.set('limit', String(params.limit))
+    const qs = searchParams.toString()
+    return request<ApiResponse>(
+      `/returns${qs ? `?${qs}` : ''}`
+    )
+  },
+
+  processRefund: (paymentId: string, data: { userId: string; reason?: string }) =>
+    request<ApiResponse>(`/payments/${paymentId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ action: 'refund', ...data }),
+    }),
+
+  releaseEscrow: (paymentId: string, data: { userId: string }) =>
+    request<ApiResponse>(`/payments/${paymentId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ action: 'release', ...data }),
+    }),
+
+  processWithdrawal: (withdrawalId: string, data: { action: 'approve' | 'reject' | 'complete'; adminId?: string; adminNote?: string }) =>
+    request<ApiResponse>(`/withdrawals/${withdrawalId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
   dataExport: async (type: string, format: string): Promise<Blob> => {
     const authToken = useMarketplaceStore.getState().authToken
     const headers: Record<string, string> = {}
@@ -1236,6 +1301,8 @@ const invoiceApi = {
 // =============================================================================
 
 export const api = {
+  /** Low-level request helper — use only when no specific API method exists */
+  request,
   auth: authApi,
   shops: shopsApi,
   products: productsApi,

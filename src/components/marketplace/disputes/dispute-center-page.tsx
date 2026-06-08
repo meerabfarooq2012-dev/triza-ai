@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { api, ApiError } from '@/lib/api'
 import { toast } from 'sonner'
 import { FileDisputeDialog } from './file-dispute-dialog'
 import type { Dispute, DisputeStatus, DisputePriority, DisputeCategory } from '@/types'
@@ -200,24 +201,31 @@ export function DisputeCenterPage({ userId, isSeller }: DisputeCenterPageProps) 
       } else {
         params.set('userId', userId)
       }
-      const res = await fetch(`/api/disputes?${params}`)
-      const json = await res.json()
+      const json = await api.request<{ success: boolean; data?: { disputes?: Dispute[] } | Dispute[]; error?: string }>(`/disputes?${params}`)
       if (json.success) {
-        const data = json.data?.disputes ?? json.data ?? []
+        const data = (json.data as { disputes?: Dispute[] } | undefined)?.disputes ?? json.data ?? []
         setDisputes(Array.isArray(data) ? data : [])
       } else {
         // Fallback: try admin disputes API
-        const adminRes = await fetch(`/api/admin/disputes?userId=${userId}`)
-        const adminJson = await adminRes.json()
-        if (adminJson.success) {
-          const data = adminJson.data?.disputes ?? adminJson.data ?? []
-          setDisputes(Array.isArray(data) ? data : [])
-        } else {
+        try {
+          const adminJson = await api.admin.getDisputes()
+          if (adminJson.success) {
+            const adminData = adminJson.data as { disputes?: Dispute[] } | undefined
+            const allDisputes = adminData?.disputes ?? adminJson.data ?? []
+            setDisputes(Array.isArray(allDisputes) ? allDisputes : [])
+          } else {
+            toast.error(json.error || 'Failed to load disputes')
+          }
+        } catch {
           toast.error(json.error || 'Failed to load disputes')
         }
       }
-    } catch {
-      toast.error('Failed to fetch disputes')
+    } catch (error) {
+      if (error instanceof ApiError) {
+        toast.error(error.message || 'Failed to fetch disputes')
+      } else {
+        toast.error('Failed to fetch disputes')
+      }
     } finally {
       setLoading(false)
     }

@@ -139,12 +139,12 @@ export const useMarketplaceStore = create<MarketplaceState>()(
   persist(
     (set, get) => ({
       // ----- Auth State -----
-      // Start with isLoadingAuth = false so the page always renders immediately.
-      // The persist middleware will rehydrate from localStorage and the
-      // onRehydrateStorage callback will validate the rehydrated state.
+      // Start with isLoadingAuth = true so components know the store hasn't
+      // rehydrated from localStorage yet. The onRehydrateStorage callback
+      // will set it to false once rehydration completes.
       currentUser: null,
       isAuthenticated: false,
-      isLoadingAuth: false,
+      isLoadingAuth: true,
       authToken: null,
       refreshToken: null,
 
@@ -505,8 +505,10 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         language: state.language,
       }),
       // Synchronously sanitize persisted state BEFORE it's applied to the store.
-      // This prevents "forEach is not a function" crashes when localStorage
-      // has corrupted data (e.g. an array field stored as null/object).
+      // Strategy: start with currentState (which has all action functions) and
+      // ONLY overlay known data keys from persistedState. This prevents corrupted
+      // localStorage (e.g., { login: null }) from ever overwriting action functions,
+      // which causes "TypeError: X is not a function" at runtime (minified: "ew is not a function").
       merge: (persistedState, currentState) => {
         // Guard against undefined/null persistedState (first visit, cleared localStorage, etc.)
         if (!persistedState || typeof persistedState !== 'object') {
@@ -515,37 +517,17 @@ export const useMarketplaceStore = create<MarketplaceState>()(
 
         const p = persistedState as Record<string, unknown>
 
-        // Ensure array fields are actually arrays
+        // Only allow these specific data keys from persisted state
+        // (matching the partialize config). All other keys (including
+        // action functions) are kept from currentState.
+        const dataKeys = [
+          'currentUser', 'isAuthenticated', 'authToken', 'refreshToken',
+          'activeRole', 'cart', 'cartTotal', 'currentView', 'viewParams', 'language'
+        ]
+
+        // Sanitize array fields
         if (!Array.isArray(p.cart)) p.cart = []
         if (!Array.isArray(p.favoriteIds)) p.favoriteIds = []
-
-        // Guard any other fields that might be arrays from corrupted localStorage
-        const arrayFields = ['notifications', 'orders', 'messages', 'disputes', 'stories', 'favorites', 'products', 'categories']
-        for (const field of arrayFields) {
-          if (field in p && !Array.isArray(p[field])) {
-            delete p[field]
-          }
-        }
-
-        // CRITICAL: Never allow persisted data to override action functions with
-        // non-function values. Corrupted localStorage (e.g., from a previous app
-        // version) may store stale keys like { login: null, setAuthToken: null },
-        // which would override the real functions from currentState and cause
-        // "TypeError: X is not a function" at runtime (minified to "ew is not a function").
-        const actionKeys = [
-          'login', 'logout', 'setLoadingAuth', 'setAuthToken', 'setRefreshToken',
-          'setCurrentView', 'setActiveRole', 'addToCart', 'removeFromCart',
-          'updateCartQuantity', 'clearCart', 'syncCartToServer', 'loadCartFromServer',
-          'setSearchQuery', 'setSearchCategory', 'setSearchType',
-          'setUnreadNotifications', 'setFavoriteIds', 'toggleFavoriteId',
-          'toggleSidebar', 'setSidebarOpen', 'toggleMobileMenu', 'setMobileMenuOpen',
-          'setSelectedAddress', 'setSelectedShippingMethod', 'setLanguage',
-        ]
-        for (const key of actionKeys) {
-          if (key in p && typeof p[key] !== 'function') {
-            delete p[key]
-          }
-        }
 
         // Ensure viewParams is a plain object
         if (!p.viewParams || typeof p.viewParams !== 'object' || Array.isArray(p.viewParams)) {
@@ -566,10 +548,20 @@ export const useMarketplaceStore = create<MarketplaceState>()(
           p.viewParams = {}
         }
 
-        return {
-          ...currentState,
-          ...(p as Partial<MarketplaceState>),
+        // Build merged state: start with currentState (has all functions),
+        // then overlay ONLY the known data keys from persistedState
+        const merged = { ...currentState }
+        for (const key of dataKeys) {
+          if (key in p) {
+            ;(merged as Record<string, unknown>)[key] = p[key]
+          }
         }
+        // Also carry over favoriteIds if present (it's used but not in partialize)
+        if ('favoriteIds' in p) {
+          ;(merged as Record<string, unknown>).favoriteIds = p.favoriteIds
+        }
+
+        return merged as MarketplaceState
       },
       onRehydrateStorage: () => {
         return (state, error) => {
@@ -590,16 +582,35 @@ export const useMarketplaceStore = create<MarketplaceState>()(
             })
             return
           }
-          // Validate action functions survived hydration — if any are missing,
-          // the localStorage data is corrupted and we need to clear it.
-          if (state && typeof state.login !== 'function') {
-            console.warn('[Marketo] Store corrupted — action functions missing after rehydration. Clearing storage.')
-            try { localStorage.removeItem('marketo-storage') } catch {}
-            // Force reload to get a clean state
-            if (typeof window !== 'undefined') {
-              window.location.reload()
+          // Validate action functions survived hydration — check ALL action keys.
+          // If any action function is not a function, the store is corrupted
+          // and we need to clear localStorage and force reload.
+          const actionKeys = [
+            'login', 'logout', 'setLoadingAuth', 'setAuthToken', 'setRefreshToken',
+            'setCurrentView', 'setActiveRole', 'addToCart', 'removeFromCart',
+            'updateCartQuantity', 'clearCart', 'syncCartToServer', 'loadCartFromServer',
+            'setSearchQuery', 'setSearchCategory', 'setSearchType',
+            'setUnreadNotifications', 'setFavoriteIds', 'toggleFavoriteId',
+            'toggleSidebar', 'setSidebarOpen', 'toggleMobileMenu', 'setMobileMenuOpen',
+            'setSelectedAddress', 'setSelectedShippingMethod', 'setLanguage',
+          ]
+          if (state) {
+            const corruptedKey = actionKeys.find(
+              (key) => typeof (state as Record<string, unknown>)[key] !== 'function'
+            )
+            if (corruptedKey) {
+              console.warn(
+                `[Marketo] Store corrupted — action "${corruptedKey}" is not a function after rehydration. Clearing storage and reloading.`
+              )
+              try { localStorage.removeItem('marketo-storage') } catch {}
+              // Force reload to get a clean state
+              if (typeof window !== 'undefined') {
+                window.location.reload()
+              }
             }
           }
+          // Rehydration complete — signal to components that auth state is now settled
+          useMarketplaceStore.setState({ isLoadingAuth: false })
         }
       },
     }
