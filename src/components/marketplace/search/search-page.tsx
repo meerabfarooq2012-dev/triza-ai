@@ -57,7 +57,6 @@ import {
   GIG_CATEGORIES,
 } from '@/lib/constants'
 import type { Product, Gig, GigPackage, Category, SearchFilters, ProductType, GigSearchParams, DeliveryFilterType, DateAddedFilter } from '@/types'
-import { StoryBar } from '@/components/marketplace/social/story-bar'
 
 // ----- Price preset ranges -----
 const PRICE_PRESETS = [
@@ -1529,9 +1528,6 @@ export default function SearchPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Story Bar */}
-        <StoryBar />
-
         {/* Search Header */}
         <div className="mb-6">
           <form onSubmit={handleSearch} className="relative max-w-2xl mx-auto">
