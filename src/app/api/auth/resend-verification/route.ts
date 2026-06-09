@@ -67,7 +67,7 @@ export const POST = async (request: NextRequest) => {
     });
 
     // Send verification email (non-blocking) — use raw token in the link
-    const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://marketo.fun'}?verify=${verifyToken}`;
+    const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://marketo-alpha.vercel.app'}?verify=${verifyToken}`;
     sendEmailAsync({
       to: user.email,
       subject: 'Verify Your Email — Thiora',

@@ -10,7 +10,7 @@ export async function GET() {
       data: {
         configured,
         provider: configured ? 'resend' : 'none',
-        fromDomain: configured ? 'thiora.fun' : null,
+        fromDomain: configured ? (process.env.EMAIL_FROM_DOMAIN || 'marketo-alpha.vercel.app') : null,
       },
     });
   } catch (error) {

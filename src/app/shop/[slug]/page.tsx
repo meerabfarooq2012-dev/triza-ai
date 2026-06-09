@@ -16,7 +16,7 @@ async function getBaseUrl(): Promise<string> {
     const protocol = headersList.get('x-forwarded-proto') || (host.startsWith('localhost') ? 'http' : 'https')
     return `${protocol}://${host}`
   } catch {
-    return 'https://marketo.pk'
+    return 'https://marketo-alpha.vercel.app'
   }
 }
 

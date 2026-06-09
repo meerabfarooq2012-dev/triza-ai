@@ -177,7 +177,7 @@ export function welcomeEmail(data: WelcomeEmailData): string {
             🎉 As a seller, you can create your shop, list products and gigs, and start earning. We only charge a 10% platform fee — you keep 90% of every sale!
           </p>` : ''}
 
-          ${ctaButton('Visit Marketplace', 'https://marketo.fun')}
+          ${ctaButton('Visit Marketplace', 'https://marketo-alpha.vercel.app')}
 
           <p style="margin:24px 0 0 0;font-size:14px;color:${TEXT_MUTED};text-align:center;line-height:1.5;">
             If you have any questions, feel free to reach out to our support team.
@@ -277,7 +277,7 @@ export function orderConfirmationBuyerEmail(data: OrderConfirmationBuyerData): s
             </tr>
           </table>
 
-          ${ctaButton('View Order Details', 'https://marketo.fun')}
+          ${ctaButton('View Order Details', 'https://marketo-alpha.vercel.app')}
 
         </td>
       </tr>
@@ -367,7 +367,7 @@ export function newOrderSellerEmail(data: NewOrderSellerData): string {
             </tr>
           </table>
 
-          ${ctaButton('View Order', 'https://marketo.fun')}
+          ${ctaButton('View Order', 'https://marketo-alpha.vercel.app')}
 
           <p style="margin:20px 0 0 0;font-size:14px;color:${TEXT_MUTED};text-align:center;line-height:1.5;">
             Please process this order promptly to keep your buyers happy!
@@ -497,7 +497,7 @@ export function orderStatusUpdateEmail(data: OrderStatusUpdateData): string {
             </tr>
           </table>` : ''}
 
-          ${ctaButton('View Order', 'https://marketo.fun')}
+          ${ctaButton('View Order', 'https://marketo-alpha.vercel.app')}
 
         </td>
       </tr>
@@ -566,7 +566,7 @@ export function paymentConfirmationEmail(data: PaymentConfirmationData): string 
             </tr>
           </table>
 
-          ${ctaButton('View Transaction', 'https://marketo.fun')}
+          ${ctaButton('View Transaction', 'https://marketo-alpha.vercel.app')}
 
           <p style="margin:20px 0 0 0;font-size:13px;color:${TEXT_MUTED};text-align:center;line-height:1.5;">
             If you did not authorize this payment, please contact our support team immediately.
@@ -707,7 +707,7 @@ export function withdrawalNotificationEmail(data: WithdrawalNotificationData): s
             </tr>
           </table>` : ''}
 
-          ${ctaButton('View Withdrawal Details', 'https://marketo.fun')}
+          ${ctaButton('View Withdrawal Details', 'https://marketo-alpha.vercel.app')}
 
         </td>
       </tr>
@@ -792,7 +792,7 @@ export function paymentReceivedSellerEmail(data: PaymentReceivedSellerData): str
             </tr>
           </table>
 
-          ${ctaButton('View Order Details', 'https://marketo.fun')}
+          ${ctaButton('View Order Details', 'https://marketo-alpha.vercel.app')}
 
           <p style="margin:20px 0 0 0;font-size:14px;color:${TEXT_MUTED};text-align:center;line-height:1.5;">
             Please process and ship the order promptly to ensure timely payout.

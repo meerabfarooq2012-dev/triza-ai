@@ -64,7 +64,7 @@ export const POST = async (request: NextRequest) => {
     });
 
     // Send password reset email (non-blocking)
-    const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://marketo.fun'}/reset-password?token=${resetToken}`;
+    const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://marketo-alpha.vercel.app'}/reset-password?token=${resetToken}`;
     sendEmailAsync({
       to: email,
       subject: 'Reset Your Thiora Password',
