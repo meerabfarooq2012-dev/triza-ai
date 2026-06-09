@@ -1,7 +1,7 @@
 {
   "name": "Thiora - Marketplace",
   "short_name": "Thiora",
-  "description": "Your trusted marketplace for buying and selling",
+  "description": "Freelance services, digital downloads, and physical products — three worlds, one marketplace.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0a0a",
