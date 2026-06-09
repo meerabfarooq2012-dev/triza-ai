@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { authenticateRequest } from '@/lib/auth-middleware';
 import { withCsrf } from '@/lib/with-csrf';
 import { createAuditLog } from '@/lib/audit-log';
+import { sanitizeString } from '@/lib/sanitize';
 
 export async function GET(
   request: NextRequest,
@@ -114,6 +115,8 @@ async function handleUpdateProduct(
       'hasVariants',
     ];
 
+    const textFieldFields = new Set(['description', 'shortDesc', 'deliveryInfo', 'requirements']);
+
     const data: Record<string, unknown> = {};
     for (const field of allowedFields) {
       if (body[field] !== undefined) {
@@ -121,6 +124,8 @@ async function handleUpdateProduct(
           data[field] = JSON.stringify(body[field]);
         } else if (field === 'price' || field === 'comparePrice') {
           data[field] = body[field] !== null ? parseFloat(String(body[field])) : null;
+        } else if (textFieldFields.has(field) && typeof body[field] === 'string') {
+          data[field] = sanitizeString(body[field]);
         } else {
           data[field] = body[field];
         }

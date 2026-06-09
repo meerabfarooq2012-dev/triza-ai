@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { rateLimit, getRateLimitKey, authRateLimit } from '@/lib/rate-limit';
-import { authenticateRequestWithSession, signToken, signRefreshToken, setAuthCookies } from '@/lib/auth-middleware';
+import { authenticateRequestWithSession, signToken, signRefreshToken, setAuthCookies, extractToken } from '@/lib/auth-middleware';
 import { withCsrf } from '@/lib/with-csrf';
 import { validateInput, changePasswordSchema } from '@/lib/validation';
 import { getSafeErrorMessage } from '@/lib/error-handler';
+import { revokeAllUserSessions, createSession } from '@/lib/session';
 
 export const POST = withCsrf(async (request: NextRequest) => {
   try {
@@ -85,6 +86,9 @@ export const POST = withCsrf(async (request: NextRequest) => {
       },
     });
 
+    // Revoke all sessions for this user so other devices/sessions must re-authenticate
+    await revokeAllUserSessions(userId);
+
     // Generate a new JWT access token and refresh token
     const authPayload = {
       userId: user.id,
@@ -93,6 +97,11 @@ export const POST = withCsrf(async (request: NextRequest) => {
     };
     const token = signToken(authPayload);
     const refreshToken = signRefreshToken(authPayload);
+
+    // Create a new session for the new access token
+    const deviceInfo = request.headers.get('user-agent') || undefined;
+    const ipAddress = request.headers.get('x-forwarded-for') || undefined;
+    await createSession(userId, token, deviceInfo, ipAddress);
 
     const response = NextResponse.json({
       success: true,

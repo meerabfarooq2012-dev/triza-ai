@@ -20,7 +20,7 @@ function getJwtSecret(): string {
   }
   return _jwtSecret
 }
-const JWT_EXPIRES_IN = '7d' // 7 days
+const JWT_EXPIRES_IN = '1h' // 1 hour
 const REFRESH_TOKEN_EXPIRES_IN = '30d' // 30 days
 
 export interface AuthPayload {
@@ -160,7 +160,7 @@ export function setAuthCookies(
     secure: isSecure,
     sameSite: 'lax',
     path: '/',
-    maxAge: 7 * 24 * 60 * 60, // 7 days
+    maxAge: 60 * 60, // 1 hour
   })
 
   if (refreshToken) {

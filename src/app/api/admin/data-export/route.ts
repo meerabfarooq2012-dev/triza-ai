@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@/lib/auth-middleware';
+import { authenticateRequestWithSession } from '@/lib/auth-middleware';
 import { rateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import { createAuditLog } from '@/lib/audit-log';
 import { db } from '@/lib/db';
@@ -65,7 +65,7 @@ function convertToCsv(data: Record<string, unknown>[]): string {
 export async function GET(request: NextRequest) {
   try {
     // Authenticate admin
-    const auth = authenticateRequest(request);
+    const auth = await authenticateRequestWithSession(request);
     if (!auth) {
       return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
     }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db'
 import { authenticateRequest } from '@/lib/auth-middleware';
 import { withCsrf } from '@/lib/with-csrf';
+import { sanitizeString } from '@/lib/sanitize';
 
 // POST /api/messages/conversations/create
 // Create or find a conversation between two users
@@ -50,7 +51,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
           gigId: gigId || null,
           lastMessageAt: new Date(),
           lastMessagePreview: initialMessage
-            ? initialMessage.substring(0, 100)
+            ? sanitizeString(initialMessage.substring(0, 100))
             : null,
         },
       });
@@ -64,7 +65,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
           conversationId: conversation.id,
           senderId: userId,
           receiverId: otherUserId,
-          content: initialMessage,
+          content: sanitizeString(initialMessage),
           messageType: 'text',
         },
         include: {
@@ -78,7 +79,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
         where: { id: conversation.id },
         data: {
           lastMessageAt: new Date(),
-          lastMessagePreview: initialMessage.substring(0, 100),
+          lastMessagePreview: sanitizeString(initialMessage.substring(0, 100)),
         },
       });
 

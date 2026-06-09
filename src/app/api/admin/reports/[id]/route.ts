@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withCsrf } from '@/lib/with-csrf';
-import { authenticateRequest } from '@/lib/auth-middleware';
+import { authenticateRequestWithSession } from '@/lib/auth-middleware';
 import { rateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import { createAuditLog } from '@/lib/audit-log';
 import { db } from '@/lib/db';
@@ -13,7 +13,7 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
 async function handler(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     // Authenticate admin
-    const auth = authenticateRequest(request);
+    const auth = await authenticateRequestWithSession(request);
     if (!auth) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },

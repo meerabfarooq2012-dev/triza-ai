@@ -5,6 +5,7 @@ import {
   verifyJazzCashCallback,
   completeSimulatedPayment,
 } from '@/lib/payment-gateway';
+import { rateLimit, getRateLimitKey } from '@/lib/rate-limit';
 
 // =============================================================================
 // POST /api/payments/callback
@@ -13,6 +14,21 @@ import {
 // =============================================================================
 
 export async function POST(request: NextRequest) {
+  // Rate limiting: max 30 requests per minute per IP
+  const rateLimitKey = getRateLimitKey(request);
+  const rateLimitResult = rateLimit({
+    windowMs: 60 * 1000,
+    maxRequests: 30,
+    key: `payment-callback:${rateLimitKey}`,
+  });
+
+  if (!rateLimitResult.success) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000)) } }
+    );
+  }
+
   try {
     const gateway = request.nextUrl.searchParams.get('gateway');
 
@@ -108,6 +124,26 @@ export async function POST(request: NextRequest) {
         { success: false, error: 'Payment not found for this order' },
         { status: 404 }
       );
+    }
+
+    // ----- Amount Verification -----
+    // Verify that the callback amount matches the stored payment amount
+    // This prevents amount tampering attacks where an attacker modifies the
+    // payment amount in the callback to pay less than the actual order total.
+    if (amount !== undefined && amount !== null) {
+      const storedAmount = Math.round(payment.amount * 100) / 100; // Round to 2 decimal places
+      const callbackAmount = Math.round(amount * 100) / 100;
+      if (callbackAmount !== storedAmount) {
+        console.error(
+          `[SECURITY WARNING] Amount mismatch for payment ${payment.id} (order: ${orderId}). ` +
+          `Stored amount: ${storedAmount}, Callback amount: ${callbackAmount}. ` +
+          `Possible amount tampering attack from IP: ${request.headers.get('x-forwarded-for') || 'unknown'}`
+        );
+        return NextResponse.json(
+          { success: false, error: 'Amount verification failed' },
+          { status: 400 }
+        );
+      }
     }
 
     // ----- Determine payment result -----

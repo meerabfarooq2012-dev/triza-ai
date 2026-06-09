@@ -10,6 +10,15 @@ import { getSafeErrorMessage } from '@/lib/error-handler';
 
 export async function GET(request: NextRequest) {
   try {
+    // Authenticate the request
+    const auth = await authenticateRequestWithSession(request);
+    if (!auth) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get('userId') || '';
     const role = searchParams.get('role') || 'buyer';
@@ -22,6 +31,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: 'userId is required' },
         { status: 400 }
+      );
+    }
+
+    // IDOR check: only allow users to access their own orders, unless they're admin
+    if (auth.userId !== userId && auth.role !== 'admin') {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden: you can only view your own orders' },
+        { status: 403 }
       );
     }
 

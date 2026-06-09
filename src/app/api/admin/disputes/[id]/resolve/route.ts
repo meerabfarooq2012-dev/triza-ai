@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { authenticateRequest } from '@/lib/auth-middleware'
+import { authenticateRequestWithSession } from '@/lib/auth-middleware'
 import { withCsrf } from '@/lib/with-csrf'
 import { createAuditLog } from '@/lib/audit-log'
 import { getSafeErrorMessage } from '@/lib/error-handler'
@@ -11,7 +11,7 @@ export const PATCH = withCsrf(async (
   { params }: { params: Promise<{ id: string }> }
 ) => {
   try {
-    const auth = authenticateRequest(request)
+    const auth = await authenticateRequestWithSession(request)
     if (!auth) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },

@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { authenticateRequest } from '@/lib/auth-middleware';
 
 import { withCsrf } from '@/lib/with-csrf';
+import { sanitizeString } from '@/lib/sanitize';
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -86,9 +87,15 @@ export const PATCH = withCsrf(async (request: NextRequest,
       'isFeatured', 'isActive',
     ];
 
+    const textFieldFields = new Set(['description', 'requirements']);
+
     for (const field of allowedFields) {
       if (body[field] !== undefined) {
-        updateData[field] = body[field];
+        if (textFieldFields.has(field) && typeof body[field] === 'string') {
+          updateData[field] = sanitizeString(body[field]);
+        } else {
+          updateData[field] = body[field];
+        }
       }
     }
 

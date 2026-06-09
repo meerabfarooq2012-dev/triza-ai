@@ -4,7 +4,8 @@ import { Prisma } from '@prisma/client';
 import { withCsrf } from '@/lib/with-csrf';
 import { cache } from '@/lib/cache';
 import { authenticateRequestWithSession } from '@/lib/auth-middleware';
-import { isPositiveNumber } from '@/lib/sanitize';
+import { isPositiveNumber, sanitizeString } from '@/lib/sanitize';
+import { rateLimit, getRateLimitKey } from '@/lib/rate-limit';
 
 function slugify(text: string): string {
   return text
@@ -14,6 +15,16 @@ function slugify(text: string): string {
 }
 
 export async function GET(request: NextRequest) {
+  // Rate limiting: 60 req/min for GET
+  const rlKey = getRateLimitKey(request);
+  const rl = rateLimit({ windowMs: 60 * 1000, maxRequests: 60, key: `products-get:${rlKey}` });
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetTime - Date.now()) / 1000)) } }
+    );
+  }
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search') || searchParams.get('query') || '';
@@ -301,6 +312,16 @@ export async function GET(request: NextRequest) {
 }
 
 export const POST = withCsrf(async (request: NextRequest) => {
+  // Rate limiting: 10 req/min for POST
+  const rlKey = getRateLimitKey(request);
+  const rl = rateLimit({ windowMs: 60 * 1000, maxRequests: 10, key: `products-post:${rlKey}` });
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetTime - Date.now()) / 1000)) } }
+    );
+  }
+
   try {
     // Authenticate the request (with session validation)
     const auth = await authenticateRequestWithSession(request);
@@ -396,8 +417,8 @@ export const POST = withCsrf(async (request: NextRequest) => {
         categoryId,
         name,
         slug,
-        description,
-        shortDesc,
+        description: sanitizeString(description),
+        shortDesc: shortDesc ? sanitizeString(shortDesc) : null,
         price: parseFloat(String(price)),
         comparePrice: comparePrice ? parseFloat(String(comparePrice)) : null,
         type,
@@ -409,9 +430,9 @@ export const POST = withCsrf(async (request: NextRequest) => {
         tags: typeof tags === 'string' ? tags : JSON.stringify(tags || []),
         isFeatured: isFeatured || false,
         isApproved: true, // Auto-approve products
-        deliveryInfo,
+        deliveryInfo: deliveryInfo ? sanitizeString(deliveryInfo) : null,
         deliveryCountries: typeof deliveryCountries === 'string' ? deliveryCountries : JSON.stringify(deliveryCountries || []),
-        requirements,
+        requirements: requirements ? sanitizeString(requirements) : null,
       },
       include: {
         shop: { select: { id: true, name: true, slug: true, logo: true } },

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { withCsrf } from '@/lib/with-csrf';
+import { sanitizeString } from '@/lib/sanitize';
 
 // GET /api/messages?userId=string&otherUserId=string
 // Fetch messages between two users (backward compatible)
@@ -95,7 +96,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
           productId: productId || null,
           gigId: gigId || null,
           lastMessageAt: new Date(),
-          lastMessagePreview: content.substring(0, 100),
+          lastMessagePreview: sanitizeString(content.substring(0, 100)),
         },
       });
     }
@@ -106,7 +107,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
         conversationId: conversation.id,
         senderId,
         receiverId,
-        content,
+        content: sanitizeString(content),
         messageType: messageType || 'text',
       },
       include: {
@@ -120,7 +121,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
       where: { id: conversation.id },
       data: {
         lastMessageAt: new Date(),
-        lastMessagePreview: content.substring(0, 100),
+        lastMessagePreview: sanitizeString(content.substring(0, 100)),
       },
     });
 

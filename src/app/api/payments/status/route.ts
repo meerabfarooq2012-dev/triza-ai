@@ -5,6 +5,7 @@ import {
   verifyJazzCashPayment,
   getGatewayMode,
 } from '@/lib/payment-gateway';
+import { authenticateRequestWithSession } from '@/lib/auth-middleware';
 
 // =============================================================================
 // GET /api/payments/status
@@ -14,6 +15,15 @@ import {
 
 export async function GET(request: NextRequest) {
   try {
+    // Authenticate the request
+    const auth = await authenticateRequestWithSession(request);
+    if (!auth) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const paymentId = searchParams.get('paymentId');
     const checkGateway = searchParams.get('checkGateway') === 'true'; // optionally verify with gateway
@@ -53,6 +63,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: 'Payment not found' },
         { status: 404 }
+      );
+    }
+
+    // IDOR check: only allow buyer, seller, or admin to view payment status
+    if (auth.userId !== payment.buyerId && auth.userId !== payment.sellerId && auth.role !== 'admin') {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden: you can only view your own payments' },
+        { status: 403 }
       );
     }
 

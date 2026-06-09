@@ -3,6 +3,8 @@ import { db } from '@/lib/db';
 import { withCsrf } from '@/lib/with-csrf';
 import { cache } from '@/lib/cache';
 import { authenticateRequestWithSession } from '@/lib/auth-middleware';
+import { rateLimit, getRateLimitKey } from '@/lib/rate-limit';
+import { sanitizeString } from '@/lib/sanitize';
 
 function slugify(text: string): string {
   return text
@@ -12,6 +14,16 @@ function slugify(text: string): string {
 }
 
 export async function GET(request: NextRequest) {
+  // Rate limiting: 60 req/min for GET
+  const rlKey = getRateLimitKey(request);
+  const rl = rateLimit({ windowMs: 60 * 1000, maxRequests: 60, key: `shops-get:${rlKey}` });
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetTime - Date.now()) / 1000)) } }
+    );
+  }
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search') || '';
@@ -107,6 +119,16 @@ export async function GET(request: NextRequest) {
 }
 
 export const POST = withCsrf(async (request: NextRequest) => {
+  // Rate limiting: 10 req/min for POST
+  const rlKey = getRateLimitKey(request);
+  const rl = rateLimit({ windowMs: 60 * 1000, maxRequests: 10, key: `shops-post:${rlKey}` });
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetTime - Date.now()) / 1000)) } }
+    );
+  }
+
   try {
     // Authenticate the request (with session validation)
     const auth = await authenticateRequestWithSession(request);
@@ -166,7 +188,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
         userId,
         name,
         slug,
-        description,
+        description: description ? sanitizeString(description) : null,
         logo,
         banner,
         primaryColor,
@@ -174,10 +196,10 @@ export const POST = withCsrf(async (request: NextRequest) => {
         accentColor,
         layoutStyle,
         displayStyle,
-        about,
+        about: about ? sanitizeString(about) : null,
         contactEmail,
         contactPhone,
-        address,
+        address: address ? sanitizeString(address) : null,
       },
     });
 

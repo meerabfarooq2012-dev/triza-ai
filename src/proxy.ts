@@ -120,14 +120,14 @@ function buildSecurityHeaders(isDev: boolean): Record<string, string> {
   // In production, consider using nonce-based CSP for stronger protection.
   const scriptSrc = isDev
     ? "script-src 'self' 'unsafe-inline' 'unsafe-eval';" // Dev: needs both for HMR + RSC
-    : "script-src 'self' 'unsafe-inline';" // Prod: unsafe-inline needed for Next.js RSC inline scripts
+    : "script-src 'self' 'unsafe-inline';" // Prod: unsafe-inline needed for Next.js RSC inline scripts. TODO: Migrate to nonce-based CSP for stronger protection (see https://nextjs.org/docs/app/building-your-application/configuring/content-security-policy)
 
-  const cspImageSources = ["'self'", 'data:', 'blob:', 'https:']
+  const cspImageSources = ["'self'", 'data:', 'blob:', 'https://*.supabase.co']
   if (supabaseDomain) {
     cspImageSources.push(`https://${supabaseDomain}`)
   }
 
-  const cspConnectSources = ["'self'", 'ws:', 'wss:', 'https:', 'http:']
+  const cspConnectSources = ["'self'", 'https://*.supabase.co', 'wss:', (process.env.NEXT_PUBLIC_APP_URL || 'https://thiora.vercel.app').replace(/\/$/, '')]
   if (supabaseDomain) {
     cspConnectSources.push(`https://${supabaseDomain}`)
   }
@@ -200,11 +200,18 @@ export async function proxy(request: NextRequest) {
 
     // For API routes, return a JSON error response
     const { pathname } = request.nextUrl
+    const isDev = process.env.NODE_ENV === 'development'
     if (pathname.startsWith('/api/')) {
+      // In production, return a generic error message to avoid leaking internals.
+      // In development, include the actual error detail for debugging.
+      const detail = isDev
+        ? (error instanceof Error ? error.message : String(error))
+        : undefined
+
       return NextResponse.json(
         {
-          error: 'Internal server error in proxy middleware',
-          detail: error instanceof Error ? error.message : String(error),
+          error: 'Internal proxy error',
+          ...(isDev && detail ? { detail } : {}),
         },
         { status: 500 }
       )

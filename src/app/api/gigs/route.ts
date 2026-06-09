@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db'
-import { authenticateRequest } from '@/lib/auth-middleware';
+import { authenticateRequestWithSession } from '@/lib/auth-middleware';
 import { Prisma } from '@prisma/client';
 import { rateLimit, getRateLimitKey, gigRateLimit } from '@/lib/rate-limit';
 
 import { withCsrf } from '@/lib/with-csrf';
 import { validateInput, gigCreateSchema } from '@/lib/validation';
+import { sanitizeString } from '@/lib/sanitize';
 function slugify(text: string): string {
   return text
     .toLowerCase()
@@ -14,9 +15,9 @@ function slugify(text: string): string {
 }
 
 export async function GET(request: NextRequest) {
-  // Rate limiting
+  // Rate limiting: 60 req/min for GET
   const rlKey = getRateLimitKey(request);
-  const rlResult = rateLimit({ ...gigRateLimit, key: `gigs:${rlKey}` });
+  const rlResult = rateLimit({ windowMs: 60 * 1000, maxRequests: 60, key: `gigs-get:${rlKey}` });
   if (!rlResult.success) {
     return NextResponse.json(
       { success: false, error: 'Too many requests. Please try again later.' },
@@ -191,9 +192,9 @@ export async function GET(request: NextRequest) {
 }
 
 export const POST = withCsrf(async (request: NextRequest) => {
-  // Rate limiting
+  // Rate limiting: 10 req/min for POST
   const rlKey = getRateLimitKey(request);
-  const rlResult = rateLimit({ ...gigRateLimit, key: `gigs:${rlKey}` });
+  const rlResult = rateLimit({ windowMs: 60 * 1000, maxRequests: 10, key: `gigs-post:${rlKey}` });
   if (!rlResult.success) {
     return NextResponse.json(
       { success: false, error: 'Too many requests. Please try again later.' },
@@ -201,7 +202,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
     );
   }
 
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequestWithSession(request);
   if (!auth) {
     return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
   }
@@ -255,12 +256,12 @@ export const POST = withCsrf(async (request: NextRequest) => {
         categoryId,
         title,
         slug,
-        description,
+        description: sanitizeString(description),
         images: typeof images === 'string' ? images : JSON.stringify(images || []),
         tags: typeof tags === 'string' ? tags : JSON.stringify(tags || []),
         packages: typeof packages === 'string' ? packages : JSON.stringify(packages),
         faqs: typeof faqs === 'string' ? faqs : JSON.stringify(faqs || []),
-        requirements,
+        requirements: sanitizeString(requirements),
         isFeatured: isFeatured || false,
       },
       include: {

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@/lib/auth-middleware';
+import { authenticateRequestWithSession } from '@/lib/auth-middleware';
 import { db } from '@/lib/db';
 import { Prisma } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
   try {
     // Authenticate and verify admin role
-    const auth = authenticateRequest(request);
+    const auth = await authenticateRequestWithSession(request);
     if (!auth) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },

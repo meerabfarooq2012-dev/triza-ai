@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db'
-import { authenticateRequest } from '@/lib/auth-middleware';
+import { authenticateRequest, authenticateRequestWithSession } from '@/lib/auth-middleware';
 import { PLATFORM_FEE_PERCENT } from '@/lib/constants';
 import { createDownloadLink } from '@/lib/digital-download';
 
@@ -32,6 +32,15 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Authenticate the request
+    const auth = await authenticateRequestWithSession(request);
+    if (!auth) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
     const { id } = await params;
 
     const payment = await db.payment.findUnique({
@@ -66,6 +75,14 @@ export async function GET(
       return NextResponse.json(
         { success: false, error: 'Payment not found' },
         { status: 404 }
+      );
+    }
+
+    // IDOR check: only allow buyer, seller, or admin to view payment details
+    if (auth.userId !== payment.buyerId && auth.userId !== payment.sellerId && auth.role !== 'admin') {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden: you can only view your own payments' },
+        { status: 403 }
       );
     }
 

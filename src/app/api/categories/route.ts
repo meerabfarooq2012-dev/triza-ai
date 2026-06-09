@@ -2,8 +2,19 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { GIG_CATEGORIES, PHYSICAL_CATEGORIES, DIGITAL_CATEGORIES } from '@/lib/constants';
 import { cache } from '@/lib/cache';
+import { rateLimit, getRateLimitKey } from '@/lib/rate-limit';
 
 export async function GET(request: Request) {
+  // Rate limiting: 60 req/min for GET
+  const rlKey = getRateLimitKey(request);
+  const rl = rateLimit({ windowMs: 60 * 1000, maxRequests: 60, key: `categories-get:${rlKey}` });
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetTime - Date.now()) / 1000)) } }
+    );
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type'); // 'gigs', 'physical', 'digital', or undefined (all)

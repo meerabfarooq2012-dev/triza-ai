@@ -12,6 +12,12 @@
  */
 
 export async function register() {
+  // Validate environment variables at startup
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    const { validateEnvironment } = await import('./lib/env-validation');
+    validateEnvironment();
+  }
+
   // Skip mini-service spawning on Vercel (serverless environment)
   if (process.env.VERCEL || process.env.VERCEL_ENV) {
     console.log('[Instrumentation] Vercel environment detected — skipping mini-services');

@@ -9,6 +9,7 @@ import { db } from '@/lib/db'
 const SESSION_THROTTLE_MS = 5 * 60 * 1000 // 5 minutes — only update lastActiveAt this often
 const JWT_ACCESS_TOKEN_EXPIRY_MINUTES = 15 // Access token expiry (must match auth-middleware.ts)
 const JWT_REFRESH_TOKEN_EXPIRY_DAYS = 7 // Refresh token expiry
+const MAX_CONCURRENT_SESSIONS = 5 // Maximum active sessions per user
 
 /**
  * Hash a JWT token using SHA-256. We NEVER store raw tokens.
@@ -20,6 +21,8 @@ export function hashToken(token: string): string {
 /**
  * Create a new session record after successful login.
  * Only the SHA-256 hash of the token is stored — never the raw JWT.
+ * Enforces a maximum concurrent session limit — if the user already has
+ * MAX_CONCURRENT_SESSIONS active sessions, the oldest one is revoked first.
  */
 export async function createSession(
   userId: string,
@@ -32,6 +35,22 @@ export async function createSession(
 
   // Clean up expired sessions for this user on each new login
   await cleanExpiredSessions()
+
+  // Enforce concurrent session limit
+  const activeSessions = await db.session.findMany({
+    where: { userId, expiresAt: { gt: new Date() } },
+    orderBy: { lastActiveAt: 'asc' },
+  })
+
+  if (activeSessions.length >= MAX_CONCURRENT_SESSIONS) {
+    // Revoke the oldest session(s) to make room for the new one
+    const sessionsToRevoke = activeSessions.slice(0, activeSessions.length - MAX_CONCURRENT_SESSIONS + 1)
+    if (sessionsToRevoke.length > 0) {
+      await db.session.deleteMany({
+        where: { id: { in: sessionsToRevoke.map((s) => s.id) } },
+      })
+    }
+  }
 
   return db.session.create({
     data: {

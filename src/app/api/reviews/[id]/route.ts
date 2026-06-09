@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { authenticateRequest } from '@/lib/auth-middleware';
 
 import { withCsrf } from '@/lib/with-csrf';
+import { sanitizeString } from '@/lib/sanitize';
 // Helper to recalculate average rating for a product or shop
 async function recalculateRating(productId?: string | null, shopId?: string | null, gigId?: string | null) {
   if (productId) {
@@ -176,8 +177,8 @@ export const PATCH = withCsrf(async (request: NextRequest,
     // Build update data
     const updateData: Record<string, unknown> = {};
     if (rating !== undefined) updateData.rating = rating;
-    if (title !== undefined) updateData.title = title;
-    if (comment !== undefined) updateData.comment = comment;
+    if (title !== undefined) updateData.title = sanitizeString(title);
+    if (comment !== undefined) updateData.comment = sanitizeString(comment);
     if (images !== undefined) updateData.images = JSON.stringify(images);
 
     const updatedReview = await db.review.update({

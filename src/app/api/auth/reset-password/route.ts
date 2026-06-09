@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import bcrypt from 'bcryptjs';
+import { createHash } from 'crypto';
 import { rateLimit, getRateLimitKey, passwordResetRateLimit } from '@/lib/rate-limit';
 import { withCsrf } from '@/lib/with-csrf';
 import { validateInput, resetPasswordSchema } from '@/lib/validation';
 import { getSafeErrorMessage } from '@/lib/error-handler';
+import { revokeAllUserSessions } from '@/lib/session';
+
+function hashToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
 
 export const POST = withCsrf(async (request: NextRequest) => {
   try {
@@ -40,10 +46,10 @@ export const POST = withCsrf(async (request: NextRequest) => {
 
     const { token, password } = validation.data;
 
-    // Find user by reset token where the token has not expired
+    // Find user by hashed reset token where the token has not expired
     const user = await db.user.findFirst({
       where: {
-        resetToken: token,
+        resetToken: hashToken(token),
         resetTokenExpiry: {
           gt: new Date(),
         },
@@ -71,6 +77,9 @@ export const POST = withCsrf(async (request: NextRequest) => {
         lockoutUntil: null,
       },
     });
+
+    // Revoke all sessions for this user so they must re-authenticate with the new password
+    await revokeAllUserSessions(user.id);
 
     return NextResponse.json({
       success: true,

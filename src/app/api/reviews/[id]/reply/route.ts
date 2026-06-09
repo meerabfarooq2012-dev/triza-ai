@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { authenticateRequest } from '@/lib/auth-middleware';
 
 import { withCsrf } from '@/lib/with-csrf';
+import { sanitizeString } from '@/lib/sanitize';
 // POST /api/reviews/[id]/reply - Add seller reply to a review
 export const POST = withCsrf(async (request: NextRequest,
   { params }: { params: Promise<{ id: string }> }) => {
@@ -101,7 +102,7 @@ export const POST = withCsrf(async (request: NextRequest,
     const updatedReview = await db.review.update({
       where: { id },
       data: {
-        sellerReply: reply.trim(),
+        sellerReply: sanitizeString(reply.trim()),
         sellerReplyAt: new Date(),
       },
       include: {

@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import bcrypt from 'bcryptjs';
+import { randomBytes } from 'crypto';
 import { rateLimit, getRateLimitKey } from '@/lib/rate-limit';
 
 /**
  * Admin Setup Endpoint
  *
- * GET  /api/setup/admin?key=thiora-setup-2024  → Setup admin (works in browser!)
- * POST /api/setup/admin  Body: { setupKey: "thiora-setup-2024" } → Setup admin
+ * GET  /api/setup/admin?key=<ADMIN_SETUP_KEY>  → Setup admin (works in browser!)
+ * POST /api/setup/admin  Body: { setupKey: "<ADMIN_SETUP_KEY>" } → Setup admin
  *
  * This fixes the admin password hash so login works on Vercel/Supabase.
+ * Requires ADMIN_SETUP_KEY env var to be set.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -26,7 +28,16 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const setupKey = searchParams.get('key');
 
-    if (setupKey !== 'thiora-setup-2024') {
+    const adminSetupKey = process.env.ADMIN_SETUP_KEY;
+    if (!adminSetupKey) {
+      console.warn('[SECURITY] ADMIN_SETUP_KEY env var is not set. Admin setup is disabled.');
+      return NextResponse.json(
+        { success: false, error: 'Admin setup is not configured. Set ADMIN_SETUP_KEY environment variable.' },
+        { status: 503 }
+      );
+    }
+
+    if (setupKey !== adminSetupKey) {
       return NextResponse.json(
         { success: false, error: 'Invalid setup key' },
         { status: 403 }
@@ -55,7 +66,7 @@ export async function GET(request: NextRequest) {
         'Step 8: Redeploy (Deployments → click "..." → Redeploy)',
         'Step 9: Come back and try this setup URL again',
       ].join('\n');
-      helpInfo.diagnostic = 'Visit /api/db-diagnostic?key=thiora-setup-2024 for more details';
+      helpInfo.diagnostic = 'Visit /api/db-diagnostic?key=<ADMIN_SETUP_KEY> for more details';
     } else if (errMsg.includes('password') || errMsg.includes('authentication')) {
       helpInfo.issue = 'DATABASE_AUTH_FAILED';
       helpInfo.cause = 'The database password in your DATABASE_URL is incorrect.';
@@ -88,7 +99,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { setupKey } = body;
 
-    if (setupKey !== 'thiora-setup-2024') {
+    const adminSetupKey = process.env.ADMIN_SETUP_KEY;
+    if (!adminSetupKey) {
+      console.warn('[SECURITY] ADMIN_SETUP_KEY env var is not set. Admin setup is disabled.');
+      return NextResponse.json(
+        { success: false, error: 'Admin setup is not configured. Set ADMIN_SETUP_KEY environment variable.' },
+        { status: 503 }
+      );
+    }
+
+    if (setupKey !== adminSetupKey) {
       return NextResponse.json(
         { success: false, error: 'Invalid setup key' },
         { status: 403 }
@@ -106,8 +126,8 @@ export async function POST(request: NextRequest) {
 }
 
 async function setupAdmin() {
-  const adminEmail = 'admin@thiora.com';
-  const adminPassword = 'Admin123!';
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@thiora.com';
+  const adminPassword = process.env.ADMIN_PASSWORD || generateSecurePassword();
   const SALT_ROUNDS = 12;
 
   const hashedPassword = await bcrypt.hash(adminPassword, SALT_ROUNDS);
@@ -147,10 +167,17 @@ async function setupAdmin() {
       });
     }
 
-    return NextResponse.json({
+    const response: Record<string, unknown> = {
       success: true,
       message: 'Admin account updated successfully',
-    });
+    };
+    // Include generated password only if ADMIN_PASSWORD env var was not set
+    if (!process.env.ADMIN_PASSWORD) {
+      response.generatedPassword = adminPassword;
+      response.warning = 'No ADMIN_PASSWORD env var set. A random password was generated. Save it now — it won\'t be shown again.';
+    }
+
+    return NextResponse.json(response);
   }
 
   // Create new admin user
@@ -193,8 +220,20 @@ async function setupAdmin() {
     });
   }
 
-  return NextResponse.json({
+  const response: Record<string, unknown> = {
     success: true,
     message: 'Admin account created successfully',
-  });
+  };
+  // Include generated password only if ADMIN_PASSWORD env var was not set
+  if (!process.env.ADMIN_PASSWORD) {
+    response.generatedPassword = adminPassword;
+    response.warning = 'No ADMIN_PASSWORD env var set. A random password was generated. Save it now — it won\'t be shown again.';
+  }
+
+  return NextResponse.json(response);
+}
+
+/** Generate a cryptographically secure random password */
+function generateSecurePassword(): string {
+  return randomBytes(24).toString('base64url').slice(0, 32);
 }

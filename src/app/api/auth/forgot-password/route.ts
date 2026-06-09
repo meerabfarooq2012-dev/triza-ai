@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { createHash } from 'crypto';
 import { rateLimit, getRateLimitKey, passwordResetRateLimit } from '@/lib/rate-limit';
 import { generateResetToken, generateResetExpiry } from '@/lib/auth-middleware';
 import { sendEmailAsync } from '@/lib/email';
 import { passwordResetEmail } from '@/lib/email-templates';
 import { validateInput, forgotPasswordSchema } from '@/lib/validation';
 import { getSafeErrorMessage } from '@/lib/error-handler';
+
+function hashToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
 
 export const POST = async (request: NextRequest) => {
   try {
@@ -58,7 +63,7 @@ export const POST = async (request: NextRequest) => {
     await db.user.update({
       where: { id: user.id },
       data: {
-        resetToken,
+        resetToken: hashToken(resetToken),
         resetTokenExpiry,
       },
     });

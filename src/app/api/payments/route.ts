@@ -4,9 +4,19 @@ import { Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { PLATFORM_FEE_PERCENT } from '@/lib/constants';
 import { getSafeErrorMessage } from '@/lib/error-handler';
+import { authenticateRequestWithSession } from '@/lib/auth-middleware';
 
 export async function GET(request: NextRequest) {
   try {
+    // Authenticate the request
+    const auth = await authenticateRequestWithSession(request);
+    if (!auth) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get('userId') || '';
     const role = searchParams.get('role') || 'buyer';
@@ -20,6 +30,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: 'userId is required' },
         { status: 400 }
+      );
+    }
+
+    // IDOR check: only allow users to access their own payments, unless they're admin
+    if (auth.userId !== userId && auth.role !== 'admin') {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden: you can only view your own payments' },
+        { status: 403 }
       );
     }
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { withCsrf } from '@/lib/with-csrf';
+import { sanitizeString } from '@/lib/sanitize';
 
 export async function GET(
   request: NextRequest,
@@ -101,11 +102,15 @@ async function handleUpdateShop(
       'about', 'contactEmail', 'contactPhone', 'address', 'customSections',
     ];
 
+    const textFieldFields = new Set(['description', 'about', 'address']);
+
     const data: Record<string, unknown> = {};
     for (const field of allowedFields) {
       if (updateData[field] !== undefined) {
         if (field === 'customSections' && typeof updateData[field] !== 'string') {
           data[field] = JSON.stringify(updateData[field]);
+        } else if (textFieldFields.has(field) && typeof updateData[field] === 'string') {
+          data[field] = sanitizeString(updateData[field] as string);
         } else {
           data[field] = updateData[field];
         }

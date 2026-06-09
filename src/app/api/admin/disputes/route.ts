@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@/lib/auth-middleware';
+import { authenticateRequestWithSession } from '@/lib/auth-middleware';
 import { db } from '@/lib/db';
 import { createAuditLog } from '@/lib/audit-log';
 
@@ -7,7 +7,7 @@ import { withCsrf } from '@/lib/with-csrf';
 export async function GET(request: NextRequest) {
   try {
     // Authenticate and verify admin role
-    const auth = authenticateRequest(request);
+    const auth = await authenticateRequestWithSession(request);
     if (!auth) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },
@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
 export const PUT = withCsrf(async (request: NextRequest) => {
   try {
     // Authenticate and verify admin role
-    const auth = authenticateRequest(request);
+    const auth = await authenticateRequestWithSession(request);
     if (!auth) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },

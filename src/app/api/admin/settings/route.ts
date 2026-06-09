@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { rateLimit, apiRateLimit, getRateLimitKey } from '@/lib/rate-limit'
 import { createAuditLog } from '@/lib/audit-log'
-import { authenticateRequest } from '@/lib/auth-middleware'
+import { authenticateRequestWithSession } from '@/lib/auth-middleware'
 import { withCsrf } from '@/lib/with-csrf'
 import { getSafeErrorMessage } from '@/lib/error-handler'
 
 // GET /api/admin/settings — Get platform settings
 export async function GET(request: NextRequest) {
   // Authenticate and verify admin role
-  const auth = authenticateRequest(request)
+  const auth = await authenticateRequestWithSession(request)
   if (!auth) {
     return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
   }
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
 // PATCH /api/admin/settings — Update platform settings
 export const PATCH = withCsrf(async (request: NextRequest) => {
   // Authenticate and verify admin role
-  const auth = authenticateRequest(request)
+  const auth = await authenticateRequestWithSession(request)
   if (!auth) {
     return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
   }

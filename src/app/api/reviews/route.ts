@@ -6,6 +6,7 @@ import { notifyNewReview } from '@/lib/notifications';
 import { rateLimit, getRateLimitKey, reviewRateLimit } from '@/lib/rate-limit';
 import { withCsrf } from '@/lib/with-csrf';
 import { validateInput, reviewCreateSchema, reviewHelpfulSchema } from '@/lib/validation';
+import { sanitizeString } from '@/lib/sanitize';
 
 export async function GET(request: NextRequest) {
   // Rate limiting
@@ -267,8 +268,8 @@ export const POST = withCsrf(async (request: NextRequest) => {
       productId: productId || null,
       gigId: gigId || null,
       rating,
-      title: title || null,
-      comment,
+      title: title ? sanitizeString(title) : null,
+      comment: sanitizeString(comment),
       isVerified: isVerifiedPurchase,
       helpfulCount: 0,
     };
