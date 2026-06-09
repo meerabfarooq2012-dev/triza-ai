@@ -20,7 +20,7 @@ function getJwtSecret(): string {
   }
   return _jwtSecret
 }
-const JWT_EXPIRES_IN = '1h' // 1 hour
+const JWT_EXPIRES_IN = '24h' // 24 hours (balanced security + UX)
 const REFRESH_TOKEN_EXPIRES_IN = '30d' // 30 days
 
 export interface AuthPayload {
@@ -84,12 +84,31 @@ export function extractToken(request: Request): string | null {
  * Authenticate a request by extracting and verifying the JWT token
  * @returns the AuthPayload if valid, null otherwise
  */
-export function authenticateRequest(request: Request): AuthPayload | null {
+export async function authenticateRequest(request: Request): Promise<AuthPayload | null> {
   const token = extractToken(request)
   if (!token) return null
 
   const decoded = verifyToken(token)
-  if (!decoded) return null
+  if (!decoded) {
+    // Token expired or invalid — try refresh token
+    const cookieHeader = request.headers.get('cookie')
+    if (cookieHeader) {
+      const cookies = cookieHeader.split(';')
+      for (const cookie of cookies) {
+        const trimmed = cookie.trim()
+        if (trimmed.startsWith('refresh-token=')) {
+          const refreshToken = trimmed.slice('refresh-token='.length)
+          if (refreshToken) {
+            const refreshedPayload = verifyRefreshToken(refreshToken)
+            if (refreshedPayload && !refreshedPayload.twoFactorPending) {
+              return refreshedPayload
+            }
+          }
+        }
+      }
+    }
+    return null
+  }
 
   // Reject tokens that still have 2FA pending
   if (decoded.twoFactorPending) {
@@ -160,7 +179,7 @@ export function setAuthCookies(
     secure: isSecure,
     sameSite: 'lax',
     path: '/',
-    maxAge: 60 * 60, // 1 hour
+    maxAge: 24 * 60 * 60, // 24 hours
   })
 
   if (refreshToken) {
