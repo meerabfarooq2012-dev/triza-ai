@@ -156,6 +156,7 @@ export function NotificationBell() {
           variant="ghost"
           size="icon"
           className="h-9 w-9 relative"
+          aria-label={`Notifications${unreadNotifications > 0 ? ` (${unreadNotifications} unread)` : ''}`}
         >
           <Bell className={cn("h-[18px] w-[18px]", unreadNotifications > 0 && "animate-bounce")} style={{ animationDuration: '1s', animationIterationCount: '3' }} />
           {unreadNotifications > 0 && (

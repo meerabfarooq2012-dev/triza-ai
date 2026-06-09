@@ -177,6 +177,7 @@ export function Header() {
             <button
               onClick={() => handleNavClick('landing')}
               className="flex items-center gap-2 flex-shrink-0"
+              aria-label="Go to homepage"
             >
               <img src="/logo.png" alt="Marketo" className="h-8 w-8 rounded-lg" />
               <span className="text-xl font-extrabold gold-gradient-text bg-clip-text text-transparent">
@@ -238,6 +239,7 @@ export function Header() {
               size="icon"
               className="md:hidden h-9 w-9"
               onClick={() => setSearchExpanded(!searchExpanded)}
+              aria-label="Search"
             >
               <Search className="h-4.5 w-4.5" />
             </Button>
@@ -248,6 +250,7 @@ export function Header() {
               size="icon"
               className="h-9 w-9 relative"
               onClick={() => openCartDrawer()}
+              aria-label={`Shopping cart${cart.length > 0 ? ` (${cart.length} items)` : ''}`}
             >
               <ShoppingCart className="h-4.5 w-4.5" />
               {cart.length > 0 && (
@@ -264,6 +267,7 @@ export function Header() {
                 size="icon"
                 className="h-9 w-9 relative"
                 onClick={() => handleNavClick('messages')}
+                aria-label={`Messages${unreadMessages > 0 ? ` (${unreadMessages} unread)` : ''}`}
               >
                 <MessageSquare className="h-4.5 w-4.5" />
                 {unreadMessages > 0 && (
@@ -299,7 +303,7 @@ export function Header() {
             {isAuthenticated && currentUser ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="h-9 px-2 gap-2">
+                  <Button variant="ghost" className="h-9 px-2 gap-2" aria-label="User menu">
                     <Avatar className="h-7 w-7">
                       {currentUser?.avatar ? (
                         <AvatarImage src={currentUser?.avatar} alt={currentUser?.name} />
@@ -486,6 +490,7 @@ export function Header() {
               size="icon"
               className="md:hidden h-9 w-9"
               onClick={() => setMobileMenuOpen(true)}
+              aria-label="Open menu"
             >
               <Menu className="h-5 w-5" />
             </Button>
@@ -520,6 +525,7 @@ export function Header() {
                     size="icon"
                     className="absolute right-6 top-1/2 -translate-y-1/2 h-7 w-7"
                     onClick={() => setSearchInput('')}
+                    aria-label="Clear search"
                   >
                     <X className="h-3.5 w-3.5" />
                   </Button>

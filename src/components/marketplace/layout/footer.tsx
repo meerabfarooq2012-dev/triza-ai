@@ -49,6 +49,7 @@ export function Footer() {
             <button
               onClick={() => handleNavClick('landing')}
               className="inline-flex items-center gap-2 mb-3"
+              aria-label="Go to homepage"
             >
               <img src="/logo.png" alt="Marketo" className="h-7 w-7 rounded-lg" />
               <span className="text-xl font-extrabold gold-gradient-text">
