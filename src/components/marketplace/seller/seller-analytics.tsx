@@ -1058,7 +1058,7 @@ export function SellerAnalytics() {
     try {
       setLoading(true)
       setError(null)
-      const res = await fetch(`/api/analytics/seller?userId=${currentUser.id}`)
+      const res = await fetch(`/api/analytics/seller?userId=${currentUser.id}`, { credentials: 'include' })
       if (!res.ok) {
         throw new Error(`Server returned ${res.status}`)
       }

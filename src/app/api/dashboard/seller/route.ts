@@ -5,7 +5,7 @@ import { authenticateRequest } from '@/lib/auth-middleware'
 // GET /api/dashboard/seller — seller dashboard stats
 export async function GET(request: NextRequest) {
   try {
-    const auth = authenticateRequest(request)
+    const auth = await authenticateRequest(request)
     if (!auth) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },
