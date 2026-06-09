@@ -11,7 +11,7 @@ interface CsrfState {
   fetchedAt: number | null
 }
 
-const REFRESH_INTERVAL = 50 * 60 * 1000 // 50 minutes (cookie expires in 1 hour)
+const REFRESH_INTERVAL = 23 * 60 * 60 * 1000 // 23 hours (cookie expires in 24 hours)
 
 let state: CsrfState = { token: null, fetchedAt: null }
 let listeners: Set<() => void> = new Set()
@@ -82,7 +82,7 @@ export function useCsrf() {
     fetchInProgress.current = true
 
     try {
-      const response = await fetch('/api/csrf-token')
+      const response = await fetch('/api/csrf-token', { credentials: 'include' })
       const data: CsrfResponse = await response.json()
       if (data.success && data.token) {
         setCsrfState({ token: data.token, fetchedAt: Date.now() })

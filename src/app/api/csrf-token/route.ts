@@ -31,9 +31,9 @@ export async function GET(request: NextRequest) {
   response.cookies.set(cookieName, token, {
     httpOnly: true,
     secure: isSecure,
-    sameSite: 'strict',
+    sameSite: 'lax',
     path: '/',
-    maxAge: 60 * 60, // 1 hour (matches /api/auth/csrf)
+    maxAge: 24 * 60 * 60, // 24 hours (matches JWT access token)
   })
 
   return response

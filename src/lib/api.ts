@@ -101,7 +101,7 @@ async function getCsrfToken(): Promise<string | null> {
 
   csrfFetchPromise = (async () => {
     try {
-      const response = await fetch('/api/csrf-token')
+      const response = await fetch('/api/csrf-token', { credentials: 'include' })
       // Guard against HTML responses (e.g., Vercel error pages)
       const contentType = response.headers.get('content-type') || ''
       if (!contentType.includes('application/json')) {
