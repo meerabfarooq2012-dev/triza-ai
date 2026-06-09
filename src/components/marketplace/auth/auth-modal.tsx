@@ -609,6 +609,7 @@ export function AuthModal() {
                       type="button"
                       onClick={handleGoogleLogin}
                       disabled={isLoading}
+                      aria-label="Sign in with Google"
                       className="w-full flex items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
                     >
                       <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -674,6 +675,7 @@ export function AuthModal() {
                     <button
                       type="button"
                       onClick={() => setShowLoginPassword(!showLoginPassword)}
+                      aria-label={showLoginPassword ? 'Hide password' : 'Show password'}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
                       {showLoginPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -813,6 +815,7 @@ export function AuthModal() {
                       type="button"
                       onClick={handleGoogleLogin}
                       disabled={isLoading}
+                      aria-label="Sign up with Google"
                       className="w-full flex items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
                     >
                       <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -908,6 +911,7 @@ export function AuthModal() {
                     <button
                       type="button"
                       onClick={() => setShowRegPassword(!showRegPassword)}
+                      aria-label={showRegPassword ? 'Hide password' : 'Show password'}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
                       {showRegPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -959,6 +963,7 @@ export function AuthModal() {
                     <button
                       type="button"
                       onClick={() => setShowRegConfirmPassword(!showRegConfirmPassword)}
+                      aria-label={showRegConfirmPassword ? 'Hide password' : 'Show password'}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
                       {showRegConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}

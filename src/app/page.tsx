@@ -509,6 +509,11 @@ function MarketplaceApp() {
     window.history.replaceState({}, '', newUrl)
   }, [currentView, viewParams])
 
+  // Scroll to top when view changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }, [currentView])
+
   const renderView = useCallback(() => {
     try {
       switch (currentView) {
@@ -625,7 +630,7 @@ function MarketplaceApp() {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1">
-        <ErrorBoundary>
+        <ErrorBoundary key={currentView}>
           {renderView()}
         </ErrorBoundary>
       </main>
