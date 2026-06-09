@@ -202,7 +202,7 @@ export async function notifyOrderCreated(buyerId: string, sellerId: string, orde
   if (buyerInfo) {
     sendEmailAsync({
       to: buyerInfo.email,
-      subject: `✅ Order Confirmation #${orderNumber} — Marketo`,
+      subject: `✅ Order Confirmation #${orderNumber} — Thiora`,
       html: orderConfirmationBuyerEmail({
         orderNumber,
         buyerName: buyerInfo.name,
@@ -218,7 +218,7 @@ export async function notifyOrderCreated(buyerId: string, sellerId: string, orde
   if (sellerInfo) {
     sendEmailAsync({
       to: sellerInfo.email,
-      subject: `🎉 New Order #${orderNumber} — Marketo`,
+      subject: `🎉 New Order #${orderNumber} — Thiora`,
       html: newOrderSellerEmail({
         orderNumber,
         sellerName: sellerInfo.name,
@@ -351,7 +351,7 @@ export async function notifyPaymentReceived(sellerId: string, orderId: string, a
 
     sendEmailAsync({
       to: sellerInfo.email,
-      subject: `💳 Payment Received for Order #${orderId.slice(-8)} — Marketo`,
+      subject: `💳 Payment Received for Order #${orderId.slice(-8)} — Thiora`,
       html: paymentReceivedSellerEmail({
         sellerName: sellerInfo.name,
         amount,
@@ -445,7 +445,7 @@ export async function notifyNewMessage(userId: string, senderName: string, previ
 export async function notifyWelcome(userId: string, name: string) {
   await createNotification({
     userId,
-    title: `Welcome to Marketo, ${name}! 🎉`,
+    title: `Welcome to Thiora, ${name}! 🎉`,
     message: 'Start exploring the marketplace or set up your shop to begin selling.',
     type: 'success',
     category: 'system',

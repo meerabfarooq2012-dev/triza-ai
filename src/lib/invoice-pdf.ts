@@ -16,7 +16,7 @@ interface InvoiceData {
 
 export function generateInvoicePDF(data: InvoiceData): Buffer {
   const { order, shop, settings } = data;
-  const platformName = settings?.platformName || 'Marketo';
+  const platformName = settings?.platformName || 'Thiora';
 
   const doc = new PDFDocument({ size: 'A4', margin: 50 });
   const chunks: Buffer[] = [];

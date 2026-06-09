@@ -91,7 +91,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
       where: { id: userId },
       data: {
         name: 'Deleted User',
-        email: `deleted_${userId}@marketo.deleted`,
+        email: `deleted_${userId}@thiora.deleted`,
         avatar: null,
         bio: null,
         phone: null,

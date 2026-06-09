@@ -1,13 +1,13 @@
 -- =============================================
--- Marketo - Supabase Seed Data
+-- Thiora - Supabase Seed Data
 -- Run this AFTER running supabase-migration.sql
 -- =============================================
 
--- Admin User (email: admin@marketo.com, password: admin123)
+-- Admin User (email: admin@thiora.com, password: admin123)
 INSERT INTO "User" ("id", "email", "password", "name", "role", "isAdmin", "isActive", "isVerified", "createdAt", "updatedAt")
 VALUES (
   'cmpshpzxg0000khnlezqnttkw',
-  'admin@marketo.com',
+  'admin@thiora.com',
   '$2b$10$.vTTRxUMF6KL7wkZRdqsWuFhcKZK97qpDR74BqYjhQHbCmFewMQqi',
   'Admin User',
   'both',

@@ -1,5 +1,5 @@
 // =============================================================================
-// Marketo CSRF Validation Middleware — Wraps API route handlers with CSRF checks
+// Thiora CSRF Validation Middleware — Wraps API route handlers with CSRF checks
 // Validates CSRF tokens on mutating requests (POST/PATCH/PUT/DELETE)
 // Uses the double-submit cookie pattern
 // =============================================================================

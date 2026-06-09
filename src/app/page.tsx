@@ -16,7 +16,7 @@ if (typeof window !== 'undefined') {
   function handleChunkError() {
     if (chunkReloadAttempted) return
     chunkReloadAttempted = true
-    console.warn('[Marketo] ChunkLoadError detected — reloading with cache busting')
+    console.warn('[Thiora] ChunkLoadError detected — reloading with cache busting')
     // Add a cache-busting param and force reload
     const url = new URL(window.location.href)
     url.searchParams.set('_r', Date.now().toString())
@@ -64,7 +64,7 @@ function PageLoader() {
     <div className="flex items-center justify-center min-h-screen">
       <div className="flex flex-col items-center gap-3">
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-200 border-t-amber-600" />
-        <p className="text-sm text-muted-foreground font-medium">Loading Marketo...</p>
+        <p className="text-sm text-muted-foreground font-medium">Loading Thiora...</p>
       </div>
     </div>
   )
@@ -92,7 +92,7 @@ function withChunkRetry(importFn: () => Promise<any>, extractNamed?: string): ()
         err.message.includes('Loading chunk') ||
         err.message.includes('Failed to load chunk')
       )))) {
-        console.warn('[Marketo] Chunk load failed, retrying with cache busting...')
+        console.warn('[Thiora] Chunk load failed, retrying with cache busting...')
         // Force a fresh request by adding a cache-busting query param
         const url = new URL(window.location.href)
         url.searchParams.set('_r', Date.now().toString())
@@ -320,7 +320,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('[Marketo] Rendering error caught:', error, errorInfo)
+    console.error('[Thiora] Rendering error caught:', error, errorInfo)
     // Auto-reload on ChunkLoadError
     if (error.name === 'ChunkLoadError' || (error.message && (
       error.message.includes('ChunkLoadError') ||
@@ -359,7 +359,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
             </h2>
             <p className="text-sm text-muted-foreground mb-2">
               {isChunkError
-                ? 'A new version of Marketo is available. Please refresh to get the latest version.'
+                ? 'A new version of Thiora is available. Please refresh to get the latest version.'
                 : this.state.error?.message || 'An unexpected error occurred while rendering this section.'}
             </p>
             <details className="text-left mb-4">
@@ -391,9 +391,9 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
                   <button
                     onClick={() => {
                       try {
-                        localStorage.removeItem('marketo-storage')
+                        localStorage.removeItem('thiora-storage')
                         Object.keys(localStorage).forEach(key => {
-                          if (key.startsWith('marketo')) localStorage.removeItem(key)
+                          if (key.startsWith('thiora')) localStorage.removeItem(key)
                         })
                       } catch {}
                       window.location.reload()
@@ -612,7 +612,7 @@ function MarketplaceApp() {
           return <LandingPage />
       }
     } catch (error) {
-      console.error('[Marketo] View render error:', error)
+      console.error('[Thiora] View render error:', error)
       return (
         <div className="flex items-center justify-center min-h-[300px] p-8">
           <div className="text-center">

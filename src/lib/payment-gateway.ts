@@ -1,5 +1,5 @@
 // =============================================================================
-// Marketo - Payment Gateway Service
+// Thiora - Payment Gateway Service
 // Easypaisa & JazzCash Integration with Sandbox Support
 // =============================================================================
 

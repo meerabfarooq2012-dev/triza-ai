@@ -1,5 +1,5 @@
 -- =============================================================================
--- Marketo — Supabase PostgreSQL Migration
+-- Thiora — Supabase PostgreSQL Migration
 -- =============================================================================
 -- Run this SQL in Supabase SQL Editor to create all tables
 -- =============================================================================
@@ -588,10 +588,10 @@ CREATE INDEX "FeedbackMessage_createdAt_idx" ON "FeedbackMessage"("createdAt");
 -- Admin user (password: admin123)
 INSERT INTO "User" ("id", "email", "password", "name", "role", "isVerified", "isAdmin", "isActive")
 VALUES (
-  'admin_marketo_001',
-  'admin@marketo.pk',
+  'admin_thiora_001',
+  'admin@thiora.pk',
   '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
-  'Marketo Admin',
+  'Thiora Admin',
   'both',
   true,
   true,

@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore, useCallback } from 'react'
 
-const STORAGE_KEY = 'marketo-recently-viewed'
+const STORAGE_KEY = 'thiora-recently-viewed'
 const MAX_ITEMS = 20
 const EMPTY_ARRAY: string[] = []
 

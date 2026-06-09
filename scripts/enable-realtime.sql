@@ -3,7 +3,7 @@
 -- =============================================================================
 --
 -- Run this script in the Supabase SQL Editor to enable Realtime
--- for the tables used by the Marketo marketplace.
+-- for the tables used by the Thiora marketplace.
 --
 -- Prerequisites:
 --   1. The "Message" and "Notification" tables must exist in the public schema.

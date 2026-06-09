@@ -12,7 +12,7 @@ export default function Error({
   reset: () => void
 }) {
   useEffect(() => {
-    console.error('[Marketo] App error:', error)
+    console.error('[Thiora] App error:', error)
   }, [error])
 
   return (
@@ -50,7 +50,7 @@ export default function Error({
           </button>
           <button
             onClick={() => {
-              try { localStorage.removeItem('marketo-storage') } catch {}
+              try { localStorage.removeItem('thiora-storage') } catch {}
               window.location.reload()
             }}
             className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 text-sm font-medium"

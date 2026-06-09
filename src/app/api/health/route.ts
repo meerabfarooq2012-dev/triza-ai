@@ -53,7 +53,7 @@ export async function GET() {
 
     // Check if admin user exists
     try {
-      const admin = await db.user.findUnique({ where: { email: 'admin@marketo.com' } });
+      const admin = await db.user.findUnique({ where: { email: 'admin@thiora.com' } });
       health.database.adminExists = !!admin;
       health.database.adminIsActive = admin?.isActive ?? false;
       health.database.adminIsVerified = admin?.isVerified ?? false;
@@ -77,7 +77,7 @@ export async function GET() {
       health.recommendations.push('Check DATABASE_URL format — should start with postgresql://');
     } else if (err.message.includes('P1003') || err.message.includes('does not exist')) {
       health.recommendations.push('Database tables do not exist yet.');
-      health.recommendations.push('Visit /api/setup/sync-schema?key=marketo-setup-2024 to create tables.');
+      health.recommendations.push('Visit /api/setup/sync-schema?key=thiora-setup-2024 to create tables.');
     } else if (err.message.includes('tenant') || err.message.includes('ENOTFOUND')) {
       health.recommendations.push('Supabase project appears to be paused or URL is wrong.');
       health.recommendations.push('Go to https://supabase.com/dashboard → Restore project.');

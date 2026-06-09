@@ -63,8 +63,8 @@ export default function AdminSettings() {
   const prevIsLoadingAuthRef = useRef(isLoadingAuth)
 
   // Platform settings state
-  const [platformName, setPlatformName] = useState('Marketo')
-  const [tagline, setTagline] = useState('Your Marketplace, Your Way')
+  const [platformName, setPlatformName] = useState('Thiora')
+  const [tagline, setTagline] = useState('Freelance. Digital. Physical. One Platform.')
   const [description, setDescription] = useState(
     'Create your own customizable shop, sell digital & physical products, or offer freelance services — all in one place.'
   )
@@ -109,8 +109,8 @@ export default function AdminSettings() {
       const data = await api.admin.getSettings()
       const s = ((data as any).settings || (data as any).data) as unknown as PlatformSettingsData
 
-      setPlatformName(s.platformName || 'Marketo')
-      setTagline(s.tagline || 'Your Marketplace, Your Way')
+      setPlatformName(s.platformName || 'Thiora')
+      setTagline(s.tagline || 'Freelance. Digital. Physical. One Platform.')
       setDescription(
         s.description ||
           'Create your own customizable shop, sell digital & physical products, or offer freelance services — all in one place.'

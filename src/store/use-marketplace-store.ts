@@ -3,8 +3,19 @@ import { persist } from 'zustand/middleware'
 import type { User, CartItem, ViewMode, DeliveryAddress, ShippingRate, ProductType } from '@/types'
 import type { Locale } from '@/lib/i18n'
 
+// Migrate localStorage from old 'marketo-storage' key to new 'thiora-storage' key
+if (typeof window !== 'undefined') {
+  try {
+    const oldData = localStorage.getItem('marketo-storage')
+    if (oldData && !localStorage.getItem('thiora-storage')) {
+      localStorage.setItem('thiora-storage', oldData)
+      localStorage.removeItem('marketo-storage')
+    }
+  } catch {}
+}
+
 // =============================================================================
-// Marketo Marketplace - Zustand Store
+// Thiora Marketplace - Zustand Store
 // =============================================================================
 
 // Module-level debounce timer for cart sync
@@ -373,7 +384,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
             body: JSON.stringify({ items }),
           }).catch((err) => {
             // Non-blocking — just warn
-            console.warn('[Marketo] Cart sync failed:', err)
+            console.warn('[Thiora] Cart sync failed:', err)
           })
         }, 300)
       },
@@ -422,7 +433,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
           })
         } catch (err) {
           // Non-blocking — just warn
-          console.warn('[Marketo] Failed to load cart from server:', err)
+          console.warn('[Thiora] Failed to load cart from server:', err)
         }
       },
 
@@ -490,7 +501,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
       },
     }),
     {
-      name: 'marketo-storage',
+      name: 'thiora-storage',
       // Storage version — increment when the store schema changes.
       // This forces a migration that clears potentially corrupted data
       // (e.g., old localStorage where action functions were serialized as null,
@@ -585,7 +596,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
           if (error) {
             console.error('Zustand rehydration error:', error)
             // Clear corrupted localStorage
-            try { localStorage.removeItem('marketo-storage') } catch {}
+            try { localStorage.removeItem('thiora-storage') } catch {}
             setTimeout(() => useMarketplaceStore.setState({
               currentUser: null,
               isAuthenticated: false,
@@ -617,9 +628,9 @@ export const useMarketplaceStore = create<MarketplaceState>()(
             )
             if (corruptedKey) {
               console.warn(
-                `[Marketo] Store corrupted — action "${corruptedKey}" is not a function after rehydration. Clearing storage and reloading.`
+                `[Thiora] Store corrupted — action "${corruptedKey}" is not a function after rehydration. Clearing storage and reloading.`
               )
-              try { localStorage.removeItem('marketo-storage') } catch {}
+              try { localStorage.removeItem('thiora-storage') } catch {}
               // Force reload to get a clean state
               if (typeof window !== 'undefined') {
                 window.location.reload()

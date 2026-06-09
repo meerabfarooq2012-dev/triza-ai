@@ -1,5 +1,5 @@
 // =============================================================================
-// Marketo Database Client — Prisma Singleton
+// Thiora Database Client — Prisma Singleton
 // Safely initializes PrismaClient with error handling for Vercel serverless
 // =============================================================================
 

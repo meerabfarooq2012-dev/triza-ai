@@ -4,14 +4,14 @@ import { useEffect, useRef, useCallback } from 'react'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 
 // ---------------------------------------------------------------------------
-// Default SEO values for the Marketo marketplace
+// Default SEO values for the Thiora marketplace
 // ---------------------------------------------------------------------------
 const DEFAULT_SEO = {
-  title: 'Marketo - Your Marketplace, Your Way',
+  title: 'Thiora - Freelance. Digital. Physical. One Platform.',
   description:
-    'Create your own customizable shop, sell digital & physical products, or offer freelance services — all in one place.',
+    'Freelance services, digital downloads, and physical products — three worlds, one marketplace.',
   keywords:
-    'Marketo, marketplace, e-commerce, digital products, freelance, online shop, seller',
+    'Thiora, marketplace, e-commerce, digital products, freelance, online shop, seller',
   ogImage: '/og-default.png',
 }
 
@@ -129,7 +129,7 @@ function applySEO(seo: SEOData) {
     property: 'og:url',
     content: seo.canonicalUrl || window.location.href,
   })
-  setMetaTag({ property: 'og:site_name', content: 'Marketo' })
+  setMetaTag({ property: 'og:site_name', content: 'Thiora' })
 
   // Twitter Card
   setMetaTag({ name: 'twitter:card', content: 'summary_large_image' })
@@ -195,7 +195,7 @@ async function fetchProductSEO(
     const url = `${window.location.origin}?product=${productId}`
 
     return {
-      title: `${product.name} — Marketo`,
+      title: `${product.name} — Thiora`,
       description: description || DEFAULT_SEO.description,
       keywords: Array.isArray(product.tags)
         ? product.tags.join(', ')
@@ -227,7 +227,7 @@ async function fetchShopSEO(
     const url = `${window.location.origin}?shop=${slug}`
 
     return {
-      title: `${shop.name} — Marketo`,
+      title: `${shop.name} — Thiora`,
       description: description || DEFAULT_SEO.description,
       keywords: `${shop.name}, shop, marketplace`,
       ogImage: image,
@@ -254,7 +254,7 @@ async function fetchGigSEO(
     const url = `${window.location.origin}?gig=${gigId}`
 
     return {
-      title: `${gig.title} — Marketo`,
+      title: `${gig.title} — Thiora`,
       description: description || DEFAULT_SEO.description,
       keywords: Array.isArray(gig.tags)
         ? gig.tags.join(', ')
@@ -281,7 +281,7 @@ const VIEW_SEO_MAP: Partial<Record<string, SEOData>> = {
     ogType: 'website',
   },
   'gigs-browse': {
-    title: 'Browse Services — Marketo',
+    title: 'Browse Services — Thiora',
     description:
       'Find freelance services from talented sellers. Browse gigs for design, development, writing, and more.',
     keywords: 'freelance, services, gigs, hire, marketplace',
@@ -289,39 +289,39 @@ const VIEW_SEO_MAP: Partial<Record<string, SEOData>> = {
     ogType: 'website',
   },
   search: {
-    title: 'Search — Marketo',
+    title: 'Search — Thiora',
     description:
-      'Search products, shops, and services on Marketo.',
+      'Search products, shops, and services on Thiora.',
     keywords: 'search, products, shops, marketplace',
     ogImage: DEFAULT_SEO.ogImage,
     ogType: 'website',
   },
   privacy: {
-    title: 'Privacy Policy — Marketo',
-    description: 'Read the Marketo privacy policy.',
+    title: 'Privacy Policy — Thiora',
+    description: 'Read the Thiora privacy policy.',
     ogImage: DEFAULT_SEO.ogImage,
     ogType: 'website',
   },
   terms: {
-    title: 'Terms of Service — Marketo',
-    description: 'Read the Marketo terms of service.',
+    title: 'Terms of Service — Thiora',
+    description: 'Read the Thiora terms of service.',
     ogImage: DEFAULT_SEO.ogImage,
     ogType: 'website',
   },
   'buyer-dashboard': {
-    title: 'My Dashboard — Marketo',
+    title: 'My Dashboard — Thiora',
     description: 'Manage your orders, favorites, and account settings.',
     ogImage: DEFAULT_SEO.ogImage,
     ogType: 'website',
   },
   'seller-dashboard': {
-    title: 'Seller Dashboard — Marketo',
+    title: 'Seller Dashboard — Thiora',
     description: 'Manage your shop, products, orders, and analytics.',
     ogImage: DEFAULT_SEO.ogImage,
     ogType: 'website',
   },
   admin: {
-    title: 'Admin Panel — Marketo',
+    title: 'Admin Panel — Thiora',
     description: 'Marketplace administration panel.',
     ogImage: DEFAULT_SEO.ogImage,
     ogType: 'website',
@@ -334,14 +334,14 @@ const VIEW_SEO_MAP: Partial<Record<string, SEOData>> = {
 
 /**
  * Client-side SEO component that dynamically updates `document.title` and
- * meta tags when the current view changes. Because Marketo is an SPA with
+ * meta tags when the current view changes. Because Thiora is an SPA with
  * Zustand-based navigation, we cannot use Next.js `generateMetadata` in the
  * traditional file-based routing way. Instead, this component manipulates the
  * DOM `<head>` directly.
  *
  * Features:
  *  - Debounces rapid view changes (150 ms) to avoid unnecessary fetches
- *  - Falls back to default Marketo SEO while data is loading or on error
+ *  - Falls back to default Thiora SEO while data is loading or on error
  *  - Cleans up all injected tags on unmount
  *  - Sets canonical URL, Open Graph, and Twitter Card tags
  */
@@ -367,7 +367,7 @@ export function DynamicSEO() {
       if (view === 'product-detail' && params.productId) {
         // Show a generic title immediately while data loads
         applySEO({
-          title: 'Loading Product… — Marketo',
+          title: 'Loading Product… — Thiora',
           description: DEFAULT_SEO.description,
           ogImage: DEFAULT_SEO.ogImage,
           ogType: 'product',
@@ -381,7 +381,7 @@ export function DynamicSEO() {
           applySEO(seo)
         } else {
           applySEO({
-            title: 'Product — Marketo',
+            title: 'Product — Thiora',
             description: DEFAULT_SEO.description,
             ogImage: DEFAULT_SEO.ogImage,
             ogType: 'product',
@@ -393,7 +393,7 @@ export function DynamicSEO() {
 
       if (view === 'shop-view' && params.shopSlug) {
         applySEO({
-          title: 'Loading Shop… — Marketo',
+          title: 'Loading Shop… — Thiora',
           description: DEFAULT_SEO.description,
           ogImage: DEFAULT_SEO.ogImage,
           ogType: 'website',
@@ -406,7 +406,7 @@ export function DynamicSEO() {
           applySEO(seo)
         } else {
           applySEO({
-            title: 'Shop — Marketo',
+            title: 'Shop — Thiora',
             description: DEFAULT_SEO.description,
             ogImage: DEFAULT_SEO.ogImage,
             ogType: 'website',
@@ -418,7 +418,7 @@ export function DynamicSEO() {
 
       if (view === 'gig-detail' && params.gigId) {
         applySEO({
-          title: 'Loading Service… — Marketo',
+          title: 'Loading Service… — Thiora',
           description: DEFAULT_SEO.description,
           ogImage: DEFAULT_SEO.ogImage,
           ogType: 'website',
@@ -431,7 +431,7 @@ export function DynamicSEO() {
           applySEO(seo)
         } else {
           applySEO({
-            title: 'Service — Marketo',
+            title: 'Service — Thiora',
             description: DEFAULT_SEO.description,
             ogImage: DEFAULT_SEO.ogImage,
             ogType: 'website',

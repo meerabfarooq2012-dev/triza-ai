@@ -44,7 +44,7 @@ export function CTASection() {
             Ready to Start?
           </h2>
           <p className="text-lg sm:text-xl text-white/80 mb-10 max-w-2xl mx-auto leading-relaxed">
-            Join thousands of sellers and buyers on Marketo. Create your shop today and start selling your products to the world.
+            Join thousands of sellers and buyers on Thiora. Create your shop today and start selling your products to the world.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

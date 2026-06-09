@@ -6,7 +6,7 @@ import { getSafeErrorMessage } from '@/lib/error-handler';
  * Database Diagnostic Endpoint
  *
  * GET /api/db-diagnostic                      → Requires JWT admin auth
- * GET /api/db-diagnostic?key=marketo-setup-2024  → Accessible with setup key (for pre-setup debugging)
+ * GET /api/db-diagnostic?key=thiora-setup-2024  → Accessible with setup key (for pre-setup debugging)
  *
  * Tests the database connection and reports detailed diagnostics.
  */
@@ -15,12 +15,12 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const setupKey = searchParams.get('key');
 
-  if (setupKey !== 'marketo-setup-2024') {
+  if (setupKey !== 'thiora-setup-2024') {
     // Fall back to JWT admin auth
     const auth = authenticateRequest(request);
     if (!auth) {
       return NextResponse.json(
-        { error: 'Authentication required. Use ?key=marketo-setup-2024 or JWT admin auth.' },
+        { error: 'Authentication required. Use ?key=thiora-setup-2024 or JWT admin auth.' },
         { status: 401 }
       );
     }
@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
     let adminExists = false;
     try {
       userCount = await prisma.user.count();
-      const admin = await prisma.user.findUnique({ where: { email: 'admin@marketo.com' } });
+      const admin = await prisma.user.findUnique({ where: { email: 'admin@thiora.com' } });
       adminExists = !!admin;
     } catch (e) {
       diagnostics.userTableError = (e as Error).message;

@@ -50,7 +50,7 @@ async function handler(request: NextRequest) {
         isValid = true;
         usedBackupCode = true;
         // Remove used backup code
-        const usedCodeHash = createHmac('sha256', process.env.JWT_SECRET || 'marketo-dev-secret').update(code).digest('hex');
+        const usedCodeHash = createHmac('sha256', process.env.JWT_SECRET || 'thiora-dev-secret').update(code).digest('hex');
         const remainingCodes = hashedCodes.filter(hc => hc !== usedCodeHash);
         await db.user.update({
           where: { id: user.id },

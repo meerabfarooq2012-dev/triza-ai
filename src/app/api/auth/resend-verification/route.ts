@@ -70,7 +70,7 @@ export const POST = async (request: NextRequest) => {
     const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://marketo.fun'}?verify=${verifyToken}`;
     sendEmailAsync({
       to: user.email,
-      subject: 'Verify Your Email — Marketo',
+      subject: 'Verify Your Email — Thiora',
       html: emailVerificationEmail(user.name, verifyUrl),
     });
 

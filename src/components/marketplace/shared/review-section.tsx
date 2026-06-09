@@ -79,7 +79,7 @@ type FilterChip = 'all' | '5' | '4' | '3' | '2' | '1' | 'photos' | 'verified'
 // Constants
 // =============================================================================
 
-const HELPED_STORAGE_KEY = 'marketo_helped_reviews'
+const HELPED_STORAGE_KEY = 'thiora_helped_reviews'
 const REVIEWS_PER_PAGE = 10
 
 const SORT_OPTIONS: { value: ReviewSortOption; label: string }[] = [

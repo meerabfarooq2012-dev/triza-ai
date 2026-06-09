@@ -4,7 +4,7 @@ import { headers } from 'next/headers'
 import type { Metadata } from 'next'
 import ShopPageClient from './shop-page-client'
 
-const PLATFORM_NAME = 'Marketo'
+const PLATFORM_NAME = 'Thiora'
 const PLATFORM_URL = process.env.NEXT_PUBLIC_PLATFORM_URL || ''
 
 // Get the base URL for generating full shop URLs (works in any environment)

@@ -126,7 +126,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
         buyerPhone,
         buyerName,
         paymentMethod: 'easypaisa',
-        description: `Marketo Order #${orderId.slice(-8)}`,
+        description: `Thiora Order #${orderId.slice(-8)}`,
       });
     } else {
       gatewayResult = await initiateJazzCashPayment({
@@ -137,7 +137,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
         buyerPhone,
         buyerName,
         paymentMethod: 'jazzcash',
-        description: `Marketo Order #${orderId.slice(-8)}`,
+        description: `Thiora Order #${orderId.slice(-8)}`,
       });
     }
 

@@ -4,7 +4,7 @@ import { db } from '@/lib/db'
 /**
  * Schema Sync Endpoint — Adds missing columns/tables to the production database
  *
- * GET /api/setup/sync-schema?key=marketo-setup-2024
+ * GET /api/setup/sync-schema?key=thiora-setup-2024
  *
  * This runs ALTER TABLE statements to add any missing columns that the
  * Prisma schema expects but the database doesn't have yet.
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const key = searchParams.get('key')
 
-    if (key !== 'marketo-setup-2024') {
+    if (key !== 'thiora-setup-2024') {
       return NextResponse.json(
         { success: false, error: 'Invalid setup key' },
         { status: 403 }
@@ -250,7 +250,7 @@ export async function GET(request: NextRequest) {
 
     // Try running admin setup too
     try {
-      const setupRes = await fetch(new URL('/api/setup/admin?key=marketo-setup-2024', request.url))
+      const setupRes = await fetch(new URL('/api/setup/admin?key=thiora-setup-2024', request.url))
       const setupData = await setupRes.json()
       results.push(`Admin setup: ${setupData.success ? '✅ ' + setupData.message : '❌ ' + setupData.error}`)
     } catch {

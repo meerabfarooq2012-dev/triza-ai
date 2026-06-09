@@ -1360,7 +1360,7 @@ model WishlistItem {
 
 model PlatformSettings {
   id          String   @id @default("default")
-  platformName String  @default("Marketo")
+  platformName String  @default("Thiora")
   tagline     String?
   description String?
   logoUrl     String?

@@ -11,15 +11,15 @@ import type {
 } from '@/types'
 
 // =============================================================================
-// Marketo Marketplace - Constants
+// Thiora Marketplace - Constants
 // =============================================================================
 
 // ----- Platform -----
 
-export const PLATFORM_NAME = 'Marketo'
-export const PLATFORM_TAGLINE = 'Your Marketplace, Your Way'
+export const PLATFORM_NAME = 'Thiora'
+export const PLATFORM_TAGLINE = 'Freelance. Digital. Physical. One Platform.'
 export const PLATFORM_DESCRIPTION =
-  'Create your own customizable shop, sell digital & physical products, or offer freelance services — all in one place.'
+  'Freelance services, digital downloads, and physical products — three worlds, one marketplace.'
 
 export const PLATFORM_FEE_PERCENT = 10 // 10% platform commission
 

@@ -41,7 +41,7 @@ import type {
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 
 // =============================================================================
-// Marketo Marketplace - API Client
+// Thiora Marketplace - API Client
 // =============================================================================
 
 class ApiError extends Error {

@@ -4,7 +4,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 // =============================================================================
-// Marketo Marketplace - Cookie Consent Store
+// Thiora Marketplace - Cookie Consent Store
 // =============================================================================
 
 type ConsentLevel = 'none' | 'essential' | 'all'
@@ -114,7 +114,7 @@ export const useCookieConsentStore = create<CookieConsentState>()(
       },
     }),
     {
-      name: 'marketo-cookie-consent',
+      name: 'thiora-cookie-consent',
       // Persist all cookie consent state
       partialize: (state) => ({
         consentGiven: state.consentGiven,

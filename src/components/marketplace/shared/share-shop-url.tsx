@@ -25,7 +25,7 @@ interface ShareShopUrlProps {
 export function ShareShopUrl({ url, title, description, shareText }: ShareShopUrlProps) {
   const [copied, setCopied] = useState(false)
 
-  const defaultShareText = shareText || `Check out ${title} on Marketo! 🛍️`
+  const defaultShareText = shareText || `Check out ${title} on Thiora! 🛍️`
 
   const handleCopyUrl = useCallback(async () => {
     try {

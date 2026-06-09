@@ -1,5 +1,5 @@
 #!/bin/bash
-# Marketo Process Supervisor - keeps the server alive
+# Thiora Process Supervisor - keeps the server alive
 
 LOG="/home/z/my-project/dev.log"
 SERVER_CMD="node node_modules/.bin/next dev --port 3000 --hostname 0.0.0.0 --turbopack"

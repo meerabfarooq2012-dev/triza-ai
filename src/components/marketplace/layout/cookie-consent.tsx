@@ -41,8 +41,8 @@ export function CookieConsent() {
   // Listen for custom event to reopen cookie preferences (e.g., from footer link)
   useEffect(() => {
     const handler = () => setPreferencesOpen(true)
-    window.addEventListener('marketo:open-cookie-preferences', handler)
-    return () => window.removeEventListener('marketo:open-cookie-preferences', handler)
+    window.addEventListener('thiora:open-cookie-preferences', handler)
+    return () => window.removeEventListener('thiora:open-cookie-preferences', handler)
   }, [])
 
   // Derive banner visibility from store state (no useEffect + setState needed)

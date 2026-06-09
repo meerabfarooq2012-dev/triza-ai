@@ -17,13 +17,13 @@ interface GenerateDescriptionBody {
 const VALID_TYPES: DescriptionType[] = ['product', 'shop', 'gig']
 
 function buildSystemPrompt(type: DescriptionType): string {
-  const baseContext = `You are a professional copywriter for "Marketo", a leading Pakistani online marketplace platform. Marketo connects sellers and buyers across Pakistan, offering both physical and digital products as well as freelance services (gigs). The platform supports local Pakistani payment methods including Easypaisa, JazzCash, and bank transfers.`
+  const baseContext = `You are a professional copywriter for "Thiora", a leading Pakistani online marketplace platform. Thiora connects sellers and buyers across Pakistan, offering both physical and digital products as well as freelance services (gigs). The platform supports local Pakistani payment methods including Easypaisa, JazzCash, and bank transfers.`
 
   switch (type) {
     case 'product':
       return `${baseContext}
 
-Your task is to write compelling product descriptions for sellers on Marketo. Follow these guidelines:
+Your task is to write compelling product descriptions for sellers on Thiora. Follow these guidelines:
 
 - Write a professional, engaging product description between 150-300 words
 - Make it SEO-friendly by naturally incorporating relevant keywords
@@ -38,7 +38,7 @@ Your task is to write compelling product descriptions for sellers on Marketo. Fo
     case 'shop':
       return `${baseContext}
 
-Your task is to write an "About" section for shops on Marketo. Follow these guidelines:
+Your task is to write an "About" section for shops on Thiora. Follow these guidelines:
 
 - Write a professional, welcoming shop description between 100-200 words
 - Make it SEO-friendly by naturally incorporating relevant keywords
@@ -53,13 +53,13 @@ Your task is to write an "About" section for shops on Marketo. Follow these guid
     case 'gig':
       return `${baseContext}
 
-Your task is to write compelling freelance service (gig) descriptions for sellers on Marketo. Follow these guidelines:
+Your task is to write compelling freelance service (gig) descriptions for sellers on Thiora. Follow these guidelines:
 
 - Write a professional, persuasive gig description between 150-250 words
 - Make it SEO-friendly by naturally incorporating relevant keywords
 - Clearly explain what the freelancer offers, the process, and deliverables
 - Highlight the seller's expertise and why buyers should choose them
-- Mention secure payment through Easypaisa/JazzCash and Marketo's escrow protection where relevant
+- Mention secure payment through Easypaisa/JazzCash and Thiora's escrow protection where relevant
 - Use clear formatting with bullet points for what's included, process steps, or package details
 - Include a persuasive call-to-action encouraging buyers to place an order
 - Use a confident, professional tone that builds trust

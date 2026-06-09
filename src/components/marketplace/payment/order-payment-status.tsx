@@ -294,7 +294,7 @@ export function OrderPaymentStatus({
                 </AlertDialogTitle>
                 <AlertDialogDescription className="space-y-3 text-left">
                   <p>
-                    By confirming delivery, you authorize Marketo to release the payment of{' '}
+                    By confirming delivery, you authorize Thiora to release the payment of{' '}
                     <span className="font-semibold text-foreground">${(totalAmount ?? 0).toFixed(2)}</span>{' '}
                     to the seller. This action <span className="font-semibold text-foreground">cannot be undone</span>.
                   </p>

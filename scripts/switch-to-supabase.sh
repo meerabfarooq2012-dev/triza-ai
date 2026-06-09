@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# Marketo — Switch from SQLite to Supabase PostgreSQL
+# Thiora — Switch from SQLite to Supabase PostgreSQL
 # =============================================================================
 # Run this script before deploying to Vercel to switch the database to Supabase.
 #
@@ -9,7 +9,7 @@
 
 set -e
 
-echo "🔄 Switching Marketo from SQLite to Supabase PostgreSQL..."
+echo "🔄 Switching Thiora from SQLite to Supabase PostgreSQL..."
 echo ""
 
 # Step 1: Copy production schema

@@ -191,7 +191,7 @@ export const POST = async (request: NextRequest) => {
     // Send welcome email (non-blocking)
     sendEmailAsync({
       to: googleUser.email,
-      subject: 'Welcome to Marketo! 🎉',
+      subject: 'Welcome to Thiora! 🎉',
       html: welcomeEmail({ name: googleUser.name || googleUser.email.split('@')[0], role }),
     });
 

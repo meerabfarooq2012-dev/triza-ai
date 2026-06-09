@@ -6,8 +6,8 @@ import { rateLimit, getRateLimitKey } from '@/lib/rate-limit';
 /**
  * Admin Setup Endpoint
  *
- * GET  /api/setup/admin?key=marketo-setup-2024  → Setup admin (works in browser!)
- * POST /api/setup/admin  Body: { setupKey: "marketo-setup-2024" } → Setup admin
+ * GET  /api/setup/admin?key=thiora-setup-2024  → Setup admin (works in browser!)
+ * POST /api/setup/admin  Body: { setupKey: "thiora-setup-2024" } → Setup admin
  *
  * This fixes the admin password hash so login works on Vercel/Supabase.
  */
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const setupKey = searchParams.get('key');
 
-    if (setupKey !== 'marketo-setup-2024') {
+    if (setupKey !== 'thiora-setup-2024') {
       return NextResponse.json(
         { success: false, error: 'Invalid setup key' },
         { status: 403 }
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
         'Step 8: Redeploy (Deployments → click "..." → Redeploy)',
         'Step 9: Come back and try this setup URL again',
       ].join('\n');
-      helpInfo.diagnostic = 'Visit /api/db-diagnostic?key=marketo-setup-2024 for more details';
+      helpInfo.diagnostic = 'Visit /api/db-diagnostic?key=thiora-setup-2024 for more details';
     } else if (errMsg.includes('password') || errMsg.includes('authentication')) {
       helpInfo.issue = 'DATABASE_AUTH_FAILED';
       helpInfo.cause = 'The database password in your DATABASE_URL is incorrect.';
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { setupKey } = body;
 
-    if (setupKey !== 'marketo-setup-2024') {
+    if (setupKey !== 'thiora-setup-2024') {
       return NextResponse.json(
         { success: false, error: 'Invalid setup key' },
         { status: 403 }
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function setupAdmin() {
-  const adminEmail = 'admin@marketo.com';
+  const adminEmail = 'admin@thiora.com';
   const adminPassword = 'Admin123!';
   const SALT_ROUNDS = 12;
 
@@ -163,7 +163,7 @@ async function setupAdmin() {
       isAdmin: true,
       isVerified: true,
       isActive: true,
-      bio: 'Platform administrator for Marketo marketplace.',
+      bio: 'Platform administrator for Thiora marketplace.',
     },
   });
 

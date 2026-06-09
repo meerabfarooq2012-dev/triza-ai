@@ -2,7 +2,7 @@ import { db } from '../src/lib/db'
 import bcrypt from 'bcryptjs'
 
 // =============================================================================
-// Marketo - Minimal Seed Script
+// Thiora - Minimal Seed Script
 // Creates only: Admin user + Categories
 // No fake products, shops, gigs, orders, or transactions
 // =============================================================================
@@ -10,7 +10,7 @@ import bcrypt from 'bcryptjs'
 const SALT_ROUNDS = 10
 
 async function main() {
-  console.log('🌱 Starting Marketo minimal seed...\n')
+  console.log('🌱 Starting Thiora minimal seed...\n')
 
   // ===========================================================================
   // 1. Clear all existing data (respecting foreign key order)
@@ -45,14 +45,14 @@ async function main() {
 
   const admin = await db.user.create({
     data: {
-      email: 'admin@marketo.com',
+      email: 'admin@thiora.com',
       password: await bcrypt.hash('Admin123!', SALT_ROUNDS),
       name: 'Admin User',
       role: 'both',
       isAdmin: true,
       isVerified: true,
       isActive: true,
-      bio: 'Platform administrator for Marketo marketplace.',
+      bio: 'Platform administrator for Thiora marketplace.',
     },
   })
 
@@ -158,7 +158,7 @@ async function main() {
   // ===========================================================================
   console.log('🎉 Seed complete!\n')
   console.log('Summary:')
-  console.log('  - 1 admin user (admin@marketo.com / Admin123!)')
+  console.log('  - 1 admin user (admin@thiora.com / Admin123!)')
   console.log(`  - ${categories.length} categories`)
   console.log('  - No fake products, shops, gigs, orders, or transactions')
   console.log('\nThe marketplace is ready for real users to sign up and create content.\n')

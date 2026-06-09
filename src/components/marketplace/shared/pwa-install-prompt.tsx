@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Download, X, Smartphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-const DISMISSAL_KEY = 'marketo_pwa_dismissed';
+const DISMISSAL_KEY = 'thiora_pwa_dismissed';
 const DISMISSAL_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 interface BeforeInstallPromptEvent extends Event {
@@ -113,12 +113,12 @@ export function PwaInstallPrompt() {
         {/* Content */}
         <div className="flex items-start gap-3 pr-4">
           {/* Icon */}
-          <img src="/logo.png" alt="Marketo" className="h-10 w-10 shrink-0 rounded-lg shadow-md" />
+          <img src="/logo.png" alt="Thiora" className="h-10 w-10 shrink-0 rounded-lg shadow-md" />
 
           <div className="flex-1 space-y-2">
             <div>
               <h3 className="text-sm font-semibold text-amber-100">
-                Install Marketo
+                Install Thiora
               </h3>
               <p className="mt-0.5 text-xs text-amber-200/70">
                 Add to your home screen for a faster, app-like experience.

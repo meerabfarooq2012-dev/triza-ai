@@ -10,7 +10,7 @@ export async function GET() {
       data: {
         configured,
         provider: configured ? 'resend' : 'none',
-        fromDomain: configured ? 'marketo.fun' : null,
+        fromDomain: configured ? 'thiora.fun' : null,
       },
     });
   } catch (error) {

@@ -242,7 +242,7 @@ export async function GET(request: NextRequest) {
     const exportData = {
       exportInfo: {
         exportedAt: new Date().toISOString(),
-        platform: 'Marketo Marketplace',
+        platform: 'Thiora Marketplace',
         format: 'GDPR Data Portability Export v1.0',
         userId: user.id,
       },
@@ -305,7 +305,7 @@ export async function GET(request: NextRequest) {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Content-Disposition': 'attachment; filename="marketo-data-export.json"',
+        'Content-Disposition': 'attachment; filename="thiora-data-export.json"',
         'Cache-Control': 'no-store, no-cache, must-revalidate',
       },
     })

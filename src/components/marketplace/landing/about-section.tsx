@@ -122,7 +122,7 @@ export function AboutSection() {
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* ── About Marketo ─────────────────────────────────────────────── */}
+        {/* ── About Thiora ─────────────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -137,11 +137,11 @@ export function AboutSection() {
           <h2 className="text-3xl sm:text-4xl font-bold mb-6 text-gray-900 dark:text-gray-100">
             About{' '}
             <span className="gold-gradient-text">
-              Marketo
+              Thiora
             </span>
           </h2>
           <p className="text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed">
-            Marketo is an all-in-one modern marketplace where users can join as buyers, sellers, or both. Sellers can offer freelance services, sell digital and physical products, and create their own customizable online shop with a unique public URL. Buyers can easily hire freelancers and purchase products through a simple and secure system.
+            Thiora is an all-in-one modern marketplace where users can join as buyers, sellers, or both. Sellers can offer freelance services, sell digital and physical products, and create their own customizable online shop with a unique public URL. Buyers can easily hire freelancers and purchase products through a simple and secure system.
           </p>
         </motion.div>
 
@@ -296,7 +296,7 @@ export function AboutSection() {
               transition={{ duration: 0.5, delay: 0.4 }}
               className="text-lg text-gray-300 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed"
             >
-              Our motive is to build a simple and powerful marketplace where people can buy, sell, and work online easily. Marketo also supports freelancers by giving them a platform to offer services, find clients, and earn independently. It is designed to help individuals and small businesses grow and succeed in one trusted digital space.
+              Our motive is to build a simple and powerful marketplace where people can buy, sell, and work online easily. Thiora also supports freelancers by giving them a platform to offer services, find clients, and earn independently. It is designed to help individuals and small businesses grow and succeed in one trusted digital space.
             </motion.p>
 
             {/* Divider */}

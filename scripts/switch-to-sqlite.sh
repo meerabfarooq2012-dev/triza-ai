@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# Marketo — Switch back to SQLite for local/sandbox development
+# Thiora — Switch back to SQLite for local/sandbox development
 # =============================================================================
 # Run this script when developing locally in the sandbox.
 #
@@ -9,7 +9,7 @@
 
 set -e
 
-echo "🔄 Switching Marketo back to SQLite for sandbox development..."
+echo "🔄 Switching Thiora back to SQLite for sandbox development..."
 echo ""
 
 # Step 1: Update Prisma schema back to SQLite

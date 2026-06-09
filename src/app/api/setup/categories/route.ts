@@ -5,7 +5,7 @@ import { DIGITAL_CATEGORIES, PHYSICAL_CATEGORIES, GIG_CATEGORIES, GIG_SUBCATEGOR
 /**
  * Category Seed Endpoint
  *
- * GET /api/setup/categories?key=marketo-setup-2024
+ * GET /api/setup/categories?key=thiora-setup-2024
  *
  * Seeds all digital, physical, and gig categories into the database.
  * Safe to run multiple times — uses upsert to avoid duplicates.
@@ -15,9 +15,9 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const key = searchParams.get('key');
 
-    if (key !== 'marketo-setup-2024') {
+    if (key !== 'thiora-setup-2024') {
       return NextResponse.json(
-        { success: false, error: 'Invalid key. Use ?key=marketo-setup-2024' },
+        { success: false, error: 'Invalid key. Use ?key=thiora-setup-2024' },
         { status: 403 }
       );
     }

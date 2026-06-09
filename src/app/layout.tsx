@@ -23,26 +23,26 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Marketo - Your Marketplace, Your Way",
-  description: "Create your own customizable shop, sell digital & physical products, or offer freelance services — all in one place.",
-  keywords: ["Marketo", "marketplace", "e-commerce", "digital products", "freelance", "online shop", "seller"],
-  authors: [{ name: "Marketo" }],
+  title: "Thiora - Freelance. Digital. Physical. One Platform.",
+  description: "Freelance services, digital downloads, and physical products — three worlds, one marketplace.",
+  keywords: ["Thiora", "marketplace", "e-commerce", "digital products", "freelance", "online shop", "seller"],
+  authors: [{ name: "Thiora" }],
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Marketo",
+    title: "Thiora",
   },
   openGraph: {
-    title: "Marketo - Your Marketplace, Your Way",
-    description: "Create your own customizable shop, sell digital & physical products, or offer freelance services.",
-    siteName: "Marketo",
+    title: "Thiora - Freelance. Digital. Physical. One Platform.",
+    description: "Freelance services, digital downloads, and physical products — three worlds, one marketplace.",
+    siteName: "Thiora",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Marketo - Your Marketplace, Your Way",
-    description: "Create your own customizable shop, sell digital & physical products, or offer freelance services.",
+    title: "Thiora - Freelance. Digital. Physical. One Platform.",
+    description: "Freelance services, digital downloads, and physical products — three worlds, one marketplace.",
   },
 };
 

@@ -855,7 +855,7 @@ export default function ProductDetail() {
               <ShareShopUrl
                 url={`${window.location.origin}/?product=${productId}`}
                 title={product.name}
-                shareText={`Check out "${product.name}" on Marketo! 🛍️`}
+                shareText={`Check out "${product.name}" on Thiora! 🛍️`}
               />
             </DialogContent>
           </Dialog>

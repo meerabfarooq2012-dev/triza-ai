@@ -3,7 +3,7 @@ import { Resend } from 'resend';
 // Lazy-initialized Resend client to avoid constructor errors when API key is missing
 let _resend: Resend | null = null;
 
-const FROM_DOMAIN = 'marketo.fun';
+const FROM_DOMAIN = 'thiora.fun';
 const FALLBACK_FROM = 'onboarding@resend.dev';
 
 /**
@@ -57,7 +57,7 @@ export async function sendEmail(options: SendEmailOptions): Promise<void> {
 
   try {
     const { error } = await resend.emails.send({
-      from: from || getFromAddress('Marketo'),
+      from: from || getFromAddress('Thiora'),
       to,
       subject,
       html,

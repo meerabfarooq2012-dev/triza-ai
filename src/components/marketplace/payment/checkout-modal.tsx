@@ -1072,7 +1072,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                   className="mt-0.5 data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600"
                 />
                 <label htmlFor="payment-auth" className="text-xs text-amber-800 cursor-pointer leading-relaxed">
-                  I confirm this payment is authentic and I authorize Marketo to hold funds in escrow
+                  I confirm this payment is authentic and I authorize Thiora to hold funds in escrow
                   until delivery is confirmed.
                 </label>
               </div>

@@ -1,5 +1,5 @@
 -- =============================================================================
--- Marketo - Complete Subcategories Seed SQL for Supabase
+-- Thiora - Complete Subcategories Seed SQL for Supabase
 -- =============================================================================
 -- 
 -- INSTRUCTIONS:

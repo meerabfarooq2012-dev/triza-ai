@@ -51,7 +51,7 @@ export function Footer() {
               className="inline-flex items-center gap-2 mb-3"
               aria-label="Go to homepage"
             >
-              <img src="/logo.png" alt="Marketo" className="h-7 w-7 rounded-lg" />
+              <img src="/logo.png" alt="Thiora" className="h-7 w-7 rounded-lg" />
               <span className="text-xl font-extrabold gold-gradient-text">
                 {PLATFORM_NAME}
               </span>
@@ -130,7 +130,7 @@ export function Footer() {
             <button onClick={() => setCurrentView('terms')} className="hover:text-foreground transition-colors">{t('footer.terms')}</button>
             <button onClick={() => setCurrentView('privacy')} className="hover:text-foreground transition-colors">{t('footer.privacy')}</button>
             <button
-              onClick={() => window.dispatchEvent(new CustomEvent('marketo:open-cookie-preferences'))}
+              onClick={() => window.dispatchEvent(new CustomEvent('thiora:open-cookie-preferences'))}
               className="hover:text-foreground transition-colors"
             >
               {t('footer.cookieSettings')}
