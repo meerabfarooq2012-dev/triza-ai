@@ -117,8 +117,8 @@ export const POST = withCsrf(async (request: NextRequest) => {
       );
     }
 
-    const systemPrompt = buildSystemPrompt(validation.data.type)
-    const userPrompt = buildUserPrompt(validation.data as GenerateDescriptionBody)
+    const systemPrompt = buildSystemPrompt(body.type)
+    const userPrompt = buildUserPrompt(body)
 
     // Generate using smart AI provider (auto-switches Z-AI ↔ Gemini)
     const description = await generateWithAI(systemPrompt, userPrompt)

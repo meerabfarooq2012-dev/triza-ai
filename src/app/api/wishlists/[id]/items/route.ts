@@ -39,8 +39,8 @@ export const POST = withCsrf(async (req: NextRequest,
     }
 
     // Check if already in wishlist
-    const existing = await db.wishlistItem.findUnique({
-      where: { wishlistId_productId: { wishlistId: id, productId } },
+    const existing = await db.wishlistItem.findFirst({
+      where: { wishlistId: id, productId },
     })
 
     if (existing) {
@@ -48,7 +48,7 @@ export const POST = withCsrf(async (req: NextRequest,
     }
 
     const item = await db.wishlistItem.create({
-      data: { wishlistId: id, productId },
+      data: { wishlistId: id, productId, userId: bodyUserId },
       include: {
         product: {
           include: {
@@ -93,8 +93,8 @@ export const DELETE = withCsrf(async (req: NextRequest,
       return NextResponse.json({ success: false, error: 'Only the owner can remove items' }, { status: 403 })
     }
 
-    const item = await db.wishlistItem.findUnique({
-      where: { wishlistId_productId: { wishlistId: id, productId } },
+    const item = await db.wishlistItem.findFirst({
+      where: { wishlistId: id, productId },
     })
 
     if (!item) {

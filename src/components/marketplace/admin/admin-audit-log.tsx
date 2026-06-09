@@ -126,7 +126,7 @@ export function AdminAuditLog() {
       if (data.success) {
         const logsData = (data.data as AuditLogEntry[] | undefined) || [];
         setLogs(logsData);
-        const pagination = (data as Record<string, unknown>).pagination as { totalPages?: number } | undefined;
+        const pagination = (data as any).pagination as { totalPages?: number } | undefined;
         setTotalPages(pagination?.totalPages || 1);
       }
     } catch (error) {

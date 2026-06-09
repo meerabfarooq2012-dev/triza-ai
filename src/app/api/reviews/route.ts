@@ -262,12 +262,12 @@ export const POST = withCsrf(async (request: NextRequest) => {
 
     // Build review data with images
     const reviewData: Record<string, unknown> = {
-      userId,
-      shopId,
-      productId,
-      gigId,
+      userId: userId || auth.userId,
+      shopId: shopId || null,
+      productId: productId || null,
+      gigId: gigId || null,
       rating,
-      title,
+      title: title || null,
       comment,
       isVerified: isVerifiedPurchase,
       helpfulCount: 0,
@@ -279,7 +279,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
     }
 
     const review = await db.review.create({
-      data: reviewData,
+      data: reviewData as Prisma.ReviewUncheckedCreateInput,
       include: {
         user: { select: { id: true, name: true, avatar: true } },
       },

@@ -73,14 +73,6 @@ export function TwoFactorSetup({ open, onOpenChange, userId }: TwoFactorSetupPro
     fetchSetup()
   }, [open])
 
-  // Auto-submit when 6 digits are entered
-  useEffect(() => {
-    if (otpValue.length === 6 && step === 'verify') {
-      handleVerify()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [otpValue, step])
-
   const handleVerify = useCallback(async () => {
     if (otpValue.length !== 6) return
 
@@ -108,6 +100,13 @@ export function TwoFactorSetup({ open, onOpenChange, userId }: TwoFactorSetupPro
       setIsVerifying(false)
     }
   }, [otpValue, userId])
+
+  // Auto-submit when 6 digits are entered
+  useEffect(() => {
+    if (otpValue.length === 6 && step === 'verify') {
+      handleVerify()
+    }
+  }, [otpValue, step, handleVerify])
 
   const handleCopy = async (text: string, field: 'secret' | 'code') => {
     try {

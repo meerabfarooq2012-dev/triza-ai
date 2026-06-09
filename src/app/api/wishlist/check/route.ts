@@ -24,13 +24,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const item = await db.wishlistItem.findUnique({
+    const item = await db.wishlistItem.findFirst({
       where: {
-        userId_productId_gigId: {
-          userId,
-          productId: productId || '',
-          gigId: gigId || '',
-        },
+        userId,
+        productId: productId || null,
+        gigId: gigId || null,
       },
       select: {
         id: true,

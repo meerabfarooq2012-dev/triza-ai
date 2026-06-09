@@ -190,6 +190,7 @@ async function handleSuccessfulPayment(
     metadata: string;
     status: string;
     escrowStatus: string;
+    paymentProvider: string | null;
   },
   transactionId: string,
   gateway: string,
@@ -269,6 +270,7 @@ async function handleFailedPayment(
     metadata: string;
     status: string;
     escrowStatus: string;
+    paymentProvider: string | null;
   },
   transactionId: string,
   gateway: string,

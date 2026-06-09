@@ -304,7 +304,7 @@ async function _proxyInner(request: NextRequest) {
 
     // If payload has _deferred flag, JWT_SECRET wasn't available on Edge.
     // Let the request through so the Node.js route handler can authenticate.
-    const isDeferred = '_deferred' in (payload as Record<string, unknown>)
+    const isDeferred = '_deferred' in (payload as unknown as Record<string, unknown>)
 
     if (!isDeferred) {
       // We verified the token on Edge — check admin role

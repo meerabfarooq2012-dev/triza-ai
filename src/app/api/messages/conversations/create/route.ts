@@ -57,7 +57,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
     }
 
     // If an initial message is provided, create it
-    let message: Awaited<ReturnType<typeof db.message.create<{ include: { sender: { select: { id: true; name: true; avatar: true } }; receiver: { select: { id: true; name: true; avatar: true } } } }>>> | null = null;
+    let message: any = null;
     if (initialMessage) {
       message = await db.message.create({
         data: {

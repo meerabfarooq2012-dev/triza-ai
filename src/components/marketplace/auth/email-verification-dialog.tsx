@@ -17,7 +17,7 @@ import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { api } from '@/lib/api'
 import { useToast } from '@/hooks/use-toast'
 
-interface EmailVerificationDialogProps {
+export interface EmailVerificationDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   userId?: string

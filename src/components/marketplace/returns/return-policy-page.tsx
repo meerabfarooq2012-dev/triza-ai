@@ -39,7 +39,7 @@ import type { ReturnPolicy, RefundMethod, ReturnShippingPaidBy } from '@/types'
 // Props
 // ---------------------------------------------------------------------------
 
-interface ReturnPolicyPageProps {
+export interface ReturnPolicyPageProps {
   shopId: string
 }
 

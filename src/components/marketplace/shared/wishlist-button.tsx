@@ -75,12 +75,13 @@ export function WishlistButton({
       return
     }
 
+    const userId = currentUser.id
     let cancelled = false
 
     async function checkStatus() {
       setIsChecking(true)
       try {
-        const params = new URLSearchParams({ userId: currentUser.id })
+        const params = new URLSearchParams({ userId })
         if (productId) params.set('productId', productId)
         if (gigId) params.set('gigId', gigId)
 

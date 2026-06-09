@@ -67,9 +67,7 @@ export const PATCH = withCsrf(async (
       data: {
         status: 'resolved',
         resolution,
-        adminNote: adminNote || null,
         resolvedAt: new Date(),
-        resolvedBy: auth.userId,
       },
     })
 
@@ -77,9 +75,10 @@ export const PATCH = withCsrf(async (
     await db.disputeTimeline.create({
       data: {
         disputeId: id,
+        status: 'resolved',
         action: 'resolved',
-        description: `Dispute resolved: ${resolution}`,
-        performedBy: auth.userId,
+        note: String(adminNote || `Dispute resolved: ${resolution}`),
+        changedBy: auth.userId,
       },
     }).catch(() => {
       // Non-blocking
@@ -108,7 +107,7 @@ export const PATCH = withCsrf(async (
     // Create notification for the filer
     await db.notification.create({
       data: {
-        userId: dispute.filerId,
+        userId: dispute.userId,
         title: 'Dispute Resolved',
         message: `Your dispute #${id.slice(-8)} has been resolved: ${resolution}`,
         type: 'dispute',

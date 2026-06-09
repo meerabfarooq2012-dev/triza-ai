@@ -478,7 +478,7 @@ export function SellerReviews({ shopId, userId }: SellerReviewsProps) {
   useEffect(() => {
     setPage(1)
     fetchReviews(1, false)
-  }, [sort]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [sort])
 
   // Compute stats
   const stats = useMemo(() => {

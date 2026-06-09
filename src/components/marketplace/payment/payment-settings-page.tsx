@@ -54,7 +54,7 @@ import type {
 // Props
 // ---------------------------------------------------------------------------
 
-interface PaymentSettingsPageProps {
+export interface PaymentSettingsPageProps {
   userId: string
   /** If the user is "both", show both tabs; otherwise show the relevant one */
   userRole: 'buyer' | 'seller' | 'both'

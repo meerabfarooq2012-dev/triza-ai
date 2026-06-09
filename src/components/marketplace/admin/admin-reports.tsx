@@ -102,9 +102,11 @@ export function AdminReports() {
       if (statusFilter !== 'all') params.status = statusFilter;
       const result = await api.reports.getReports(params);
       if (result.success) {
-        setReports(result.reports || []);
-        setTotalPages(result.pagination?.totalPages || 1);
-        if (result.countsByStatus) setCountsByStatus(result.countsByStatus);
+        const reportsData = (result.data || []) as unknown as ProductReport[];
+        setReports(reportsData);
+        const resultExtra = result as unknown as Record<string, unknown>;
+        setTotalPages(((resultExtra.pagination as Record<string, unknown>)?.totalPages as number) || 1);
+        if (resultExtra.countsByStatus) setCountsByStatus(resultExtra.countsByStatus as Record<string, number>);
       }
     } catch (error) {
       console.error('Failed to fetch reports:', error);

@@ -33,6 +33,8 @@ export async function GET(request: NextRequest) {
   }
 
   const diagnostics: Record<string, unknown> = {};
+  let rawConnectionTests: Array<Record<string, unknown>> = [];
+  let recommendations: string[] = [];
 
   // 1. Check environment variables
   const dbUrl = process.env.DATABASE_URL || '';
@@ -114,7 +116,7 @@ export async function GET(request: NextRequest) {
     };
 
     // 4. If Prisma fails, try raw pg connection with different formats
-    diagnostics.rawConnectionTests = [];
+    rawConnectionTests = [];
 
     if (dbUrl.startsWith('postgresql://') || dbUrl.startsWith('postgres://')) {
       try {
@@ -133,13 +135,13 @@ export async function GET(request: NextRequest) {
           await client.connect();
           const res = await client.query('SELECT 1 as test');
           await client.end();
-          diagnostics.rawConnectionTests.push({
+          rawConnectionTests.push({
             test: 'DATABASE_URL as-is',
             status: 'SUCCESS',
             result: res.rows[0],
           });
         } catch (e) {
-          diagnostics.rawConnectionTests.push({
+          rawConnectionTests.push({
             test: 'DATABASE_URL as-is',
             status: 'FAILED',
             error: (e as Error).message,
@@ -158,13 +160,13 @@ export async function GET(request: NextRequest) {
             await client.connect();
             const res = await client.query('SELECT 1 as test');
             await client.end();
-            diagnostics.rawConnectionTests.push({
+            rawConnectionTests.push({
               test: 'DIRECT_URL',
               status: 'SUCCESS',
               result: res.rows[0],
             });
           } catch (e) {
-            diagnostics.rawConnectionTests.push({
+            rawConnectionTests.push({
               test: 'DIRECT_URL',
               status: 'FAILED',
               error: (e as Error).message,
@@ -185,13 +187,13 @@ export async function GET(request: NextRequest) {
             await client.connect();
             const res = await client.query('SELECT 1 as test');
             await client.end();
-            diagnostics.rawConnectionTests.push({
+            rawConnectionTests.push({
               test: 'Pooler port 5432 (session mode)',
               status: 'SUCCESS',
               result: res.rows[0],
             });
           } catch (e) {
-            diagnostics.rawConnectionTests.push({
+            rawConnectionTests.push({
               test: 'Pooler port 5432 (session mode)',
               status: 'FAILED',
               error: (e as Error).message,
@@ -222,38 +224,38 @@ export async function GET(request: NextRequest) {
             await client.connect();
             const res = await client.query('SELECT 1 as test');
             await client.end();
-            diagnostics.rawConnectionTests.push({
+            rawConnectionTests.push({
               test: 'Direct connection (db.*.supabase.co)',
               status: 'SUCCESS',
               result: res.rows[0],
             });
           }
         } catch (e) {
-          diagnostics.rawConnectionTests.push({
+          rawConnectionTests.push({
             test: 'Direct connection (db.*.supabase.co)',
             status: 'FAILED',
             error: (e as Error).message,
           });
         }
       } catch (pgError) {
-        diagnostics.rawConnectionTests = {
+        (rawConnectionTests as Array<Record<string, unknown>>) = [{
           error: 'Could not import pg module: ' + (pgError as Error).message,
-        };
+        }];
       }
     }
   }
 
   // 5. Provide recommendations
-  diagnostics.recommendations = [];
+  recommendations = [];
 
   if (!dbUrl) {
-    diagnostics.recommendations.push('DATABASE_URL is not set! Add it in Vercel Environment Variables.');
+    recommendations.push('DATABASE_URL is not set! Add it in Vercel Environment Variables.');
   } else if (dbUrl.startsWith('file:')) {
-    diagnostics.recommendations.push('DATABASE_URL is set to SQLite (file:). For Vercel, you need a PostgreSQL URL from Supabase.');
+    recommendations.push('DATABASE_URL is set to SQLite (file:). For Vercel, you need a PostgreSQL URL from Supabase.');
   }
 
   if (dbUrl && !directUrl) {
-    diagnostics.recommendations.push('DIRECT_URL is not set. Prisma needs this for Supabase migrations. Add the direct connection string.');
+    recommendations.push('DIRECT_URL is not set. Prisma needs this for Supabase migrations. Add the direct connection string.');
   }
 
   const connResult = diagnostics.connection as { status?: string; error?: string } | undefined;
@@ -261,18 +263,21 @@ export async function GET(request: NextRequest) {
     const errMsg = connResult.error || '';
 
     if (errMsg.includes('tenant') || errMsg.includes('ENOTFOUND')) {
-      diagnostics.recommendations.push(
+      recommendations.push(
         '🔴 SUPABASE PROJECT MAY BE PAUSED! Go to https://supabase.com/dashboard → find your project → click "Restore project"'
       );
-      diagnostics.recommendations.push(
+      recommendations.push(
         'If project is active, the DATABASE_URL region might be wrong. Check Supabase Dashboard → Settings → Database → Connection string for the correct URL.'
       );
     }
 
     if (errMsg.includes('password') || errMsg.includes('authentication')) {
-      diagnostics.recommendations.push('Database password might be wrong. Check your Supabase database password.');
+      recommendations.push('Database password might be wrong. Check your Supabase database password.');
     }
   }
+
+  diagnostics.rawConnectionTests = rawConnectionTests;
+  diagnostics.recommendations = recommendations;
 
   // Use a custom JSON serializer to handle BigInt values from PostgreSQL
   // (Prisma $queryRaw returns BigInt for integer columns in PostgreSQL)

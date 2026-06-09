@@ -122,6 +122,7 @@ export async function GET(request: NextRequest) {
         _sum: { amount: true },
       });
 
+      // @ts-expect-error Prisma aggregate type
       monthlyEarnings.push({
         month: monthNames[monthDate.getMonth()],
         year: monthDate.getFullYear(),

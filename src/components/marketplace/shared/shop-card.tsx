@@ -86,9 +86,9 @@ export function ShopCard({ shop, className }: ShopCardProps) {
                   {shop.name}
                 </h3>
                 <SellerTrustBadge
-                  verificationStatus={(shop as Record<string, unknown>).verificationStatus as string || 'none'}
-                  trustLevel={(shop as Record<string, unknown>).trustLevel as string || 'none'}
-                  trustScore={(shop as Record<string, unknown>).trustScore as number | undefined}
+                  verificationStatus={(shop as unknown as Record<string, unknown>).verificationStatus as string || 'none'}
+                  trustLevel={(shop as unknown as Record<string, unknown>).trustLevel as string || 'none'}
+                  trustScore={(shop as unknown as Record<string, unknown>).trustScore as number | undefined}
                   size="sm"
                   showLabel={false}
                 />

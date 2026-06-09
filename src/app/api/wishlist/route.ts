@@ -240,13 +240,11 @@ export const POST = withCsrf(async (request: NextRequest) => {
     await ensureDefaultCollection(userId);
 
     // Check if item already exists
-    const existingItem = await db.wishlistItem.findUnique({
+    const existingItem = await db.wishlistItem.findFirst({
       where: {
-        userId_productId_gigId: {
-          userId,
-          productId: productId || '',
-          gigId: gigId || '',
-        },
+        userId,
+        productId: productId || null,
+        gigId: gigId || null,
       },
     });
 

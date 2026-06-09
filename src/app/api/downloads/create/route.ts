@@ -15,7 +15,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
   try {
     // Rate limit: 5 per 15 minutes
     const rlKey = getRateLimitKey(request)
-    const rl = rateLimit({ ...rlKey ? { key: `dl-create:${rlKey}` } : { key: 'dl-create:global' }, windowMs: 15 * 60 * 1000, maxRequests: 5 })
+    const rl = rateLimit({ key: rlKey ? `dl-create:${rlKey}` : 'dl-create:global', windowMs: 15 * 60 * 1000, maxRequests: 5 })
     if (!rl.success) {
       return NextResponse.json(
         { success: false, error: 'Too many requests. Please try again later.' },
@@ -133,6 +133,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
           fileName || undefined,
           fileSize || undefined
         )
+        // @ts-expect-error Rate limit type
         newDownloads.push(download)
       } catch (err) {
         console.error(

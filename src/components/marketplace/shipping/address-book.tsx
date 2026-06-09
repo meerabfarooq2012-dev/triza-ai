@@ -54,7 +54,7 @@ import type { DeliveryAddress } from '@/types'
 // Props
 // ---------------------------------------------------------------------------
 
-interface AddressBookProps {
+export interface AddressBookProps {
   userId: string
   onSelectAddress?: (address: DeliveryAddress) => void
 }

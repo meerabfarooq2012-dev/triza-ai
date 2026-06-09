@@ -31,7 +31,7 @@ import type { Activity as ActivityType, ShopStory, Shop } from '@/types'
 // Props
 // ---------------------------------------------------------------------------
 
-interface ActivityFeedPageProps {
+export interface ActivityFeedPageProps {
   userId: string
 }
 

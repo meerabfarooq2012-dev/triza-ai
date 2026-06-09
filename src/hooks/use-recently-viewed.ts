@@ -4,13 +4,14 @@ import { useSyncExternalStore, useCallback } from 'react'
 
 const STORAGE_KEY = 'marketo-recently-viewed'
 const MAX_ITEMS = 20
+const EMPTY_ARRAY: string[] = []
 
 // Module-level cache for stable snapshot references with useSyncExternalStore
 let cachedIds: string[] | null = null
 let cachedIdsJSON = ''
 
 function getIdsFromStorage(): string[] {
-  if (typeof window === 'undefined') return []
+  if (typeof window === 'undefined') return EMPTY_ARRAY
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
     const json = stored || ''
@@ -28,17 +29,17 @@ function getIdsFromStorage(): string[] {
       }
     }
     cachedIdsJSON = json
-    cachedIds = []
-    return []
+    cachedIds = EMPTY_ARRAY
+    return EMPTY_ARRAY
   } catch {
     cachedIdsJSON = ''
-    cachedIds = []
-    return []
+    cachedIds = EMPTY_ARRAY
+    return EMPTY_ARRAY
   }
 }
 
 function getServerSnapshot(): string[] {
-  return []
+  return EMPTY_ARRAY
 }
 
 // Custom subscribe function that listens for storage events and custom dispatch

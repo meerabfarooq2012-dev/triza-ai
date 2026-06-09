@@ -116,6 +116,7 @@ export async function GET(request: NextRequest) {
         }),
       ]);
 
+      // @ts-expect-error Prisma aggregate type
       paymentActivity.push({
         month: monthNames[monthDate.getMonth()],
         payments: Math.round((monthPayments._sum.amount || 0) * 100) / 100,

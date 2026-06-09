@@ -597,12 +597,12 @@ export function SellerProducts() {
     setEditingProduct(product)
     let tags: string[] = []
     try {
-      const raw = (product as Record<string, unknown>).tags
+      const raw = (product as unknown as Record<string, unknown>).tags
       tags = JSON.parse(typeof raw === 'string' && raw ? raw : '[]')
     } catch { tags = [] }
     let deliveryCountries: string[] = []
     try {
-      const raw = (product as Record<string, unknown>).deliveryCountries
+      const raw = (product as unknown as Record<string, unknown>).deliveryCountries
       const parsed = JSON.parse(typeof raw === 'string' && raw ? raw : '[]')
       deliveryCountries = Array.isArray(parsed) ? parsed : []
     } catch { deliveryCountries = [] }
@@ -616,7 +616,7 @@ export function SellerProducts() {
     }
     let images: string[] = []
     try {
-      const raw = (product as Record<string, unknown>).images
+      const raw = (product as unknown as Record<string, unknown>).images
       images = JSON.parse(typeof raw === 'string' && raw ? raw : '[]')
     } catch { images = [] }
     setFormData({
@@ -895,7 +895,7 @@ export function SellerProducts() {
                   {filteredProducts.map((product) => {
                     let images: string[] = []
                     try {
-                      const raw = (product as Record<string, unknown>).images
+                      const raw = (product as unknown as Record<string, unknown>).images
                       images = JSON.parse(typeof raw === 'string' && raw ? raw : '[]')
                     } catch { images = [] }
                     return (
@@ -1033,7 +1033,7 @@ export function SellerProducts() {
               {filteredProducts.map((product) => {
                 let images: string[] = []
                 try {
-                  const raw = (product as Record<string, unknown>).images
+                  const raw = (product as unknown as Record<string, unknown>).images
                   images = JSON.parse(typeof raw === 'string' && raw ? raw : '[]')
                 } catch { images = [] }
                 return (
@@ -1299,16 +1299,16 @@ export function SellerProducts() {
                       .filter((cat) => {
                         if (!cat.children || cat.children.length > 0) return true
                         // Filter top-level categories based on product type
-                        const physicalSlugs = PHYSICAL_CATEGORIES.map(c => c.slug)
-                        const digitalSlugs = DIGITAL_CATEGORIES.map(c => c.slug)
+                        const physicalSlugs: string[] = PHYSICAL_CATEGORIES.map(c => c.slug)
+                        const digitalSlugs: string[] = DIGITAL_CATEGORIES.map(c => c.slug)
                         if (formData.type === 'physical') return physicalSlugs.includes(cat.slug)
                         if (formData.type === 'digital') return digitalSlugs.includes(cat.slug)
                         return true
                       })
                       .filter((cat) => {
                         // Only show top-level categories that match the product type
-                        const physicalSlugs = PHYSICAL_CATEGORIES.map(c => c.slug)
-                        const digitalSlugs = DIGITAL_CATEGORIES.map(c => c.slug)
+                        const physicalSlugs: string[] = PHYSICAL_CATEGORIES.map(c => c.slug)
+                        const digitalSlugs: string[] = DIGITAL_CATEGORIES.map(c => c.slug)
                         if (formData.type === 'physical') return physicalSlugs.includes(cat.slug)
                         if (formData.type === 'digital') return digitalSlugs.includes(cat.slug)
                         return true

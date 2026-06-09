@@ -256,7 +256,7 @@ export function StoryViewer({
                         }`}
                       >
                         <p className="text-white text-xl font-bold leading-relaxed">
-                          {story?.content || story?.title || 'Story'}
+                          {story?.content || 'Story'}
                         </p>
                         {story?.type === 'promotion' && (
                           <p className="text-white/80 text-sm mt-2">🏷️ Special Offer</p>

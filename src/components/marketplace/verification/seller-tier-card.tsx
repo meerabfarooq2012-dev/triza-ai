@@ -50,7 +50,7 @@ function AnimatedTierEmblem({
   children,
 }: {
   tier: SellerTierLevel
-  children: React.ReactNode
+  children?: React.ReactNode
 }) {
   const config = TIER_CONFIG[tier]
   const [rotation, setRotation] = useState(0)

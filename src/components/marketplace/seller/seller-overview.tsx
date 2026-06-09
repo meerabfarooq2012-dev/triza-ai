@@ -97,13 +97,13 @@ export function SellerOverview() {
 
         // Fetch products
         const productsRes = await fetch(
-          `/api/products?shopId=${currentUser.shop.id}&limit=5&sortBy=popular`
+          `/api/products?shopId=${currentUser.shop?.id}&limit=5&sortBy=popular`
         )
         const productsData = await productsRes.json()
 
         // Fetch gigs
         const gigsRes = await fetch(
-          `/api/gigs?shopId=${currentUser.shop.id}&limit=5&sort=popular`
+          `/api/gigs?shopId=${currentUser.shop?.id}&limit=5&sort=popular`
         )
         const gigsData = await gigsRes.json()
 
@@ -606,7 +606,7 @@ export function SellerOverview() {
                   {topProducts.map((product, idx) => {
                     let images: string[] = []
                     try {
-                      const raw = (product as Record<string, unknown>).images
+                      const raw = (product as unknown as Record<string, unknown>).images
                       images = JSON.parse(typeof raw === 'string' && raw ? raw : '[]')
                     } catch { images = [] }
                     return (
@@ -671,7 +671,7 @@ export function SellerOverview() {
                     const packages = (() => {
                       try {
                         return JSON.parse(
-                          (gig as Record<string, unknown>).packages as string || '[]'
+                          (gig as unknown as Record<string, unknown>).packages as string || '[]'
                         ) as { price: number }[]
                       } catch {
                         return []

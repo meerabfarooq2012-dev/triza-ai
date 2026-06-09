@@ -1624,12 +1624,39 @@ export interface Wishlist {
   _count?: { items: number }
 }
 
+export interface WishlistCollection {
+  id: string
+  userId: string
+  name: string
+  icon: string
+  color: string
+  isDefault: boolean
+  sortOrder: number
+  createdAt: string
+  updatedAt: string
+  items?: WishlistItem[]
+  _count?: { items: number }
+}
+
 export interface WishlistItem {
   id: string
-  wishlistId: string
-  productId: string
+  wishlistId: string | null
+  productId: string | null
+  gigId: string | null
+  userId: string
+  collectionId: string | null
+  currentPrice: number
+  priceWhenSaved: number
+  notes: string | null
+  notifyPriceDrop: boolean
+  notifyRestock: boolean
+  isActive: boolean
   addedAt: string
-  product?: Product
+  createdAt: string
+  updatedAt: string
+  product?: Product | null
+  gig?: Gig | null
+  collection?: WishlistCollection | null
 }
 
 export interface CreateWishlistInput {

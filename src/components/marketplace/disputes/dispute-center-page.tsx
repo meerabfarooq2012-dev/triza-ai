@@ -31,7 +31,7 @@ import type { Dispute, DisputeStatus, DisputePriority, DisputeCategory } from '@
 // Props
 // ---------------------------------------------------------------------------
 
-interface DisputeCenterPageProps {
+export interface DisputeCenterPageProps {
   userId: string
   isSeller?: boolean
 }

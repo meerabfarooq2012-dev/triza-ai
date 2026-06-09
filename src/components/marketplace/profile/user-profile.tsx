@@ -148,7 +148,7 @@ export function UserProfile() {
       if (res.success && res.data) {
         login({
           ...currentUser,
-          ...(res.data as Record<string, unknown>),
+          ...(res.data as any),
         })
         setIsEditing(false)
         toast.success('Profile updated successfully!')

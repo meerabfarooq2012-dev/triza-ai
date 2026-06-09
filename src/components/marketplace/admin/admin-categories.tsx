@@ -864,12 +864,12 @@ export default function AdminCategories() {
               )}
               {(deletingCategory?._count?.products ?? 0) > 0 && (
                 <span className="block mt-1 text-orange-600 font-medium">
-                  {deletingCategory._count?.products} products will be unlinked from this category.
+                  {deletingCategory?._count?.products} products will be unlinked from this category.
                 </span>
               )}
               {(deletingCategory?._count?.gigs ?? 0) > 0 && (
                 <span className="block mt-1 text-orange-600 font-medium">
-                  {deletingCategory._count?.gigs} gigs will be unlinked from this category.
+                  {deletingCategory?._count?.gigs} gigs will be unlinked from this category.
                 </span>
               )}
               This action cannot be undone.

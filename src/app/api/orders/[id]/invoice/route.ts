@@ -37,7 +37,7 @@ export async function GET(request: NextRequest, context?: unknown) {
     }
 
     // Only buyer, seller, or admin can download
-    if (order.buyerId !== auth.userId && order.sellerId !== auth.userId && !auth.isAdmin) {
+    if (order.buyerId !== auth.userId && order.sellerId !== auth.userId && auth.role !== 'admin') {
       return NextResponse.json({ success: false, error: 'Access denied' }, { status: 403 });
     }
 
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest, context?: unknown) {
 
     const invoiceNumber = `INV-${orderId.substring(0, 8).toUpperCase()}`;
 
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(pdfBuffer as unknown as BodyInit, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',

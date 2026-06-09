@@ -83,10 +83,8 @@ function ViewLoader() {
 
 // ── Dynamic import helper with retry for ChunkLoadError ─────────────────────
 // Wraps dynamic imports to retry once if a chunk fails to load
-function withChunkRetry<T extends React.ComponentType<unknown>>(
-  importFn: () => Promise<{ default: T } | { [key: string]: T }>,
-  extractNamed?: string
-): () => Promise<{ default: T }> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function withChunkRetry(importFn: () => Promise<any>, extractNamed?: string): () => Promise<any> {
   return () => {
     return importFn().catch((err) => {
       if (err && (err.name === 'ChunkLoadError' || (err.message && (
@@ -99,14 +97,14 @@ function withChunkRetry<T extends React.ComponentType<unknown>>(
         const url = new URL(window.location.href)
         url.searchParams.set('_r', Date.now().toString())
         window.location.replace(url.toString())
-        return new Promise<{ default: T }>(() => {}) // Never resolves, page will reload
+        return new Promise<never>(() => {}) // Never resolves, page will reload
       }
       throw err
-    }).then((module) => {
+    }).then((module: Record<string, unknown>) => {
       if (extractNamed && module && extractNamed in module) {
-        return { default: (module as Record<string, T>)[extractNamed] }
+        return { default: (module as Record<string, unknown>)[extractNamed] }
       }
-      return module as { default: T }
+      return module
     })
   }
 }
@@ -137,7 +135,7 @@ const AuthModal = dynamic(
   { ssr: false, loading: () => <PageLoader /> }
 )
 
-const EmailVerificationDialog = dynamic(
+const EmailVerificationDialog = dynamic<import('@/components/marketplace/auth/email-verification-dialog').EmailVerificationDialogProps>(
   withChunkRetry(() => import('@/components/marketplace/auth/email-verification-dialog'), 'EmailVerificationDialog'),
   { ssr: false }
 )
@@ -207,12 +205,12 @@ const OrderTrackingPage = dynamic(
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
-const ShippingSettings = dynamic(
+const ShippingSettings = dynamic<import('@/components/marketplace/shipping/shipping-settings').ShippingSettingsProps>(
   withChunkRetry(() => import('@/components/marketplace/shipping/shipping-settings'), 'ShippingSettings'),
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
-const AddressBook = dynamic(
+const AddressBook = dynamic<import('@/components/marketplace/shipping/address-book').AddressBookProps>(
   withChunkRetry(() => import('@/components/marketplace/shipping/address-book'), 'AddressBook'),
   { ssr: false, loading: () => <ViewLoader /> }
 )
@@ -222,32 +220,32 @@ const FeedbackWidget = dynamic(
   { ssr: false }
 )
 
-const ReturnsPage = dynamic(
+const ReturnsPage = dynamic<import('@/components/marketplace/returns/returns-page').ReturnsPageProps>(
   withChunkRetry(() => import('@/components/marketplace/returns/returns-page'), 'ReturnsPage'),
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
-const ReturnDetailPage = dynamic(
+const ReturnDetailPage = dynamic<import('@/components/marketplace/returns/return-detail-page').ReturnDetailPageProps>(
   withChunkRetry(() => import('@/components/marketplace/returns/return-detail-page'), 'ReturnDetailPage'),
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
-const ReturnPolicyPage = dynamic(
+const ReturnPolicyPage = dynamic<import('@/components/marketplace/returns/return-policy-page').ReturnPolicyPageProps>(
   withChunkRetry(() => import('@/components/marketplace/returns/return-policy-page'), 'ReturnPolicyPage'),
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
-const ActivityFeedPage = dynamic(
+const ActivityFeedPage = dynamic<import('@/components/marketplace/social/activity-feed-page').ActivityFeedPageProps>(
   withChunkRetry(() => import('@/components/marketplace/social/activity-feed-page'), 'ActivityFeedPage'),
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
-const DisputeCenterPage = dynamic(
+const DisputeCenterPage = dynamic<import('@/components/marketplace/disputes/dispute-center-page').DisputeCenterPageProps>(
   withChunkRetry(() => import('@/components/marketplace/disputes/dispute-center-page'), 'DisputeCenterPage'),
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
-const DisputeDetailPage = dynamic(
+const DisputeDetailPage = dynamic<import('@/components/marketplace/disputes/dispute-detail-page').DisputeDetailPageProps>(
   withChunkRetry(() => import('@/components/marketplace/disputes/dispute-detail-page'), 'DisputeDetailPage'),
   { ssr: false, loading: () => <ViewLoader /> }
 )
@@ -257,7 +255,7 @@ const VerificationPage = dynamic(
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
-const PublicWishlist = dynamic(
+const PublicWishlist = dynamic<import('@/components/marketplace/shared/public-wishlist').PublicWishlistProps>(
   withChunkRetry(() => import('@/components/marketplace/shared/public-wishlist'), 'PublicWishlist'),
   { ssr: false, loading: () => <ViewLoader /> }
 )
@@ -302,7 +300,7 @@ const SellerWallet = dynamic(
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
-const PaymentSettingsPage = dynamic(
+const PaymentSettingsPage = dynamic<import('@/components/marketplace/payment/payment-settings-page').PaymentSettingsPageProps>(
   withChunkRetry(() => import('@/components/marketplace/payment/payment-settings-page'), 'PaymentSettingsPage'),
   { ssr: false, loading: () => <ViewLoader /> }
 )

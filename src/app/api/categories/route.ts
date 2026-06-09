@@ -21,9 +21,9 @@ export async function GET(request: Request) {
       });
     }
 
-    const gigCategorySlugs = GIG_CATEGORIES.map(c => c.slug);
-    const physicalCategorySlugs = PHYSICAL_CATEGORIES.map(c => c.slug);
-    const digitalCategorySlugs = DIGITAL_CATEGORIES.map(c => c.slug);
+    const gigCategorySlugs: string[] = GIG_CATEGORIES.map(c => c.slug);
+    const physicalCategorySlugs: string[] = PHYSICAL_CATEGORIES.map(c => c.slug);
+    const digitalCategorySlugs: string[] = DIGITAL_CATEGORIES.map(c => c.slug);
 
     const activeFilter = includeInactive ? {} : { isActive: true };
     const childrenActiveFilter = includeInactive ? {} : { isActive: true };

@@ -8,14 +8,15 @@ const ISSUER = 'Marketo';
  * Generate a new TOTP secret for a user
  */
 export function generateTOTPSecret(userEmail: string, userId: string): { secret: string; totp: OTPAuth.TOTP } {
-  const secret = randomBytes(20).toString('base64');
+  const secretBytes = randomBytes(20);
+  const secret = secretBytes.toString('hex');
   const totp = new OTPAuth.TOTP({
     issuer: ISSUER,
     label: userEmail,
     algorithm: 'SHA1',
     digits: 6,
     period: 30,
-    secret: OTPAuth.Secret.fromBase64(secret),
+    secret: OTPAuth.Secret.fromHex(secret),
   });
 
   return { secret, totp };
@@ -39,7 +40,7 @@ export function verifyTOTP(secret: string, code: string): boolean {
       algorithm: 'SHA1',
       digits: 6,
       period: 30,
-      secret: OTPAuth.Secret.fromBase64(secret),
+      secret: OTPAuth.Secret.fromHex(secret),
     });
 
     const delta = totp.validate({ token: code, window: 1 });

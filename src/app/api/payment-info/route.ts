@@ -137,9 +137,13 @@ export const POST = withCsrf(async (request: NextRequest) => {
       );
     }
     const { userId, type, method, label, accountDetails, isDefault } = validation.data;
+    const effectiveUserId = userId || auth.userId;
+    const effectiveType = type || 'seller';
+    const effectiveMethod = (method || 'bank_transfer') as PaymentInfoMethod;
+    const effectiveLabel = label || `${effectiveMethod} account`;
 
     // Method-specific accountDetails validation
-    const validationError = validateAccountDetails(method, accountDetails);
+    const validationError = validateAccountDetails(effectiveMethod, accountDetails || {} as PaymentInfoAccountDetails);
     if (validationError) {
       return NextResponse.json(
         { success: false, error: validationError },
@@ -148,7 +152,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
     }
 
     // Verify user exists
-    const user = await db.user.findUnique({ where: { id: userId } });
+    const user = await db.user.findUnique({ where: { id: effectiveUserId } });
     if (!user) {
       return NextResponse.json(
         { success: false, error: 'User not found' },
@@ -160,8 +164,8 @@ export const POST = withCsrf(async (request: NextRequest) => {
     if (isDefault) {
       await db.paymentInfo.updateMany({
         where: {
-          userId,
-          type,
+          userId: effectiveUserId,
+          type: effectiveType,
           isDefault: true,
         },
         data: {
@@ -173,11 +177,11 @@ export const POST = withCsrf(async (request: NextRequest) => {
     // Create the payment info record
     const paymentInfo = await db.paymentInfo.create({
       data: {
-        userId,
-        type,
-        method,
-        label,
-        accountDetails: JSON.stringify(accountDetails),
+        userId: effectiveUserId,
+        type: effectiveType,
+        method: effectiveMethod,
+        label: effectiveLabel,
+        accountDetails: JSON.stringify(accountDetails || {}),
         isDefault: isDefault ?? false,
         isActive: true,
       },

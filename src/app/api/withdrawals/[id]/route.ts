@@ -378,7 +378,6 @@ export const PUT = withCsrf(async (
             withdrawalId: withdrawal.id,
             netAmount: withdrawal.netAmount,
             fee: withdrawal.fee,
-            adminNote: adminNote || undefined,
           }),
         });
       }

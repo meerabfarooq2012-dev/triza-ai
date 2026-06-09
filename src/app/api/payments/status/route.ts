@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
     }
 
     // ----- Optionally verify with gateway (for real-time status) -----
-    let gatewayStatus = null;
+    let gatewayStatus: { success: boolean; status: string; transactionId?: string; amount?: number; error?: string } | null = null;
     if (checkGateway && payment.status === 'processing') {
       const paymentToken = metadata.paymentToken as string | undefined;
       const paymentMethod = payment.paymentMethod;

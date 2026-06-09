@@ -47,7 +47,7 @@ import {
   NOTIFICATION_CATEGORY_COLORS,
 } from '@/lib/constants'
 import { cn } from '@/lib/utils'
-import type { Notification, NotificationCategory } from '@/types'
+import type { Notification as NotificationType, NotificationCategory } from '@/types'
 
 // ─── Icon per category ────────────────────────────────────────────────────
 
@@ -235,7 +235,7 @@ function NotificationPreferences() {
 export default function NotificationsPage() {
   const { currentUser, setUnreadNotifications, setCurrentView } = useMarketplaceStore()
 
-  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [notifications, setNotifications] = useState<NotificationType[]>([])
   const [loading, setLoading] = useState(true)
   const [markingAllRead, setMarkingAllRead] = useState(false)
   const [activeCategory, setActiveCategory] = useState<string>('all')
@@ -343,7 +343,7 @@ export default function NotificationsPage() {
     }
   }
 
-  const handleNotificationClick = (notification: Notification) => {
+  const handleNotificationClick = (notification: NotificationType) => {
     if (!notification.isRead) {
       handleMarkAsRead(notification.id)
     }
@@ -366,7 +366,7 @@ export default function NotificationsPage() {
   const unreadCount = notifications.filter(n => !n.isRead).length
 
   // Group notifications by date
-  const groupedNotifications: Record<string, Notification[]> = {}
+  const groupedNotifications: Record<string, NotificationType[]> = {};
   (Array.isArray(notifications) ? notifications : []).forEach(n => {
     const group = getDateGroup(n.createdAt)
     if (!groupedNotifications[group]) groupedNotifications[group] = []

@@ -86,7 +86,7 @@ export default function AdminDisputes() {
   const handleInvestigate = async (disputeId: string) => {
     try {
       await api.admin.resolveDispute(disputeId, {
-        status: 'investigating',
+        status: 'under_review' as any,
         resolution: 'Under investigation by admin team',
       })
       fetchDisputes()

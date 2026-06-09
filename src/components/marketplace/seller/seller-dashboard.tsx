@@ -30,7 +30,7 @@ export function SellerDashboard() {
   const [manualTab, setManualTab] = useState<string | null>(null)
   const [shopLoading, setShopLoading] = useState(true)
   const [creatingShop, setCreatingShop] = useState(false)
-  const [shopData, setShopData] = useState<Record<string, unknown> | null>(null)
+  const [shopData, setShopData] = useState<import('@/types').Shop | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
 
   // Fetch fresh user data (with shop) from API on mount

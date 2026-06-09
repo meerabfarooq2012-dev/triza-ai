@@ -46,7 +46,7 @@ import type { ShippingZone, ShippingRate, ShippingMethod } from '@/types'
 // Props
 // ---------------------------------------------------------------------------
 
-interface ShippingSettingsProps {
+export interface ShippingSettingsProps {
   shopId?: string
   userId?: string
 }
@@ -628,9 +628,9 @@ export function ShippingSettings({ shopId: propShopId, userId }: ShippingSetting
           countries: Array.isArray(z.countries) ? z.countries : parseJsonArray(z.countries as string),
           rates: (Array.isArray(z.rates) ? z.rates : []).map((r: Record<string, unknown>) => ({
             ...r,
-            method: r.method || 'standard',
+            method: (r.method as string) || 'standard',
           })),
-        }))
+        } as any))
         setZones(parsed)
       } else {
         setError(json.error || 'Failed to load shipping zones')
@@ -1384,7 +1384,7 @@ export function ShippingSettings({ shopId: propShopId, userId }: ShippingSetting
 
       {/* Zone Dialog */}
       <ZoneDialog
-        shopId={shopId}
+        shopId={shopId || ''}
         editItem={editingZone}
         open={zoneDialogOpen}
         onOpenChange={setZoneDialogOpen}

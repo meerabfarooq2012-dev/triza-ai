@@ -188,7 +188,7 @@ export function BuyerOrders() {
 
   // Check if invoice is available for an order
   const canDownloadInvoice = (order: Order) => {
-    return order.paymentStatus === 'paid' || order.paymentStatus === 'completed' || order.status === 'delivered'
+    return order.paymentStatus === 'paid' || (order.paymentStatus as string) === 'completed' || order.status === 'delivered'
   }
 
   return (
@@ -317,7 +317,7 @@ export function BuyerOrders() {
                           let productImages: string[] = []
                           if (item.product) {
                             try {
-                              const raw = (item.product as Record<string, unknown>).images
+                              const raw = (item.product as unknown as Record<string, unknown>).images
                               productImages = JSON.parse(typeof raw === 'string' && raw ? raw : '[]')
                             } catch { productImages = [] }
                           }
@@ -643,7 +643,7 @@ export function BuyerOrders() {
               </Button>
 
               {/* Request Return Button — available for delivered/shipped orders that aren't already refunded */}
-              {(selectedOrder.status === 'delivered' || selectedOrder.status === 'shipped') && selectedOrder.status !== 'refunded' && (
+              {(selectedOrder.status === 'delivered' || selectedOrder.status === 'shipped') && (selectedOrder.status as string) !== 'refunded' && (
                 <Button
                   variant="outline"
                   className="w-full gap-2 text-amber-600 hover:bg-amber-50 hover:text-amber-700 border-amber-200"

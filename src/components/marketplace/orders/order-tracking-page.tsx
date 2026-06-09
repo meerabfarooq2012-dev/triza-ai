@@ -1089,11 +1089,12 @@ export default function OrderTrackingPage() {
           )}
 
           {/* Digital Downloads Section */}
-          {isBuyer && order.items?.some((item) => item.type === 'digital') && (
-            order.paymentStatus === 'paid' || order.status === 'delivered'
-          ) && (
-            <DigitalDownloadsSection orderId={order.id} userId={currentUser.id} />
-          )}
+          {(() => {
+            const showDownloads = isBuyer && order.items?.some((item) => item.type === 'digital')
+              && (order.paymentStatus === 'paid' || order.status === 'delivered')
+              && !!currentUser;
+            return showDownloads ? <DigitalDownloadsSection orderId={order.id} userId={currentUser!.id} /> : null;
+          })()}
 
           {/* Payment & Escrow Section */}
           {paymentData && (

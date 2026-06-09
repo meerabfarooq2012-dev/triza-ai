@@ -224,7 +224,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
         userId,
         shopId: shop.id,
         reason,
-        description,
+        description: description || '',
         images: JSON.stringify(images || []),
         type: returnType,
         status: 'requested',
@@ -283,16 +283,18 @@ export const POST = withCsrf(async (request: NextRequest) => {
       ...returnRequest,
       images: JSON.parse(returnRequest.images || '[]'),
       order: {
-        ...returnRequest.order,
-        items: returnRequest.order.items.map((item) => ({
-          ...item,
-          product: item.product
-            ? {
-                ...item.product,
-                images: JSON.parse(item.product.images || '[]'),
-              }
-            : null,
-        })),
+        ...(returnRequest as Record<string, unknown>).order as Record<string, unknown>,
+        items: ((returnRequest as Record<string, unknown>).order as Record<string, unknown>)?.items
+          ? (((returnRequest as Record<string, unknown>).order as Record<string, unknown>).items as Array<Record<string, unknown>>).map((item) => ({
+              ...item,
+              product: item.product
+                ? {
+                    ...(item.product as Record<string, unknown>),
+                    images: JSON.parse((item.product as Record<string, unknown>).images as string || '[]'),
+                  }
+                : null,
+            }))
+          : [],
       },
     };
 

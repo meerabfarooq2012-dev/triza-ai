@@ -63,7 +63,7 @@ import type { Dispute, DisputeStatus, DisputePriority, DisputeCategory, DisputeR
 // Props
 // ---------------------------------------------------------------------------
 
-interface DisputeDetailPageProps {
+export interface DisputeDetailPageProps {
   disputeId: string
   userId: string
   isSeller?: boolean
@@ -233,7 +233,8 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
       const json = await api.request<{ success: boolean; data?: { dispute?: Dispute } | Dispute; error?: string }>(`/disputes/${disputeId}`)
       if (json.success) {
         const disputeData = json.data as { dispute?: Dispute } | Dispute | undefined
-        setDispute(disputeData?.dispute ?? disputeData ?? null as unknown as Dispute)
+        const extracted: Dispute | undefined = disputeData && 'dispute' in disputeData ? disputeData.dispute : (disputeData as Dispute | undefined)
+        setDispute(extracted ?? null as unknown as Dispute)
       } else {
         // Fallback: try admin disputes
         try {
@@ -1073,7 +1074,7 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
                         variant="outline"
                         className="w-full text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200"
                         onClick={() => setEscalateDialogOpen(true)}
-                        disabled={dispute.status === 'escalated'}
+                        disabled={false}
                       >
                         <AlertTriangle className="h-4 w-4 mr-2" />
                         Escalate Dispute
@@ -1132,7 +1133,7 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
                         variant="outline"
                         className="w-full text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200"
                         onClick={() => setEscalateDialogOpen(true)}
-                        disabled={dispute.status === 'escalated'}
+                        disabled={false}
                       >
                         <AlertTriangle className="h-4 w-4 mr-2" />
                         Escalate Dispute

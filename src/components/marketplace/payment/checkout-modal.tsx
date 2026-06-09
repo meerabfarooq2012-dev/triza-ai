@@ -1134,7 +1134,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                           onClick={() => handleSelectSavedMethod(pm)}
                         >
                           <RadioGroupItem
-                            checked={isSelected}
+                            value={pm.id}
                             className={isSelected ? 'text-amber-600' : ''}
                           />
                           <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${
@@ -1187,7 +1187,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                       }`}
                       onClick={handleUseNewMethod}
                     >
-                      <RadioGroupItem checked={!useSavedMethod && !selectedSavedMethodId} />
+                      <RadioGroupItem value="new-method" />
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gray-100">
                         <CreditCard className="h-4 w-4 text-gray-500" />
                       </div>

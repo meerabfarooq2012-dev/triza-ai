@@ -98,7 +98,10 @@ export const orderCreateSchema = z.object({
 export const reviewCreateSchema = z.object({
   productId: z.string().min(1).optional(),
   gigId: z.string().min(1).optional(),
+  shopId: z.string().min(1).optional(),
+  userId: z.string().min(1).optional(),
   rating: z.number().int().min(1).max(5),
+  title: z.string().max(200).optional(),
   comment: z.string().min(1).max(2000),
   images: z.array(z.string().url().max(2048)).max(5).optional(),
 });
@@ -156,9 +159,12 @@ export const disputeCreateSchema = z.object({
 
 export const returnCreateSchema = z.object({
   orderId: z.string().min(1),
-  orderItemId: z.string().min(1),
+  orderItemId: z.string().min(1).optional(),
   reason: z.string().min(1).max(2000),
+  description: z.string().max(2000).optional(),
+  images: z.array(z.string().url().max(2048)).max(5).optional(),
   evidence: z.array(z.string().url().max(2048)).max(5).optional(),
+  type: z.enum(['return', 'exchange', 'refund_only']).optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -194,29 +200,35 @@ export const wishlistItemRemoveSchema = z.object({
 // ---------------------------------------------------------------------------
 
 export const addressCreateSchema = z.object({
-  name: z.string().min(1).max(200),
+  label: z.string().min(1).max(100),
+  fullName: z.string().min(1).max(200),
   phone: z.string().min(1).max(30),
   address: z.string().min(1).max(500),
   city: z.string().min(1).max(100),
-  state: z.string().min(1).max(100),
-  zip: z.string().min(1).max(20),
-  country: z.string().min(1).max(5),
+  state: z.string().max(100).optional(),
+  zipCode: z.string().max(20).optional(),
+  country: z.string().max(5).default('PK'),
   isDefault: z.boolean().default(false),
 });
 
 export const addressUpdateSchema = z.object({
-  name: z.string().min(1).max(200).optional(),
+  id: z.string().min(1),
+  userId: z.string().min(1),
+  label: z.string().min(1).max(100).optional(),
+  fullName: z.string().min(1).max(200).optional(),
   phone: z.string().min(1).max(30).optional(),
   address: z.string().min(1).max(500).optional(),
   city: z.string().min(1).max(100).optional(),
-  state: z.string().min(1).max(100).optional(),
-  zip: z.string().min(1).max(20).optional(),
-  country: z.string().min(1).max(5).optional(),
+  state: z.string().max(100).optional(),
+  zipCode: z.string().max(20).optional(),
+  country: z.string().max(5).optional(),
   isDefault: z.boolean().optional(),
+  isActive: z.boolean().optional(),
 });
 
 export const addressDeleteSchema = z.object({
   id: z.string().min(1),
+  userId: z.string().min(1).optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -243,14 +255,21 @@ export const cartItemAddSchema = z.object({
 // ---------------------------------------------------------------------------
 
 export const couponCreateSchema = z.object({
+  shopId: z.string().min(1),
   code: z.string().min(1).max(50),
+  description: z.string().max(500).optional(),
   type: z.enum(['percentage', 'fixed']),
   value: z.number().positive(),
-  minOrder: z.number().min(0).optional(),
+  minOrderAmount: z.number().min(0).optional(),
   maxDiscount: z.number().positive().optional(),
   usageLimit: z.number().int().positive().optional(),
-  expiresAt: z.string().min(1),
-  shopId: z.string().min(1),
+  perUserLimit: z.number().int().positive().optional(),
+  startDate: z.string().min(1).optional(),
+  endDate: z.string().min(1).optional(),
+  expiresAt: z.string().min(1).optional(),
+  appliesToType: z.string().max(50).optional(),
+  productId: z.string().min(1).optional(),
+  isActive: z.boolean().optional(),
 });
 
 export const couponValidateSchema = z.object({
@@ -264,11 +283,18 @@ export const couponValidateSchema = z.object({
 // ---------------------------------------------------------------------------
 
 export const flashSaleCreateSchema = z.object({
+  shopId: z.string().min(1),
   productId: z.string().min(1),
-  discountPrice: z.number().positive(),
+  title: z.string().min(1).max(200),
+  description: z.string().max(1000).optional(),
+  salePrice: z.number().positive(),
+  discountPrice: z.number().positive().optional(),
+  type: z.enum(['flash_sale', 'deal_of_day']).optional(),
   startDate: z.string().min(1),
   endDate: z.string().min(1),
-  quantity: z.number().int().positive(),
+  quantity: z.number().int().positive().optional(),
+  maxQuantity: z.number().int().optional(),
+  banner: z.string().url().max(2048).optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -276,6 +302,7 @@ export const flashSaleCreateSchema = z.object({
 // ---------------------------------------------------------------------------
 
 export const gigCreateSchema = z.object({
+  shopId: z.string().min(1),
   title: z.string().min(1).max(200),
   description: z.string().min(1).max(5000),
   categoryId: z.string().min(1),
@@ -283,6 +310,10 @@ export const gigCreateSchema = z.object({
   deliveryTime: z.number().int().positive().max(365),
   images: z.array(z.string().url().max(2048)).max(10).optional(),
   tags: z.array(z.string().max(50)).max(20).optional(),
+  packages: z.any().optional(),
+  faqs: z.any().optional(),
+  requirements: z.string().max(2000).optional(),
+  isFeatured: z.boolean().optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -290,10 +321,16 @@ export const gigCreateSchema = z.object({
 // ---------------------------------------------------------------------------
 
 export const paymentInfoCreateSchema = z.object({
-  bankName: z.string().min(1).max(200),
-  accountTitle: z.string().min(1).max(200),
-  accountNumber: z.string().min(1).max(50),
-  bankCode: z.string().min(1).max(20),
+  userId: z.string().min(1).optional(),
+  type: z.string().min(1).max(50).optional(),
+  method: z.string().min(1).max(50).optional(),
+  label: z.string().min(1).max(200).optional(),
+  accountDetails: z.any().optional(),
+  isDefault: z.boolean().optional(),
+  bankName: z.string().min(1).max(200).optional(),
+  accountTitle: z.string().min(1).max(200).optional(),
+  accountNumber: z.string().min(1).max(50).optional(),
+  bankCode: z.string().min(1).max(20).optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -301,7 +338,8 @@ export const paymentInfoCreateSchema = z.object({
 // ---------------------------------------------------------------------------
 
 export const reviewHelpfulSchema = z.object({
-  userId: z.string().min(1),
+  reviewId: z.string().min(1),
+  userId: z.string().min(1).optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -319,8 +357,13 @@ export const socialShareSchema = z.object({
 // ---------------------------------------------------------------------------
 
 export const verificationSubmitSchema = z.object({
+  userId: z.string().min(1).optional(),
   shopId: z.string().min(1),
-  documents: z.array(z.string().url().max(2048)).min(1).max(10),
+  documentType: z.string().min(1).max(100).optional(),
+  country: z.string().max(10).optional(),
+  documentNumber: z.string().max(100).optional(),
+  documentUrl: z.string().max(2048).optional(),
+  documents: z.array(z.string().url().max(2048)).min(1).max(10).optional(),
 });
 
 // ---------------------------------------------------------------------------

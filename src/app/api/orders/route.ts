@@ -142,7 +142,7 @@ async function resolveItem(
 
     const variant = await db.productVariant.findUnique({
       where: { id: item.variantId },
-      include: { values: { include: { option: true } } },
+      include: { values: true },
     });
 
     if (!variant || variant.productId !== product.id || !variant.isActive) {
@@ -167,7 +167,7 @@ async function resolveItem(
       .join(' / ');
 
     const fallbackLabel = variant.values
-      .map((vv) => `${vv.option.name}: ${vv.valueId}`)
+      .map((vv) => `Option ${vv.optionId}: ${vv.valueId}`)
       .join(' / ');
 
     return {

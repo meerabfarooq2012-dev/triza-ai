@@ -8,8 +8,25 @@ import { NextResponse } from 'next/server';
  * Use this to verify the Vercel deployment is working before
  * attempting database-dependent operations.
  */
+interface HealthDatabase {
+  status: string;
+  adminExists?: boolean | string;
+  adminIsActive?: boolean;
+  adminIsVerified?: boolean;
+  error?: string;
+  errorName?: string;
+}
+
+interface HealthStatus {
+  status: string;
+  timestamp: string;
+  env: Record<string, unknown>;
+  database?: HealthDatabase;
+  recommendations?: string[];
+}
+
 export async function GET() {
-  const health: Record<string, unknown> = {
+  const health: HealthStatus = {
     status: 'ok',
     timestamp: new Date().toISOString(),
     env: {
@@ -32,7 +49,7 @@ export async function GET() {
   try {
     const { db } = await import('@/lib/db');
     await db.$queryRaw`SELECT 1 as test`;
-    health.database = { status: 'connected' };
+    health.database = { status: 'connected' } as HealthDatabase;
 
     // Check if admin user exists
     try {
@@ -49,7 +66,7 @@ export async function GET() {
       status: 'failed',
       error: err.message,
       errorName: err.name,
-    };
+    } as HealthDatabase;
 
     // Provide helpful recommendations
     health.recommendations = [];

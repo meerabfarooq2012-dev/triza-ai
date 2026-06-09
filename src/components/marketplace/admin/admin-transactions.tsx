@@ -485,7 +485,7 @@ export function AdminTransactions() {
                             ESCROW_STATUS_CONFIG.held
 
                           // Check if order has disputes
-                          const orderDisputes = (payment.order as Record<string, unknown> & { disputes?: Array<{ id: string; status: string; reason: string }> })?.disputes
+                          const orderDisputes = ((payment as any).order as { disputes?: Array<{ id: string; status: string; reason: string }> })?.disputes
                           const hasActiveDispute = orderDisputes && orderDisputes.length > 0
 
                           return (

@@ -14,15 +14,18 @@ export const POST = withCsrf(async (req: NextRequest) => {
       return NextResponse.json({ success: false, error: validation.error }, { status: 400 })
     }
     const { userId, shopId, documentType, country, documentNumber, documentUrl } = validation.data
+    const effectiveUserId = userId || '';
+    const effectiveDocumentType = documentType || 'national_id';
+    const effectiveDocumentUrl = documentUrl || (validation.data.documents?.[0] || '');
 
     // Check user exists
-    const user = await db.user.findUnique({ where: { id: userId } })
+    const user = await db.user.findUnique({ where: { id: effectiveUserId } })
     if (!user) {
       return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 })
     }
 
     // Check shop exists and belongs to user
-    const shop = await db.shop.findFirst({ where: { id: shopId, userId } })
+    const shop = await db.shop.findFirst({ where: { id: shopId, userId: effectiveUserId } })
     if (!shop) {
       return NextResponse.json({ success: false, error: 'Shop not found or does not belong to user' }, { status: 404 })
     }
@@ -30,10 +33,10 @@ export const POST = withCsrf(async (req: NextRequest) => {
     // Create verification document
     const verification = await db.sellerVerification.create({
       data: {
-        userId,
+        userId: effectiveUserId,
         shopId,
-        documentType,
-        documentUrl: documentUrl || '',
+        documentType: effectiveDocumentType,
+        documentUrl: effectiveDocumentUrl,
         documentNumber: documentNumber || null,
         country: country || 'PK',
         status: 'pending',

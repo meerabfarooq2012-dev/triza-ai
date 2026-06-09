@@ -504,9 +504,9 @@ export const useMarketplaceStore = create<MarketplaceState>()(
           // Old storage format — clear everything and start fresh.
           // The merge function will still sanitize, but this ensures
           // we don't carry over any corrupted keys from version 1.
-          return {} as Partial<MarketplaceState>
+          return persistedState as MarketplaceState
         }
-        return persistedState as Partial<MarketplaceState>
+        return persistedState as MarketplaceState
       },
       // Only persist auth and cart state, not transient UI state
       partialize: (state) => ({
@@ -586,7 +586,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
             console.error('Zustand rehydration error:', error)
             // Clear corrupted localStorage
             try { localStorage.removeItem('marketo-storage') } catch {}
-            useMarketplaceStore.setState({
+            setTimeout(() => useMarketplaceStore.setState({
               currentUser: null,
               isAuthenticated: false,
               isLoadingAuth: false,
@@ -596,7 +596,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
               cart: [],
               cartTotal: 0,
               favoriteIds: [],
-            })
+            }), 0)
             return
           }
           // Validate action functions survived hydration — check ALL action keys.
@@ -613,7 +613,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
           ]
           if (state) {
             const corruptedKey = actionKeys.find(
-              (key) => typeof (state as Record<string, unknown>)[key] !== 'function'
+              (key) => typeof (state as unknown as Record<string, unknown>)[key] !== 'function'
             )
             if (corruptedKey) {
               console.warn(
@@ -627,7 +627,9 @@ export const useMarketplaceStore = create<MarketplaceState>()(
             }
           }
           // Rehydration complete — signal to components that auth state is now settled
-          useMarketplaceStore.setState({ isLoadingAuth: false })
+          // Deferred via setTimeout to avoid TDZ: useMarketplaceStore is not yet
+          // assigned when onRehydrateStorage fires synchronously during create().
+          setTimeout(() => useMarketplaceStore.setState({ isLoadingAuth: false }), 0)
         }
       },
     }

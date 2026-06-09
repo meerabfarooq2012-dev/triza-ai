@@ -239,7 +239,7 @@ export function AdminShops() {
                       <span className="text-sm">{(shop as any)._count?.products ?? shop.products?.length ?? 0}</span>
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">
-                      {getVerificationBadge(shop.verificationStatus || 'none')}
+                      {getVerificationBadge((shop as any).verificationStatus || 'none')}
                     </TableCell>
                     <TableCell>
                       <Badge

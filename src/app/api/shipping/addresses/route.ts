@@ -81,7 +81,6 @@ export const POST = withCsrf(async (request: NextRequest) => {
       );
     }
     const {
-      userId,
       label,
       fullName,
       phone,
@@ -268,6 +267,7 @@ export const DELETE = withCsrf(async (request: NextRequest) => {
       );
     }
     const { id, userId: deleteUserId } = validation.data;
+    const effectiveUserId = deleteUserId || userId;
 
     const existing = await db.deliveryAddress.findUnique({ where: { id } });
     if (!existing) {
@@ -276,7 +276,7 @@ export const DELETE = withCsrf(async (request: NextRequest) => {
         { status: 404 }
       );
     }
-    if (existing.userId !== deleteUserId) {
+    if (existing.userId !== effectiveUserId) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 403 }
@@ -292,7 +292,7 @@ export const DELETE = withCsrf(async (request: NextRequest) => {
     // If the deleted address was the default, set the next available as default
     if (existing.isDefault) {
       const nextDefault = await db.deliveryAddress.findFirst({
-        where: { userId: deleteUserId, isActive: true },
+        where: { userId: effectiveUserId, isActive: true },
         orderBy: { createdAt: 'desc' },
       });
       if (nextDefault) {

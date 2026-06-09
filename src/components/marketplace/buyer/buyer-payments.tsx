@@ -386,7 +386,7 @@ export function BuyerPayments() {
   }
 
   const canConfirmDelivery = (payment: Payment) => {
-    const orderStatus = (payment.order as Record<string, unknown>)?.status as string | undefined
+    const orderStatus = (payment.order as unknown as Record<string, unknown>)?.status as string | undefined
     return (
       payment.escrowStatus === 'held' &&
       (orderStatus === 'delivered' || orderStatus === 'shipped')
@@ -769,15 +769,15 @@ export function BuyerPayments() {
               {selectedPayment.seller && (
                 <div className="flex items-center gap-3 rounded-lg border p-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100">
-                    {(selectedPayment.seller as Record<string, unknown>).avatar ? (
+                    {(selectedPayment.seller as unknown as Record<string, unknown>).avatar ? (
                       <img
-                        src={(selectedPayment.seller as Record<string, unknown>).avatar as string}
-                        alt={(selectedPayment.seller as Record<string, unknown>).name as string}
+                        src={(selectedPayment.seller as unknown as Record<string, unknown>).avatar as string}
+                        alt={(selectedPayment.seller as unknown as Record<string, unknown>).name as string}
                         className="h-9 w-9 rounded-full object-cover"
                       />
                     ) : (
                       <span className="text-sm font-semibold text-gray-500">
-                        {((selectedPayment.seller as Record<string, unknown>).name as string)
+                        {((selectedPayment.seller as unknown as Record<string, unknown>).name as string)
                           ?.charAt(0)
                           ?.toUpperCase()}
                       </span>
@@ -785,7 +785,7 @@ export function BuyerPayments() {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                      {(selectedPayment.seller as Record<string, unknown>).name as string}
+                      {(selectedPayment.seller as unknown as Record<string, unknown>).name as string}
                     </p>
                     <p className="text-xs text-gray-500">Seller</p>
                   </div>
@@ -798,7 +798,7 @@ export function BuyerPayments() {
                   <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 p-3">
                     <ShieldCheck className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
                     <p className="text-xs text-amber-700">
-                      Your order has been {(selectedPayment.order as Record<string, unknown>)?.status as string}. Confirm
+                      Your order has been {(selectedPayment.order as unknown as Record<string, unknown>)?.status as string}. Confirm
                       delivery to release the payment from escrow to the seller.
                     </p>
                   </div>

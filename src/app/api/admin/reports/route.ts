@@ -32,7 +32,6 @@ export async function GET(request: NextRequest) {
         include: {
           product: { select: { id: true, name: true, images: true, isActive: true } },
           reporter: { select: { id: true, name: true, email: true, avatar: true } },
-          reviewer: { select: { id: true, name: true } },
         },
         orderBy: { createdAt: 'desc' },
         skip,

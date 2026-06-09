@@ -7,7 +7,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateCsrfToken } from '@/lib/csrf'
 
-type RouteHandler = (request: NextRequest, context?: unknown) => Promise<NextResponse>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type RouteHandler = (request: NextRequest, context?: any) => Promise<NextResponse>
 
 const MUTATING_METHODS = new Set(['POST', 'PATCH', 'PUT', 'DELETE'])
 
@@ -65,7 +66,8 @@ async function extractCsrfToken(request: NextRequest): Promise<string | null> {
  * ```
  */
 export function withCsrf(handler: RouteHandler): RouteHandler {
-  return async (request: NextRequest, context?: unknown): Promise<NextResponse> => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return async (request: NextRequest, context?: any): Promise<NextResponse> => {
     // Only validate CSRF on mutating methods
     if (!MUTATING_METHODS.has(request.method)) {
       return handler(request, context)

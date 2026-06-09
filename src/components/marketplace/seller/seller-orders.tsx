@@ -149,7 +149,7 @@ export function SellerOrders() {
 
   // Check if invoice is available for an order
   const canDownloadInvoice = (order: Order) => {
-    return order.paymentStatus === 'paid' || order.paymentStatus === 'completed' || order.status === 'delivered'
+    return order.paymentStatus === 'paid' || order.status === 'delivered'
   }
 
   return (
@@ -259,7 +259,7 @@ export function SellerOrders() {
                         let productImages: string[] = []
                         if (item.product) {
                           try {
-                            const raw = (item.product as Record<string, unknown>).images
+                            const raw = item.product ? (item.product as any).images : null
                             productImages = JSON.parse(typeof raw === 'string' && raw ? raw : '[]')
                           } catch { productImages = [] }
                         }

@@ -49,7 +49,6 @@ export function TwoFactorVerify({ open, onOpenChange, userId, email, tempToken }
     if (otpValue.length === 6 && !useBackupCode && open) {
       handleVerify()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [otpValue, useBackupCode, open])
 
   const handleVerify = async () => {

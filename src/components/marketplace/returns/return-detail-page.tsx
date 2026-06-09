@@ -57,7 +57,7 @@ import type { ReturnRequest, ReturnStatus, RefundMethod, ReturnTimeline } from '
 // Props
 // ---------------------------------------------------------------------------
 
-interface ReturnDetailPageProps {
+export interface ReturnDetailPageProps {
   returnId: string
   isSeller: boolean
 }
@@ -850,7 +850,7 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
                     {(returnData.order.items || []).map((item) => {
                       let productImages: string[] = []
                       try {
-                        const raw = (item.product as Record<string, unknown>)?.images
+                        const raw = item.product ? (item.product as any).images : null
                         productImages = JSON.parse(typeof raw === 'string' && raw ? raw : '[]')
                       } catch { productImages = [] }
 

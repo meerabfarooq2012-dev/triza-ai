@@ -25,6 +25,8 @@ export async function GET() {
       DATABASE_URL_prefix: process.env.DATABASE_URL?.substring(0, 30) || 'not set',
       JWT_SECRET_set: !!process.env.JWT_SECRET,
       NEXT_PUBLIC_SUPABASE_URL_set: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      DATABASE_connected: false as boolean,
+      DATABASE_error: null as string | null,
     },
     build: {
       buildId: process.env.__NEXT_BUILD_ID || 'unknown',
@@ -34,7 +36,7 @@ export async function GET() {
   // Test database connection
   try {
     const { db } = await import('@/lib/db')
-    await db.$queryRaw`SELECT 1`
+    await db.$queryRaw`SELECT 1`;
     info.env.DATABASE_connected = true
   } catch (err) {
     info.env.DATABASE_connected = false

@@ -192,16 +192,22 @@ export const NOTIFICATION_PRIORITY_COLORS: Record<string, string> = {
 
 export const DISPUTE_STATUS_LABELS: Record<DisputeStatus, string> = {
   open: 'Open',
+  under_review: 'Under Review',
   investigating: 'Investigating',
+  awaiting_response: 'Awaiting Response',
   resolved: 'Resolved',
   closed: 'Closed',
+  escalated: 'Escalated',
 }
 
 export const DISPUTE_STATUS_COLORS: Record<DisputeStatus, string> = {
   open: 'bg-red-100 text-red-800',
+  under_review: 'bg-blue-100 text-blue-800',
   investigating: 'bg-yellow-100 text-yellow-800',
+  awaiting_response: 'bg-orange-100 text-orange-800',
   resolved: 'bg-amber-100 text-amber-800',
   closed: 'bg-gray-100 text-gray-800',
+  escalated: 'bg-purple-100 text-purple-800',
 }
 
 // ----- Social Platforms -----

@@ -438,7 +438,7 @@ export function SellerGigs() {
     const subcategoryId = isSubcategory ? (gig.categoryId || '') : ''
 
     const gigImages = safeJsonParse<string[]>(gig.images, [])
-    const gigPortfolio = safeJsonParse<string[]>((gig as Record<string, unknown>).portfolio as string | null | undefined, [])
+    const gigPortfolio = safeJsonParse<string[]>((gig as any).portfolio as string | null | undefined, [])
 
     setFormData({
       title: gig.title,
@@ -689,7 +689,7 @@ export function SellerGigs() {
 
   // Get subcategories for selected category in form (from DB children)
   const selectedCategory = allCategories.find((c) => c.id === formData.categoryId)
-  const availableSubcategories: Category[] = selectedCategory?.children || []
+  const availableSubcategories: Category[] = (selectedCategory as any)?.children || []
 
   // =====================================================================
   // Render

@@ -27,7 +27,7 @@ function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
   }
 }
 
-interface PublicWishlistProps {
+export interface PublicWishlistProps {
   slug: string
 }
 

@@ -593,7 +593,7 @@ export function BuyerWishlists() {
                   <CardContent className="pt-0">
                     {/* Product Preview Thumbnails */}
                     {(() => {
-                      const previewItems = (wishlist as Record<string, unknown>).items as Array<{ product: { name: string; images: string | null; price: number } }> | undefined
+                      const previewItems = (wishlist as any).items as Array<{ product: { name: string; images: string | null; price: number } }> | undefined
                       const previewProducts = previewItems?.map(i => i.product) ?? []
                       const totalItems = wishlist._count?.items ?? 0
                       const hasItems = previewProducts.length > 0

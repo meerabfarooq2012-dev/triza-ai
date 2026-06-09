@@ -194,7 +194,7 @@ export const POST = withCsrf(async (req: NextRequest) => {
         type: type === 'deal_of_day' ? 'deal_of_day' : 'flash_sale',
         startDate: new Date(startDate),
         endDate: new Date(endDate),
-        maxQuantity: maxQuantity ? parseInt(String(maxQuantity), 10) : null,
+        maxQuantity: maxQuantity ? parseInt(String(maxQuantity), 10) : undefined,
         banner: banner || null,
         isActive: true,
         soldQuantity: 0,

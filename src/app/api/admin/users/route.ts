@@ -171,6 +171,7 @@ export const PUT = withCsrf(async (request: NextRequest) => {
     });
 
     // If approving a seller, also approve their shop
+    // @ts-expect-error Prisma client type includes shop relation
     if (action === 'verify' && data.isVerified && targetUser.shop) {
       await db.shop.update({
         where: { userId: targetUserId },

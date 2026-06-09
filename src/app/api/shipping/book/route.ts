@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       include: {
         items: {
           include: {
-            product: { select: { name: true, weight: true } },
+            product: { select: { name: true } },
           },
         },
         seller: { select: { id: true, name: true, phone: true, shop: { select: { name: true, address: true } } } },

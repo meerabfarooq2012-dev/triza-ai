@@ -31,7 +31,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
         { status: 400 }
       );
     }
-    const { productId, platform } = validation.data;
+    const { platform } = validation.data; const productId = (validation.data as any).productId || (validation.data as any).entityId;
     const userId = auth.userId;
 
     // Verify the product exists

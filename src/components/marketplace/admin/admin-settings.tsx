@@ -95,7 +95,7 @@ export default function AdminSettings() {
 
     // Check if user is authenticated and is admin
     // Use both isAuthenticated flag AND presence of authToken for reliability
-    if (!isAuthenticated || !authToken || (currentUser?.role !== 'admin' && currentUser?.role !== 'both')) {
+    if (!isAuthenticated || !authToken || ((currentUser?.role as string) !== 'admin' && currentUser?.role !== 'both')) {
       // If we have an auth token but no user, try the API anyway — the token
       // may be valid even if the store hasn't fully rehydrated yet
       if (!authToken) {
@@ -107,7 +107,7 @@ export default function AdminSettings() {
 
     try {
       const data = await api.admin.getSettings()
-      const s = data.settings as unknown as PlatformSettingsData
+      const s = ((data as any).settings || (data as any).data) as unknown as PlatformSettingsData
 
       setPlatformName(s.platformName || 'Marketo')
       setTagline(s.tagline || 'Your Marketplace, Your Way')

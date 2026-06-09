@@ -33,7 +33,7 @@ import type { ReturnRequest, ReturnStatus } from '@/types'
 // Props
 // ---------------------------------------------------------------------------
 
-interface ReturnsPageProps {
+export interface ReturnsPageProps {
   userId: string
   isSeller: boolean
   shopId?: string

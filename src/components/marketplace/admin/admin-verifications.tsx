@@ -599,7 +599,7 @@ export default function AdminVerifications() {
                         Trust Level
                       </p>
                       <p className="text-sm font-medium capitalize">
-                        {(reviewingItem as Record<string, unknown>).trustLevel || '—'}
+                        {(reviewingItem as any).trustLevel || '—'}
                       </p>
                     </div>
                     <div>

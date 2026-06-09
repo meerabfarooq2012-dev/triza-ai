@@ -156,7 +156,7 @@ export const POST = withCsrf(async (req: NextRequest) => {
       }
 
       const comparePrice = comparePriceStr ? parseFloat(comparePriceStr) : undefined
-      if (comparePriceStr && (isNaN(comparePrice) || comparePrice < 0)) {
+      if (comparePriceStr && (isNaN(comparePrice!) || comparePrice! < 0)) {
         errors.push({ row: rowNum, message: 'Compare price must be a valid positive number' })
         continue
       }
