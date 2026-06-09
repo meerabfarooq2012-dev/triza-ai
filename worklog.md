@@ -195,3 +195,30 @@ Stage Summary:
 - Browser verified: Home, Login, Browse, Gigs pages all working correctly
 - No error overlay, no console errors, getSnapshot warning eliminated
 - Remaining 3 TS errors are in scripts/switch-db.ts, skills/image-edit/scripts/image-edit.ts, skills/stock-analysis-skill/src/analyzer.ts (non-application code)
+
+---
+Task ID: 5
+Agent: Main Agent
+Task: Fix Home navigation bug and add aria-labels to icon-only buttons for accessibility
+
+Work Log:
+- Tested Home navigation using Agent Browser: Navigated Landing → Browse → Home → Gigs → Home → Logo → all working correctly
+- The Home navigation bug was already fixed in previous sessions (the Zustand store and page.tsx fixes resolved the underlying issue)
+- Added aria-label="Go to homepage" to logo button in header.tsx (line 180)
+- Added aria-label="Search" to mobile search toggle button in header.tsx
+- Added dynamic aria-label to cart button: "Shopping cart" or "Shopping cart (N items)" in header.tsx
+- Added dynamic aria-label to messages button: "Messages" or "Messages (N unread)" in header.tsx
+- Added aria-label="Open menu" to mobile menu button in header.tsx
+- Added aria-label="Clear search" to mobile search clear button in header.tsx
+- Added aria-label="User menu" to user avatar/dropdown button in header.tsx
+- Added dynamic aria-label to NotificationBell: "Notifications" or "Notifications (N unread)"
+- Added aria-label="Toggle theme" to both mounted and unmounted ThemeToggle button states
+- Added aria-label="Go to homepage" to footer brand button in footer.tsx
+- Social login buttons (Google) in auth-modal.tsx already had aria-labels ("Sign in with Google" and "Sign up with Google")
+- Committed and pushed to GitHub (commit 7159aaa) for Vercel auto-deploy
+
+Stage Summary:
+- Home navigation works correctly (was already fixed by previous store/page.tsx changes)
+- All icon-only buttons now have descriptive aria-labels for screen reader accessibility
+- Dynamic counts included in aria-labels for cart, messages, and notifications
+- Changes pushed to origin/main for Vercel deployment
