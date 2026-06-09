@@ -172,7 +172,7 @@ export const POST = async (request: NextRequest) => {
 
     // Send email verification (non-blocking)
     // Note: we send the raw token in the email link, but store the hashed version
-    const verifyUrl = `${process.env.NEXT_PUBLIC_PLATFORM_URL || 'https://marketo-alpha.vercel.app'}?verify=${verifyToken}`;
+    const verifyUrl = `${process.env.NEXT_PUBLIC_PLATFORM_URL || 'https://thiora.vercel.app'}?verify=${verifyToken}`;
     sendEmailAsync({
       to: email,
       subject: 'Verify your email — Thiora',

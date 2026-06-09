@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 import { db } from '@/lib/db';
 
-const BASE_URL = process.env.NEXT_PUBLIC_PLATFORM_URL || 'https://marketo-alpha.vercel.app';
+const BASE_URL = process.env.NEXT_PUBLIC_PLATFORM_URL || 'https://thiora.vercel.app';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Static pages

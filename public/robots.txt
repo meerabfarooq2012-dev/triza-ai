@@ -16,4 +16,4 @@ Allow: /
 Disallow: /api/
 Disallow: /admin
 
-Sitemap: https://marketo-alpha.vercel.app/sitemap.xml
+Sitemap: https://thiora.vercel.app/sitemap.xml

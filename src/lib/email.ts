@@ -3,7 +3,7 @@ import { Resend } from 'resend';
 // Lazy-initialized Resend client to avoid constructor errors when API key is missing
 let _resend: Resend | null = null;
 
-const FROM_DOMAIN = process.env.EMAIL_FROM_DOMAIN || 'marketo-alpha.vercel.app';
+const FROM_DOMAIN = process.env.EMAIL_FROM_DOMAIN || 'thiora.vercel.app';
 const FALLBACK_FROM = 'onboarding@resend.dev';
 
 /**
