@@ -1,9 +1,9 @@
 /// <reference lib="webworker" />
 
-const CACHE_NAME = 'marketo-v1';
-const STATIC_CACHE = 'marketo-static-v1';
-const DYNAMIC_CACHE = 'marketo-dynamic-v1';
-const API_CACHE = 'marketo-api-v1';
+const CACHE_NAME = 'thiora-v1';
+const STATIC_CACHE = 'thiora-static-v1';
+const DYNAMIC_CACHE = 'thiora-dynamic-v1';
+const API_CACHE = 'thiora-api-v1';
 
 const STATIC_ASSETS = [
   '/',

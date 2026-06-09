@@ -5,12 +5,12 @@ const PORT = 3003;
 
 // ─── JWT Configuration ────────────────────────────────────────────────────
 // Must match the JWT_SECRET used by the main Next.js app (auth-middleware.ts)
-const JWT_SECRET = process.env.JWT_SECRET || "marketo-dev-secret-change-in-production";
+const JWT_SECRET = process.env.JWT_SECRET || "thiora-dev-secret-change-in-production";
 
 // ─── Allowed CORS Origins ─────────────────────────────────────────────────
 const ALLOWED_ORIGINS = [
   process.env.FRONTEND_URL || "http://localhost:3000",
-  "https://marketo-vercel-app.vercel.app",
+  "https://thiora.vercel.app",
 ];
 
 // ─── Socket.io Server ─────────────────────────────────────────────────────

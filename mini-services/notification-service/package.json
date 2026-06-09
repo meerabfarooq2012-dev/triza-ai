@@ -1,5 +1,5 @@
 {
-  "name": "marketo-notification-service",
+  "name": "thiora-notification-service",
   "module": "index.ts",
   "type": "module",
   "private": true,

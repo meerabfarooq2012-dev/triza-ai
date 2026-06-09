@@ -1,5 +1,5 @@
 {
-  "name": "marketo-chat-service",
+  "name": "thiora-chat-service",
   "module": "index.ts",
   "type": "module",
   "private": true,
