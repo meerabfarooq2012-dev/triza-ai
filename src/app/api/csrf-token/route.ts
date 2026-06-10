@@ -1,9 +1,7 @@
 // =============================================================================
-// CSRF Token API — Generates and serves CSRF tokens (double-submit cookie)
+// CSRF Token API — Generates and serves CSRF tokens
 // GET /api/csrf-token → { success: true, token: "..." }
-// Sets an HttpOnly cookie for server-side verification.
-// The token is also returned in the response body for client-side use
-// in the x-csrf-token header (double-submit cookie pattern).
+// Sets a cookie for reference, returns token in response body for client use.
 // =============================================================================
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -12,24 +10,19 @@ import { generateCsrfToken } from '@/lib/csrf'
 export async function GET(request: NextRequest) {
   const token = generateCsrfToken()
 
-  // Determine if the request is over HTTPS
   const isSecure =
     request.headers.get('x-forwarded-proto') === 'https' ||
     request.nextUrl.protocol === 'https:'
-
-  // Use __Host- prefix when on HTTPS (more restrictive cookie prefix)
-  const cookieName = isSecure ? '__Host-csrf-token' : 'csrf-token'
 
   const response = NextResponse.json({
     success: true,
     token,
   })
 
-  // Set the CSRF token as an HttpOnly cookie (inaccessible to JS — prevents XSS exfil)
-  // The double-submit pattern works because the client reads the token from the
-  // response body and sends it back in the x-csrf-token header on mutating requests.
-  response.cookies.set(cookieName, token, {
-    httpOnly: true,
+  // Set the CSRF token as a cookie
+  // Using simple name without __Host- prefix for better compatibility on Vercel
+  response.cookies.set('csrf-token', token, {
+    httpOnly: false, // Client JS needs to read this for double-submit on same-origin
     secure: isSecure,
     sameSite: 'lax',
     path: '/',

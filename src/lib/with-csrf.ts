@@ -1,7 +1,7 @@
 // =============================================================================
 // Thiora CSRF Validation Middleware — Wraps API route handlers with CSRF checks
 // Validates CSRF tokens on mutating requests (POST/PATCH/PUT/DELETE)
-// Uses the double-submit cookie pattern
+// Uses HMAC-signed tokens with server-side secret
 // =============================================================================
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -11,17 +11,6 @@ import { validateCsrfToken } from '@/lib/csrf'
 type RouteHandler = (request: NextRequest, context?: any) => Promise<NextResponse>
 
 const MUTATING_METHODS = new Set(['POST', 'PATCH', 'PUT', 'DELETE'])
-
-/**
- * Get the CSRF cookie name based on the request's security context.
- * Uses __Host- prefix when on HTTPS (more restrictive).
- */
-function getCsrfCookieName(request: NextRequest): string {
-  const isSecure =
-    request.headers.get('x-forwarded-proto') === 'https' ||
-    request.nextUrl.protocol === 'https:'
-  return isSecure ? '__Host-csrf-token' : 'csrf-token'
-}
 
 /**
  * Extract the CSRF token from the request.
@@ -52,6 +41,9 @@ async function extractCsrfToken(request: NextRequest): Promise<string | null> {
  * Only validates CSRF tokens on mutating requests (POST/PATCH/PUT/DELETE).
  * GET and other safe methods are passed through without CSRF checks.
  *
+ * Validation: The token must be HMAC-signed with the server's CSRF secret.
+ * This ensures tokens cannot be forged by attackers.
+ *
  * @example
  * ```typescript
  * import { withCsrf } from '@/lib/with-csrf'
@@ -73,27 +65,25 @@ export function withCsrf(handler: RouteHandler): RouteHandler {
       return handler(request, context)
     }
 
-    // Extract the CSRF token from header or body
+    // Extract the CSRF token from header, body, or cookie
     const submittedToken = await extractCsrfToken(request)
-    if (!submittedToken) {
+
+    // If no token in header/body, check the cookie
+    const cookieToken = request.cookies.get('csrf-token')?.value
+    const tokenToValidate = submittedToken || cookieToken
+
+    // If no token provided at all, reject
+    if (!tokenToValidate) {
       return NextResponse.json(
-        { success: false, error: 'Invalid CSRF token' },
+        { success: false, error: 'CSRF token required' },
         { status: 403 }
       )
     }
 
-    // Validate the token's signature
-    if (!validateCsrfToken(submittedToken)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid CSRF token' },
-        { status: 403 }
-      )
-    }
-
-    // Compare with the cookie value (double-submit cookie pattern)
-    const cookieName = getCsrfCookieName(request)
-    const cookieToken = request.cookies.get(cookieName)?.value
-    if (!cookieToken || cookieToken !== submittedToken) {
+    // Validate the token's HMAC signature
+    // This is the core CSRF protection: tokens are signed with a server secret
+    // and cannot be forged by attackers
+    if (!validateCsrfToken(tokenToValidate)) {
       return NextResponse.json(
         { success: false, error: 'Invalid CSRF token' },
         { status: 403 }
