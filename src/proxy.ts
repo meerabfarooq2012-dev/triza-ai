@@ -42,6 +42,9 @@ const ALLOWED_API_METHODS = new Set([
   'OPTIONS',
 ])
 
+/** Mutating HTTP methods that require CSRF protection */
+const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
+
 /** Maximum request body size for API routes (10 MB) */
 const MAX_CONTENT_LENGTH = 10 * 1024 * 1024
 
@@ -290,6 +293,46 @@ async function _proxyInner(request: NextRequest) {
       return response
     }
 
+    // Origin-based CSRF check for mutating admin requests (production only)
+    if (!isDev && MUTATING_METHODS.has(request.method)) {
+      try {
+        const origin = request.headers.get('origin')
+        const referer = request.headers.get('referer')
+        const adminAllowedOrigins = [
+          process.env.NEXT_PUBLIC_APP_URL || '',
+          'https://thiora.vercel.app',
+        ].filter(Boolean)
+
+        let adminOriginValid = false
+        if (origin) {
+          adminOriginValid = adminAllowedOrigins.some(allowed => origin === allowed)
+        } else if (referer) {
+          try {
+            const refererOrigin = new URL(referer).origin
+            adminOriginValid = adminAllowedOrigins.some(allowed => refererOrigin === allowed)
+          } catch {
+            adminOriginValid = false
+          }
+        } else {
+          // No origin — check if JWT token is valid (API clients)
+          const token = extractBearerToken(request)
+          if (token) {
+            const payload = await verifyJwt(token)
+            adminOriginValid = !!payload
+          }
+        }
+
+        if (!adminOriginValid) {
+          return NextResponse.json(
+            { error: 'Forbidden — invalid origin for admin action.' },
+            { status: 403 }
+          )
+        }
+      } catch (adminCsrfError) {
+        console.warn('[proxy] Admin CSRF origin check error:', adminCsrfError)
+      }
+    }
+
     // Verify JWT with admin role
     const token = extractBearerToken(request)
     if (!token) {
@@ -349,7 +392,53 @@ async function _proxyInner(request: NextRequest) {
   }
 
   // -----------------------------------------------------------------------
-  // 5. All Other Routes — Add Security Headers + CORS
+  // 5. CSRF Protection — Origin-based validation for mutating API requests
+  //    (Complements the passthrough withCsrf wrapper in route handlers)
+  // -----------------------------------------------------------------------
+  if (!isDev && isApiRoute && MUTATING_METHODS.has(request.method)) {
+    try {
+      const origin = request.headers.get('origin')
+      const referer = request.headers.get('referer')
+
+      const allowedOrigins = [
+        process.env.NEXT_PUBLIC_APP_URL || '',
+        'https://thiora.vercel.app',
+      ].filter(Boolean)
+
+      let originValid = false
+
+      if (origin) {
+        originValid = allowedOrigins.some(allowed => origin === allowed)
+      } else if (referer) {
+        try {
+          const refererOrigin = new URL(referer).origin
+          originValid = allowedOrigins.some(allowed => refererOrigin === allowed)
+        } catch {
+          originValid = false
+        }
+      } else {
+        // No Origin or Referer in production — allow if valid auth token (API clients)
+        const token = extractBearerToken(request)
+        if (token) {
+          const payload = await verifyJwt(token)
+          originValid = !!payload
+        }
+      }
+
+      if (!originValid) {
+        return NextResponse.json(
+          { error: 'Forbidden — invalid origin' },
+          { status: 403 }
+        )
+      }
+    } catch (csrfError) {
+      // If CSRF check fails, log but don't block — the route handler has its own auth
+      console.warn('[proxy] CSRF origin check error:', csrfError)
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // 6. All Other Routes — Add Security Headers + CORS
   // -----------------------------------------------------------------------
   const response = NextResponse.next()
 
