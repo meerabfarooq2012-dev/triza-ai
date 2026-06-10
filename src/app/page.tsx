@@ -305,6 +305,11 @@ const PaymentSettingsPage = dynamic<import('@/components/marketplace/payment/pay
   { ssr: false, loading: () => <ViewLoader /> }
 )
 
+const AIGuideMascot = dynamic(
+  withChunkRetry(() => import('@/components/marketplace/shared/ai-guide-mascot'), 'AIGuideMascot'),
+  { ssr: false }
+)
+
 // Error boundary component to catch rendering errors in child components
 type ErrorBoundaryProps = { children: React.ReactNode; fallback?: React.ReactNode }
 type ErrorBoundaryState = { hasError: boolean; error: Error | null }
@@ -641,6 +646,7 @@ function MarketplaceApp() {
       <FeedbackWidget />
       <CookieConsent />
       <CartSync />
+      <AIGuideMascot />
       <EmailVerificationDialog
         open={showEmailVerify}
         onOpenChange={setShowEmailVerify}
