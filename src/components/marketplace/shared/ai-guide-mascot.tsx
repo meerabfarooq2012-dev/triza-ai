@@ -25,9 +25,9 @@ interface ChatMessage {
 function getWelcomeMessage(isAuthenticated: boolean, userName?: string, currentView?: string): string {
   if (!isAuthenticated) {
     const greetings = [
-      "Hey there! 👋 I'm Thori, your Thiora guide! I can help you explore our marketplace — freelance services, digital downloads, and physical products, all in one place!",
-      "Welcome to Thiora! ✨ I'm Thori, your personal guide! Here you can sell anything — freelance services, digital products, or physical items. Want me to show you around?",
-      "Hi! 🌟 I'm Thori! Thiora is Pakistan's marketplace where sellers keep 90% of earnings! Let me help you get started — just ask me anything!",
+      "Hey there! 👋 I'm Thori, your Thiora guide! I can help you explore our international marketplace — freelance services, digital downloads, and physical products, all in one place!",
+      "Welcome to Thiora! ✨ I'm Thori, your personal guide! Here you can sell anything — freelance services, digital products, or physical items. Work from anywhere, get paid globally!",
+      "Hi! 🌟 I'm Thori! Thiora is an international marketplace where sellers and freelancers keep 90% of earnings! Let me help you get started — just ask me anything!",
     ]
     return greetings[Math.floor(Math.random() * greetings.length)]
   }
@@ -35,7 +35,7 @@ function getWelcomeMessage(isAuthenticated: boolean, userName?: string, currentV
   const name = userName ? ` ${userName}` : ''
 
   if (currentView === 'seller-dashboard') {
-    return `Hey${name}! 🎉 Great to see you managing your shop! Need help with products, orders, or growing your sales? I'm here for you!`
+    return `Hey${name}! 🎉 Great to see you managing your shop! Need help with products, gigs, orders, or growing your sales? I'm here for you!`
   }
 
   if (currentView === 'buyer-dashboard') {
@@ -73,7 +73,7 @@ function getSuggestedActions(isAuthenticated: boolean, currentView?: string): Ar
 
   return [
     { label: 'Explore features', message: 'What features does Thiora offer?' },
-    { label: 'Sell on Thiora', message: 'How can I start selling on Thiora?' },
+    { label: 'Become a freelancer', message: 'How can I start freelancing on Thiora?' },
     { label: 'Find freelancers', message: 'How do I find and hire freelancers?' },
   ]
 }
@@ -278,7 +278,7 @@ export function AIGuideMascot() {
               ✕
             </button>
             <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed pr-3">
-              👋 Hey! I&apos;m <strong className="text-amber-600">Thori</strong>, your Thiora guide! Tap me for help navigating the marketplace!
+              👋 Hey! I&apos;m <strong className="text-amber-600">Thori</strong>, your Thiora guide! Buy, sell, or freelance — I can help with it all!
             </p>
           </div>
         )}
