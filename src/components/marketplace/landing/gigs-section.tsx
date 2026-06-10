@@ -109,7 +109,7 @@ export function GigsSection() {
   const { setCurrentView } = useMarketplaceStore()
 
   return (
-    <section className="py-20 sm:py-28 bg-gradient-to-b from-amber-50/50 via-white to-white dark:from-amber-950/20 dark:via-background dark:to-background">
+    <section id="gigs-section" className="py-20 sm:py-28 bg-gradient-to-b from-amber-50/50 via-white to-white dark:from-amber-950/20 dark:via-background dark:to-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div

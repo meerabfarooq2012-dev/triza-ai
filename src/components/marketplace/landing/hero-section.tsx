@@ -12,7 +12,7 @@ export function HeroSection() {
   const { t } = useLanguage()
 
   return (
-    <section className="relative min-h-[90vh] flex items-center overflow-hidden">
+    <section id="hero-section" className="relative min-h-[90vh] flex items-center overflow-hidden">
       {/* Subtle warm background gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-amber-50/50 via-background to-amber-100/30 dark:from-amber-950/20 dark:via-background dark:to-amber-950/10" />
 

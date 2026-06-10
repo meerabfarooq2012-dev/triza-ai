@@ -9,7 +9,7 @@ export function CTASection() {
   const { setCurrentView } = useMarketplaceStore()
 
   return (
-    <section className="py-20 sm:py-28 relative overflow-hidden">
+    <section id="cta-section" className="py-20 sm:py-28 relative overflow-hidden">
       {/* Gradient background */}
       <div className="absolute inset-0 gold-gradient" />
 

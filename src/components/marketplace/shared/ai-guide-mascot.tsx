@@ -5,13 +5,15 @@ import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { X, Send, Sparkles, Minimize2 } from 'lucide-react'
+import { X, Send, Sparkles, Minimize2, ChevronRight, SkipForward } from 'lucide-react'
 import Image from 'next/image'
 
 // ─────────────────────────────────────────────────────────────
 // Thori — Thiora's AI Guide Mascot
-// A friendly flying character that guides users through the
-// platform, welcomes visitors, and answers questions.
+// - Flies vertically across landing page showing sections
+// - Guides new visitors with a tour
+// - After login, explains all features
+// - Then returns to its fixed position for chat
 // ─────────────────────────────────────────────────────────────
 
 interface ChatMessage {
@@ -20,6 +22,98 @@ interface ChatMessage {
   content: string
   timestamp: Date
 }
+
+// Landing page tour steps
+const LANDING_TOUR_STEPS = [
+  {
+    targetId: 'hero-section',
+    title: 'Welcome to Thiora! 🎉',
+    description: 'Create your shop, sell freelance services, digital downloads, or physical products — all in one international marketplace!',
+    position: 'right' as const,
+  },
+  {
+    targetId: 'browse-by-type',
+    title: 'Browse by Type 🔍',
+    description: 'Explore three worlds: Digital Products, Physical Products, and Freelance Services — whatever you need!',
+    position: 'right' as const,
+  },
+  {
+    targetId: 'commission-section',
+    title: 'You Keep 90%! 💰',
+    description: 'Sellers and freelancers keep 90% of earnings — only 10% commission. Much lower than competitors who take 25%!',
+    position: 'right' as const,
+  },
+  {
+    targetId: 'features-section',
+    title: 'Powerful Features ⚡',
+    description: 'Custom shops, escrow payments, AI descriptions, order tracking, seller wallets, and much more!',
+    position: 'right' as const,
+  },
+  {
+    targetId: 'how-it-works',
+    title: 'Simple 3 Steps 📋',
+    description: 'Sign Up → Pay Securely with Escrow → Confirm & Get Paid. It\'s that easy!',
+    position: 'right' as const,
+  },
+  {
+    targetId: 'categories-section',
+    title: 'Categories Galore! 🏷️',
+    description: 'From Fashion to Electronics, Graphic Design to AI Services — find everything you need!',
+    position: 'right' as const,
+  },
+  {
+    targetId: 'gigs-section',
+    title: 'Freelance Services 🧑‍💻',
+    description: 'Hire talented freelancers or offer your own services. Design, development, writing, marketing & more!',
+    position: 'right' as const,
+  },
+  {
+    targetId: 'cta-section',
+    title: 'Ready to Start? 🚀',
+    description: 'Sign up for free and start selling or freelancing today. Work from anywhere, get paid globally!',
+    position: 'right' as const,
+  },
+]
+
+// Post-login feature tour steps
+const LOGIN_TOUR_STEPS = [
+  {
+    title: 'Welcome Back! 🎉',
+    description: 'Let me show you around your Thiora dashboard! Here\'s everything you can do.',
+  },
+  {
+    title: 'Your Dashboard 📊',
+    description: 'Switch between Buyer and Seller dashboards. As a buyer, track orders and favorites. As a seller, manage products and analytics.',
+  },
+  {
+    title: 'Create Your Shop 🏪',
+    description: 'Set up a custom shop with your branding. Sell digital products, physical items, or freelance services (gigs)!',
+  },
+  {
+    title: 'Offer Freelance Gigs 🧑‍💻',
+    description: 'Create gig listings with Basic, Standard, and Premium packages. Earn 90% on every order!',
+  },
+  {
+    title: 'Secure Escrow Payments 🔒',
+    description: 'Payments are held safely until delivery is confirmed. Withdraw via PayPal, Payoneer, bank transfer, or crypto.',
+  },
+  {
+    title: 'Real-time Messages 💬',
+    description: 'Chat with buyers, sellers, and freelancers in real-time. Quick responses lead to better ratings!',
+  },
+  {
+    title: 'Track Orders 📦',
+    description: 'Track orders from placement to delivery. File disputes if anything goes wrong — we\'ve got you covered.',
+  },
+  {
+    title: 'Seller Wallet 💰',
+    description: 'View your earnings, manage withdrawals, and track your income. Your money, your way!',
+  },
+  {
+    title: 'Need Help? I\'m Here! ✨',
+    description: 'Just tap me anytime! I can answer questions about any feature. Enjoy Thiora! 🌟',
+  },
+]
 
 // Context-aware welcome messages
 function getWelcomeMessage(isAuthenticated: boolean, userName?: string, currentView?: string): string {
@@ -45,7 +139,7 @@ function getWelcomeMessage(isAuthenticated: boolean, userName?: string, currentV
   return `Hey${name}! 😊 I'm Thori, your Thiora guide! Whether you're buying, selling, or freelancing — I've got you covered. What can I help you with?`
 }
 
-// Suggested quick actions based on user state
+// Suggested quick actions
 function getSuggestedActions(isAuthenticated: boolean, currentView?: string): Array<{ label: string; message: string }> {
   if (!isAuthenticated) {
     return [
@@ -83,40 +177,90 @@ export function AIGuideMascot() {
   const currentUser = useMarketplaceStore((s) => s.currentUser)
   const currentView = useMarketplaceStore((s) => s.currentView)
 
+  // Chat state
   const [isOpen, setIsOpen] = useState(false)
   const [isMinimized, setIsMinimized] = useState(false)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+
+  // Tour state
+  const [tourActive, setTourActive] = useState(false)
+  const [tourStep, setTourStep] = useState(0)
+  const [tourType, setTourType] = useState<'landing' | 'login'>('landing')
   const [showWelcome, setShowWelcome] = useState(false)
   const [hasInteracted, setHasInteracted] = useState(false)
+  const [tourCompleted, setTourCompleted] = useState(false)
+  const [flyingToSection, setFlyingToSection] = useState(false)
+  const [mascotPosition, setMascotPosition] = useState({ x: 0, y: 0 })
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const chatContainerRef = useRef<HTMLDivElement>(null)
+  const mascotRef = useRef<HTMLDivElement>(null)
+  const tourSeenRef = useRef<Set<string>>(new Set())
 
-  // Show welcome bubble after a delay
+  // Check if tour was already seen
+  useEffect(() => {
+    try {
+      const seen = localStorage.getItem('thiora-tour-seen')
+      if (seen) tourSeenRef.current = new Set(JSON.parse(seen))
+    } catch {}
+  }, [])
+
+  // Save tour as seen
+  const markTourSeen = useCallback((tourId: string) => {
+    tourSeenRef.current.add(tourId)
+    try {
+      localStorage.setItem('thiora-tour-seen', JSON.stringify([...tourSeenRef.current]))
+    } catch {}
+  }, [])
+
+  // Show welcome bubble after delay
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!hasInteracted) {
+      if (!hasInteracted && !tourActive) {
         setShowWelcome(true)
       }
-    }, 3000)
-
+    }, 2500)
     return () => clearTimeout(timer)
-  }, [hasInteracted])
+  }, [hasInteracted, tourActive])
 
-  // Hide welcome bubble after some time
+  // Hide welcome bubble after time
   useEffect(() => {
     if (showWelcome) {
-      const timer = setTimeout(() => {
-        setShowWelcome(false)
-      }, 8000)
+      const timer = setTimeout(() => setShowWelcome(false), 7000)
       return () => clearTimeout(timer)
     }
   }, [showWelcome])
 
-  // Scroll to bottom when new messages arrive
+  // Auto-start landing page tour for new visitors
+  useEffect(() => {
+    if (currentView === 'landing' && !isAuthenticated && !tourActive && !tourCompleted) {
+      const seen = tourSeenRef.current.has('landing')
+      if (!seen && !hasInteracted) {
+        const timer = setTimeout(() => {
+          startLandingTour()
+        }, 4000)
+        return () => clearTimeout(timer)
+      }
+    }
+  }, [currentView, isAuthenticated, tourActive, tourCompleted, hasInteracted])
+
+  // Auto-start login tour when user logs in for first time
+  useEffect(() => {
+    if (isAuthenticated && currentUser && !tourActive && !tourCompleted) {
+      const seen = tourSeenRef.current.has(`login-${currentUser.id}`)
+      if (!seen) {
+        const timer = setTimeout(() => {
+          startLoginTour()
+        }, 1500)
+        return () => clearTimeout(timer)
+      }
+    }
+  }, [isAuthenticated, currentUser, tourActive, tourCompleted])
+
+  // Scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
@@ -128,21 +272,87 @@ export function AIGuideMascot() {
     }
   }, [isOpen, isMinimized])
 
+  // Landing page tour - fly to each section
+  const startLandingTour = useCallback(() => {
+    setTourType('landing')
+    setTourStep(0)
+    setTourActive(true)
+    setHasInteracted(true)
+    setShowWelcome(false)
+  }, [])
+
+  // Login tour - show feature highlights
+  const startLoginTour = useCallback(() => {
+    setTourType('login')
+    setTourStep(0)
+    setTourActive(true)
+    setHasInteracted(true)
+  }, [])
+
+  // Fly mascot to a section element
+  const flyToElement = useCallback((elementId: string) => {
+    const el = document.getElementById(elementId)
+    if (!el || !mascotRef.current) return
+
+    setFlyingToSection(true)
+    const rect = el.getBoundingClientRect()
+    const scrollToY = window.scrollY + rect.top - 100
+
+    // Smooth scroll to the section
+    window.scrollTo({ top: scrollToY, behavior: 'smooth' })
+
+    // Calculate mascot position
+    const targetX = rect.left - 80
+    const targetY = rect.top + rect.height / 2 - 30
+
+    setMascotPosition({ x: Math.max(10, targetX), y: Math.max(10, targetY) })
+
+    setTimeout(() => setFlyingToSection(false), 800)
+  }, [])
+
+  // Handle tour step change
+  useEffect(() => {
+    if (!tourActive) return
+
+    if (tourType === 'landing') {
+      const step = LANDING_TOUR_STEPS[tourStep]
+      if (step) {
+        flyToElement(step.targetId)
+      }
+    }
+  }, [tourStep, tourActive, tourType, flyToElement])
+
+  const nextTourStep = useCallback(() => {
+    const steps = tourType === 'landing' ? LANDING_TOUR_STEPS : LOGIN_TOUR_STEPS
+    if (tourStep < steps.length - 1) {
+      setTourStep((prev) => prev + 1)
+    } else {
+      // Tour complete
+      setTourActive(false)
+      setTourCompleted(true)
+      if (tourType === 'landing') {
+        markTourSeen('landing')
+      } else if (currentUser?.id) {
+        markTourSeen(`login-${currentUser.id}`)
+      }
+    }
+  }, [tourStep, tourType, currentUser, markTourSeen])
+
+  const skipTour = useCallback(() => {
+    setTourActive(false)
+    setTourCompleted(true)
+    if (tourType === 'landing') {
+      markTourSeen('landing')
+    } else if (currentUser?.id) {
+      markTourSeen(`login-${currentUser.id}`)
+    }
+  }, [tourType, currentUser, markTourSeen])
+
+  // Chat functions
   const initializeChat = useCallback(() => {
     if (messages.length === 0) {
-      const welcome = getWelcomeMessage(
-        isAuthenticated,
-        currentUser?.name,
-        currentView
-      )
-      setMessages([
-        {
-          id: 'welcome',
-          role: 'assistant',
-          content: welcome,
-          timestamp: new Date(),
-        },
-      ])
+      const welcome = getWelcomeMessage(isAuthenticated, currentUser?.name, currentView)
+      setMessages([{ id: 'welcome', role: 'assistant', content: welcome, timestamp: new Date() }])
     }
   }, [isAuthenticated, currentUser?.name, currentView, messages.length])
 
@@ -159,13 +369,8 @@ export function AIGuideMascot() {
     setIsMinimized(false)
   }, [])
 
-  const handleMinimizeChat = useCallback(() => {
-    setIsMinimized(true)
-  }, [])
-
-  const handleRestoreChat = useCallback(() => {
-    setIsMinimized(false)
-  }, [])
+  const handleMinimizeChat = useCallback(() => setIsMinimized(true), [])
+  const handleRestoreChat = useCallback(() => setIsMinimized(false), [])
 
   const sendMessage = useCallback(
     async (messageText: string) => {
@@ -188,10 +393,7 @@ export function AIGuideMascot() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             message: messageText.trim(),
-            history: messages.map((m) => ({
-              role: m.role,
-              content: m.content,
-            })),
+            history: messages.map((m) => ({ role: m.role, content: m.content })),
             context: {
               currentView,
               isAuthenticated,
@@ -205,32 +407,21 @@ export function AIGuideMascot() {
         const data = await response.json()
 
         if (data.success && data.data?.response) {
-          const aiMessage: ChatMessage = {
-            id: `ai-${Date.now()}`,
-            role: 'assistant',
-            content: data.data.response,
-            timestamp: new Date(),
-          }
-          setMessages((prev) => [...prev, aiMessage])
+          setMessages((prev) => [
+            ...prev,
+            { id: `ai-${Date.now()}`, role: 'assistant', content: data.data.response, timestamp: new Date() },
+          ])
         } else {
-          const errorMessage: ChatMessage = {
-            id: `error-${Date.now()}`,
-            role: 'assistant',
-            content:
-              "Oops! I had a little trouble there. 😅 Could you try asking again? I'm here to help!",
-            timestamp: new Date(),
-          }
-          setMessages((prev) => [...prev, errorMessage])
+          setMessages((prev) => [
+            ...prev,
+            { id: `error-${Date.now()}`, role: 'assistant', content: "Oops! 😅 Could you try asking again? I'm here to help!", timestamp: new Date() },
+          ])
         }
       } catch {
-        const errorMessage: ChatMessage = {
-          id: `error-${Date.now()}`,
-          role: 'assistant',
-          content:
-            "I seem to have lost my way! 🌀 Please try again in a moment. I'll be right here!",
-          timestamp: new Date(),
-        }
-        setMessages((prev) => [...prev, errorMessage])
+        setMessages((prev) => [
+          ...prev,
+          { id: `error-${Date.now()}`, role: 'assistant', content: "I lost my way! 🌀 Please try again in a moment.", timestamp: new Date() },
+        ])
       } finally {
         setIsLoading(false)
       }
@@ -238,9 +429,7 @@ export function AIGuideMascot() {
     [isLoading, messages, currentView, isAuthenticated, currentUser]
   )
 
-  const handleSendMessage = useCallback(() => {
-    sendMessage(inputValue)
-  }, [inputValue, sendMessage])
+  const handleSendMessage = useCallback(() => sendMessage(inputValue), [inputValue, sendMessage])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -252,94 +441,223 @@ export function AIGuideMascot() {
     [handleSendMessage]
   )
 
-  const handleQuickAction = useCallback(
-    (message: string) => {
-      sendMessage(message)
-    },
-    [sendMessage]
-  )
+  const handleQuickAction = useCallback((message: string) => sendMessage(message), [sendMessage])
 
   const suggestedActions = getSuggestedActions(isAuthenticated, currentView)
 
+  // Get current tour step data
+  const currentTourStep = tourActive
+    ? tourType === 'landing'
+      ? LANDING_TOUR_STEPS[tourStep]
+      : LOGIN_TOUR_STEPS[tourStep]
+    : null
+
+  const totalTourSteps = tourType === 'landing' ? LANDING_TOUR_STEPS.length : LOGIN_TOUR_STEPS.length
+
   return (
     <>
-      {/* Flying Mascot Button */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2">
-        {/* Welcome Bubble */}
-        {showWelcome && !isOpen && (
-          <div className="animate-fade-in max-w-[260px] rounded-2xl bg-white dark:bg-gray-900 px-4 py-3 shadow-xl border border-amber-200 dark:border-amber-800 relative">
-            <button
-              onClick={() => {
-                setShowWelcome(false)
-                setHasInteracted(true)
-              }}
-              className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-[10px] text-gray-500 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-            >
-              ✕
-            </button>
-            <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed pr-3">
-              👋 Hey! I&apos;m <strong className="text-amber-600">Thori</strong>, your Thiora guide! Buy, sell, or freelance — I can help with it all!
-            </p>
-          </div>
-        )}
-
-        {/* Minimized Chat Bubble */}
-        {isOpen && isMinimized && (
-          <button
-            onClick={handleRestoreChat}
-            className="animate-bounce-in flex items-center gap-2 rounded-full bg-amber-500 hover:bg-amber-600 text-white pl-3 pr-4 py-2.5 shadow-xl transition-all hover:scale-105"
+      {/* ═══════════════════════════════════════════════════════════
+          LANDING PAGE TOUR — Thori flies to each section
+          ═══════════════════════════════════════════════════════════ */}
+      {tourActive && tourType === 'landing' && currentTourStep && (
+        <>
+          {/* Flying Mascot near the section */}
+          <div
+            ref={mascotRef}
+            className={`fixed z-[60] transition-all duration-700 ease-in-out ${flyingToSection ? 'opacity-50 scale-75' : 'opacity-100 scale-100'}`}
+            style={{
+              left: `${mascotPosition.x}px`,
+              top: `${mascotPosition.y}px`,
+            }}
           >
-            <Image
-              src="/mascot.png"
-              alt="Thori"
-              width={28}
-              height={28}
-              className="rounded-full"
-            />
-            <span className="text-sm font-medium">Chat with Thori</span>
-          </button>
-        )}
-
-        {/* Floating Mascot Button */}
-        {!isOpen && (
-          <button
-            onClick={handleOpenChat}
-            className="group relative animate-float"
-            aria-label="Open AI Guide"
-          >
-            {/* Glow effect */}
-            <div className="absolute inset-0 rounded-full bg-amber-400/30 blur-xl animate-pulse-slow" />
-
-            {/* Sparkle particles */}
-            <div className="absolute -top-2 -right-2 animate-sparkle">
-              <Sparkles className="w-4 h-4 text-amber-400" />
-            </div>
-            <div className="absolute -bottom-1 -left-3 animate-sparkle-delayed">
-              <Sparkles className="w-3 h-3 text-yellow-400" />
-            </div>
-
-            {/* Main button */}
-            <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 shadow-lg shadow-amber-500/30 flex items-center justify-center transition-all duration-300 hover:shadow-xl hover:shadow-amber-500/40 hover:scale-110">
+            <div className="animate-float relative">
               <Image
                 src="/mascot.png"
-                alt="Thori - AI Guide"
-                width={52}
-                height={52}
-                className="rounded-full object-cover ring-2 ring-amber-300/50"
-                priority
+                alt="Thori"
+                width={56}
+                height={56}
+                className="rounded-full ring-2 ring-amber-400 shadow-lg shadow-amber-400/30"
               />
+              <Sparkles className="absolute -top-2 -right-2 w-4 h-4 text-amber-400 animate-sparkle" />
             </div>
+          </div>
 
-            {/* Notification dot */}
-            {!hasInteracted && (
-              <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 border-2 border-white dark:border-gray-900 animate-pulse" />
-            )}
-          </button>
-        )}
-      </div>
+          {/* Tour Tooltip */}
+          <div
+            className="fixed z-[59] transition-all duration-700 ease-in-out"
+            style={{
+              left: `${Math.min(mascotPosition.x + 70, window.innerWidth - 320)}px`,
+              top: `${Math.max(mascotPosition.y - 20, 20)}px`,
+              maxWidth: '300px',
+            }}
+          >
+            <div className="animate-fade-in bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-amber-200 dark:border-amber-800 overflow-hidden">
+              {/* Header with progress */}
+              <div className="bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2.5 text-white">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Image src="/mascot.png" alt="Thori" width={22} height={22} className="rounded-full" />
+                    <span className="text-sm font-semibold">Thori</span>
+                  </div>
+                  <span className="text-[11px] text-amber-100">{tourStep + 1}/{totalTourSteps}</span>
+                </div>
+                {/* Progress bar */}
+                <div className="mt-1.5 h-1 bg-amber-700/50 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-white/80 rounded-full transition-all duration-500"
+                    style={{ width: `${((tourStep + 1) / totalTourSteps) * 100}%` }}
+                  />
+                </div>
+              </div>
+              {/* Content */}
+              <div className="px-4 py-3">
+                <h4 className="font-bold text-sm text-gray-900 dark:text-gray-100 mb-1">{currentTourStep.title}</h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">{currentTourStep.description}</p>
+              </div>
+              {/* Actions */}
+              <div className="px-4 pb-3 flex items-center justify-between">
+                <button
+                  onClick={skipTour}
+                  className="text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                >
+                  Skip tour
+                </button>
+                <button
+                  onClick={nextTourStep}
+                  className="flex items-center gap-1 text-xs font-medium text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 transition-colors"
+                >
+                  {tourStep < totalTourSteps - 1 ? 'Next' : 'Got it!'}
+                  <ChevronRight className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
-      {/* Chat Panel */}
-      {isOpen && !isMinimized && (
+      {/* ═══════════════════════════════════════════════════════════
+          LOGIN TOUR — Feature highlights after login
+          ═══════════════════════════════════════════════════════════ */}
+      {tourActive && tourType === 'login' && currentTourStep && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="animate-slide-up max-w-[380px] w-[90vw]">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-amber-200 dark:border-amber-800 overflow-hidden">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-amber-500 to-amber-600 px-5 py-4 text-white text-center">
+                <div className="flex justify-center mb-2">
+                  <div className="animate-float">
+                    <Image src="/mascot.png" alt="Thori" width={64} height={64} className="rounded-full ring-2 ring-white/30" />
+                  </div>
+                </div>
+                <h3 className="font-bold text-lg">{currentTourStep.title}</h3>
+                <div className="mt-2 h-1 bg-amber-700/50 rounded-full overflow-hidden max-w-[200px] mx-auto">
+                  <div
+                    className="h-full bg-white/80 rounded-full transition-all duration-500"
+                    style={{ width: `${((tourStep + 1) / totalTourSteps) * 100}%` }}
+                  />
+                </div>
+              </div>
+              {/* Content */}
+              <div className="px-5 py-4 text-center">
+                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{currentTourStep.description}</p>
+              </div>
+              {/* Actions */}
+              <div className="px-5 pb-4 flex items-center justify-between">
+                <button
+                  onClick={skipTour}
+                  className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                >
+                  <SkipForward className="w-3 h-3" />
+                  Skip
+                </button>
+                <button
+                  onClick={nextTourStep}
+                  className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-full transition-colors shadow-md"
+                >
+                  {tourStep < totalTourSteps - 1 ? 'Next →' : "Let's Go! 🚀"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+          FIXED POSITION — Floating mascot button + chat
+          ═══════════════════════════════════════════════════════════ */}
+      {!tourActive && (
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2">
+          {/* Welcome Bubble */}
+          {showWelcome && !isOpen && (
+            <div className="animate-fade-in max-w-[260px] rounded-2xl bg-white dark:bg-gray-900 px-4 py-3 shadow-xl border border-amber-200 dark:border-amber-800 relative">
+              <button
+                onClick={() => { setShowWelcome(false); setHasInteracted(true) }}
+                className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-[10px] text-gray-500 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              >
+                ✕
+              </button>
+              <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed pr-3">
+                👋 Hey! I&apos;m <strong className="text-amber-600">Thori</strong>, your Thiora guide! Buy, sell, or freelance — I can help with it all!
+              </p>
+              {/* Take tour button */}
+              {!isAuthenticated && currentView === 'landing' && !tourSeenRef.current.has('landing') && (
+                <button
+                  onClick={() => startLandingTour()}
+                  className="mt-2 text-[11px] font-medium text-amber-600 dark:text-amber-400 hover:underline"
+                >
+                  ✨ Take a quick tour?
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Minimized Chat Bubble */}
+          {isOpen && isMinimized && (
+            <button
+              onClick={handleRestoreChat}
+              className="animate-bounce-in flex items-center gap-2 rounded-full bg-amber-500 hover:bg-amber-600 text-white pl-3 pr-4 py-2.5 shadow-xl transition-all hover:scale-105"
+            >
+              <Image src="/mascot.png" alt="Thori" width={28} height={28} className="rounded-full" />
+              <span className="text-sm font-medium">Chat with Thori</span>
+            </button>
+          )}
+
+          {/* Floating Mascot Button */}
+          {!isOpen && (
+            <button
+              onClick={handleOpenChat}
+              className="group relative animate-float"
+              aria-label="Open AI Guide"
+            >
+              <div className="absolute inset-0 rounded-full bg-amber-400/30 blur-xl animate-pulse-slow" />
+              <div className="absolute -top-2 -right-2 animate-sparkle">
+                <Sparkles className="w-4 h-4 text-amber-400" />
+              </div>
+              <div className="absolute -bottom-1 -left-3 animate-sparkle-delayed">
+                <Sparkles className="w-3 h-3 text-yellow-400" />
+              </div>
+              <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 shadow-lg shadow-amber-500/30 flex items-center justify-center transition-all duration-300 hover:shadow-xl hover:shadow-amber-500/40 hover:scale-110">
+                <Image
+                  src="/mascot.png"
+                  alt="Thori - AI Guide"
+                  width={52}
+                  height={52}
+                  className="rounded-full object-cover ring-2 ring-amber-300/50"
+                  priority
+                />
+              </div>
+              {!hasInteracted && (
+                <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 border-2 border-white dark:border-gray-900 animate-pulse" />
+              )}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+          CHAT PANEL
+          ═══════════════════════════════════════════════════════════ */}
+      {isOpen && !isMinimized && !tourActive && (
         <div
           ref={chatContainerRef}
           className="fixed bottom-6 right-6 z-50 w-[380px] max-w-[calc(100vw-48px)] animate-slide-up"
@@ -348,14 +666,7 @@ export function AIGuideMascot() {
             {/* Chat Header */}
             <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white">
               <div className="relative">
-                <Image
-                  src="/mascot.png"
-                  alt="Thori"
-                  width={36}
-                  height={36}
-                  className="rounded-full ring-2 ring-white/30"
-                />
-                {/* Online indicator */}
+                <Image src="/mascot.png" alt="Thori" width={36} height={36} className="rounded-full ring-2 ring-white/30" />
                 <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-400 border-2 border-amber-500" />
               </div>
               <div className="flex-1 min-w-0">
@@ -363,18 +674,10 @@ export function AIGuideMascot() {
                 <p className="text-[11px] text-amber-100">Your Thiora Guide ✨</p>
               </div>
               <div className="flex items-center gap-1">
-                <button
-                  onClick={handleMinimizeChat}
-                  className="p-1.5 rounded-lg hover:bg-amber-600/50 transition-colors"
-                  aria-label="Minimize chat"
-                >
+                <button onClick={handleMinimizeChat} className="p-1.5 rounded-lg hover:bg-amber-600/50 transition-colors" aria-label="Minimize chat">
                   <Minimize2 className="w-4 h-4" />
                 </button>
-                <button
-                  onClick={handleCloseChat}
-                  className="p-1.5 rounded-lg hover:bg-amber-600/50 transition-colors"
-                  aria-label="Close chat"
-                >
+                <button onClick={handleCloseChat} className="p-1.5 rounded-lg hover:bg-amber-600/50 transition-colors" aria-label="Close chat">
                   <X className="w-4 h-4" />
                 </button>
               </div>
@@ -384,20 +687,11 @@ export function AIGuideMascot() {
             <ScrollArea className="flex-1 p-4 min-h-[280px] max-h-[340px]">
               <div className="space-y-3">
                 {messages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                  >
+                  <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                     {msg.role === 'assistant' && (
                       <div className="flex gap-2 max-w-[85%]">
                         <div className="flex-shrink-0 mt-1">
-                          <Image
-                            src="/mascot.png"
-                            alt="Thori"
-                            width={24}
-                            height={24}
-                            className="rounded-full"
-                          />
+                          <Image src="/mascot.png" alt="Thori" width={24} height={24} className="rounded-full" />
                         </div>
                         <div className="rounded-2xl rounded-tl-sm bg-amber-50 dark:bg-amber-950/30 px-3.5 py-2.5 text-sm text-gray-800 dark:text-gray-200 leading-relaxed border border-amber-100 dark:border-amber-900/50">
                           {msg.content}
@@ -411,19 +705,11 @@ export function AIGuideMascot() {
                     )}
                   </div>
                 ))}
-
-                {/* Typing indicator */}
                 {isLoading && (
                   <div className="flex justify-start">
                     <div className="flex gap-2 max-w-[85%]">
                       <div className="flex-shrink-0 mt-1">
-                        <Image
-                          src="/mascot.png"
-                          alt="Thori"
-                          width={24}
-                          height={24}
-                          className="rounded-full"
-                        />
+                        <Image src="/mascot.png" alt="Thori" width={24} height={24} className="rounded-full" />
                       </div>
                       <div className="rounded-2xl rounded-tl-sm bg-amber-50 dark:bg-amber-950/30 px-4 py-3 border border-amber-100 dark:border-amber-900/50">
                         <div className="flex gap-1.5 items-center">
