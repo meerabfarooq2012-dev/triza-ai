@@ -342,9 +342,14 @@ export function AIGuideMascot() {
     // Wait for scroll, then position mascot on the left side of the section
     setTimeout(() => {
       const updatedRect = el.getBoundingClientRect()
+      const viewportHeight = window.innerHeight
       // Position mascot on the left edge, vertically centered with the section
+      // But clamp so the tour tooltip (which extends below) stays visible
+      const idealY = updatedRect.top + updatedRect.height / 2 - 40
+      // Tooltip is ~200px tall, so make sure mascot + tooltip fits in viewport
+      const maxY = viewportHeight - 260
       const targetX = 20
-      const targetY = Math.max(80, updatedRect.top + updatedRect.height / 2 - 40)
+      const targetY = Math.max(80, Math.min(idealY, maxY))
 
       setMascotPosition({ x: targetX, y: targetY })
       setFlyingToSection(false)
@@ -522,7 +527,8 @@ export function AIGuideMascot() {
               top: `${mascotPosition.y}px`,
             }}
           >
-            <div className="animate-float relative" style={{ perspective: '300px' }}>
+            {/* NO animate-float during tour — keeps mascot stable */}
+            <div className="relative" style={{ perspective: '300px' }}>
               {/* 3D Mascot with perspective transform */}
               <div
                 className="relative transition-transform duration-200 ease-out"
@@ -568,7 +574,7 @@ export function AIGuideMascot() {
             className="fixed z-[59] transition-all duration-700 ease-in-out"
             style={{
               left: `${mascotPosition.x + 92}px`,
-              top: `${Math.max(mascotPosition.y - 30, 16)}px`,
+              top: `${Math.max(mascotPosition.y - 20, 16)}px`,
               maxWidth: '320px',
             }}
           >
@@ -597,20 +603,20 @@ export function AIGuideMascot() {
                 <h4 className="font-bold text-sm text-gray-900 dark:text-gray-100 mb-1">{currentTourStep.title}</h4>
                 <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">{currentTourStep.description}</p>
               </div>
-              {/* Actions */}
+              {/* Actions — BIGGER and easier to click */}
               <div className="px-4 pb-3 flex items-center justify-between">
                 <button
                   onClick={skipTour}
-                  className="text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                  className="text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors px-2 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
                 >
                   Skip tour
                 </button>
                 <button
                   onClick={nextTourStep}
-                  className="flex items-center gap-1 text-xs font-medium text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 transition-colors"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium transition-colors shadow-md hover:shadow-lg"
                 >
                   {tourStep < totalTourSteps - 1 ? 'Next' : 'Finish! 🏠'}
-                  <ChevronRight className="w-3 h-3" />
+                  <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -628,7 +634,8 @@ export function AIGuideMascot() {
               {/* Header */}
               <div className="bg-gradient-to-r from-amber-500 to-amber-600 px-5 py-5 text-white text-center">
                 <div className="flex justify-center mb-3">
-                  <div className="animate-float" style={{ perspective: '400px' }}>
+                  {/* NO animate-float during tour — keeps mascot stable */}
+                  <div style={{ perspective: '400px' }}>
                     <div className="relative">
                       <img
                         src="/mascot-3d.png"
