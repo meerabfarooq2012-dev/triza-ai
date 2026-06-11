@@ -339,19 +339,13 @@ export function AIGuideMascot() {
     // Smooth scroll to the section
     window.scrollTo({ top: scrollToY, behavior: 'smooth' })
 
-    // Wait for scroll, then position mascot on the left side of the section
-    setTimeout(() => {
-      const updatedRect = el.getBoundingClientRect()
-      const viewportHeight = window.innerHeight
-      // Position mascot on the left edge, vertically centered with the section
-      // But clamp so the tour tooltip (which extends below) stays visible
-      const idealY = updatedRect.top + updatedRect.height / 2 - 40
-      // Tooltip is ~200px tall, so make sure mascot + tooltip fits in viewport
-      const maxY = viewportHeight - 260
-      const targetX = 20
-      const targetY = Math.max(80, Math.min(idealY, maxY))
+    // ALWAYS position mascot in the safe zone — top portion of viewport
+    // This ensures the tooltip with Next button is always easily clickable
+    // Mascot stays at a fixed safe Y position, NOT tied to section position
+    const safeY = 100 // Always 100px from top — safe zone
 
-      setMascotPosition({ x: targetX, y: targetY })
+    setTimeout(() => {
+      setMascotPosition({ x: 20, y: safeY })
       setFlyingToSection(false)
     }, 600)
   }, [])
@@ -569,12 +563,12 @@ export function AIGuideMascot() {
             </div>
           </div>
 
-          {/* Tour Tooltip — appears to the RIGHT of the mascot */}
+          {/* Tour Tooltip — appears to the RIGHT of the mascot, ALWAYS in safe zone */}
           <div
             className="fixed z-[59] transition-all duration-700 ease-in-out"
             style={{
               left: `${mascotPosition.x + 92}px`,
-              top: `${Math.max(mascotPosition.y - 20, 16)}px`,
+              top: `${Math.max(mascotPosition.y - 10, 16)}px`,
               maxWidth: '320px',
             }}
           >
