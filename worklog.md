@@ -163,3 +163,35 @@ Stage Summary:
 - Login tour works for logged-in users (shows feature highlights)
 - Fly-back-home animation when tour completes
 - Deployed to Vercel
+
+---
+Task ID: 6
+Agent: Main Agent
+Task: Make 3D mascot, move to left side, keep chat on right side
+
+Work Log:
+- Generated new 3D mascot image using z-ai (Pixar-style golden fairy character with crown, wings, magic wand)
+- Saved to public/mascot.png (85KB)
+- Rewrote ai-guide-mascot.tsx:
+  - Mascot floating button moved to bottom-LEFT corner (fixed bottom-6 left-6)
+  - Chat panel stays on bottom-RIGHT corner (fixed bottom-6 right-6)
+  - Welcome bubble appears above mascot on left side
+  - Flying tour: mascot starts from left side, positions at left edge of sections
+  - Tour tooltip appears to the right of the mascot (with arrow pointing left)
+  - Fly-back animation: mascot returns to bottom-left after tour
+  - 3D shadow effect under mascot
+  - Changed mascot frame from circle to rounded square (3D style)
+  - When chat is open, small faded mascot thumbnail remains on left side
+- Fixed slug name conflicts that prevented dev server from starting:
+  - Removed conflicting middleware.ts (proxy.ts already handles CORS + security)
+  - Removed duplicate [reportId] route (kept [id] version in admin/reports)
+  - Removed duplicate [token] downloads route (kept [id] version in downloads)
+  - Fixed [senderId]/[userId] conflict in messages API (merged into [userId])
+- Added new CSS animations: fly-home, wing-flutter, section-highlight
+- Committed and pushed to Vercel (commit 98daf1e)
+
+Stage Summary:
+- 3D mascot character generated (golden fairy with crown, wings, wand)
+- Mascot on LEFT side, Chat on RIGHT side — clear separation
+- All slug conflicts resolved (middleware, reportId, token, senderId)
+- Deployed to Vercel at thiora.vercel.app
