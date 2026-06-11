@@ -5,14 +5,16 @@ import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { X, Send, Sparkles, Minimize2, ChevronRight, SkipForward, RotateCcw, Map } from 'lucide-react'
+import { X, Send, Sparkles, Minimize2, ChevronRight, SkipForward, RotateCcw, Map, MessageCircle } from 'lucide-react'
 
 // ─────────────────────────────────────────────────────────────
-// Thori — Thiora's AI Guide Mascot
+// Thori — Thiora's AI Guide Mascot (3D)
+// - Sits on LEFT side (floating 3D character)
+// - Chat panel opens on RIGHT side
 // - Flies vertically across landing page showing sections
 // - Guides new visitors with a tour
 // - After login, explains all features
-// - Then returns to its fixed position for chat
+// - Then flies back to its position on the left
 // - "Restart Tour" option for testing / replaying
 // ─────────────────────────────────────────────────────────────
 
@@ -212,7 +214,7 @@ export function AIGuideMascot() {
     } catch {}
   }, [])
 
-  // Clear tour history — allows restarting tours
+  // Clear tour history
   const clearTourHistory = useCallback(() => {
     tourSeenRef.current.clear()
     try {
@@ -239,7 +241,7 @@ export function AIGuideMascot() {
     }
   }, [showWelcome])
 
-  // Auto-start landing page tour for new visitors (only once per session)
+  // Auto-start landing page tour for new visitors
   useEffect(() => {
     if (hasAutoStartedTour.current) return
     if (currentView === 'landing' && !isAuthenticated && !tourActive && !tourCompleted) {
@@ -279,7 +281,7 @@ export function AIGuideMascot() {
     }
   }, [isOpen, isMinimized])
 
-  // Landing page tour — fly to each section
+  // Landing page tour
   const startLandingTour = useCallback(() => {
     setTourType('landing')
     setTourStep(0)
@@ -290,7 +292,7 @@ export function AIGuideMascot() {
     setReturningHome(false)
   }, [])
 
-  // Login tour — show feature highlights
+  // Login tour
   const startLoginTour = useCallback(() => {
     setTourType('login')
     setTourStep(0)
@@ -301,7 +303,7 @@ export function AIGuideMascot() {
     setReturningHome(false)
   }, [])
 
-  // Fly mascot to a section element
+  // Fly mascot to a section element (positioned on left side)
   const flyToElement = useCallback((elementId: string) => {
     const el = document.getElementById(elementId)
     if (!el) return
@@ -313,19 +315,19 @@ export function AIGuideMascot() {
     // Smooth scroll to the section
     window.scrollTo({ top: scrollToY, behavior: 'smooth' })
 
-    // Wait for scroll, then position mascot
+    // Wait for scroll, then position mascot on the left side of the section
     setTimeout(() => {
       const updatedRect = el.getBoundingClientRect()
-      // Position mascot to the left side of the section, vertically centered
-      const targetX = Math.max(16, updatedRect.left - 80)
-      const targetY = Math.max(80, updatedRect.top + updatedRect.height / 2 - 30)
+      // Position mascot on the left edge, vertically centered with the section
+      const targetX = 20
+      const targetY = Math.max(80, updatedRect.top + updatedRect.height / 2 - 40)
 
       setMascotPosition({ x: targetX, y: targetY })
       setFlyingToSection(false)
     }, 600)
   }, [])
 
-  // Handle tour step change — fly to section
+  // Handle tour step change
   useEffect(() => {
     if (!tourActive) return
 
@@ -337,16 +339,15 @@ export function AIGuideMascot() {
     }
   }, [tourStep, tourActive, tourType, flyToElement])
 
-  // Complete tour and fly back home
+  // Complete tour and fly back home (to bottom-left)
   const completeTour = useCallback(() => {
     setReturningHome(true)
 
-    // Animate mascot flying back to bottom-right corner
     setTimeout(() => {
       setTourActive(false)
       setReturningHome(false)
       setTourCompleted(true)
-      setHasInteracted(false) // Reset so welcome bubble can show again
+      setHasInteracted(false)
 
       if (tourType === 'landing') {
         markTourSeen('landing')
@@ -361,7 +362,6 @@ export function AIGuideMascot() {
     if (tourStep < steps.length - 1) {
       setTourStep((prev) => prev + 1)
     } else {
-      // Tour complete — fly back home
       completeTour()
     }
   }, [tourStep, tourType, completeTour])
@@ -479,18 +479,18 @@ export function AIGuideMascot() {
   return (
     <>
       {/* ═══════════════════════════════════════════════════════════
-          LANDING PAGE TOUR — Thori flies to each section
+          LANDING PAGE TOUR — Thori flies to each section (from LEFT)
           ═══════════════════════════════════════════════════════════ */}
       {tourActive && tourType === 'landing' && currentTourStep && (
         <>
-          {/* Flying Mascot near the section */}
+          {/* Flying 3D Mascot near the section — LEFT side */}
           <div
             ref={mascotRef}
             className={`fixed z-[60] transition-all duration-700 ease-in-out ${
               flyingToSection
                 ? 'opacity-40 scale-50 -translate-y-4'
                 : returningHome
-                ? 'opacity-0 scale-30 translate-x-[200px] translate-y-[400px]'
+                ? 'opacity-0 scale-30 -translate-x-[-100px] translate-y-[400px]'
                 : 'opacity-100 scale-100'
             }`}
             style={{
@@ -499,14 +499,19 @@ export function AIGuideMascot() {
             }}
           >
             <div className="animate-float relative">
-              <img
-                src="/mascot.png"
-                alt="Thori"
-                width={60}
-                height={60}
-                className="rounded-full ring-3 ring-amber-400 shadow-lg shadow-amber-400/40 bg-amber-100"
-              />
-              {/* Sparkle trail effect */}
+              {/* 3D Mascot with shadow & glow */}
+              <div className="relative">
+                <img
+                  src="/mascot.png"
+                  alt="Thori"
+                  width={72}
+                  height={72}
+                  className="rounded-2xl ring-2 ring-amber-400/60 shadow-xl shadow-amber-400/30 bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/40 dark:to-amber-800/30 object-cover"
+                />
+                {/* 3D shadow underneath */}
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-12 h-2 bg-amber-900/10 dark:bg-amber-400/10 rounded-full blur-sm" />
+              </div>
+              {/* Sparkle trail */}
               <div className="absolute -top-3 -right-3 w-5 h-5">
                 <Sparkles className="w-5 h-5 text-amber-400 animate-sparkle" />
               </div>
@@ -514,21 +519,23 @@ export function AIGuideMascot() {
                 <Sparkles className="w-4 h-4 text-yellow-400 animate-sparkle-delayed" />
               </div>
               {/* Magic wand trail dots */}
-              <div className="absolute -right-6 top-1/2 w-2 h-2 rounded-full bg-amber-300 animate-pulse" />
-              <div className="absolute -right-10 top-1/3 w-1.5 h-1.5 rounded-full bg-amber-200 animate-pulse" style={{ animationDelay: '0.3s' }} />
+              <div className="absolute -right-5 top-1/2 w-2 h-2 rounded-full bg-amber-300 animate-pulse" />
+              <div className="absolute -right-9 top-1/3 w-1.5 h-1.5 rounded-full bg-amber-200 animate-pulse" style={{ animationDelay: '0.3s' }} />
             </div>
           </div>
 
-          {/* Tour Tooltip — appears to the right of the mascot */}
+          {/* Tour Tooltip — appears to the RIGHT of the mascot */}
           <div
             className="fixed z-[59] transition-all duration-700 ease-in-out"
             style={{
-              left: `${Math.min(mascotPosition.x + 76, typeof window !== 'undefined' ? window.innerWidth - 340 : 800)}px`,
-              top: `${Math.max(mascotPosition.y - 40, 16)}px`,
+              left: `${mascotPosition.x + 84}px`,
+              top: `${Math.max(mascotPosition.y - 30, 16)}px`,
               maxWidth: '320px',
             }}
           >
             <div className="animate-fade-in bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-amber-200 dark:border-amber-800 overflow-hidden">
+              {/* Arrow pointing left to mascot */}
+              <div className="absolute left-0 top-6 -translate-x-2 w-0 h-0 border-t-8 border-b-8 border-r-8 border-transparent border-r-white dark:border-r-gray-900" />
               {/* Header with progress */}
               <div className="bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2.5 text-white">
                 <div className="flex items-center justify-between">
@@ -569,17 +576,6 @@ export function AIGuideMascot() {
               </div>
             </div>
           </div>
-
-          {/* Section highlight glow — points to the current section */}
-          <div
-            className="fixed z-[58] pointer-events-none transition-all duration-700 ease-in-out"
-            style={{
-              left: `${Math.min(mascotPosition.x + 76, typeof window !== 'undefined' ? window.innerWidth - 340 : 800) + 330}px`,
-              top: `${Math.max(mascotPosition.y - 40, 16)}px`,
-            }}
-          >
-            <div className="w-3 h-3 rounded-full bg-amber-400 animate-pulse-slow shadow-lg shadow-amber-400/60" />
-          </div>
         </>
       )}
 
@@ -594,7 +590,10 @@ export function AIGuideMascot() {
               <div className="bg-gradient-to-r from-amber-500 to-amber-600 px-5 py-5 text-white text-center">
                 <div className="flex justify-center mb-3">
                   <div className="animate-float">
-                    <img src="/mascot.png" alt="Thori" width={72} height={72} className="rounded-full ring-3 ring-white/30 bg-amber-200 shadow-lg" />
+                    <div className="relative">
+                      <img src="/mascot.png" alt="Thori" width={80} height={80} className="rounded-2xl ring-3 ring-white/30 bg-amber-200 shadow-xl object-cover" />
+                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-10 h-2 bg-amber-900/10 rounded-full blur-sm" />
+                    </div>
                   </div>
                 </div>
                 <h3 className="font-bold text-lg">{currentTourStep.title}</h3>
@@ -631,13 +630,13 @@ export function AIGuideMascot() {
       )}
 
       {/* ═══════════════════════════════════════════════════════════
-          FIXED POSITION — Floating mascot button + chat
+          LEFT SIDE — 3D Mascot floating button
           ═══════════════════════════════════════════════════════════ */}
       {!tourActive && (
-        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2">
-          {/* Welcome Bubble */}
+        <div className="fixed bottom-6 left-6 z-50 flex flex-col items-start gap-2">
+          {/* Welcome Bubble — appears above mascot */}
           {showWelcome && !isOpen && (
-            <div className="animate-fade-in max-w-[280px] rounded-2xl bg-white dark:bg-gray-900 px-4 py-3 shadow-xl border border-amber-200 dark:border-amber-800 relative">
+            <div className="animate-fade-in max-w-[260px] rounded-2xl bg-white dark:bg-gray-900 px-4 py-3 shadow-xl border border-amber-200 dark:border-amber-800 relative">
               <button
                 onClick={() => { setShowWelcome(false); setHasInteracted(true) }}
                 className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-[10px] text-gray-500 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
@@ -645,9 +644,9 @@ export function AIGuideMascot() {
                 ✕
               </button>
               <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed pr-3">
-                👋 Hey! I&apos;m <strong className="text-amber-600">Thori</strong>, your Thiora guide! Buy, sell, or freelance — I can help with it all!
+                👋 Hey! I&apos;m <strong className="text-amber-600">Thori</strong>, your Thiora guide! Buy, sell, or freelance — I can help!
               </p>
-              {/* Take tour / Restart tour buttons */}
+              {/* Take tour buttons */}
               {!isAuthenticated && currentView === 'landing' && (
                 <button
                   onClick={() => {
@@ -673,18 +672,7 @@ export function AIGuideMascot() {
             </div>
           )}
 
-          {/* Minimized Chat Bubble */}
-          {isOpen && isMinimized && (
-            <button
-              onClick={handleRestoreChat}
-              className="animate-bounce-in flex items-center gap-2 rounded-full bg-amber-500 hover:bg-amber-600 text-white pl-3 pr-4 py-2.5 shadow-xl transition-all hover:scale-105"
-            >
-              <img src="/mascot.png" alt="Thori" width={28} height={28} className="rounded-full bg-amber-200" />
-              <span className="text-sm font-medium">Chat with Thori</span>
-            </button>
-          )}
-
-          {/* Floating Mascot Button */}
+          {/* Floating 3D Mascot Button — LEFT side */}
           {!isOpen && (
             <button
               onClick={handleOpenChat}
@@ -692,7 +680,7 @@ export function AIGuideMascot() {
               aria-label="Open AI Guide"
             >
               {/* Glow ring */}
-              <div className="absolute inset-0 rounded-full bg-amber-400/30 blur-xl animate-pulse-slow" />
+              <div className="absolute inset-0 rounded-2xl bg-amber-400/30 blur-xl animate-pulse-slow" />
               {/* Sparkles */}
               <div className="absolute -top-2 -right-2 animate-sparkle">
                 <Sparkles className="w-5 h-5 text-amber-400" />
@@ -700,16 +688,18 @@ export function AIGuideMascot() {
               <div className="absolute -bottom-1 -left-3 animate-sparkle-delayed">
                 <Sparkles className="w-3 h-3 text-yellow-400" />
               </div>
-              {/* Mascot circle */}
-              <div className="relative w-[68px] h-[68px] rounded-full bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 shadow-lg shadow-amber-500/30 flex items-center justify-center transition-all duration-300 hover:shadow-xl hover:shadow-amber-500/40 hover:scale-110 p-1.5">
+              {/* 3D Mascot with rounded square frame */}
+              <div className="relative w-[72px] h-[72px] rounded-2xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 shadow-xl shadow-amber-500/30 flex items-center justify-center transition-all duration-300 hover:shadow-2xl hover:shadow-amber-500/40 hover:scale-110 p-1">
                 <img
                   src="/mascot.png"
                   alt="Thori - AI Guide"
-                  width={58}
-                  height={58}
-                  className="rounded-full object-cover ring-2 ring-amber-300/50 bg-amber-200"
+                  width={60}
+                  height={60}
+                  className="rounded-xl object-cover ring-2 ring-amber-300/50"
                 />
               </div>
+              {/* 3D shadow under mascot */}
+              <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-14 h-3 bg-amber-900/10 dark:bg-amber-400/10 rounded-full blur-sm" />
               {/* Notification dot */}
               {!hasInteracted && (
                 <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 border-2 border-white dark:border-gray-900 animate-pulse" />
@@ -720,7 +710,20 @@ export function AIGuideMascot() {
       )}
 
       {/* ═══════════════════════════════════════════════════════════
-          CHAT PANEL
+          RIGHT SIDE — Minimized chat bubble
+          ═══════════════════════════════════════════════════════════ */}
+      {isOpen && isMinimized && !tourActive && (
+        <button
+          onClick={handleRestoreChat}
+          className="animate-bounce-in fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full bg-amber-500 hover:bg-amber-600 text-white pl-3 pr-4 py-2.5 shadow-xl transition-all hover:scale-105"
+        >
+          <img src="/mascot.png" alt="Thori" width={28} height={28} className="rounded-lg bg-amber-200" />
+          <span className="text-sm font-medium">Chat with Thori</span>
+        </button>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+          RIGHT SIDE — Chat Panel
           ═══════════════════════════════════════════════════════════ */}
       {isOpen && !isMinimized && !tourActive && (
         <div
@@ -731,7 +734,7 @@ export function AIGuideMascot() {
             {/* Chat Header */}
             <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white">
               <div className="relative">
-                <img src="/mascot.png" alt="Thori" width={36} height={36} className="rounded-full ring-2 ring-white/30 bg-amber-200" />
+                <img src="/mascot.png" alt="Thori" width={36} height={36} className="rounded-lg ring-2 ring-white/30 object-cover" />
                 <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-400 border-2 border-amber-500" />
               </div>
               <div className="flex-1 min-w-0">
@@ -772,7 +775,7 @@ export function AIGuideMascot() {
                     {msg.role === 'assistant' && (
                       <div className="flex gap-2 max-w-[85%]">
                         <div className="flex-shrink-0 mt-1">
-                          <img src="/mascot.png" alt="Thori" width={24} height={24} className="rounded-full bg-amber-200" />
+                          <img src="/mascot.png" alt="Thori" width={24} height={24} className="rounded-md object-cover" />
                         </div>
                         <div className="rounded-2xl rounded-tl-sm bg-amber-50 dark:bg-amber-950/30 px-3.5 py-2.5 text-sm text-gray-800 dark:text-gray-200 leading-relaxed border border-amber-100 dark:border-amber-900/50">
                           {msg.content}
@@ -790,7 +793,7 @@ export function AIGuideMascot() {
                   <div className="flex justify-start">
                     <div className="flex gap-2 max-w-[85%]">
                       <div className="flex-shrink-0 mt-1">
-                        <img src="/mascot.png" alt="Thori" width={24} height={24} className="rounded-full bg-amber-200" />
+                        <img src="/mascot.png" alt="Thori" width={24} height={24} className="rounded-md object-cover" />
                       </div>
                       <div className="rounded-2xl rounded-tl-sm bg-amber-50 dark:bg-amber-950/30 px-4 py-3 border border-amber-100 dark:border-amber-900/50">
                         <div className="flex gap-1.5 items-center">
@@ -864,6 +867,18 @@ export function AIGuideMascot() {
                 Thori can make mistakes. Check important info.
               </p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+          LEFT SIDE — "Open Chat" hint when mascot is hidden during chat
+          ═══════════════════════════════════════════════════════════ */}
+      {isOpen && !tourActive && (
+        <div className="fixed bottom-6 left-6 z-40">
+          <div className="animate-fade-in flex flex-col items-center gap-1">
+            <img src="/mascot.png" alt="Thori" width={40} height={40} className="rounded-xl opacity-60 animate-float object-cover" />
+            <span className="text-[9px] text-muted-foreground">Thori</span>
           </div>
         </div>
       )}

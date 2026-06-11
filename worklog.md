@@ -99,3 +99,67 @@ Stage Summary:
 - Payment methods updated from local (Easypaisa/JazzCash) to international (PayPal/Payoneer/Crypto)
 - Freelancer references added throughout AI guide
 - Deployed to Vercel via git push
+
+---
+Task ID: 4
+Agent: Main Agent
+Task: Fix mascot image, add flying tour system, add login tour, deploy to Vercel
+
+Work Log:
+- Fixed mascot.png missing from public/ directory (regenerated with z-ai)
+- Added mascot.png to git with -f flag (was in .gitignore)
+- Rewrote ai-guide-mascot.tsx with complete tour system:
+  - Landing page tour: Thori flies vertically to 8 sections
+    - Hero, Browse by Type, Commission, Features, How it Works, Categories, Gigs, CTA
+    - Each step scrolls to section and shows tooltip
+    - Progress bar with step count
+    - Skip/Next controls
+  - Login tour: Modal overlay with 9 feature steps
+    - Welcome, Dashboard, Shop, Gigs, Escrow, Messages, Orders, Wallet, Help
+    - Center modal with mascot animation
+    - Progress bar and Skip/Next buttons
+  - Tour state saved in localStorage (won't repeat for same user)
+  - After tour completes, mascot returns to fixed position
+- Added section IDs to 8 landing page components:
+  - hero-section, browse-by-type, commission-section, features-section
+  - how-it-works, categories-section, gigs-section, cta-section
+- Committed and pushed to Vercel (commit b806aa1)
+
+Stage Summary:
+- Mascot image now visible (public/mascot.png)
+- Landing page tour: Thori flies to each section vertically
+- Login tour: Explains all features after first login
+- Tour state persisted in localStorage
+- After tour, mascot returns to fixed floating button position
+- Deployed to Vercel
+
+---
+Task ID: 5
+Agent: Main Agent
+Task: Fix mascot image visibility, add Restart Tour for logged-in users, improve animations
+
+Work Log:
+- Replaced Next.js Image component with native <img> tag for reliable mascot rendering
+- The Next.js Image component wasn't loading the mascot.png properly in dynamic imports
+- Added "Restart Tour" button in chat header (Map icon) for easy tour replay
+- Added "Restart Tour" as a quick action button at bottom of chat panel
+- Added "Take a feature tour?" link in welcome bubble for logged-in users
+- Added clearTourHistory() function to reset localStorage tour state
+- Added "Take a quick tour?" link in welcome bubble for non-logged-in visitors
+- Improved flying mascot animation with sparkle trail effects
+- Added fly-back-home animation when tour completes (mascot flies to bottom-right)
+- Added wing flutter CSS animation for mascot during flight
+- Added section highlight pulse CSS animation for tour targets
+- Improved tour tooltip positioning and styling
+- Verified mascot visibility via agent browser + VLM analysis
+- Verified landing page tour works (Welcome to Thiora tooltip appears)
+- Verified chat panel shows Thori, Restart Tour button, and quick actions
+- Committed and pushed to Vercel (commit 4e26b28)
+
+Stage Summary:
+- Mascot image NOW VISIBLE on the page (fixed by using <img> instead of Next Image)
+- "Restart Tour" button added — logged-in users can now replay tours anytime
+- Landing page tour works for visitors (flies to each section)
+- Login tour works for logged-in users (shows feature highlights)
+- Fly-back-home animation when tour completes
+- Deployed to Vercel
