@@ -195,3 +195,44 @@ Stage Summary:
 - Mascot on LEFT side, Chat on RIGHT side — clear separation
 - All slug conflicts resolved (middleware, reportId, token, senderId)
 - Deployed to Vercel at thiora.vercel.app
+---
+Task ID: 1
+Agent: Main Agent
+Task: Make mascot 3D with different shape and move to left side
+
+Work Log:
+- Read current mascot component (ai-guide-mascot.tsx) and CSS animations
+- Generated new 3D owl mascot image (mascot-3d.png) using AI image generation - Pixar-style golden owl with explorer hat and compass necklace
+- Completely rewrote the mascot component with 3D effects:
+  - CSS 3D perspective (600px) and preserve-3d transforms
+  - Mouse-tracking tilt effect (rotateX/rotateY based on cursor position)
+  - 3D sphere orb background with highlight and shadow
+  - translateZ layers for depth (mascot at +12px, depth ring at -4px, depth blur at -5px)
+  - drop-shadow filter for golden glow
+  - 3D shadow underneath mascot that grows on hover
+- Moved mascot to LEFT side (fixed bottom-6 left-6)
+- Chat assistant stays on RIGHT side (fixed bottom-6 right-6)
+- When chat is open, small mascot remains visible on left side
+- Updated CSS animations:
+  - fly-home animation now goes to bottom-LEFT (negative X values)
+  - wing-flutter updated for 3D with rotateY
+  - Added wobble-3d animation (6s gentle rotation)
+  - Added perspective-enter animation (3D entrance)
+  - Added hover-lift-3d animation (translateZ effect)
+- All references changed from mascot.png to mascot-3d.png
+- Added hover tooltip "Click to chat!"
+- All images now use rounded-full (circular) instead of rounded-2xl (square)
+- Verified with agent browser: all 5 checks passed
+  - Page loads correctly
+  - 3D owl mascot on LEFT side (bottom-left)
+  - Circular/orb shape with golden colors
+  - 3D depth effects working (perspective, translateZ, shadows, sphere highlight)
+  - Sparkle effects around mascot
+- Chat panel verified: opens on RIGHT side with Thori header and input field
+
+Stage Summary:
+- New 3D golden owl mascot (mascot-3d.png) replaces old fairy mascot
+- Mascot on LEFT side with 3D CSS effects (perspective, translateZ, mouse tilt)
+- Chat assistant on RIGHT side (separate from tour guide mascot)
+- All CSS animations updated for left-side positioning
+- No runtime errors, lint passes (1 pre-existing warning only)
