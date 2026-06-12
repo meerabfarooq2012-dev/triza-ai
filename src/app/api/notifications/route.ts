@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { authenticateRequest } from '@/lib/auth-middleware'
 import { withCsrf } from '@/lib/with-csrf'
+import { sendPushNotification, isWebPushConfigured } from '@/lib/web-push'
 
 // GET /api/notifications — Get notifications for the authenticated user
 export async function GET(request: NextRequest) {
@@ -118,6 +119,25 @@ export const POST = withCsrf(async (request: NextRequest) => {
         })
       } catch {
         // Socket.io push is non-critical; if it fails, the notification is still in DB
+      }
+    }
+
+    // Try to send browser push notification (works on Vercel too)
+    if (isWebPushConfigured()) {
+      try {
+        await sendPushNotification(userId, {
+          title: notification.title,
+          body: notification.message,
+          icon: notification.image || '/logo.svg',
+          badge: '/logo.svg',
+          url: notification.link || '/',
+          tag: `notification-${notification.id}`,
+          type: notification.type,
+          category: notification.category,
+          notificationId: notification.id,
+        })
+      } catch {
+        // Browser push is non-critical; if it fails, the notification is still in DB
       }
     }
 

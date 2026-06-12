@@ -57,6 +57,7 @@ import { useLanguage } from '@/hooks/use-language'
 import { cn } from '@/lib/utils'
 import type { ViewMode } from '@/types'
 import { NotificationBell } from '@/components/marketplace/notifications/notification-bell'
+import { PushNotificationManager } from '@/components/marketplace/shared/push-notification-manager'
 import { ThemeToggle } from '@/components/marketplace/layout/theme-toggle'
 import { SearchAutocomplete } from '@/components/marketplace/search/search-autocomplete'
 import { usePwa } from '@/components/providers/pwa-provider'
@@ -281,6 +282,11 @@ export function Header() {
             {/* Notifications Bell Dropdown */}
             {isAuthenticated && (
               <NotificationBell />
+            )}
+
+            {/* Push Notification Manager */}
+            {isAuthenticated && (
+              <PushNotificationManager />
             )}
 
             {/* Install App Button */}

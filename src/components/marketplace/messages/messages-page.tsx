@@ -16,6 +16,10 @@ import {
   Phone,
   Video,
   Info,
+  Image as ImageIcon,
+  X,
+  Paperclip,
+  Loader2,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -255,6 +259,9 @@ export function MessagesPage() {
   const [sendingMessage, setSendingMessage] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [showMobileThread, setShowMobileThread] = useState(false)
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const [imagePreview, setImagePreview] = useState<{ file: File; url: string } | null>(null)
+  const [imageModalUrl, setImageModalUrl] = useState<string | null>(null)
   // ── Chat Socket Hook ──────────────────────────────────────────────────
   const {
     isConnected: socketConnected,
@@ -283,6 +290,7 @@ export function MessagesPage() {
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // ── Socket.io: Listen for new messages via hook ───────────────────────
   useEffect(() => {
@@ -301,10 +309,10 @@ export function MessagesPage() {
             return {
               ...conv,
               lastMessageAt: message.createdAt,
-              lastMessagePreview: message.content.substring(0, 100),
+              lastMessagePreview: message.messageType === 'image' ? '📷 Image' : message.content.substring(0, 100),
               lastMessage: {
                 id: message.id,
-                content: message.content,
+                content: message.messageType === 'image' ? '📷 Image' : message.content,
                 senderId: message.senderId,
                 createdAt: message.createdAt,
               },
@@ -568,6 +576,140 @@ export function MessagesPage() {
       setSendingMessage(false)
     }
   }, [newMessage, currentUser, selectedConversation, socketSendMessage, emitStopTyping])
+
+  // ── Handle Image File Selection ──────────────────────────────────────
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+    if (!allowedTypes.includes(file.type)) {
+      alert('Invalid file type. Please select a JPEG, PNG, WebP, or GIF image.')
+      return
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File too large. Maximum size is 5MB.')
+      return
+    }
+
+    // Show preview
+    const url = URL.createObjectURL(file)
+    setImagePreview({ file, url })
+
+    // Reset input so same file can be selected again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }, [])
+
+  // ── Handle Image Upload & Send ───────────────────────────────────────
+  const handleImageUpload = useCallback(async () => {
+    if (!imagePreview || !currentUser || !selectedConversation) return
+
+    setUploadingImage(true)
+    const optimisticId = `temp-img-${Date.now()}`
+
+    // Optimistic image message
+    const optimisticMsg: ConversationMessage = {
+      id: optimisticId,
+      conversationId: selectedConversation.id,
+      senderId: currentUser.id,
+      receiverId: selectedConversation.otherUser.id,
+      content: imagePreview.url,
+      messageType: 'image',
+      isRead: false,
+      createdAt: new Date().toISOString(),
+      sender: { id: currentUser.id, name: currentUser.name, avatar: currentUser.avatar },
+    }
+
+    setMessages((prev) => [...prev, optimisticMsg])
+    setImagePreview(null)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', imagePreview.file)
+      formData.append('senderId', currentUser.id)
+      formData.append('receiverId', selectedConversation.otherUser.id)
+      formData.append('conversationId', selectedConversation.id)
+
+      const res = await fetch('/api/messages/upload', {
+        method: 'POST',
+        body: formData,
+      })
+      const data = await res.json()
+
+      if (data.success) {
+        // Replace optimistic message with real one
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === optimisticId
+              ? {
+                  id: data.data.id,
+                  conversationId: data.data.conversationId,
+                  senderId: data.data.senderId,
+                  receiverId: data.data.receiverId,
+                  content: data.data.content,
+                  messageType: data.data.messageType,
+                  isRead: data.data.isRead,
+                  createdAt: data.data.createdAt,
+                  sender: data.data.sender,
+                }
+              : msg
+          )
+        )
+
+        // Emit via Socket.io
+        socketSendMessage(selectedConversation.id, data.data)
+        emitStopTyping(selectedConversation.id)
+
+        // Update conversation list
+        setConversations((prev) => {
+          const updated = prev.map((conv) => {
+            if (conv.id === selectedConversation.id) {
+              return {
+                ...conv,
+                lastMessageAt: new Date().toISOString(),
+                lastMessagePreview: '📷 Image',
+                lastMessage: {
+                  id: data.data.id,
+                  content: '📷 Image',
+                  senderId: currentUser.id,
+                  createdAt: new Date().toISOString(),
+                },
+              }
+            }
+            return conv
+          })
+          return updated.sort(
+            (a, b) =>
+              new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()
+          )
+        })
+      } else {
+        // Remove optimistic message on failure
+        setMessages((prev) => prev.filter((msg) => msg.id !== optimisticId))
+        alert(data.error || 'Failed to upload image')
+      }
+    } catch (error) {
+      console.error('Failed to upload image:', error)
+      // Remove optimistic message on error
+      setMessages((prev) => prev.filter((msg) => msg.id !== optimisticId))
+      alert('Failed to upload image. Please try again.')
+    } finally {
+      setUploadingImage(false)
+    }
+  }, [imagePreview, currentUser, selectedConversation, socketSendMessage, emitStopTyping])
+
+  // ── Cancel Image Preview ─────────────────────────────────────────────
+  const cancelImagePreview = useCallback(() => {
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview.url)
+    }
+    setImagePreview(null)
+  }, [imagePreview])
 
   // ── Typing Indicator Logic ────────────────────────────────────────────
   const handleTyping = useCallback(() => {
@@ -1041,15 +1183,32 @@ export function MessagesPage() {
 
                                       <div>
                                         <div
-                                          className={`rounded-2xl px-3.5 py-2.5 ${
-                                            isMine
-                                              ? 'bg-gradient-to-br from-amber-500 to-yellow-600 text-white rounded-br-md'
-                                              : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-md'
+                                          className={`rounded-2xl ${
+                                            msg.messageType === 'image'
+                                              ? 'p-1 overflow-hidden ' + (isMine ? 'rounded-br-md' : 'rounded-bl-md')
+                                              : 'px-3.5 py-2.5 ' + (isMine
+                                                  ? 'bg-gradient-to-br from-amber-500 to-yellow-600 text-white rounded-br-md'
+                                                  : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-md')
                                           }`}
                                         >
-                                          <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-                                            {msg.content}
-                                          </p>
+                                          {msg.messageType === 'image' ? (
+                                            <button
+                                              type="button"
+                                              onClick={() => setImageModalUrl(msg.content)}
+                                              className="block cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-400 rounded-xl overflow-hidden"
+                                            >
+                                              <img
+                                                src={msg.content}
+                                                alt="Shared image"
+                                                className="max-w-[200px] sm:max-w-[260px] max-h-[200px] sm:max-h-[260px] object-cover rounded-xl hover:opacity-90 transition-opacity"
+                                                loading="lazy"
+                                              />
+                                            </button>
+                                          ) : (
+                                            <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                                              {msg.content}
+                                            </p>
+                                          )}
                                         </div>
                                         <div
                                           className={`flex items-center gap-1.5 mt-0.5 px-1 ${
@@ -1100,7 +1259,62 @@ export function MessagesPage() {
 
                   {/* Message Input Area */}
                   <div className="border-t border-gray-100 dark:border-gray-800 p-3 bg-white dark:bg-gray-900">
+                    {/* Image Preview */}
+                    <AnimatePresence>
+                      {imagePreview && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="mb-3"
+                        >
+                          <div className="relative inline-block">
+                            <img
+                              src={imagePreview.url}
+                              alt="Upload preview"
+                              className="max-h-[120px] rounded-xl border border-gray-200 dark:border-gray-700 object-cover"
+                            />
+                            <button
+                              type="button"
+                              onClick={cancelImagePreview}
+                              className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-gray-900/80 text-white flex items-center justify-center hover:bg-gray-900 transition-colors"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                            {uploadingImage && (
+                              <div className="absolute inset-0 rounded-xl bg-black/40 flex items-center justify-center">
+                                <Loader2 className="h-6 w-6 text-white animate-spin" />
+                              </div>
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* Hidden file input */}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                      aria-label="Upload image"
+                    />
+
                     <div className="flex items-end gap-2">
+                      {/* Image upload button */}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-10 w-10 rounded-xl shrink-0 text-muted-foreground hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploadingImage || sendingMessage}
+                        title="Attach image"
+                      >
+                        <Paperclip className="h-4 w-4" />
+                      </Button>
+
                       <div className="flex-1 relative">
                         <Textarea
                           ref={textareaRef}
@@ -1118,20 +1332,38 @@ export function MessagesPage() {
                           placeholder="Type a message..."
                           className="min-h-[40px] max-h-[120px] resize-none rounded-xl bg-gray-50 dark:bg-gray-800 border-gray-100 dark:border-gray-700 focus:bg-white dark:focus:bg-gray-700 pr-2 text-sm"
                           rows={1}
-                          disabled={sendingMessage}
+                          disabled={sendingMessage || uploadingImage}
                         />
                       </div>
-                      <Button
-                        onClick={handleSendMessage}
-                        disabled={!newMessage.trim() || sendingMessage}
-                        className="h-10 w-10 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 shrink-0 shadow-sm"
-                        size="icon"
-                      >
-                        <Send className="h-4 w-4" />
-                      </Button>
+
+                      {/* Send / Upload button */}
+                      {imagePreview ? (
+                        <Button
+                          onClick={handleImageUpload}
+                          disabled={uploadingImage}
+                          className="h-10 w-10 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 shrink-0 shadow-sm"
+                          size="icon"
+                          title="Send image"
+                        >
+                          {uploadingImage ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Send className="h-4 w-4" />
+                          )}
+                        </Button>
+                      ) : (
+                        <Button
+                          onClick={handleSendMessage}
+                          disabled={!newMessage.trim() || sendingMessage}
+                          className="h-10 w-10 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 shrink-0 shadow-sm"
+                          size="icon"
+                        >
+                          <Send className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                     <p className="text-[10px] text-muted-foreground mt-1.5 px-1">
-                      Press Enter to send, Shift+Enter for new line
+                      Press Enter to send, Shift+Enter for new line · 📎 to share images
                     </p>
                   </div>
                 </>
@@ -1274,6 +1506,42 @@ export function MessagesPage() {
           )}
         </div>
       </div>
+
+      {/* Image Preview Modal */}
+      <AnimatePresence>
+        {imageModalUrl && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+            onClick={() => setImageModalUrl(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="relative max-w-[90vw] max-h-[90vh]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => setImageModalUrl(null)}
+                className="absolute -top-3 -right-3 h-8 w-8 rounded-full bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 flex items-center justify-center shadow-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors z-10"
+                aria-label="Close image preview"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <img
+                src={imageModalUrl}
+                alt="Full size image"
+                className="max-w-[90vw] max-h-[85vh] object-contain rounded-lg shadow-2xl"
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

@@ -236,3 +236,119 @@ Stage Summary:
 - Chat assistant on RIGHT side (separate from tour guide mascot)
 - All CSS animations updated for left-side positioning
 - No runtime errors, lint passes (1 pre-existing warning only)
+
+---
+Task ID: 7
+Agent: Main Agent
+Task: Build Stripe Payment Integration
+
+Work Log:
+- Read worklog.md and full codebase context (payment-gateway.ts, initiate route, callback route, verify route, Prisma schema, auth middleware, CSRF, constants)
+- Updated Prisma schema:
+  - Added `stripe` and `card` to Payment model's paymentMethod comment: `// easypaisa, jazzcash, stripe, card, payoneer, wise`
+  - Added `pushSubscriptions PushSubscription[]` relation to User model
+  - Added `PushSubscription` model with fields: id, userId, endpoint, p256dh, auth, createdAt, updatedAt, user relation
+  - Added `@@unique([userId, endpoint])` and `@@index([userId])` constraints
+- Created `src/lib/stripe.ts` — Complete Stripe helper module:
+  - Lazy-initialized Stripe client with STRIPE_SECRET_KEY env var
+  - `createCheckoutSession(params)` — Creates Stripe Checkout Session with mode: 'payment', supports cards/Apple Pay/Google Pay, includes platform fee (10%) and seller payout metadata
+  - `verifySession(sessionId)` — Verifies checkout session status with Stripe, maps to internal status
+  - `createPaymentIntent(params)` — For manual card processing (returns clientSecret)
+  - `verifyWebhookSignature(payload, signature)` — Verifies Stripe webhook signature with STRIPE_WEBHOOK_SECRET
+  - `handleWebhookEvent(event)` — Processes webhook events:
+    - `checkout.session.completed` — Marks payment completed, escrowStatus held, creates escrow_hold and commission transactions, sends notifications
+    - `checkout.session.expired` — Marks payment as failed
+    - `payment_intent.payment_failed` — Marks payment as failed with error details
+    - `payment_intent.succeeded` — Handles Payment Intent flow completion
+    - `charge.refunded` — Marks payment as refunded
+  - `isStripeConfigured()` — Checks if Stripe env vars are set
+  - `getStripeGatewayStatus()` — Returns config status (safe for frontend)
+  - Supports sandbox mode via PAYMENT_GATEWAY_MODE env var
+  - Idempotency check on webhook handler (skips already completed payments)
+- Updated `src/lib/payment-gateway.ts`:
+  - Added `'stripe'` to InitiatePaymentParams paymentMethod union type
+  - Added optional `sellerId`, `platformFee`, `sellerPayout` fields to InitiatePaymentParams
+  - Imported `createCheckoutSession` and `isStripeConfigured` from stripe.ts
+  - Added `stripe` entry to `getGatewayStatus()` return object
+  - Updated `isGatewayConfigured()` to accept and handle 'stripe' gateway
+  - Added `isStripeConfigured()` export function (delegates to stripe.ts)
+  - Added `initiateStripePayment(params)` function that creates Checkout Session and returns redirectUrl + sessionId
+- Created `src/app/api/payments/stripe/checkout/route.ts`:
+  - POST handler with CSRF (withCsrf) + auth (authenticateRequestWithSession)
+  - Validates orderId, buyerId, amount
+  - Verifies order ownership and payment record existence
+  - Calculates platform fee (10%) and seller payout (90%)
+  - Creates Stripe Checkout Session
+  - Updates payment record with stripe session ID and processing status
+  - Returns sessionId + redirectUrl + amount + platformFee + sellerPayout
+- Created `src/app/api/payments/stripe/webhook/route.ts`:
+  - POST handler WITHOUT CSRF (webhooks come from Stripe servers)
+  - Verifies Stripe signature from stripe-signature header
+  - Processes webhook events via handleWebhookEvent()
+  - Returns 200 OK for valid events (Stripe expects acknowledgment)
+  - Rejects GET/PUT/DELETE methods
+- Created `src/app/api/payments/stripe/verify/route.ts`:
+  - POST handler with CSRF + auth
+  - Accepts sessionId or orderId (looks up sessionId from payment metadata)
+  - Verifies buyer owns the payment
+  - Calls verifySession() to check Stripe session status
+  - Returns session status, payment intent ID, amount, payment/escrow/order status
+- Updated `src/app/api/payments/initiate/route.ts`:
+  - Added `initiateStripePayment` to imports
+  - Added `'stripe'` to validMethods array
+  - Added `stripe` case in gateway selection that calls initiateStripePayment with sellerId, platformFee, sellerPayout
+  - Added else clause for unsupported payment methods
+- Updated `.env` with Stripe environment variables:
+  - STRIPE_SECRET_KEY=
+  - STRIPE_PUBLISHABLE_KEY=
+  - STRIPE_WEBHOOK_SECRET=
+  - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
+- Ran `bun run db:push` — Schema changes applied successfully, Prisma Client regenerated
+- Ran `bun run lint` — 0 errors, 1 pre-existing warning
+
+Stage Summary:
+- Stripe payment gateway fully integrated alongside existing Easypaisa/JazzCash
+- 4 new files created, 4 existing files modified
+- API endpoints: POST /api/payments/stripe/checkout, POST /api/payments/stripe/webhook, POST /api/payments/stripe/verify
+- Webhook handler processes checkout.session.completed, expired, payment_intent.failed/succeeded, charge.refunded
+- Escrow + platform fee (10%) logic included in webhook handler
+- PushSubscription model added for push notifications (for another agent)
+- All code uses existing patterns (withCsrf, authenticateRequestWithSession, NextResponse.json, db from @/lib/db)
+- No Stripe secrets hardcoded — all from environment variables
+
+---
+Task ID: 2
+Agent: Image Upload Agent
+Task: Add Image/File Sharing to Chat Messages
+
+Work Log:
+- Updated src/lib/supabase-storage.ts: Added 'messages' to ALLOWED_FOLDERS array
+- Created src/app/api/messages/upload/route.ts: Image upload API endpoint
+  - POST handler with withCsrf + authenticateRequest
+  - Validates file type (JPEG, PNG, WebP, GIF) and size (max 5MB)
+  - Validates file magic bytes via validateFile()
+  - Uploads to Supabase storage in 'messages' folder
+  - Creates Message with messageType: 'image', content = image URL
+  - Finds/creates Conversation, updates lastMessagePreview to "📷 Image"
+  - Creates notification for receiver
+  - Returns full message data with sender/receiver relations
+- Updated src/components/marketplace/messages/messages-page.tsx:
+  - Added imports: ImageIcon, X, Paperclip, Loader2 from lucide-react
+  - Added state: uploadingImage, imagePreview (file + blob URL), imageModalUrl
+  - Added ref: fileInputRef for hidden file input
+  - Added handleFileSelect: validates and previews selected image
+  - Added handleImageUpload: uploads via /api/messages/upload with optimistic message, socket emit
+  - Added cancelImagePreview: revokes blob URL and clears preview
+  - Message rendering: conditional for messageType === 'image' — clickable thumbnail opens full-size modal
+  - Input area: Paperclip button, image preview with cancel, upload spinner, contextual send/upload button
+  - Socket handler: shows "📷 Image" for image messages in conversation list
+  - Image preview modal: full-screen overlay with animated entry/exit, close button, click-outside-to-close
+
+Stage Summary:
+- Chat messages now support image sharing alongside existing text messages
+- Upload endpoint: POST /api/messages/upload (with CSRF + auth)
+- Images stored in Supabase storage 'messages' folder
+- Optimistic rendering for instant feedback
+- Full-size image preview modal
+- Conversation list shows "📷 Image" for image messages
+- Lint: 0 errors, 1 pre-existing warning

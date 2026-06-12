@@ -585,7 +585,42 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
       const firstPaymentId = paymentResults[0]?.data?.id || ''
       setPaymentId(firstPaymentId)
 
-      // Step 3: For Easypaisa/JazzCash, redirect to payment gateway (use first order)
+      // Step 3: For Stripe (card payments), redirect to Stripe Checkout
+      if (paymentMethod === 'card') {
+        try {
+          const stripeRes = await fetch('/api/payments/stripe/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orderId: firstOrderId,
+              buyerId: currentUser.id,
+              amount: cartTotal,
+              successUrl: `${window.location.origin}?stripe_success=1&order=${firstOrderId}`,
+              cancelUrl: `${window.location.origin}?stripe_cancel=1`,
+            }),
+          })
+
+          const stripeData = await stripeRes.json()
+
+          if (stripeData.success && stripeData.data?.redirectUrl) {
+            // Redirect to Stripe Checkout
+            window.location.href = stripeData.data.redirectUrl
+            return
+          }
+
+          // If Stripe not configured, fall back to sandbox/verification flow
+          if (stripeData.error?.includes('not configured')) {
+            toast.warning('Card payments require Stripe configuration. Using sandbox mode.')
+          } else {
+            throw new Error(stripeData.error || 'Stripe checkout failed')
+          }
+        } catch (err) {
+          console.warn('Stripe checkout error, falling back to verification flow:', err)
+          // Fall through to verify flow below
+        }
+      }
+
+      // Step 4: For Easypaisa/JazzCash, redirect to payment gateway (use first order)
       if (paymentMethod === 'easypaisa' || paymentMethod === 'jazzcash') {
         try {
           const initiateRes = await fetch('/api/payments/initiate', {

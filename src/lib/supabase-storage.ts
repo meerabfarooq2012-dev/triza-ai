@@ -41,7 +41,7 @@ function validateFileSignature(buffer: Buffer, mimeType: string): boolean {
 }
 
 // Allowed folder names for upload
-const ALLOWED_FOLDERS = ['products', 'avatars', 'shops', 'reviews', 'evidence', 'stories', 'general']
+const ALLOWED_FOLDERS = ['products', 'avatars', 'shops', 'reviews', 'evidence', 'stories', 'general', 'messages']
 
 // Lazy-initialized Supabase admin client
 let _supabaseAdmin: SupabaseClient | null = null

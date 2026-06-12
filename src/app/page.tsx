@@ -485,8 +485,21 @@ function MarketplaceApp() {
     const productId = searchParams.get('product')
     const gigId = searchParams.get('gig')
     const wishlistSlug = searchParams.get('wishlist')
+    const stripeSuccess = searchParams.get('stripe_success')
+    const stripeCancel = searchParams.get('stripe_cancel')
 
-    if (shopSlug) {
+    // Handle Stripe payment return
+    if (stripeSuccess) {
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname)
+      // Show success — user will see their orders
+      if (isAuthenticated) {
+        setCurrentView('buyer-dashboard')
+      }
+    } else if (stripeCancel) {
+      // Clean URL — payment was cancelled
+      window.history.replaceState({}, '', window.location.pathname)
+    } else if (shopSlug) {
       setCurrentView('shop-view', { shopSlug })
     } else if (productId) {
       setCurrentView('product-detail', { productId })

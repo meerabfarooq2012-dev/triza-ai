@@ -204,3 +204,82 @@ async function staleWhileRevalidate(request) {
 
   return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
 }
+
+// =============================================================================
+// Push Notification Handlers
+// =============================================================================
+
+// Push event — show notification when a push message is received
+self.addEventListener('push', (event) => {
+  let data = {
+    title: 'Thiora',
+    body: 'You have a new notification',
+    icon: '/logo.svg',
+    badge: '/logo.svg',
+    url: '/',
+    tag: undefined,
+    type: undefined,
+    category: undefined,
+    notificationId: undefined,
+  };
+
+  if (event.data) {
+    try {
+      const parsed = event.data.json();
+      data = { ...data, ...parsed };
+    } catch {
+      // If not JSON, use the text as the body
+      data.body = event.data.text();
+    }
+  }
+
+  const title = data.title;
+  const options = {
+    body: data.body,
+    icon: data.icon || '/logo.svg',
+    badge: data.badge || '/logo.svg',
+    image: data.image || undefined,
+    tag: data.tag || undefined,
+    data: {
+      url: data.url || '/',
+      type: data.type,
+      category: data.category,
+      notificationId: data.notificationId,
+    },
+    vibrate: [100, 50, 100],
+    actions: [
+      { action: 'open', title: 'Open' },
+      { action: 'dismiss', title: 'Dismiss' },
+    ],
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(title, options)
+  );
+});
+
+// Notification click event — open the app when notification is clicked
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  const urlToOpen = event.notification.data?.url || '/';
+
+  if (event.action === 'dismiss') return;
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // If there's already a window open, focus it and navigate
+      for (const client of clientList) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          // Navigate to the target URL if different
+          if (urlToOpen !== '/' && client.navigate) {
+            client.navigate(urlToOpen);
+          }
+          return client.focus();
+        }
+      }
+      // No window open — open a new one
+      return self.clients.openWindow(urlToOpen);
+    })
+  );
+});

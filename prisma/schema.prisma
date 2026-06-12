@@ -74,6 +74,7 @@ model User {
   reports          ProductReport[]
   auditLogs        AuditLog[]
   cart             Cart?
+  pushSubscriptions PushSubscription[]
 }
 
 model Shop {
@@ -659,7 +660,7 @@ model Payment {
   amount          Float                     // Total amount paid by buyer
   platformFee     Float    @default(0)      // 10% commission
   sellerPayout    Float    @default(0)      // Amount seller receives (90%)
-  paymentMethod   String   @default("easypaisa")  // easypaisa, jazzcash, payoneer, wise
+  paymentMethod   String   @default("easypaisa")  // easypaisa, jazzcash, stripe, card, payoneer, wise
   paymentProvider String?                     // External transaction/reference ID
   status          String   @default("pending")    // pending, processing, completed, failed, refunded, escrow
   escrowStatus    String   @default("held")       // held, released, refunded
@@ -1494,4 +1495,22 @@ model Cart {
   @@index([userId])
   @@index([updatedAt])
   @@index([abandonedAt])
+}
+
+// =============================================================================
+// PUSH NOTIFICATION MODEL — Web Push subscriptions
+// =============================================================================
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, endpoint])
+  @@index([userId])
 }

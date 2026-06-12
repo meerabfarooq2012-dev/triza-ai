@@ -5,6 +5,7 @@
 
 import { createHmac, createHash, randomUUID } from 'crypto';
 import { PAYMENT_GATEWAY_MODE, PAYMENT_CALLBACK_BASE_URL } from '@/lib/constants';
+import { createCheckoutSession, isStripeConfigured as checkStripeConfigured } from '@/lib/stripe';
 
 // ----- Types -----
 
@@ -32,8 +33,12 @@ export interface InitiatePaymentParams {
   buyerEmail?: string;
   buyerPhone?: string;
   buyerName?: string;
-  paymentMethod: 'easypaisa' | 'jazzcash';
+  paymentMethod: 'easypaisa' | 'jazzcash' | 'stripe';
   description?: string;
+  // Stripe-specific fields
+  sellerId?: string;
+  platformFee?: number;
+  sellerPayout?: number;
 }
 
 // ----- Easypaisa Configuration -----
@@ -1000,9 +1005,10 @@ export function getGatewayMode(): 'sandbox' | 'live' {
 /**
  * Check if a specific gateway is configured
  */
-export function isGatewayConfigured(gateway: 'easypaisa' | 'jazzcash'): boolean {
+export function isGatewayConfigured(gateway: 'easypaisa' | 'jazzcash' | 'stripe'): boolean {
   if (gateway === 'easypaisa') return hasEasypaisaCredentials();
   if (gateway === 'jazzcash') return hasJazzCashCredentials();
+  if (gateway === 'stripe') return checkStripeConfigured();
   return false;
 }
 
@@ -1019,5 +1025,72 @@ export function getGatewayStatus(): Record<string, { configured: boolean; mode: 
       configured: hasJazzCashCredentials(),
       mode: getGatewayMode(),
     },
+    stripe: {
+      configured: checkStripeConfigured(),
+      mode: getGatewayMode(),
+    },
   };
+}
+
+// =============================================================================
+// Stripe Payment Integration
+// =============================================================================
+
+/**
+ * Check if Stripe is configured (delegates to stripe.ts)
+ */
+export function isStripeConfigured(): boolean {
+  return checkStripeConfigured();
+}
+
+/**
+ * Initiate a Stripe Checkout payment.
+ * Creates a Stripe Checkout Session and returns the redirect URL.
+ */
+export async function initiateStripePayment(
+  params: InitiatePaymentParams
+): Promise<PaymentGatewayResult> {
+  try {
+    if (!checkStripeConfigured()) {
+      return {
+        success: false,
+        error: 'Stripe is not configured. Set STRIPE_SECRET_KEY environment variable.',
+        gatewayMode: getGatewayMode(),
+      };
+    }
+
+    if (!params.sellerId) {
+      return {
+        success: false,
+        error: 'sellerId is required for Stripe payments',
+        gatewayMode: getGatewayMode(),
+      };
+    }
+
+    const result = await createCheckoutSession({
+      orderId: params.orderId,
+      amount: params.amount,
+      buyerEmail: params.buyerEmail,
+      buyerId: params.buyerId,
+      description: params.description,
+      platformFee: params.platformFee || 0,
+      sellerId: params.sellerId,
+      sellerPayout: params.sellerPayout || params.amount,
+    });
+
+    return {
+      success: true,
+      redirectUrl: result.url,
+      paymentToken: result.sessionId,
+      transactionId: result.sessionId,
+      gatewayMode: getGatewayMode(),
+    };
+  } catch (error) {
+    console.error('[Payment Gateway] Stripe initiation error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to initiate Stripe payment',
+      gatewayMode: getGatewayMode(),
+    };
+  }
 }

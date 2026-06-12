@@ -4,6 +4,7 @@ import { authenticateRequestWithSession } from '@/lib/auth-middleware';
 import {
   initiateEasypaisaPayment,
   initiateJazzCashPayment,
+  initiateStripePayment,
   getGatewayMode,
 } from '@/lib/payment-gateway';
 import { withCsrf } from '@/lib/with-csrf';
@@ -48,7 +49,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
       );
     }
 
-    const validMethods = ['easypaisa', 'jazzcash'];
+    const validMethods = ['easypaisa', 'jazzcash', 'stripe'];
     if (!validMethods.includes(paymentMethod)) {
       return NextResponse.json(
         {
@@ -128,7 +129,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
         paymentMethod: 'easypaisa',
         description: `Thiora Order #${orderId.slice(-8)}`,
       });
-    } else {
+    } else if (paymentMethod === 'jazzcash') {
       gatewayResult = await initiateJazzCashPayment({
         orderId,
         amount,
@@ -139,6 +140,25 @@ export const POST = withCsrf(async (request: NextRequest) => {
         paymentMethod: 'jazzcash',
         description: `Thiora Order #${orderId.slice(-8)}`,
       });
+    } else if (paymentMethod === 'stripe') {
+      gatewayResult = await initiateStripePayment({
+        orderId,
+        amount,
+        buyerId,
+        buyerEmail,
+        buyerPhone,
+        buyerName,
+        paymentMethod: 'stripe',
+        description: `Thiora Order #${orderId.slice(-8)}`,
+        sellerId: payment.sellerId,
+        platformFee: payment.platformFee,
+        sellerPayout: payment.sellerPayout,
+      });
+    } else {
+      return NextResponse.json(
+        { success: false, error: `Unsupported payment method: ${paymentMethod}` },
+        { status: 400 }
+      );
     }
 
     if (!gatewayResult.success) {
