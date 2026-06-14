@@ -344,3 +344,22 @@ Stage Summary:
 - Full client-side flow: permission request → VAPID key fetch → subscribe → server storage
 - Test notification endpoint at /api/push/test
 - UI prompt on mobile home screen encourages users to enable push notifications
+
+---
+Task ID: 2
+Agent: Main Agent
+Task: PWA auth-first flow + Vercel deployment
+
+Work Log:
+- Added useEffect in MarketplaceApp that redirects PWA standalone users: unauthenticated → auth screen, authenticated → dashboard (never landing page)
+- Updated mobile bottom nav: Home tab in PWA goes to dashboard instead of landing
+- Updated mobile header: Logo click in PWA goes to dashboard instead of landing
+- Updated auth modal: "Back to home" button hidden in PWA standalone mode (no landing page to go back to)
+- Logout in PWA automatically redirects to auth screen (handled by existing useEffect)
+- Committed and pushed to GitHub (auto-deploys to Vercel)
+
+Stage Summary:
+- PWA installed app now shows Login/Signup screen first when user is not authenticated
+- After login/signup, user goes directly to their dashboard (buyer/seller/admin)
+- No landing page or marketing content in the installed PWA app
+- Deployed to Vercel via git push to main branch
