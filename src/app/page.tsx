@@ -5,6 +5,8 @@ import dynamic from 'next/dynamic'
 import { useSearchParams } from 'next/navigation'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { useRealtimeNotifications } from '@/hooks/use-realtime-notifications'
+import { useIsMobile } from '@/hooks/use-mobile'
+import { usePwa } from '@/components/providers/pwa-provider'
 
 // ── Global ChunkLoadError Recovery ──────────────────────────────────────────
 // When Next.js/Turbopack regenerates chunk hashes (dev server restart, deploy),
@@ -127,6 +129,11 @@ const CartDrawer = dynamic(
 
 const LandingPage = dynamic(
   withChunkRetry(() => import('@/components/marketplace/landing/landing-page'), 'LandingPage'),
+  { ssr: false, loading: () => <PageLoader /> }
+)
+
+const MobileAppHome = dynamic(
+  withChunkRetry(() => import('@/components/marketplace/landing/mobile-app-home'), 'MobileAppHome'),
   { ssr: false, loading: () => <PageLoader /> }
 )
 
@@ -482,6 +489,11 @@ function MarketplaceApp() {
   const viewParams = useMarketplaceStore((s) => s.viewParams)
   const activeRole = useMarketplaceStore((s) => s.activeRole)
   const searchParams = useSearchParams()
+
+  // Detect mobile/standalone mode for app-like home screen
+  const isMobile = useIsMobile()
+  const { isStandalone } = usePwa()
+  const shouldShowAppHome = isMobile || isStandalone
   const [showEmailVerify, setShowEmailVerify] = useState(() => {
     // Initialize from URL params on first render (avoids setState in effect)
     if (typeof window !== 'undefined') {
@@ -674,7 +686,8 @@ function MarketplaceApp() {
           return <AdminPanel />
         case 'landing':
         default:
-          return <LandingPage />
+          // Mobile/standalone: show app-like home instead of marketing landing page
+          return shouldShowAppHome ? <MobileAppHome /> : <LandingPage />
       }
     } catch (error) {
       console.error('[Thiora] View render error:', error)
@@ -689,7 +702,7 @@ function MarketplaceApp() {
         </div>
       )
     }
-  }, [currentView, isAuthenticated, currentUser, activeRole, setCurrentView, viewParams])
+  }, [currentView, isAuthenticated, currentUser, activeRole, setCurrentView, viewParams, shouldShowAppHome])
 
   return (
     <MobileAppShell>

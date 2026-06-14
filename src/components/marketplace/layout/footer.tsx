@@ -6,6 +6,7 @@ import { Separator } from '@/components/ui/separator'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { PLATFORM_NAME, PLATFORM_TAGLINE } from '@/lib/constants'
 import { useLanguage } from '@/hooks/use-language'
+import { useIsMobile } from '@/hooks/use-mobile'
 import type { ViewMode } from '@/types'
 
 // PWA standalone mode detection
@@ -44,6 +45,7 @@ const socialLinks = [
 export function Footer() {
   const { setCurrentView, isAuthenticated } = useMarketplaceStore()
   const { t } = useLanguage()
+  const isMobile = useIsMobile()
   const isStandalone = useSyncExternalStore(subscribeToStandalone, getStandaloneSnapshot, getStandaloneServerSnapshot)
 
   const handleNavClick = (view: ViewMode, params?: Record<string, string>) => {
@@ -54,8 +56,8 @@ export function Footer() {
     }
   }
 
-  // Hide footer in PWA standalone mode to save screen space (bottom nav provides navigation)
-  if (isStandalone) return null
+  // Hide footer on mobile and in PWA standalone mode (bottom nav provides navigation)
+  if (isMobile || isStandalone) return null
 
   return (
     <footer className="mt-auto border-t bg-muted/20 pb-16 md:pb-0">
