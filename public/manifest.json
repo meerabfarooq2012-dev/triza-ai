@@ -4,7 +4,7 @@
   "description": "Discover freelance services, digital downloads, and physical products — your all-in-one marketplace for buying and selling online.",
   "start_url": "/",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "display_override": ["standalone", "window-controls-overlay", "minimal-ui"],
   "background_color": "#0a0a0a",
   "theme_color": "#d97706",
   "orientation": "portrait-primary",
@@ -35,7 +35,7 @@
       "purpose": "maskable"
     }
   ],
-  "categories": ["shopping", "business"],
+  "categories": ["shopping", "business", "finance"],
   "prefer_related_applications": false,
   "shortcuts": [
     {
@@ -111,5 +111,11 @@
   },
   "launch_handler": {
     "client_mode": "navigate-existing"
-  }
+  },
+  "description": "Thiora - Freelance services, digital downloads, and physical products. Install for a native app experience.",
+  "dir": "ltr",
+  "lang": "en",
+  "iarc_rating_id": "",
+  "related_applications": [],
+  "protocol_handlers": []
 }

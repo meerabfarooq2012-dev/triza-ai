@@ -19,7 +19,9 @@ export const viewport: Viewport = {
   themeColor: "#d97706",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 5,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
 };
 
 export const metadata: Metadata = {
@@ -30,7 +32,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "Thiora",
   },
   openGraph: {
@@ -77,13 +79,26 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#d97706" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Thiora" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="application-name" content="Thiora" />
+        <meta name="msapplication-TileColor" content="#d97706" />
+        <meta name="msapplication-navbutton-color" content="#d97706" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="icon" type="image/png" sizes="192x192" href="/icon-192x192.png" />
         <link rel="icon" type="image/png" sizes="512x512" href="/icon-512x512.png" />
+        {/* Prevent phone number detection for native app feel */}
+        <meta name="format-detection" content="telephone=no" />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
+        className={`
+          ${geistSans.variable} ${geistMono.variable}
+          antialiased bg-background text-foreground
+          min-h-dvh overflow-x-hidden
+          supports-[height:100dvh]:min-h-[100dvh]
+        `}
       >
         <ThemeProvider
           attribute="class"

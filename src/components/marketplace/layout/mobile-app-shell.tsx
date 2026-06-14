@@ -74,28 +74,28 @@ function getStandaloneServerSnapshot(): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// Animation variants
+// Animation variants — native iOS/Android style transitions
 // ---------------------------------------------------------------------------
-const SLIDE_DURATION = 0.25 // 250ms
-const SLIDE_EASE: [number, number, number, number] = [0.25, 0.1, 0.25, 1]
+const SLIDE_DURATION = 0.28 // 280ms — matches iOS default
+const SLIDE_EASE: [number, number, number, number] = [0.32, 0.72, 0, 1] // iOS spring-like
 
 const forwardVariants = {
-  initial: { x: '100%', opacity: 0 },
+  initial: { x: '100%', opacity: 0.9 },
   animate: { x: 0, opacity: 1 },
-  exit: { x: '-30%', opacity: 0 },
+  exit: { x: '-25%', opacity: 0.6 },
 }
 
 const backwardVariants = {
-  initial: { x: '-30%', opacity: 0 },
+  initial: { x: '-25%', opacity: 0.6 },
   animate: { x: 0, opacity: 1 },
-  exit: { x: '100%', opacity: 0 },
+  exit: { x: '100%', opacity: 0.9 },
 }
 
 // ---------------------------------------------------------------------------
 // Pull-to-refresh constants
 // ---------------------------------------------------------------------------
-const PULL_THRESHOLD = 80 // px to trigger refresh
-const PULL_RESISTANCE = 2.5 // resistance factor (slows pull)
+const PULL_THRESHOLD = 80
+const PULL_RESISTANCE = 2.5
 
 // ---------------------------------------------------------------------------
 // Scrollbar-hiding CSS (injected once)
@@ -122,7 +122,7 @@ function injectScrollbarStyles() {
 }
 
 // ---------------------------------------------------------------------------
-// useTouchFeedback hook
+// useTouchFeedback hook — native press feedback
 // ---------------------------------------------------------------------------
 export function useTouchFeedback() {
   const ref = useRef<HTMLDivElement>(null)
@@ -155,15 +155,21 @@ export function useTouchFeedback() {
 }
 
 // ---------------------------------------------------------------------------
-// Splash Screen component
+// Splash Screen component — native app-like launch screen
 // ---------------------------------------------------------------------------
 function SplashScreen({ onFinished }: { onFinished: () => void }) {
   const [fadeOut, setFadeOut] = useState(false)
+  const [logoScale, setLogoScale] = useState(false)
 
   useEffect(() => {
-    const fadeTimer = setTimeout(() => setFadeOut(true), 1200)
-    const finishTimer = setTimeout(onFinished, 1500)
+    // Animate logo in
+    const scaleTimer = setTimeout(() => setLogoScale(true), 100)
+    // Start fade out
+    const fadeTimer = setTimeout(() => setFadeOut(true), 1500)
+    // Remove from DOM
+    const finishTimer = setTimeout(onFinished, 1900)
     return () => {
+      clearTimeout(scaleTimer)
       clearTimeout(fadeTimer)
       clearTimeout(finishTimer)
     }
@@ -171,41 +177,72 @@ function SplashScreen({ onFinished }: { onFinished: () => void }) {
 
   return (
     <motion.div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-background"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-gradient-to-br from-amber-50 via-background to-amber-50/50 dark:from-amber-950/30 dark:via-background dark:to-amber-950/20"
       initial={{ opacity: 1 }}
       animate={{ opacity: fadeOut ? 0 : 1 }}
-      transition={{ duration: 0.3, ease: 'easeInOut' }}
+      transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
       style={{ pointerEvents: fadeOut ? 'none' : 'auto' }}
     >
-      <div className="flex flex-col items-center gap-3">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500 shadow-lg shadow-amber-500/30">
-          <span className="text-3xl font-bold text-white">T</span>
-        </div>
-        <span className="text-2xl font-bold tracking-tight text-foreground">
+      <div className="flex flex-col items-center gap-4">
+        {/* App icon with scale animation */}
+        <motion.div
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{
+            scale: logoScale ? 1 : 0.5,
+            opacity: logoScale ? 1 : 0,
+          }}
+          transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
+          className="relative"
+        >
+          <div className="flex h-20 w-20 items-center justify-center rounded-[22px] bg-gradient-to-br from-amber-500 to-orange-600 shadow-xl shadow-amber-500/30 ring-1 ring-white/10">
+            <img
+              src="/logo.png"
+              alt="Thiora"
+              className="h-14 w-14 rounded-xl"
+            />
+          </div>
+          {/* Glow */}
+          <div className="absolute inset-0 rounded-[22px] bg-amber-500/20 blur-xl -z-10" />
+        </motion.div>
+
+        {/* App name */}
+        <motion.span
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: logoScale ? 1 : 0, y: logoScale ? 0 : 8 }}
+          transition={{ duration: 0.4, delay: 0.2, ease: [0.32, 0.72, 0, 1] }}
+          className="text-2xl font-bold tracking-tight text-foreground"
+        >
           Thiora
-        </span>
-        <div className="mt-2 flex gap-1.5">
+        </motion.span>
+
+        {/* Loading dots */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: logoScale ? 1 : 0 }}
+          transition={{ duration: 0.3, delay: 0.4 }}
+          className="flex gap-1.5 mt-1"
+        >
           {[0, 1, 2].map((i) => (
             <motion.span
               key={i}
               className="h-1.5 w-1.5 rounded-full bg-amber-500"
-              animate={{ opacity: [0.3, 1, 0.3] }}
+              animate={{ opacity: [0.2, 1, 0.2], scale: [0.8, 1, 0.8] }}
               transition={{
-                duration: 1,
+                duration: 1.2,
                 repeat: Infinity,
                 delay: i * 0.2,
                 ease: 'easeInOut',
               }}
             />
           ))}
-        </div>
+        </motion.div>
       </div>
     </motion.div>
   )
 }
 
 // ---------------------------------------------------------------------------
-// Pull-to-Refresh indicator
+// Pull-to-Refresh indicator — native iOS style
 // ---------------------------------------------------------------------------
 function PullIndicator({
   pullDistance,
@@ -271,8 +308,7 @@ function PullIndicator({
 
 // ---------------------------------------------------------------------------
 // PageTransition — wraps ONLY the main content area with slide animations.
-// This is separated from MobileAppShell so overlays (CookieConsent, etc.)
-// are NOT unmounted on view changes.
+// iOS-style push/pop navigation with depth tracking.
 // ---------------------------------------------------------------------------
 interface PageTransitionProps {
   children: ReactNode
@@ -323,6 +359,7 @@ export function PageTransition({ children, currentView }: PageTransitionProps) {
           duration: SLIDE_DURATION,
           ease: SLIDE_EASE,
         }}
+        style={{ willChange: 'transform, opacity' }}
       >
         {children}
       </motion.div>
@@ -332,12 +369,11 @@ export function PageTransition({ children, currentView }: PageTransitionProps) {
 
 // ---------------------------------------------------------------------------
 // MobileAppShell — outer wrapper with splash screen, scrollbar hiding,
-// and pull-to-refresh. Does NOT wrap children in AnimatePresence —
-// that's handled by PageTransition for the content area only.
+// pull-to-refresh, and native app container behavior.
 // ---------------------------------------------------------------------------
 interface MobileAppShellProps {
   children: ReactNode
-  currentView?: string // kept for API compat, not used here
+  currentView?: string
 }
 
 export function MobileAppShell({ children }: MobileAppShellProps) {
@@ -350,7 +386,7 @@ export function MobileAppShell({ children }: MobileAppShellProps) {
 
   const isActive = isMobile || isStandalone
 
-  // Splash screen
+  // Splash screen — only in standalone PWA mode (first launch)
   const [splashDismissed, setSplashDismissed] = useState(false)
   const splashVisible = isStandalone && !splashDismissed
 
@@ -408,6 +444,16 @@ export function MobileAppShell({ children }: MobileAppShellProps) {
     }
   }, [isActive])
 
+  // Set status bar color dynamically
+  useEffect(() => {
+    if (isStandalone) {
+      const meta = document.querySelector('meta[name="theme-color"]')
+      if (meta) {
+        meta.setAttribute('content', '#d97706')
+      }
+    }
+  }, [isStandalone])
+
   // On desktop, render children as-is
   if (!isActive) {
     return <>{children}</>
@@ -418,17 +464,19 @@ export function MobileAppShell({ children }: MobileAppShellProps) {
       {/* Splash screen (only in standalone PWA mode) */}
       {splashVisible && <SplashScreen onFinished={handleSplashFinished} />}
 
-      {/* Native app shell wrapper — provides scroll container + pull-to-refresh */}
+      {/* Native app shell wrapper */}
       <div
         className="native-app-shell relative flex h-dvh flex-col overflow-hidden"
         style={{
           paddingTop: 'env(safe-area-inset-top, 0px)',
+          // Prevent any overscroll
+          overscrollBehavior: 'none',
         }}
       >
-        {/* Pull-to-refresh indicator at the very top */}
+        {/* Pull-to-refresh indicator */}
         <PullIndicator pullDistance={pullDistance} refreshing={refreshing} />
 
-        {/* Scrollable content container with pull-to-refresh gesture area */}
+        {/* Scrollable content with pull-to-refresh gestures */}
         <div
           ref={scrollRef}
           className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain"
@@ -438,6 +486,8 @@ export function MobileAppShell({ children }: MobileAppShellProps) {
           style={{
             paddingBottom: 'env(safe-area-inset-bottom, 0px)',
             WebkitOverflowScrolling: 'touch',
+            // Smooth momentum scrolling
+            scrollBehavior: 'smooth',
           }}
         >
           {children}

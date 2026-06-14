@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Share, Plus, Check, X } from 'lucide-react';
+import { Share, Plus, Check, X, Smartphone } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 
 const DISMISSAL_KEY = 'thiora_ios_install_dismissed';
-const DISMISSAL_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const DISMISSAL_DURATION_MS = 5 * 24 * 60 * 60 * 1000; // 5 days
 
 const isIOSSafari = () => {
   if (typeof window === 'undefined') return false;
@@ -46,21 +46,24 @@ const steps = [
     label: 'Step 1',
     title: 'Tap the Share button',
     description:
-      'Look for the Share icon (arrow pointing up) at the bottom of Safari, then tap it.',
+      'Look for the Share icon (square with arrow pointing up) at the bottom of Safari.',
+    color: 'from-blue-500 to-blue-600',
   },
   {
     icon: Plus,
     label: 'Step 2',
-    title: 'Tap "Add to Home Screen"',
+    title: 'Add to Home Screen',
     description:
-      'Scroll down in the share menu and select "Add to Home Screen" from the list of options.',
+      'Scroll down in the share menu and tap "Add to Home Screen".',
+    color: 'from-green-500 to-emerald-600',
   },
   {
     icon: Check,
     label: 'Step 3',
     title: 'Tap "Add"',
     description:
-      'Confirm by tapping "Add" in the top-right corner. Thiora will now appear on your home screen!',
+      'Confirm by tapping "Add" — Thiora will appear on your home screen like a real app!',
+    color: 'from-amber-500 to-orange-600',
   },
 ];
 
@@ -68,13 +71,11 @@ export function IosInstallInstructions() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    // Only show on iOS Safari, not in standalone mode, and not recently dismissed
     if (!isIOSSafari()) return;
     if (isStandaloneMode()) return;
     if (wasRecentlyDismissed()) return;
 
-    // Small delay so it doesn't appear instantly on page load
-    const timer = setTimeout(() => setOpen(true), 3000);
+    const timer = setTimeout(() => setOpen(true), 4000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -93,41 +94,56 @@ export function IosInstallInstructions() {
         handleDismiss();
       }
     }}>
-      <DialogContent className="sm:max-w-md border-amber-500/20 bg-gradient-to-br from-amber-950/95 via-stone-900/95 to-stone-950/95 backdrop-blur-sm text-amber-50">
-        <DialogHeader className="items-center text-center">
-          <img
-            src="/logo.png"
-            alt="Thiora"
-            className="h-14 w-14 rounded-xl shadow-lg mb-1"
-          />
-          <DialogTitle className="text-lg font-bold text-amber-100">
-            Install Thiora on your iPhone
-          </DialogTitle>
-          <DialogDescription className="text-sm text-amber-200/70">
-            Add Thiora to your home screen for a faster, app-like experience.
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-md border-0 bg-background shadow-2xl p-0 overflow-hidden animate-modal-pop">
+        {/* Gradient header */}
+        <div className="relative bg-gradient-to-br from-amber-500 via-amber-600 to-orange-600 px-6 pt-5 pb-6">
+          <button
+            onClick={handleDismiss}
+            className="absolute right-3 top-3 rounded-full p-1.5 bg-black/20 text-white/80 hover:bg-black/30 hover:text-white transition-colors"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </button>
+
+          <div className="flex items-center gap-3">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/20 shadow-lg ring-1 ring-white/10 backdrop-blur-sm">
+              <img
+                src="/logo.png"
+                alt="Thiora"
+                className="h-10 w-10 rounded-xl"
+              />
+            </div>
+            <div>
+              <DialogTitle className="text-lg font-bold text-white">
+                Install Thiora
+              </DialogTitle>
+              <DialogDescription className="text-sm text-white/80 mt-0.5">
+                Get the app experience on your iPhone
+              </DialogDescription>
+            </div>
+          </div>
+        </div>
 
         {/* Steps */}
-        <div className="mt-2 space-y-4">
+        <div className="px-6 py-5 space-y-4">
           {steps.map((step, index) => {
             const Icon = step.icon;
             return (
               <div
                 key={index}
-                className="flex items-start gap-3 rounded-lg border border-amber-500/15 bg-amber-900/20 p-3"
+                className="flex items-start gap-3"
               >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-amber-400">
-                  <Icon className="h-4.5 w-4.5" />
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${step.color} shadow-md`}>
+                  <Icon className="h-5 w-5 text-white" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <span className="text-[11px] font-medium uppercase tracking-wider text-amber-400/70">
+                <div className="flex-1 min-w-0 pt-0.5">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
                     {step.label}
                   </span>
-                  <h4 className="text-sm font-semibold text-amber-100 leading-tight">
+                  <h4 className="text-sm font-semibold text-foreground leading-tight -mt-0.5">
                     {step.title}
                   </h4>
-                  <p className="mt-0.5 text-xs text-amber-200/60 leading-relaxed">
+                  <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
                     {step.description}
                   </p>
                 </div>
@@ -136,13 +152,14 @@ export function IosInstallInstructions() {
           })}
         </div>
 
-        {/* Dismiss button */}
-        <div className="mt-4 flex justify-center">
+        {/* Action button */}
+        <div className="px-6 pb-6 pt-1">
           <Button
             onClick={handleDismiss}
-            className="bg-gradient-to-r from-amber-500 to-amber-600 font-semibold text-white shadow-md hover:from-amber-600 hover:to-amber-700"
+            className="w-full h-11 bg-gradient-to-r from-amber-500 to-amber-600 font-bold text-white shadow-lg shadow-amber-500/25 hover:from-amber-600 hover:to-amber-700"
           >
-            Got it
+            <Smartphone className="mr-2 h-4 w-4" />
+            Got it, I'll install it!
           </Button>
         </div>
       </DialogContent>
