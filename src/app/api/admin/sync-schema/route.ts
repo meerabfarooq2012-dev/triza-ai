@@ -113,16 +113,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Helper: safely create a table
+    // Uses tablesBefore (captured once at start) plus any tables created during this sync
+    // to avoid extra DB queries and keep counts consistent
+    const createdTables = new Set<string>()
     const createTableIfMissing = async (table: string, sqliteSql: string, pgSql: string) => {
       try {
-        // Check if table already exists
-        const existing = await getTableList()
-        if (existing.includes(table)) {
+        // Check if table already exists (using cached list + tables we created this run)
+        if (tablesBefore.includes(table) || createdTables.has(table)) {
           results.push({ name: `Table: ${table}`, status: 'skipped' })
           return
         }
         const sql = isPostgres ? pgSql : sqliteSql
         await db.$executeRawUnsafe(sql)
+        createdTables.add(table)
         results.push({ name: `Table: ${table}`, status: 'ok' })
       } catch (e: unknown) {
         const err = e as { message?: string }
@@ -1638,7 +1641,9 @@ export async function POST(request: NextRequest) {
 
     // ─── Capture tables after sync ───────────────────────────────────────
     const tablesAfter = await getTableList()
-    const newTables = tablesAfter.filter((t) => !tablesBefore.includes(t))
+    // Use createdTables set for accurate "new tables" tracking
+    // (avoids mismatch between tablesBefore/tablesAfter and the applied count)
+    const newTables = Array.from(createdTables)
 
     // ─── Summary ─────────────────────────────────────────────────────────
     const successCount = results.filter((r) => r.status === 'ok').length
