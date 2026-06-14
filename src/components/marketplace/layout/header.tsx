@@ -61,6 +61,7 @@ import { PushNotificationManager } from '@/components/marketplace/shared/push-no
 import { ThemeToggle } from '@/components/marketplace/layout/theme-toggle'
 import { SearchAutocomplete } from '@/components/marketplace/search/search-autocomplete'
 import { usePwa } from '@/components/providers/pwa-provider'
+import { CurrencySelector } from '@/components/marketplace/shared/currency-selector'
 
 export function Header() {
   const {
@@ -301,6 +302,9 @@ export function Header() {
                 <span className="text-xs font-medium">Install App</span>
               </Button>
             )}
+
+            {/* Currency Selector */}
+            <CurrencySelector />
 
             {/* Theme Toggle */}
             <ThemeToggle />

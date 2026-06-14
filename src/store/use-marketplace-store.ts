@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { User, CartItem, ViewMode, DeliveryAddress, ShippingRate, ProductType } from '@/types'
 import type { Locale } from '@/lib/i18n'
+import type { CurrencyCode } from '@/lib/currency'
 
 // Migrate localStorage from old 'marketo-storage' key to new 'thiora-storage' key
 if (typeof window !== 'undefined') {
@@ -94,6 +95,9 @@ interface MarketplaceState {
   // Language
   language: Locale
 
+  // Currency
+  currency: CurrencyCode
+
   // Auth actions
   login: (user: User) => void
   logout: () => void
@@ -139,6 +143,9 @@ interface MarketplaceState {
 
   // Language actions
   setLanguage: (locale: Locale) => void
+
+  // Currency actions
+  setCurrency: (currency: CurrencyCode) => void
 }
 
 function calculateCartTotal(cart: CartItem[]): number {
@@ -190,7 +197,11 @@ export const useMarketplaceStore = create<MarketplaceState>()(
       selectedShippingMethod: null,
 
       // ----- Language State -----
+      // Language is locked to 'en' — English only. No language switcher in UI.
       language: 'en' as Locale,
+
+      // ----- Currency State -----
+      currency: 'USD' as CurrencyCode,
 
       // ----- Auth Actions -----
       login: (user: User) => {
@@ -496,8 +507,14 @@ export const useMarketplaceStore = create<MarketplaceState>()(
       },
 
       // ----- Language Actions -----
-      setLanguage: (locale: Locale) => {
-        set({ language: locale })
+      // setLanguage is a no-op — app is English only, language cannot be changed
+      setLanguage: (_locale: Locale) => {
+        set({ language: 'en' as Locale })
+      },
+
+      // ----- Currency Actions -----
+      setCurrency: (currency: CurrencyCode) => {
+        set({ currency })
       },
     }),
     {
@@ -530,7 +547,9 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         cartTotal: state.cartTotal,
         currentView: state.currentView,
         viewParams: state.viewParams,
-        language: state.language,
+        // Language is always 'en' — no need to persist it
+        // (kept in state but forced to 'en' on merge)
+        currency: state.currency,
       }),
       // Synchronously sanitize persisted state BEFORE it's applied to the store.
       // Strategy: start with currentState (which has all action functions) and
@@ -550,7 +569,9 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         // action functions) are kept from currentState.
         const dataKeys = [
           'currentUser', 'isAuthenticated', 'authToken', 'refreshToken',
-          'activeRole', 'cart', 'cartTotal', 'currentView', 'viewParams', 'language'
+          'activeRole', 'cart', 'cartTotal', 'currentView', 'viewParams',
+          // 'language' intentionally excluded — always forced to 'en' (English only)
+          'currency'
         ]
 
         // Sanitize array fields
@@ -589,6 +610,9 @@ export const useMarketplaceStore = create<MarketplaceState>()(
           ;(merged as Record<string, unknown>).favoriteIds = p.favoriteIds
         }
 
+        // Force language to 'en' — app is English only, ignore any persisted value
+        ;(merged as Record<string, unknown>).language = 'en'
+
         return merged as MarketplaceState
       },
       onRehydrateStorage: () => {
@@ -620,7 +644,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
             'setSearchQuery', 'setSearchCategory', 'setSearchType',
             'setUnreadNotifications', 'setFavoriteIds', 'toggleFavoriteId',
             'toggleSidebar', 'setSidebarOpen', 'toggleMobileMenu', 'setMobileMenuOpen',
-            'setSelectedAddress', 'setSelectedShippingMethod', 'setLanguage',
+            'setSelectedAddress', 'setSelectedShippingMethod', 'setLanguage', 'setCurrency',
           ]
           if (state) {
             const corruptedKey = actionKeys.find(

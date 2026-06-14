@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { usePwa } from '@/components/providers/pwa-provider'
+import { CurrencySelector } from '@/components/marketplace/shared/currency-selector'
 import { cn } from '@/lib/utils'
 
 // ---------------------------------------------------------------------------
@@ -236,6 +237,9 @@ export function MobileHeader() {
             )}
           </button>
         )}
+
+        {/* Currency Selector — compact */}
+        <CurrencySelector variant="compact" />
 
         {/* Install App — always visible when not in standalone mode */}
         {!isPwaStandalone && (

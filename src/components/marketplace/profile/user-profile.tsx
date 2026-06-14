@@ -36,6 +36,7 @@ import { TwoFactorProfile } from '@/components/marketplace/auth/two-factor-profi
 import { SessionManager } from '@/components/marketplace/settings/session-manager'
 import { DeleteAccountDialog } from '@/components/marketplace/auth/delete-account-dialog'
 import { DataExportButton } from '@/components/marketplace/settings/data-export-button'
+import { CurrencySelector } from '@/components/marketplace/shared/currency-selector'
 
 export function UserProfile() {
   const { currentUser, setCurrentView, login } = useMarketplaceStore()
@@ -656,6 +657,36 @@ export function UserProfile() {
             </motion.div>
           </div>
         </div>
+
+        {/* Preferences */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.35 }}
+          className="mt-6"
+        >
+          <div className="max-w-4xl mx-auto">
+            <Card className="shadow-md">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  Preferences
+                </CardTitle>
+                <CardDescription>
+                  Manage your display and regional preferences.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label className="text-sm font-medium">Currency</Label>
+                    <p className="text-xs text-muted-foreground">All prices will be displayed in this currency</p>
+                  </div>
+                  <CurrencySelector variant="compact" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </motion.div>
 
         {/* Danger Zone */}
         <motion.div

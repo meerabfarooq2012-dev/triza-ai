@@ -363,3 +363,84 @@ Stage Summary:
 - After login/signup, user goes directly to their dashboard (buyer/seller/admin)
 - No landing page or marketing content in the installed PWA app
 - Deployed to Vercel via git push to main branch
+
+---
+Task ID: 2
+Agent: Multi-Currency Developer
+Task: Add Multi-Currency Support to Thiora Marketplace
+
+Work Log:
+- Created `src/lib/currency.ts` with currency configuration (10 currencies: USD, EUR, GBP, PKR, INR, SAR, AED, TRY, CAD, AUD), conversion utilities, and formatting functions
+- Updated Zustand store (`src/store/use-marketplace-store.ts`): added `currency: CurrencyCode` state, `setCurrency` action, persisted in localStorage via partialize/merge/dataKeys/actionKeys
+- Created `src/hooks/use-currency.ts` hook with formatPrice, convertPrice, changeCurrency methods
+- Created `src/components/marketplace/shared/currency-selector.tsx` with 3 variants: default (full dropdown), compact (outline button), icon (ghost icon with code badge)
+- Added CurrencySelector to desktop header (default variant, between Install App and Theme Toggle)
+- Added CurrencySelector to mobile header (compact variant, between notifications and install button)
+- Added "Preferences" card to user profile settings with currency selection
+- Created API route `src/app/api/currency/rates/route.ts` returning exchange rates and currency metadata
+- Lint passes (0 errors), API endpoint tested and returns correct JSON
+
+Stage Summary:
+- Full multi-currency support implemented: users can select from 10 currencies
+- All prices stored in USD (base currency), conversion happens at display time
+- Currency preference persisted in localStorage via Zustand persist middleware
+- CurrencySelector available in desktop header, mobile header, and user profile settings
+- API endpoint at /api/currency/rates provides programmatic access to exchange rates
+
+---
+Task ID: 1
+Agent: PWA Auth-First Flow Developer
+Task: Fix PWA auth-first flow flash of landing page on first render
+
+Work Log:
+- Identified root cause: renderView's 'landing' case returned MobileAppHome/LandingPage on first render, and the useEffect redirect only ran AFTER render, causing a flash
+- Fixed renderView switch statement to synchronously check isStandalone in the landing case:
+  - isStandalone + isLoadingAuth → show PageLoader (no flash)
+  - isStandalone + !isAuthenticated → show AuthModal (no landing page flash)
+  - isStandalone + isAuthenticated → show appropriate dashboard based on role
+  - Non-standalone mobile → MobileAppHome (unchanged)
+  - Desktop → LandingPage (unchanged)
+- Verified mobile-bottom-nav.tsx: Home tab already handles standalone mode correctly (redirects to auth/dashboard)
+- Verified auth-modal.tsx: navigateAfterAuth goes to correct dashboard, "Back to home" button hidden in standalone
+- Kept existing useEffect as safety net (still redirects currentView in standalone mode)
+- Lint check: 0 errors, 1 pre-existing warning
+
+Stage Summary:
+- PWA standalone mode no longer flashes the landing page — auth screen or dashboard renders immediately
+- The fix is synchronous in the render path, not async via useEffect
+- Loading state (PageLoader) shown while auth state is being determined
+- Browser (non-standalone) experience completely unchanged
+
+---
+Task ID: 3
+Agent: English-Only Simplifier
+Task: Make App English-Only (remove language switcher, lock to 'en')
+
+Work Log:
+- Searched entire codebase for `LanguageSwitcher` imports — found it's only defined in `src/components/marketplace/shared/language-switcher.tsx` and NOT imported/used anywhere else
+- The language switcher was already unused in all layout components (header.tsx, footer.tsx, mobile-header.tsx, auth-modal.tsx, hero-section.tsx)
+- Modified `src/store/use-marketplace-store.ts`:
+  - `language` default is already `'en' as Locale` — confirmed
+  - Changed `setLanguage` action to ignore the locale parameter and always set `'en'` (effectively a no-op)
+  - Removed `'language'` from the `partialize` config so it's no longer persisted to localStorage
+  - Removed `'language'` from `dataKeys` in the `merge` function so persisted 'ur' values are ignored
+  - Added explicit `;(merged as Record<string, unknown>).language = 'en'` after merge to force English even if old 'ur' value was in localStorage
+- Simplified `src/hooks/use-language.ts`:
+  - Removed Zustand store dependency (`useMarketplaceStore`)
+  - Hardcoded `locale = 'en'`, `rtl = false`, `direction = 'ltr'`
+  - `translate` still uses `t()` from `@/lib/i18n` for translation key resolution (always English)
+  - `setLocale` kept as a no-op function for backward compatibility
+  - Removed `useEffect` for HTML dir/lang sync (no longer needed — always 'en'/'ltr')
+  - Removed `LOCALE_CONFIG` and `allLocales` from return value (not needed without switcher)
+- Checked RTL provider (`src/components/providers/rtl-provider.tsx`) — already unused (not imported anywhere), no changes needed
+- Kept i18n infrastructure intact: `src/lib/i18n/index.ts`, locale files (en.json, ur.json) — untouched as requested
+- Kept `LanguageSwitcher` component file intact (just unused dead code)
+- Lint check: 0 errors, 1 pre-existing warning (unrelated)
+
+Stage Summary:
+- App is now English-only — no language switcher UI anywhere
+- Store language is forced to 'en' on every rehydration (even if 'ur' was persisted previously)
+- `setLanguage()` action is a no-op that always sets 'en'
+- `useLanguage` hook always returns English locale, LTR direction
+- All i18n infrastructure (locale files, t() function, i18n module) preserved for potential future use
+- Zero functional changes to the user experience — app already displayed in English

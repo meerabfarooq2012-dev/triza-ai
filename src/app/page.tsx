@@ -713,8 +713,29 @@ function MarketplaceApp() {
           return <AdminPanel />
         case 'landing':
         default:
-          // Mobile/standalone: show app-like home instead of marketing landing page
-          return shouldShowAppHome ? <MobileAppHome /> : <LandingPage />
+          // PWA standalone: NEVER show landing page — force auth or dashboard
+          if (isStandalone) {
+            if (isLoadingAuth) {
+              return <PageLoader />
+            }
+            if (!isAuthenticated) {
+              return <AuthModal />
+            }
+            // Authenticated in standalone — show dashboard based on role
+            const role = currentUser?.role
+            if (role === 'admin') {
+              return <AdminPanel />
+            } else if (role === 'seller' || role === 'both') {
+              return <SellerDashboard />
+            }
+            return <BuyerDashboard />
+          }
+          // Mobile browser (not standalone): show app-like home
+          if (shouldShowAppHome) {
+            return <MobileAppHome />
+          }
+          // Desktop: show marketing landing page
+          return <LandingPage />
       }
     } catch (error) {
       console.error('[Thiora] View render error:', error)
