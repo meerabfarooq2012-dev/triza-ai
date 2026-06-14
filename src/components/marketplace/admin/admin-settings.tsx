@@ -203,7 +203,16 @@ export default function AdminSettings() {
       }>('/admin/sync-schema', { method: 'POST' })
       setSyncResult(data)
       if (data.success) {
-        toast.success(`Schema synced! ${data.summary?.applied || 0} applied, ${data.summary?.skipped || 0} skipped`)
+        const applied = data.summary?.applied || 0
+        const skipped = data.summary?.skipped || 0
+        const errors = data.summary?.errors || 0
+        if (applied > 0) {
+          toast.success(`Schema synced! ${applied} applied, ${skipped} already exist`)
+        } else if (errors > 0) {
+          toast.warning(`Schema sync completed with ${errors} error(s)`)
+        } else {
+          toast.success('Schema is already in sync — no changes needed')
+        }
       } else {
         toast.error('Schema sync failed — check details below')
       }
@@ -644,7 +653,11 @@ export default function AdminSettings() {
             {syncResult && (
               <div className={`p-3 rounded-lg text-sm ${syncResult.success ? 'bg-green-50 border border-green-200 dark:bg-green-950/50 dark:border-green-900' : 'bg-red-50 border border-red-200 dark:bg-red-950/50 dark:border-red-900'}`}>
                 <p className={`font-medium ${syncResult.success ? 'text-green-800 dark:text-green-300' : 'text-red-800 dark:text-red-300'}`}>
-                  {syncResult.success ? '✓ Schema sync complete' : '✗ Schema sync had errors'}
+                  {syncResult.success
+                    ? (syncResult.summary?.applied || 0) > 0
+                      ? '✓ Schema sync complete — changes applied'
+                      : '✓ Schema is already in sync'
+                    : '✗ Schema sync had errors'}
                 </p>
                 {syncResult.summary && (
                   <p className="text-xs mt-1 text-muted-foreground">
