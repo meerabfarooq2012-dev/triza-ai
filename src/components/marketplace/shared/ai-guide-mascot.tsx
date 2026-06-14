@@ -683,7 +683,7 @@ export function AIGuideMascot() {
           LEFT SIDE — 3D Owl Mascot (Tour Guide)
           ═══════════════════════════════════════════════════════════ */}
       {!tourActive && (
-        <div className="fixed bottom-6 left-6 z-50 flex flex-col items-start gap-2">
+        <div className="fixed bottom-20 left-6 z-50 flex flex-col items-start gap-2 md:bottom-6">
           {/* Welcome Bubble — appears above mascot */}
           {showWelcome && !isOpen && (
             <div className="animate-fade-in max-w-[260px] rounded-2xl bg-white dark:bg-gray-900 px-4 py-3 shadow-xl border border-amber-200 dark:border-amber-800 relative">
@@ -733,7 +733,7 @@ export function AIGuideMascot() {
               aria-label="Open AI Guide"
             >
               {/* Outer glow ring */}
-              <div className="absolute inset-0 rounded-full bg-amber-400/30 blur-2xl animate-pulse-slow scale-125" />
+              <div className="absolute inset-0 rounded-full bg-amber-400/30 blur-2xl animate-pulse-slow scale-125 pointer-events-none" />
 
               {/* Sparkles */}
               <div className="absolute -top-3 -right-3 animate-sparkle">
@@ -791,7 +791,7 @@ export function AIGuideMascot() {
                   </div>
 
                   {/* 3D Shadow below mascot */}
-                  <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-16 h-4 bg-amber-900/10 dark:bg-amber-400/10 rounded-full blur-md transition-all duration-300 group-hover:w-20 group-hover:blur-lg" />
+                  <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-16 h-4 bg-amber-900/10 dark:bg-amber-400/10 rounded-full blur-md transition-all duration-300 group-hover:w-20 group-hover:blur-lg pointer-events-none" />
                 </div>
               </div>
 
@@ -817,7 +817,7 @@ export function AIGuideMascot() {
       {isOpen && isMinimized && !tourActive && (
         <button
           onClick={handleRestoreChat}
-          className="animate-bounce-in fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full bg-amber-500 hover:bg-amber-600 text-white pl-3 pr-4 py-2.5 shadow-xl transition-all hover:scale-105"
+          className="animate-bounce-in fixed bottom-20 right-6 z-50 flex items-center gap-2 rounded-full bg-amber-500 hover:bg-amber-600 text-white pl-3 pr-4 py-2.5 shadow-xl transition-all hover:scale-105 md:bottom-6"
         >
           <img src="/mascot-3d.png" alt="Thori" width={28} height={28} className="rounded-full bg-amber-200 object-cover" />
           <span className="text-sm font-medium">Chat with Thori</span>

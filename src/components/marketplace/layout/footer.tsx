@@ -1,11 +1,24 @@
 'use client'
 
+import { useSyncExternalStore } from 'react'
 import { Github, Twitter, Linkedin, Mail } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { PLATFORM_NAME, PLATFORM_TAGLINE } from '@/lib/constants'
 import { useLanguage } from '@/hooks/use-language'
 import type { ViewMode } from '@/types'
+
+// PWA standalone mode detection
+function subscribeToStandalone(callback: () => void) {
+  const mq = window.matchMedia('(display-mode: standalone)')
+  mq.addEventListener('change', callback)
+  return () => mq.removeEventListener('change', callback)
+}
+function getStandaloneSnapshot() {
+  return window.matchMedia('(display-mode: standalone)').matches ||
+    (window.navigator as unknown as { standalone?: boolean }).standalone === true
+}
+function getStandaloneServerSnapshot() { return false }
 
 const quickLinks = [
   { label: 'About', view: 'landing' as ViewMode },
@@ -31,6 +44,7 @@ const socialLinks = [
 export function Footer() {
   const { setCurrentView, isAuthenticated } = useMarketplaceStore()
   const { t } = useLanguage()
+  const isStandalone = useSyncExternalStore(subscribeToStandalone, getStandaloneSnapshot, getStandaloneServerSnapshot)
 
   const handleNavClick = (view: ViewMode, params?: Record<string, string>) => {
     if (view === 'auth' && !isAuthenticated) {
@@ -40,8 +54,11 @@ export function Footer() {
     }
   }
 
+  // Hide footer in PWA standalone mode to save screen space (bottom nav provides navigation)
+  if (isStandalone) return null
+
   return (
-    <footer className="mt-auto border-t bg-muted/20">
+    <footer className="mt-auto border-t bg-muted/20 pb-16 md:pb-0">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-10">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand */}

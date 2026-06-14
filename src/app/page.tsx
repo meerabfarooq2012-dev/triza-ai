@@ -310,6 +310,11 @@ const AIGuideMascot = dynamic(
   { ssr: false }
 )
 
+const MobileBottomNav = dynamic(
+  withChunkRetry(() => import('@/components/marketplace/layout/mobile-bottom-nav'), 'MobileBottomNav'),
+  { ssr: false }
+)
+
 // Error boundary component to catch rendering errors in child components
 type ErrorBoundaryProps = { children: React.ReactNode; fallback?: React.ReactNode }
 type ErrorBoundaryState = { hasError: boolean; error: Error | null }
@@ -471,6 +476,17 @@ function MarketplaceApp() {
     return false
   })
 
+  // Listen for cart open events from mobile bottom nav
+  useEffect(() => {
+    const handleOpenCart = () => {
+      import('@/components/marketplace/shared/cart-drawer').then((mod) => {
+        mod.openCartDrawer()
+      })
+    }
+    window.addEventListener('thiora-open-cart', handleOpenCart)
+    return () => window.removeEventListener('thiora-open-cart', handleOpenCart)
+  }, [])
+
   // Initialize real-time notification system
   useRealtimeNotifications()
 
@@ -489,6 +505,8 @@ function MarketplaceApp() {
     const payfastCancel = searchParams.get('payfast_cancel')
     const cryptoSuccess = searchParams.get('crypto_success')
     const cryptoCancel = searchParams.get('crypto_cancel')
+    // PWA shortcut support: ?view=search, ?view=orders, etc.
+    const viewParam = searchParams.get('view')
 
     // Handle PayFast payment return
     if (payfastSuccess) {
@@ -518,6 +536,9 @@ function MarketplaceApp() {
       setCurrentView('gig-detail', { gigId })
     } else if (wishlistSlug) {
       setCurrentView('wishlist-view', { slug: wishlistSlug })
+    } else if (viewParam) {
+      // PWA shortcut: navigate to the specified view
+      setCurrentView(viewParam as import('@/types').ViewMode)
     }
   }, [searchParams, setCurrentView])
 
@@ -658,12 +679,13 @@ function MarketplaceApp() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-1">
+      <main className="flex-1 pb-16 md:pb-0">
         <ErrorBoundary key={currentView}>
           {renderView()}
         </ErrorBoundary>
       </main>
       <Footer />
+      <MobileBottomNav />
       <CartDrawer />
       <CompareBar />
       <DynamicSEO />

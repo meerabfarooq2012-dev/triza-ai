@@ -470,7 +470,7 @@ export function FeedbackWidget() {
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-            className="fixed bottom-6 right-6 z-50"
+            className="fixed bottom-20 right-6 z-50 md:bottom-6"
           >
             {/* Pulse ring */}
             {!hasPulsed && (
@@ -519,7 +519,7 @@ export function FeedbackWidget() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-            className="fixed bottom-6 right-6 z-50 flex flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-2xl"
+            className="fixed bottom-20 right-6 z-50 flex flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-2xl md:bottom-6"
             style={{
               width: 'min(380px, calc(100vw - 2rem))',
               height: 'min(520px, calc(100vh - 6rem))',

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, createContext, useContext, useCallback } from 'react';
 import { PwaInstallPrompt } from '@/components/marketplace/shared/pwa-install-prompt';
+import { IosInstallInstructions } from '@/components/marketplace/shared/ios-install-instructions';
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
@@ -16,14 +17,34 @@ interface PwaContextValue {
   isInstalled: boolean;
   isOnline: boolean;
   canInstall: boolean;
+  isStandalone: boolean;
+  isIOS: boolean;
   promptInstall: () => Promise<void>;
   registration: ServiceWorkerRegistration | null;
 }
+
+const isIOSSafari = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  const ua = window.navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(ua);
+  const isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua);
+  return isIOS && isSafari;
+};
+
+const isStandaloneMode = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    (window.navigator as unknown as { standalone?: boolean }).standalone === true
+  );
+};
 
 const PwaContext = createContext<PwaContextValue>({
   isInstalled: false,
   isOnline: true,
   canInstall: false,
+  isStandalone: false,
+  isIOS: false,
   promptInstall: async () => {},
   registration: null,
 });
@@ -37,6 +58,8 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
     useState<ServiceWorkerRegistration | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
+  const [isStandalone, setIsStandalone] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
 
@@ -66,15 +89,16 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
     registerSW();
   }, []);
 
-  // Check if already installed (standalone mode)
+  // Check if already installed (standalone mode) and set isStandalone/isIOS
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const isStandalone =
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as unknown as { standalone?: boolean }).standalone === true;
+    const standalone = isStandaloneMode();
+    const ios = isIOSSafari();
 
-    setIsInstalled(isStandalone);
+    setIsStandalone(standalone);
+    setIsIOS(ios);
+    setIsInstalled(standalone);
   }, []);
 
   // Track online/offline status
@@ -129,6 +153,8 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
     isInstalled,
     isOnline,
     canInstall: !!deferredPrompt,
+    isStandalone,
+    isIOS,
     promptInstall,
     registration,
   };
@@ -137,6 +163,7 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
     <PwaContext.Provider value={contextValue}>
       {children}
       <PwaInstallPrompt />
+      <IosInstallInstructions />
     </PwaContext.Provider>
   );
 }

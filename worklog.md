@@ -93,3 +93,33 @@ Stage Summary:
 - Will work on Vercel with Supabase PostgreSQL without any changes
 - Also works locally with SQLite as before
 - The switch-db.mjs script handles copying the correct schema.prisma during Vercel builds
+---
+Task ID: 1
+Agent: Main Agent
+Task: Convert Thiora marketplace into a PWA mobile app
+
+Work Log:
+- Installed next-pwa package (kept custom service worker approach instead)
+- Created MobileBottomNav component with 5 tabs (Home, Browse, Cart, Orders, Profile)
+- Enhanced manifest.json with shortcuts, share_target, display_override, edge_side_panel, launch_handler
+- Created IosInstallInstructions component for iOS Safari "Add to Home Screen" guidance
+- Updated PwaProvider to include iOS detection, standalone mode, and render IosInstallInstructions
+- Integrated MobileBottomNav into page.tsx with dynamic import
+- Added cart drawer event listener ('thiora-open-cart') in page.tsx
+- Added PWA shortcut URL parameter support (?view=search, ?view=orders, etc.)
+- Added bottom padding (pb-16) to main content on mobile for bottom nav
+- Fixed AI Guide mascot FAB overlap with bottom nav (bottom-6 → bottom-20 md:bottom-6)
+- Fixed Feedback widget FAB overlap with bottom nav (same fix)
+- Added pointer-events-none to decorative elements (glow ring, shadow)
+- Updated Footer to hide in PWA standalone mode (useSyncExternalStore for detection)
+- Added pb-16 md:pb-0 to footer for mobile nav bar clearance
+- Verified all functionality with agent browser - all tests pass
+
+Stage Summary:
+- Thiora is now a fully functional PWA that can be installed on Android and iOS
+- Mobile bottom navigation bar provides app-like tab navigation
+- iOS users get step-by-step install instructions
+- PWA shortcuts enable quick access to Browse, Orders, Cart, Sell
+- Standalone mode hides footer for cleaner app experience
+- AI mascot and feedback widget repositioned above bottom nav on mobile
+- All lint checks pass with zero errors
