@@ -87,6 +87,8 @@ export default function AdminSettings() {
     success: boolean
     summary?: { total: number; applied: number; skipped: number; errors: number }
     results?: { name: string; status: string; error?: string }[]
+    newTables?: string[]
+    output?: string
   } | null>(null)
 
   // Load settings from the database via API on mount
@@ -634,8 +636,8 @@ export default function AdminSettings() {
             </Button>
 
             {syncResult && (
-              <div className={`p-3 rounded-lg text-sm ${syncResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
-                <p className={`font-medium ${syncResult.success ? 'text-green-800' : 'text-red-800'}`}>
+              <div className={`p-3 rounded-lg text-sm ${syncResult.success ? 'bg-green-50 border border-green-200 dark:bg-green-950/50 dark:border-green-900' : 'bg-red-50 border border-red-200 dark:bg-red-950/50 dark:border-red-900'}`}>
+                <p className={`font-medium ${syncResult.success ? 'text-green-800 dark:text-green-300' : 'text-red-800 dark:text-red-300'}`}>
                   {syncResult.success ? '✓ Schema sync complete' : '✗ Schema sync had errors'}
                 </p>
                 {syncResult.summary && (
@@ -643,14 +645,36 @@ export default function AdminSettings() {
                     {syncResult.summary.applied} applied, {syncResult.summary.skipped} already exist, {syncResult.summary.errors} errors
                   </p>
                 )}
+                {syncResult.newTables && syncResult.newTables.length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-xs font-medium text-green-700 dark:text-green-400">New tables created:</p>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {syncResult.newTables.map((t) => (
+                        <Badge key={t} variant="outline" className="text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-300 dark:border-green-800">
+                          {t}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {syncResult.results && syncResult.results.filter(r => r.status === 'error').length > 0 && (
                   <div className="mt-2 space-y-1">
                     {syncResult.results.filter(r => r.status === 'error').map((r, i) => (
-                      <p key={i} className="text-xs text-red-700">
+                      <p key={i} className="text-xs text-red-700 dark:text-red-400">
                         ✗ {r.name}: {r.error}
                       </p>
                     ))}
                   </div>
+                )}
+                {syncResult.output && (
+                  <details className="mt-2">
+                    <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
+                      View output log
+                    </summary>
+                    <pre className="mt-1 p-2 bg-black/5 dark:bg-white/5 rounded text-xs overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap">
+                      {syncResult.output}
+                    </pre>
+                  </details>
                 )}
               </div>
             )}

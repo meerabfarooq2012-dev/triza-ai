@@ -2,482 +2,20 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { authenticateRequestWithSession } from '@/lib/auth-middleware'
 import { getSafeErrorMessage } from '@/lib/error-handler'
+import { execFile } from 'child_process'
+import { promisify } from 'util'
+
+const execFileAsync = promisify(execFile)
 
 /**
  * POST /api/admin/sync-schema
- * 
- * Syncs the Prisma schema with the database by running ALTER TABLE statements.
- * This endpoint is protected by an admin key.
- * 
+ *
+ * Syncs the Prisma schema with the database by running `prisma db push`.
+ * This is the correct approach for SQLite databases.
+ *
  * Called after deployments to ensure the database schema is up-to-date.
- * Uses Prisma's $executeRawUnsafe for direct SQL execution.
+ * Protected by admin JWT authentication.
  */
-
-// All schema migrations that need to be applied
-const MIGRATIONS: { name: string; sql: string }[] = [
-  // User table - add missing columns
-  {
-    name: 'User.resetToken',
-    sql: `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "resetToken" TEXT`
-  },
-  {
-    name: 'User.resetTokenExpiry',
-    sql: `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "resetTokenExpiry" TIMESTAMP(3)`
-  },
-  {
-    name: 'User.emailVerifyToken',
-    sql: `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "emailVerifyToken" TEXT`
-  },
-  {
-    name: 'User.emailVerified',
-    sql: `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "emailVerified" BOOLEAN NOT NULL DEFAULT false`
-  },
-  {
-    name: 'User.loginAttempts',
-    sql: `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "loginAttempts" INTEGER NOT NULL DEFAULT 0`
-  },
-  {
-    name: 'User.lockoutUntil',
-    sql: `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "lockoutUntil" TIMESTAMP(3)`
-  },
-  {
-    name: 'User.lastLoginAt',
-    sql: `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "lastLoginAt" TIMESTAMP(3)`
-  },
-  {
-    name: 'User.deletedAt',
-    sql: `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "deletedAt" TIMESTAMP(3)`
-  },
-  {
-    name: 'User.termsAcceptedAt',
-    sql: `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "termsAcceptedAt" TIMESTAMP(3)`
-  },
-  {
-    name: 'User.twoFactorEnabled',
-    sql: `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "twoFactorEnabled" BOOLEAN NOT NULL DEFAULT false`
-  },
-  {
-    name: 'User.twoFactorSecret',
-    sql: `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "twoFactorSecret" TEXT`
-  },
-  {
-    name: 'User.twoFactorBackupCodes',
-    sql: `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "twoFactorBackupCodes" TEXT NOT NULL DEFAULT '[]'`
-  },
-  {
-    name: 'User.twoFactorVerifiedAt',
-    sql: `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "twoFactorVerifiedAt" TIMESTAMP(3)`
-  },
-
-  // Session table
-  {
-    name: 'Session table',
-    sql: `CREATE TABLE IF NOT EXISTS "Session" (
-      "id" TEXT NOT NULL,
-      "userId" TEXT NOT NULL,
-      "token" TEXT NOT NULL,
-      "deviceInfo" TEXT,
-      "ipAddress" TEXT,
-      "expiresAt" TIMESTAMP(3) NOT NULL,
-      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      "lastAccessedAt" TIMESTAMP(3),
-      CONSTRAINT "Session_pkey" PRIMARY KEY ("id")
-    )`
-  },
-  {
-    name: 'Session.userId index',
-    sql: `CREATE INDEX IF NOT EXISTS "Session_userId_idx" ON "Session"("userId")`
-  },
-  {
-    name: 'Session.token unique',
-    sql: `CREATE UNIQUE INDEX IF NOT EXISTS "Session_token_key" ON "Session"("token")`
-  },
-  {
-    name: 'Session.expiresAt index',
-    sql: `CREATE INDEX IF NOT EXISTS "Session_expiresAt_idx" ON "Session"("expiresAt")`
-  },
-  {
-    name: 'Session FK',
-    sql: `DO $$ BEGIN
-      IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'Session_userId_fkey') THEN
-        ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-      END IF;
-    END $$`
-  },
-
-  // DigitalDownload table
-  {
-    name: 'DigitalDownload table',
-    sql: `CREATE TABLE IF NOT EXISTS "DigitalDownload" (
-      "id" TEXT NOT NULL,
-      "userId" TEXT NOT NULL,
-      "productId" TEXT NOT NULL,
-      "orderId" TEXT,
-      "downloadToken" TEXT NOT NULL,
-      "fileUrl" TEXT NOT NULL,
-      "fileName" TEXT,
-      "fileSize" INTEGER,
-      "maxDownloads" INTEGER NOT NULL DEFAULT 5,
-      "downloadCount" INTEGER NOT NULL DEFAULT 0,
-      "expiresAt" TIMESTAMP(3) NOT NULL,
-      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      "lastDownloadedAt" TIMESTAMP(3),
-      CONSTRAINT "DigitalDownload_pkey" PRIMARY KEY ("id")
-    )`
-  },
-  {
-    name: 'DigitalDownload.userId index',
-    sql: `CREATE INDEX IF NOT EXISTS "DigitalDownload_userId_productId_idx" ON "DigitalDownload"("userId", "productId")`
-  },
-  {
-    name: 'DigitalDownload.token unique',
-    sql: `CREATE UNIQUE INDEX IF NOT EXISTS "DigitalDownload_downloadToken_key" ON "DigitalDownload"("downloadToken")`
-  },
-  {
-    name: 'DigitalDownload userId FK',
-    sql: `DO $$ BEGIN
-      IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'DigitalDownload_userId_fkey') THEN
-        ALTER TABLE "DigitalDownload" ADD CONSTRAINT "DigitalDownload_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-      END IF;
-    END $$`
-  },
-  {
-    name: 'DigitalDownload productId FK',
-    sql: `DO $$ BEGIN
-      IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'DigitalDownload_productId_fkey') THEN
-        ALTER TABLE "DigitalDownload" ADD CONSTRAINT "DigitalDownload_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-      END IF;
-    END $$`
-  },
-  {
-    name: 'DigitalDownload orderId FK',
-    sql: `DO $$ BEGIN
-      IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'DigitalDownload_orderId_fkey') THEN
-        ALTER TABLE "DigitalDownload" ADD CONSTRAINT "DigitalDownload_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON UPDATE CASCADE;
-      END IF;
-    END $$`
-  },
-
-  // AuditLog table
-  {
-    name: 'AuditLog table',
-    sql: `CREATE TABLE IF NOT EXISTS "AuditLog" (
-      "id" TEXT NOT NULL,
-      "userId" TEXT NOT NULL,
-      "action" TEXT NOT NULL,
-      "entity" TEXT NOT NULL,
-      "entityId" TEXT,
-      "details" TEXT NOT NULL DEFAULT '{}',
-      "ipAddress" TEXT,
-      "userAgent" TEXT,
-      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      CONSTRAINT "AuditLog_pkey" PRIMARY KEY ("id")
-    )`
-  },
-  {
-    name: 'AuditLog.userId index',
-    sql: `CREATE INDEX IF NOT EXISTS "AuditLog_userId_idx" ON "AuditLog"("userId")`
-  },
-  {
-    name: 'AuditLog.action index',
-    sql: `CREATE INDEX IF NOT EXISTS "AuditLog_action_idx" ON "AuditLog"("action")`
-  },
-  {
-    name: 'AuditLog.createdAt index',
-    sql: `CREATE INDEX IF NOT EXISTS "AuditLog_createdAt_idx" ON "AuditLog"("createdAt")`
-  },
-  {
-    name: 'AuditLog FK',
-    sql: `DO $$ BEGIN
-      IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'AuditLog_userId_fkey') THEN
-        ALTER TABLE "AuditLog" ADD CONSTRAINT "AuditLog_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-      END IF;
-    END $$`
-  },
-
-  // ProductReport table
-  {
-    name: 'ProductReport table',
-    sql: `CREATE TABLE IF NOT EXISTS "ProductReport" (
-      "id" TEXT NOT NULL,
-      "productId" TEXT NOT NULL,
-      "reporterId" TEXT NOT NULL,
-      "reason" TEXT NOT NULL,
-      "description" TEXT NOT NULL DEFAULT '',
-      "status" TEXT NOT NULL DEFAULT 'pending',
-      "adminNote" TEXT,
-      "reviewedBy" TEXT,
-      "reviewedAt" TIMESTAMP(3),
-      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      "updatedAt" TIMESTAMP(3) NOT NULL,
-      CONSTRAINT "ProductReport_pkey" PRIMARY KEY ("id")
-    )`
-  },
-  {
-    name: 'ProductReport.productId index',
-    sql: `CREATE INDEX IF NOT EXISTS "ProductReport_productId_idx" ON "ProductReport"("productId")`
-  },
-  {
-    name: 'ProductReport.reporterId index',
-    sql: `CREATE INDEX IF NOT EXISTS "ProductReport_reporterId_idx" ON "ProductReport"("reporterId")`
-  },
-  {
-    name: 'ProductReport.status index',
-    sql: `CREATE INDEX IF NOT EXISTS "ProductReport_status_idx" ON "ProductReport"("status")`
-  },
-  {
-    name: 'ProductReport.productId FK',
-    sql: `DO $$ BEGIN
-      IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'ProductReport_productId_fkey') THEN
-        ALTER TABLE "ProductReport" ADD CONSTRAINT "ProductReport_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-      END IF;
-    END $$`
-  },
-  {
-    name: 'ProductReport.reporterId FK',
-    sql: `DO $$ BEGIN
-      IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'ProductReport_reporterId_fkey') THEN
-        ALTER TABLE "ProductReport" ADD CONSTRAINT "ProductReport_reporterId_fkey" FOREIGN KEY ("reporterId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-      END IF;
-    END $$`
-  },
-
-  // Cart table
-  {
-    name: 'Cart table',
-    sql: `CREATE TABLE IF NOT EXISTS "Cart" (
-      "id" TEXT NOT NULL,
-      "userId" TEXT NOT NULL,
-      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      "updatedAt" TIMESTAMP(3) NOT NULL,
-      CONSTRAINT "Cart_pkey" PRIMARY KEY ("id")
-    )`
-  },
-  {
-    name: 'Cart.userId unique',
-    sql: `CREATE UNIQUE INDEX IF NOT EXISTS "Cart_userId_key" ON "Cart"("userId")`
-  },
-  {
-    name: 'Cart FK',
-    sql: `DO $$ BEGIN
-      IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'Cart_userId_fkey') THEN
-        ALTER TABLE "Cart" ADD CONSTRAINT "Cart_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-      END IF;
-    END $$`
-  },
-
-  // CartItem table
-  {
-    name: 'CartItem table',
-    sql: `CREATE TABLE IF NOT EXISTS "CartItem" (
-      "id" TEXT NOT NULL,
-      "cartId" TEXT NOT NULL,
-      "productId" TEXT NOT NULL,
-      "quantity" INTEGER NOT NULL DEFAULT 1,
-      "variantId" TEXT,
-      "variantLabel" TEXT,
-      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      "updatedAt" TIMESTAMP(3) NOT NULL,
-      CONSTRAINT "CartItem_pkey" PRIMARY KEY ("id")
-    )`
-  },
-  {
-    name: 'CartItem.cartId index',
-    sql: `CREATE INDEX IF NOT EXISTS "CartItem_cartId_idx" ON "CartItem"("cartId")`
-  },
-  {
-    name: 'CartItem.cartId FK',
-    sql: `DO $$ BEGIN
-      IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'CartItem_cartId_fkey') THEN
-        ALTER TABLE "CartItem" ADD CONSTRAINT "CartItem_cartId_fkey" FOREIGN KEY ("cartId") REFERENCES "Cart"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-      END IF;
-    END $$`
-  },
-  {
-    name: 'CartItem.productId FK',
-    sql: `DO $$ BEGIN
-      IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'CartItem_productId_fkey') THEN
-        ALTER TABLE "CartItem" ADD CONSTRAINT "CartItem_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-      END IF;
-    END $$`
-  },
-
-  // Wishlist tables
-  {
-    name: 'Wishlist table',
-    sql: `CREATE TABLE IF NOT EXISTS "Wishlist" (
-      "id" TEXT NOT NULL,
-      "userId" TEXT NOT NULL,
-      "name" TEXT NOT NULL DEFAULT 'My Wishlist',
-      "slug" TEXT NOT NULL,
-      "isPublic" BOOLEAN NOT NULL DEFAULT false,
-      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      "updatedAt" TIMESTAMP(3) NOT NULL,
-      CONSTRAINT "Wishlist_pkey" PRIMARY KEY ("id")
-    )`
-  },
-  {
-    name: 'Wishlist.userId index',
-    sql: `CREATE INDEX IF NOT EXISTS "Wishlist_userId_idx" ON "Wishlist"("userId")`
-  },
-  {
-    name: 'Wishlist.slug unique',
-    sql: `CREATE UNIQUE INDEX IF NOT EXISTS "Wishlist_slug_key" ON "Wishlist"("slug")`
-  },
-  {
-    name: 'Wishlist FK',
-    sql: `DO $$ BEGIN
-      IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'Wishlist_userId_fkey') THEN
-        ALTER TABLE "Wishlist" ADD CONSTRAINT "Wishlist_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-      END IF;
-    END $$`
-  },
-
-  // WishlistItem table
-  {
-    name: 'WishlistItem table',
-    sql: `CREATE TABLE IF NOT EXISTS "WishlistItem" (
-      "id" TEXT NOT NULL,
-      "wishlistId" TEXT NOT NULL,
-      "productId" TEXT NOT NULL,
-      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      CONSTRAINT "WishlistItem_pkey" PRIMARY KEY ("id")
-    )`
-  },
-  {
-    name: 'WishlistItem.wishlistId index',
-    sql: `CREATE INDEX IF NOT EXISTS "WishlistItem_wishlistId_idx" ON "WishlistItem"("wishlistId")`
-  },
-  {
-    name: 'WishlistItem.productId index',
-    sql: `CREATE INDEX IF NOT EXISTS "WishlistItem_productId_idx" ON "WishlistItem"("productId")`
-  },
-  {
-    name: 'WishlistItem FK wishlist',
-    sql: `DO $$ BEGIN
-      IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'WishlistItem_wishlistId_fkey') THEN
-        ALTER TABLE "WishlistItem" ADD CONSTRAINT "WishlistItem_wishlistId_fkey" FOREIGN KEY ("wishlistId") REFERENCES "Wishlist"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-      END IF;
-    END $$`
-  },
-  {
-    name: 'WishlistItem FK product',
-    sql: `DO $$ BEGIN
-      IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'WishlistItem_productId_fkey') THEN
-        ALTER TABLE "WishlistItem" ADD CONSTRAINT "WishlistItem_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-      END IF;
-    END $$`
-  },
-
-  // NotificationPreference table
-  {
-    name: 'NotificationPreference table',
-    sql: `CREATE TABLE IF NOT EXISTS "NotificationPreference" (
-      "id" TEXT NOT NULL,
-      "userId" TEXT NOT NULL,
-      "orderUpdates" BOOLEAN NOT NULL DEFAULT true,
-      "paymentAlerts" BOOLEAN NOT NULL DEFAULT true,
-      "newMessages" BOOLEAN NOT NULL DEFAULT true,
-      "reviewNotifications" BOOLEAN NOT NULL DEFAULT true,
-      "shopUpdates" BOOLEAN NOT NULL DEFAULT true,
-      "promotions" BOOLEAN NOT NULL DEFAULT true,
-      "systemAlerts" BOOLEAN NOT NULL DEFAULT true,
-      "soundEnabled" BOOLEAN NOT NULL DEFAULT true,
-      "desktopNotifications" BOOLEAN NOT NULL DEFAULT false,
-      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      "updatedAt" TIMESTAMP(3) NOT NULL,
-      CONSTRAINT "NotificationPreference_pkey" PRIMARY KEY ("id")
-    )`
-  },
-  {
-    name: 'NotificationPreference.userId unique',
-    sql: `CREATE UNIQUE INDEX IF NOT EXISTS "NotificationPreference_userId_key" ON "NotificationPreference"("userId")`
-  },
-
-  // Cart table - add abandoned cart fields
-  {
-    name: 'Cart.abandonedAt',
-    sql: `ALTER TABLE "Cart" ADD COLUMN IF NOT EXISTS "abandonedAt" TIMESTAMP(3)`
-  },
-  {
-    name: 'Cart.lastReminderSentAt',
-    sql: `ALTER TABLE "Cart" ADD COLUMN IF NOT EXISTS "lastReminderSentAt" TIMESTAMP(3)`
-  },
-  {
-    name: 'Cart.abandonedAt index',
-    sql: `CREATE INDEX IF NOT EXISTS "Cart_abandonedAt_idx" ON "Cart"("abandonedAt")`
-  },
-
-  // CartItem table (if not already created)
-  {
-    name: 'CartItem table',
-    sql: `CREATE TABLE IF NOT EXISTS "CartItem" (
-      "id" TEXT NOT NULL,
-      "cartId" TEXT NOT NULL,
-      "productId" TEXT NOT NULL,
-      "quantity" INTEGER NOT NULL DEFAULT 1,
-      "variantId" TEXT,
-      "variantLabel" TEXT,
-      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      "updatedAt" TIMESTAMP(3) NOT NULL,
-      CONSTRAINT "CartItem_pkey" PRIMARY KEY ("id")
-    )`
-  },
-  {
-    name: 'CartItem.cartId index',
-    sql: `CREATE INDEX IF NOT EXISTS "CartItem_cartId_idx" ON "CartItem"("cartId")`
-  },
-  {
-    name: 'CartItem.cartId FK',
-    sql: `DO $$ BEGIN
-      IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'CartItem_cartId_fkey') THEN
-        ALTER TABLE "CartItem" ADD CONSTRAINT "CartItem_cartId_fkey" FOREIGN KEY ("cartId") REFERENCES "Cart"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-      END IF;
-    END $$`
-  },
-  {
-    name: 'CartItem.productId FK',
-    sql: `DO $$ BEGIN
-      IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'CartItem_productId_fkey') THEN
-        ALTER TABLE "CartItem" ADD CONSTRAINT "CartItem_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-      END IF;
-    END $$`
-  },
-  // ── CryptoWallet Table ── Stores dynamic wallet addresses for crypto escrow
-  {
-    name: 'CryptoWallet table',
-    sql: `CREATE TABLE IF NOT EXISTS "CryptoWallet" (
-      "id" TEXT NOT NULL,
-      "currency" TEXT NOT NULL,
-      "address" TEXT NOT NULL,
-      "label" TEXT,
-      "isActive" BOOLEAN NOT NULL DEFAULT true,
-      "depositCount" INTEGER NOT NULL DEFAULT 0,
-      "maxDeposits" INTEGER,
-      "notes" TEXT,
-      "previousAddresses" TEXT NOT NULL DEFAULT '[]',
-      "updatedAt" TIMESTAMP(3) NOT NULL,
-      "updatedBy" TEXT,
-      CONSTRAINT "CryptoWallet_pkey" PRIMARY KEY ("id")
-    )`
-  },
-  {
-    name: 'CryptoWallet.currency unique',
-    sql: `DO $$ BEGIN
-      IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'CryptoWallet_currency_key') THEN
-        ALTER TABLE "CryptoWallet" ADD CONSTRAINT "CryptoWallet_currency_key" UNIQUE ("currency");
-      END IF;
-    END $$`
-  },
-  {
-    name: 'CryptoWallet.currency index',
-    sql: `CREATE INDEX IF NOT EXISTS "CryptoWallet_currency_idx" ON "CryptoWallet"("currency")`
-  },
-  {
-    name: 'CryptoWallet.isActive index',
-    sql: `CREATE INDEX IF NOT EXISTS "CryptoWallet_isActive_idx" ON "CryptoWallet"("isActive")`
-  },
-]
 
 export async function POST(request: NextRequest) {
   try {
@@ -490,48 +28,108 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
-    console.log('[sync-schema] Starting schema sync with raw SQL...')
-    
+    console.log('[sync-schema] Starting schema sync via prisma db push...')
+
+    // Capture the list of tables BEFORE the push
+    const tablesBefore = await getTableList()
+
+    // Run prisma db push (the correct way to sync SQLite schema)
+    const { stdout, stderr } = await execFileAsync('npx', ['prisma', 'db', 'push', '--accept-data-loss'], {
+      cwd: process.cwd(),
+      env: { ...process.env },
+      timeout: 60_000, // 60 second timeout
+    })
+
+    console.log('[sync-schema] prisma db push stdout:', stdout)
+    if (stderr) {
+      console.log('[sync-schema] prisma db push stderr:', stderr)
+    }
+
+    // Capture the list of tables AFTER the push
+    const tablesAfter = await getTableList()
+
+    // Determine which tables were added
+    const newTables = tablesAfter.filter((t) => !tablesBefore.includes(t))
+
+    // Parse output to determine what happened
+    const output = (stdout || '') + '\n' + (stderr || '')
+    const alreadyInSync = output.includes('already in sync') || output.includes('No changes')
+    const hadChanges = output.includes('changed') || output.includes('applied') || newTables.length > 0
+
     const results: { name: string; status: 'ok' | 'skipped' | 'error'; error?: string }[] = []
 
-    for (const migration of MIGRATIONS) {
-      try {
-        await db.$executeRawUnsafe(migration.sql)
-        results.push({ name: migration.name, status: 'ok' })
-        console.log(`[sync-schema] ✓ ${migration.name}`)
-      } catch (err: any) {
-        // Column/table already exists is OK
-        if (err.message?.includes('already exists') || err.message?.includes('duplicate')) {
-          results.push({ name: migration.name, status: 'skipped' })
-          console.log(`[sync-schema] ⏭ ${migration.name} (already exists)`)
-        } else {
-          results.push({ name: migration.name, status: 'error', error: getSafeErrorMessage(err) })
-          console.error(`[sync-schema] ✗ ${migration.name}:`, err.message)
+    if (alreadyInSync && !hadChanges) {
+      results.push({ name: 'Schema sync', status: 'skipped' })
+    } else {
+      if (newTables.length > 0) {
+        for (const table of newTables) {
+          results.push({ name: `Created table: ${table}`, status: 'ok' })
         }
+      }
+      if (hadChanges) {
+        results.push({ name: 'Schema changes applied', status: 'ok' })
+      }
+      if (!hadChanges && newTables.length === 0) {
+        results.push({ name: 'Schema sync', status: 'skipped' })
       }
     }
 
-    const successCount = results.filter(r => r.status === 'ok').length
-    const skippedCount = results.filter(r => r.status === 'skipped').length
-    const errorCount = results.filter(r => r.status === 'error').length
+    // Check for errors in output
+    if (output.includes('Error') || output.includes('error:')) {
+      const errorMatch = output.match(/Error[:\s]+(.+)/)
+      if (errorMatch) {
+        results.push({ name: 'Prisma error', status: 'error', error: errorMatch[1].trim() })
+      }
+    }
 
-    return NextResponse.json({ 
+    const successCount = results.filter((r) => r.status === 'ok').length
+    const skippedCount = results.filter((r) => r.status === 'skipped').length
+    const errorCount = results.filter((r) => r.status === 'error').length
+
+    return NextResponse.json({
       success: errorCount === 0,
       summary: {
-        total: MIGRATIONS.length,
+        total: results.length,
         applied: successCount,
         skipped: skippedCount,
-        errors: errorCount
+        errors: errorCount,
       },
       results,
-      timestamp: new Date().toISOString()
+      tablesBefore,
+      tablesAfter,
+      newTables,
+      output: output.trim(),
+      timestamp: new Date().toISOString(),
     })
   } catch (error: any) {
     console.error('[sync-schema] Error:', error.message)
-    return NextResponse.json({ 
-      success: false, 
-      error: getSafeErrorMessage(error)
-    }, { status: 500 })
+
+    // Check if it's a prisma command error
+    const isPrismaError = error.message?.includes('prisma') || error.code !== undefined
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: isPrismaError
+          ? `Schema sync failed: ${getSafeErrorMessage(error)}`
+          : getSafeErrorMessage(error),
+        results: [
+          {
+            name: 'Schema sync',
+            status: 'error',
+            error: getSafeErrorMessage(error),
+          },
+        ],
+        summary: {
+          total: 1,
+          applied: 0,
+          skipped: 0,
+          errors: 1,
+        },
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 }
+    )
   }
 }
 
@@ -545,30 +143,27 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
   }
 
-  // Check current schema status
+  // Check current schema status using SQLite-compatible queries
   try {
-    const tables = await db.$queryRawUnsafe(`
-      SELECT table_name FROM information_schema.tables 
-      WHERE table_schema = 'public' 
-      ORDER BY table_name
-    `)
-    
-    const userColumns = await db.$queryRawUnsafe(`
-      SELECT column_name FROM information_schema.columns 
-      WHERE table_schema = 'public' AND table_name = 'User'
-      ORDER BY ordinal_position
-    `)
+    const tables = await getTableList()
 
-    return NextResponse.json({ 
+    // Get column info for User table
+    let userColumns: string[] = []
+    try {
+      const cols = await db.$queryRawUnsafe(`PRAGMA table_info("User")`)
+      userColumns = (cols as any[])?.map((c: any) => c.name) || []
+    } catch {
+      // Table might not exist yet
+    }
+
+    return NextResponse.json({
       status: 'ready',
-      message: 'POST to this endpoint with the correct key to sync schema',
+      message: 'POST to this endpoint to sync schema with Prisma',
       env: process.env.NODE_ENV,
       databaseUrlSet: !!process.env.DATABASE_URL,
-      directUrlSet: !!process.env.DIRECT_URL,
-      isPostgresql: process.env.DATABASE_URL?.startsWith('postgresql://') || false,
-      tables: (tables as any[])?.map((t: any) => t.table_name),
-      userColumns: (userColumns as any[])?.map((c: any) => c.column_name),
-      migrationCount: MIGRATIONS.length
+      isSqlite: true,
+      tables,
+      userColumns,
     })
   } catch (error: any) {
     return NextResponse.json({
@@ -576,7 +171,18 @@ export async function GET(request: NextRequest) {
       error: getSafeErrorMessage(error),
       env: process.env.NODE_ENV,
       databaseUrlSet: !!process.env.DATABASE_URL,
-      migrationCount: MIGRATIONS.length
     })
+  }
+}
+
+/** Helper: Get list of user tables from SQLite */
+async function getTableList(): Promise<string[]> {
+  try {
+    const tables = await db.$queryRawUnsafe(
+      `SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_prisma%' ORDER BY name`
+    )
+    return (tables as any[])?.map((t: any) => t.name) || []
+  } catch {
+    return []
   }
 }
