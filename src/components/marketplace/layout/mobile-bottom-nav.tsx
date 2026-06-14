@@ -100,6 +100,8 @@ export function MobileBottomNav() {
 
   const currentView = useMarketplaceStore((s) => s.currentView)
   const isAuthenticated = useMarketplaceStore((s) => s.isAuthenticated)
+  const currentUser = useMarketplaceStore((s) => s.currentUser)
+  const activeRole = useMarketplaceStore((s) => s.activeRole)
   const cart = useMarketplaceStore((s) => s.cart)
   const setCurrentView = useMarketplaceStore((s) => s.setCurrentView)
 
@@ -127,8 +129,20 @@ export function MobileBottomNav() {
       return
     }
 
+    // PWA standalone: Home tab goes to dashboard, not landing page
+    if (tab.id === 'home' && isStandalone) {
+      if (!isAuthenticated) {
+        setCurrentView('auth')
+      } else if (activeRole === 'seller') {
+        setCurrentView('seller-dashboard')
+      } else {
+        setCurrentView('buyer-dashboard')
+      }
+      return
+    }
+
     setCurrentView(tab.view)
-  }, [isAuthenticated, setCurrentView])
+  }, [isAuthenticated, setCurrentView, isStandalone, activeRole])
 
   // Don't render on desktop or when not in PWA/mobile
   if (!isMobile && !isStandalone) return null

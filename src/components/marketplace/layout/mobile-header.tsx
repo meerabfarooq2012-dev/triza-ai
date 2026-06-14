@@ -64,6 +64,9 @@ export function MobileHeader() {
   // PWA install
   const { openInstallDialog, isStandalone: isPwaStandalone } = usePwa()
 
+  // Store for standalone-aware navigation
+  const activeRole = useMarketplaceStore((s) => s.activeRole)
+
   // Scroll shadow state
   const scrollY = useSyncExternalStore(subscribeToScroll, getScrollY, getScrollYServerSnapshot)
   const isScrolled = scrollY > 8
@@ -78,7 +81,18 @@ export function MobileHeader() {
   // Handlers
   // ---------------------------------------------------------------------------
   function handleLogoClick() {
-    setCurrentView('landing')
+    // PWA standalone: logo goes to dashboard, not landing page
+    if (isStandalone) {
+      if (!isAuthenticated) {
+        setCurrentView('auth')
+      } else if (activeRole === 'seller') {
+        setCurrentView('seller-dashboard')
+      } else {
+        setCurrentView('buyer-dashboard')
+      }
+    } else {
+      setCurrentView('landing')
+    }
   }
 
   function handleSearchClick() {

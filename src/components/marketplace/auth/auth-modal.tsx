@@ -34,6 +34,7 @@ import { EmailVerificationDialog } from '@/components/marketplace/auth/email-ver
 import { TwoFactorVerify } from '@/components/marketplace/auth/two-factor-verify'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useLanguage } from '@/hooks/use-language'
+import { usePwa } from '@/components/providers/pwa-provider'
 
 type AuthTab = 'login' | 'register' | 'forgotPassword'
 
@@ -94,6 +95,8 @@ export function AuthModal() {
   const setAuthToken = useMarketplaceStore((s) => s.setAuthToken)
   const setRefreshToken = useMarketplaceStore((s) => s.setRefreshToken)
   const setCurrentView = useMarketplaceStore((s) => s.setCurrentView)
+
+  const { isStandalone } = usePwa()
 
   const { t } = useLanguage()
 
@@ -1116,16 +1119,18 @@ export function AuthModal() {
             )}
           </AnimatePresence>
 
-          {/* Back to landing */}
-          <div className="mt-8 text-center">
-            <button
-              type="button"
-              onClick={() => setCurrentView('landing')}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              &larr; Back to home
-            </button>
-          </div>
+          {/* Back to landing — hidden in PWA standalone (no landing page there) */}
+          {!isStandalone && (
+            <div className="mt-8 text-center">
+              <button
+                type="button"
+                onClick={() => setCurrentView('landing')}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                &larr; Back to home
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

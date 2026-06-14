@@ -494,6 +494,33 @@ function MarketplaceApp() {
   const isMobile = useIsMobile()
   const { isStandalone } = usePwa()
   const shouldShowAppHome = isMobile || isStandalone
+
+  // ── PWA Standalone Flow ──────────────────────────────────────────────────
+  // When running as an installed PWA (standalone mode):
+  // - Unauthenticated users → ALWAYS show login/signup screen first
+  // - Authenticated users → show app home / dashboard (never the web landing page)
+  // - The web landing page is ONLY for browser mode
+  const isLoadingAuth = useMarketplaceStore((s) => s.isLoadingAuth)
+
+  useEffect(() => {
+    if (!isStandalone) return
+    if (isLoadingAuth) return // Wait for auth state to be determined
+
+    if (!isAuthenticated && currentView === 'landing') {
+      // PWA installed but not logged in → show auth screen
+      setCurrentView('auth')
+    } else if (isAuthenticated && currentView === 'landing') {
+      // PWA installed and logged in → go to dashboard
+      const role = currentUser?.role
+      if (role === 'admin') {
+        setCurrentView('admin')
+      } else if (role === 'seller' || role === 'both') {
+        setCurrentView('seller-dashboard')
+      } else {
+        setCurrentView('buyer-dashboard')
+      }
+    }
+  }, [isStandalone, isAuthenticated, isLoadingAuth, currentView, currentUser?.role, setCurrentView])
   const [showEmailVerify, setShowEmailVerify] = useState(() => {
     // Initialize from URL params on first render (avoids setState in effect)
     if (typeof window !== 'undefined') {
