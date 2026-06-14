@@ -6,6 +6,7 @@ export async function GET() {
     success: true,
     data: {
       base: BASE_CURRENCY,
+      totalCurrencies: Object.keys(CURRENCIES).length,
       rates: Object.fromEntries(
         Object.entries(CURRENCIES).map(([code, config]) => [code, config.rate])
       ),
@@ -17,9 +18,11 @@ export async function GET() {
             symbol: config.symbol,
             flag: config.flag,
             decimalPlaces: config.decimalPlaces,
+            region: config.region,
           },
         ])
       ),
+      regions: [...new Set(Object.values(CURRENCIES).map((c) => c.region))].sort(),
       lastUpdated: new Date().toISOString(),
       // Note: In production, these rates should be fetched from a real API
       // like exchangerate-api.com or openexchangerates.org
