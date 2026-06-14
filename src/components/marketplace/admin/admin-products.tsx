@@ -43,6 +43,7 @@ import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { api } from '@/lib/api'
 import { PRODUCT_TYPE_LABELS, DEFAULT_PAGE_SIZE } from '@/lib/constants'
 import type { Product, ProductType } from '@/types'
+import { Price } from '@/components/marketplace/shared/price'
 
 function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
   if (!value) return fallback
@@ -260,9 +261,7 @@ export default function AdminProducts() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <span className="font-semibold text-sm">
-                          ${(product.price ?? 0).toFixed(2)}
-                        </span>
+                        <Price amount={product.price ?? 0} size="sm" />
                       </TableCell>
                       <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
                         {product.shop?.name || 'Unknown'}

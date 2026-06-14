@@ -70,6 +70,7 @@ import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { GIG_CATEGORIES } from '@/lib/constants'
 import { GIG_SUBCATEGORIES } from '@/lib/gig-subcategories'
 import type { Gig, GigPackage, Category } from '@/types'
+import { Price } from '@/components/marketplace/shared/price'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 
@@ -739,8 +740,7 @@ export function GigsBrowse() {
                             <span className="text-xs text-muted-foreground">({gig.totalReviews})</span>
                           </div>
                           <div className="flex items-baseline gap-1.5">
-                            <span className="text-xs text-muted-foreground">Starting at</span>
-                            <span className="font-bold text-lg text-amber-600">${(startingPrice ?? 0).toFixed(2)}</span>
+                            <Price amount={startingPrice ?? 0} prefix="Starting at" size="sm" />
                           </div>
                           {packages.length > 0 && (
                             <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">

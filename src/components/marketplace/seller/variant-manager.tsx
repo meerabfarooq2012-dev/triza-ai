@@ -28,6 +28,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { formatPriceUtil } from '@/components/marketplace/shared/price'
 import { toast } from 'sonner'
 import type { ProductVariantOption, ProductVariant } from '@/types'
 
@@ -249,7 +250,7 @@ export function VariantManager({
 
   const setAllPriceAdjustment = (adjustment: number) => {
     setCombinations((prev) => prev.map((c) => ({ ...c, priceAdjustment: adjustment })))
-    toast.success(`Set all price adjustments to $${adjustment.toFixed(2)}`)
+    toast.success(`Set all price adjustments to ${formatPriceUtil(adjustment)}`)
   }
 
   // ---- Save ----

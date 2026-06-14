@@ -26,6 +26,7 @@ import {
   SelectItem,
 } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
+import { Price } from '@/components/marketplace/shared/price'
 import {
   Dialog,
   DialogContent,
@@ -468,7 +469,7 @@ function RateDialog({
               <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
               <p className="text-xs text-amber-700">
                 Free shipping will apply when order total exceeds{' '}
-                <span className="font-semibold">{parseFloat(freeAbove).toLocaleString()}</span>
+                <Price amount={parseFloat(freeAbove)} size="xs" />
               </p>
             </div>
           )}
@@ -1073,11 +1074,11 @@ export function ShippingSettings({ shopId: propShopId, userId }: ShippingSetting
                                     </span>
                                     <span className="flex items-center gap-0.5">
                                       <DollarSign className="h-3 w-3" />
-                                      {rate.price.toLocaleString()}
+                                      <Price amount={rate.price} size="xs" />
                                     </span>
                                     {rate.freeAbove && (
                                       <span className="text-amber-600 font-medium">
-                                        Free above {rate.freeAbove.toLocaleString()}
+                                        Free above <Price amount={rate.freeAbove} size="xs" />
                                       </span>
                                     )}
                                     {rate.weightLimit && <span>Up to {rate.weightLimit}kg</span>}
@@ -1304,12 +1305,12 @@ export function ShippingSettings({ shopId: propShopId, userId }: ShippingSetting
                             </div>
                             <div className="flex items-center gap-1.5 text-sm">
                               <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
-                              <span className="font-medium">{rate.price.toLocaleString()}</span>
+                              <Price amount={rate.price} size="sm" />
                             </div>
                             {rate.freeAbove ? (
                               <div className="flex items-center gap-1.5 text-sm text-amber-600 font-medium">
                                 <DollarSign className="h-3.5 w-3.5" />
-                                Free above {rate.freeAbove.toLocaleString()}
+                                Free above <Price amount={rate.freeAbove} size="xs" />
                               </div>
                             ) : (
                               <div />

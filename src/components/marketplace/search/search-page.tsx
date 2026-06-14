@@ -48,6 +48,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { Price } from '@/components/marketplace/shared/price'
+import { useCurrency } from '@/hooks/use-currency'
 import { api } from '@/lib/api'
 import { ProductCardSkeleton, ProductGridSkeleton } from '@/components/marketplace/shared/loading-skeletons'
 import {
@@ -58,13 +60,14 @@ import {
 } from '@/lib/constants'
 import type { Product, Gig, GigPackage, Category, SearchFilters, ProductType, GigSearchParams, DeliveryFilterType, DateAddedFilter } from '@/types'
 
-// ----- Price preset ranges -----
-const PRICE_PRESETS = [
-  { label: 'Under $10', min: undefined as number | undefined, max: 10 },
-  { label: '$10 – $25', min: 10, max: 25 },
-  { label: '$25 – $50', min: 25, max: 50 },
-  { label: '$50 – $100', min: 50, max: 100 },
-  { label: 'Over $100', min: 100, max: undefined as number | undefined },
+// ----- Price preset ranges (defined dynamically inside component for currency support) -----
+// Min/max values are in USD (base currency)
+const PRICE_PRESET_RANGES = [
+  { min: undefined as number | undefined, max: 10 },
+  { min: 10, max: 25 },
+  { min: 25, max: 50 },
+  { min: 50, max: 100 },
+  { min: 100, max: undefined as number | undefined },
 ] as const
 
 const MAX_PRICE_SLIDER = 500
@@ -254,12 +257,7 @@ function ProductCard({
             </span>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="font-bold text-lg">${(product.price ?? 0).toFixed(2)}</span>
-            {product.comparePrice && (
-              <span className="text-xs text-muted-foreground line-through">
-                ${(product.comparePrice ?? 0).toFixed(2)}
-              </span>
-            )}
+            <Price amount={product.price ?? 0} compare={product.comparePrice ?? undefined} size="sm" />
           </div>
           {tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-2">
@@ -535,6 +533,7 @@ function PriceRangeSlider({
   maxPrice: number | undefined
   onRangeChange: (min: number | undefined, max: number | undefined) => void
 }) {
+  const { formatPrice: fmtPrice, currencyConfig } = useCurrency()
   const [localRange, setLocalRange] = useState<[number, number]>([minPrice ?? 0, maxPrice ?? MAX_PRICE_SLIDER])
   const [isDragging, setIsDragging] = useState(false)
 
@@ -566,19 +565,19 @@ function PriceRangeSlider({
         value={range}
         onValueChange={(val) => handleSliderChange(val)}
         onValueCommit={(val) => handleSliderCommit(val)}
-        formatValue={(v) => `$${v}`}
+        formatValue={(v) => fmtPrice(v)}
         className="w-full"
       />
       {/* Display values */}
       <div className="flex items-center justify-between text-sm">
-        <span className="font-semibold text-amber-700 dark:text-amber-400">${range[0]}</span>
+        <span className="font-semibold text-amber-700 dark:text-amber-400">{fmtPrice(range[0])}</span>
         <div className="flex-1 mx-3 h-px bg-border" />
-        <span className="font-semibold text-amber-700 dark:text-amber-400">${range[1] >= MAX_PRICE_SLIDER ? `${MAX_PRICE_SLIDER}+` : range[1]}</span>
+        <span className="font-semibold text-amber-700 dark:text-amber-400">{range[1] >= MAX_PRICE_SLIDER ? `${fmtPrice(MAX_PRICE_SLIDER)}+` : fmtPrice(range[1])}</span>
       </div>
       {/* Custom min / max inputs */}
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
-          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencyConfig.symbol}</span>
           <Input
             type="number"
             placeholder="Min"
@@ -595,7 +594,7 @@ function PriceRangeSlider({
         </div>
         <span className="text-muted-foreground text-xs">–</span>
         <div className="relative flex-1">
-          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencyConfig.symbol}</span>
           <Input
             type="number"
             placeholder="Max"
@@ -1113,9 +1112,9 @@ function ActiveFilterTags({
     const min = filters.minPrice
     const max = filters.maxPrice
     let label = ''
-    if (min !== undefined && max !== undefined) label = `$${min} – $${max}`
-    else if (min !== undefined) label = `Over $${min}`
-    else label = `Under $${max}`
+    if (min !== undefined && max !== undefined) label = `${fmtPrice(min)} – ${fmtPrice(max)}`
+    else if (min !== undefined) label = `Over ${fmtPrice(min)}`
+    else label = `Under ${fmtPrice(max!)}`
     tags.push({ key: 'minPrice', label, colorClass: 'bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800' })
   }
   if (filters.rating !== undefined) {
@@ -1306,6 +1305,21 @@ function QuickFilterChips({
 
 export default function SearchPage() {
   const { setCurrentView, searchQuery, setSearchQuery, searchCategory, searchType } = useMarketplaceStore()
+  const { formatPrice: fmtPrice } = useCurrency()
+
+  // Build price presets dynamically based on user's currency
+  const PRICE_PRESETS = useMemo(() =>
+    PRICE_PRESET_RANGES.map((p) => ({
+      label: p.min === undefined
+        ? `Under ${fmtPrice(p.max!)}`
+        : p.max === undefined
+          ? `Over ${fmtPrice(p.min)}`
+          : `${fmtPrice(p.min)} – ${fmtPrice(p.max)}`,
+      min: p.min,
+      max: p.max,
+    })),
+    [fmtPrice]
+  )
 
   const [activeTab, setActiveTab] = useState<'products' | 'gigs'>('products')
   const [products, setProducts] = useState<Product[]>([])

@@ -444,3 +444,163 @@ Stage Summary:
 - `useLanguage` hook always returns English locale, LTR direction
 - All i18n infrastructure (locale files, t() function, i18n module) preserved for potential future use
 - Zero functional changes to the user experience — app already displayed in English
+
+---
+Task ID: 6-c
+Agent: Orders/Payment/Wallet Price Updater
+Task: Replace all hardcoded price displays with the `<Price>` component
+
+Work Log:
+- Updated 21 files, replacing ~90+ hardcoded price instances with the shared `<Price>` component and `formatPriceUtil` utility
+- Replaced patterns: `$${price.toFixed(2)}`, `Rs. {price}`, custom `formatCurrency()`, `{price.toLocaleString()}`
+- Key files updated:
+  - checkout-modal.tsx: ~21 instances (item prices, coupons, fees, tax, shipping, total, payment buttons, crypto breakdown)
+  - seller-wallet.tsx: 11 instances (stat cards, transactions, withdrawals)
+  - seller-analytics.tsx: 13 instances (removed custom formatCurrency function, replaced with formatPriceUtil)
+  - order-tracking-page.tsx, buyer-orders.tsx, seller-orders.tsx: item prices, totals, fees
+  - buyer-overview.tsx, seller-overview.tsx: stat card revenue/spent values
+  - seller-products.tsx, seller-gigs.tsx: product/gig prices with compare prices
+  - seller-flash-sales.tsx, seller-coupons.tsx: sale prices, coupon values, min order, max discount
+  - bulk-product-upload.tsx, variant-manager.tsx: preview prices, toast messages
+  - order-payment-status.tsx: total paid, platform fee, seller payout
+  - returns-page.tsx, return-detail-page.tsx: refund amounts, order totals
+  - dispute-detail-page.tsx, file-dispute-dialog.tsx: order totals
+  - shipping-method-selector.tsx: replaced Rs. hardcoded patterns with <Price>
+  - shipping-settings.tsx: rate prices, free-above thresholds
+- All amounts remain in base currency (USD); <Price> component handles conversion to user's selected currency
+- Lint: 0 errors, 1 pre-existing warning (unrelated)
+
+Stage Summary:
+- All hardcoded price displays replaced with <Price> component or formatPriceUtil
+- Rs. currency patterns in shipping-method-selector.tsx now use <Price> for consistent currency display
+- Custom formatCurrency function in seller-analytics.tsx removed in favor of shared utility
+- ~90+ price instances across 21 files now support multi-currency display
+
+---
+Task ID: 6-d
+Agent: Admin/Invoice Price Updater
+Task: Replace all hardcoded price displays with <Price> component / formatPriceUtil
+
+Work Log:
+- Updated `src/components/marketplace/admin/admin-products.tsx`:
+  - Added `Price` import from `@/components/marketplace/shared/price`
+  - Replaced `$${(product.price ?? 0).toFixed(2)}` with `<Price amount={product.price ?? 0} size="sm" />`
+- Updated `src/components/marketplace/admin/admin-orders.tsx`:
+  - Added `Price` import
+  - Replaced 3 hardcoded price patterns: table amount, detail dialog amount, item price
+  - All use `size="sm"` for table/detail context
+- Updated `src/components/marketplace/admin/admin-transactions.tsx`:
+  - Added `Price` import
+  - Replaced 3 summary card values with `<Price>` (size="lg"): Total Escrow Held, Commission Earned, Pending Withdrawals
+  - Replaced 6 payment table cells with `<Price>` (size="sm"): amount, platformFee, sellerPayout (×2: main table + detail row)
+  - Replaced 3 withdrawal table cells with `<Price>` (size="sm"): amount, fee, netAmount
+- Updated `src/components/marketplace/admin/admin-dashboard.tsx`:
+  - Added `Price` and `formatPriceUtil` imports
+  - Changed `StatCardProps.value` type from `string | number` to `React.ReactNode`
+  - Changed `StatCardProps.subtitle` type from `string` to `React.ReactNode`
+  - Replaced Revenue stat value with `<Price amount={...} size="lg" compact />`
+  - Replaced Total Escrow Held value with `<Price amount={...} size="lg" />`
+  - Replaced Commission Earned value with `<Price amount={...} size="lg" />`
+  - Replaced Active Withdrawals subtitle with `<><Price amount={...} size="sm" /> total</>`
+  - Replaced PaymentActivityTooltip entries with `<Price amount={...} size="xs" />`
+  - Replaced chart Tooltip formatter with `formatPriceUtil(value)`
+  - Replaced Y-axis tickFormatter with `formatPriceUtil(v)`
+  - Replaced Recent Orders amount with `<Price amount={...} size="sm" />`
+- Updated `src/components/marketplace/admin/admin-returns.tsx`:
+  - Added `Price` import
+  - Replaced refund amount `$${selectedReturn.refundAmount.toFixed(2)}` with `<Price amount={selectedReturn.refundAmount} size="sm" />`
+- Updated `src/lib/invoice-pdf.ts` (SERVER-SIDE):
+  - Added `formatPriceUtil` import from `@/components/marketplace/shared/price`
+  - Replaced 7 `$${...toFixed(2)}` patterns with `formatPriceUtil(...)`: item price, item total, subtotal, shippingCost, taxAmount, platformFee, totalAmount
+  - Did NOT use React components or hooks (server-side file)
+- Lint check: 0 errors, 1 pre-existing warning (unrelated)
+
+Stage Summary:
+- All 6 files updated successfully
+- Admin components use `<Price>` component with appropriate sizes (sm for table cells, lg for stats)
+- Server-side invoice-pdf.ts uses `formatPriceUtil` exclusively (no React hooks/components)
+- Dashboard chart tooltip and Y-axis formatter use `formatPriceUtil` for string returns
+- StatCard value/subtitle types upgraded to ReactNode to support Price components
+- All prices now respect user currency preferences via the centralized Price/formatPriceUtil system
+
+---
+Task ID: 6-a
+Agent: Product/Shop/Cart Price Updater
+Task: Replace all hardcoded price displays with `<Price>` component for multi-currency support
+
+Work Log:
+- Read the `<Price>` component at `@/components/marketplace/shared/price` to understand its API (amount, compare, size, prefix, showCode, compact, className, overrideCurrency, showCompare props)
+- Updated 8 files to replace all `$${...toFixed(2)}` patterns with the `<Price>` component:
+
+1. **product-detail.tsx** — Replaced 6 price patterns:
+   - Flash sale price + original → `<Price amount={activeFlashSale.salePrice} compare={activeFlashSale.originalPrice} size="2xl" />`
+   - Variant price range "From $X" → `<Price amount={...} prefix="From" size="2xl" />`
+   - Variant max "– $X" → `<Price amount={...} size="lg" />`
+   - Main price + compare → `<Price amount={displayPrice ?? 0} compare={product.comparePrice ?? undefined} size="2xl" />`
+
+2. **shop-view.tsx** — Replaced 3 layout modes (grid, list, compact), each with price + compare:
+   - Grid card: `<Price amount={product.price ?? 0} compare={product.comparePrice ?? undefined} size="sm" />`
+   - List card: `<Price amount={product.price ?? 0} compare={product.comparePrice ?? undefined} size="sm" />`
+   - Featured card: `<Price amount={product.price ?? 0} compare={product.comparePrice ?? undefined} size="lg" />`
+
+3. **cart-drawer.tsx** — Replaced 3 price patterns:
+   - Subtotal: `<Price amount={cartTotal ?? 0} size="lg" />`
+   - Checkout button: `Checkout — <Price amount={cartTotal ?? 0} size="sm" />`
+   - Item total: `<Price amount={(item.price ?? 0) * (item.quantity ?? 1)} size="sm" />`
+
+4. **product-card.tsx** — Replaced variant price range and regular price with compare:
+   - Variant "From $X" → `<Price amount={...} prefix="From" size="md" />`
+   - Variant max → `<Price amount={...} size="sm" />`
+   - Regular price + compare → `<Price amount={product.price ?? 0} compare={product.comparePrice ?? undefined} size="md" />`
+
+5. **compare-bar.tsx** — Replaced tooltip price:
+   - `${product.price.toFixed(2)}` → `<Price amount={product.price} size="xs" />`
+
+6. **recently-viewed-section.tsx** — Replaced price:
+   - `$${(product.price ?? 0).toFixed(2)}` → `<Price amount={product.price ?? 0} size="sm" />`
+
+7. **public-wishlist.tsx** — Replaced price:
+   - `$${(product.price ?? 0).toFixed(2)}` with gold-gradient → `<Price amount={product.price ?? 0} size="md" />`
+
+8. **variant-selector.tsx** — Replaced 3 price patterns:
+   - Base price: `$${basePrice.toFixed(2)}` → `<Price amount={basePrice} size="sm" />`
+   - Price adjustment: `$${priceAdjustment.toFixed(2)}` → `<Price amount={Math.abs(priceAdjustment)} size="xs" />`
+   - Total price: `$${effectivePrice.toFixed(2)}` → `<Price amount={effectivePrice} size="lg" />`
+
+- Lint check passes with 0 errors (1 pre-existing warning unrelated to changes)
+
+Stage Summary:
+- All hardcoded `$${...toFixed(2)}` price displays across 8 files replaced with `<Price>` component
+- Prices now support multi-currency conversion via the useCurrency hook
+- Compare/strikethrough prices handled via the `compare` prop instead of separate spans
+- Appropriate size variants chosen for each context (xs for tooltips, sm for cards, lg for featured/total, 2xl for detail page)
+- No functional regressions — lint passes with 0 errors
+
+---
+Task ID: 6-b
+Agent: Search/Gig/Landing Price Updater
+Task: Replace all hardcoded price displays with <Price> component
+
+Work Log:
+- Updated 14 files to replace hardcoded price displays with the <Price> component from @/components/marketplace/shared/price
+- For JSX contexts: Used <Price amount={...} compare={...} size="..." prefix="..." /> component
+- For template literal / plain text contexts: Used formatPriceUtil() utility function
+
+Files updated:
+1. search-page.tsx: Product card prices → <Price>, RangeSlider formatValue → formatPriceUtil, price filter labels → formatPriceUtil, slider display values → formatPriceUtil
+2. search-autocomplete.tsx: Product price → <Price amount={product.price} size="xs" />
+3. comparison-view.tsx: Price row → <Price> with compare for strikethrough, variant price ranges
+4. gig-detail.tsx: 3 price patterns → <Price> (pkg.price, selectedPkg.price in header, selectedPkg.price in mobile CTA)
+5. gigs-browse.tsx: Starting price → <Price amount={startingPrice} prefix="Starting at" size="sm" />
+6. featured-products-section.tsx: Product price → <Price amount={product.price} size="lg" />
+7. flash-deals-section.tsx: Sale & original price → <Price amount={deal.salePrice} compare={deal.originalPrice} size="xl" />
+8. mobile-app-home.tsx: 6 hardcoded 'From $X' strings → <Price amount={X} prefix="From" size="xs" />
+9. activity-feed-page.tsx: Product price → <Price amount={activity.product.price} size="xs" />
+10. create-story-dialog.tsx: Product price → <Price amount={product.price} size="xs" />
+11. messages-page.tsx: 4 price patterns → <Price> with conditional prefix="From" for gig prices
+12. buyer-favorites.tsx: Price & compare price → <Price amount={...} compare={...} size="lg" />
+13. buyer-wishlists.tsx: 2 price patterns → <Price> (card price and preview price)
+14. wishlist-page.tsx: Current price & saved price → <Price> with conditional compare for strikethrough
+
+Lint check: 0 errors, 1 pre-existing warning
+Dev server: Running cleanly

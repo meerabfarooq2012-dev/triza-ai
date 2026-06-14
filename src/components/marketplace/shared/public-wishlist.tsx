@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { Price } from '@/components/marketplace/shared/price'
 import type { Wishlist, WishlistItem, Product } from '@/types'
 
 function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
@@ -263,9 +264,7 @@ export function PublicWishlist({ slug }: PublicWishlistProps) {
                         </p>
                       )}
                       <div className="flex items-center justify-between pt-1">
-                        <span className="text-lg font-bold gold-gradient-text bg-clip-text text-transparent">
-                          ${(product.price ?? 0).toFixed(2)}
-                        </span>
+                        <Price amount={product.price ?? 0} size="md" />
                         {inStock && currentUser && (
                           <Button
                             size="sm"

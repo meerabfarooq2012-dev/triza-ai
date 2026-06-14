@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion } from 'framer-motion'
+import { Price, formatPriceUtil } from '@/components/marketplace/shared/price'
 import {
   ArrowLeft,
   Scale,
@@ -736,19 +737,17 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
                               <div className="min-w-0 flex-1">
                                 <p className="truncate text-sm font-medium">{item.product?.name || 'Product'}</p>
                                 <p className="text-xs text-muted-foreground">
-                                  Qty: {item.quantity} &times; ${(item.price ?? 0).toFixed(2)}
+                                  Qty: {item.quantity} &times; <Price amount={item.price ?? 0} size="xs" />
                                 </p>
                               </div>
-                              <p className="text-sm font-semibold">
-                                ${((item.price ?? 0) * (item.quantity ?? 1)).toFixed(2)}
-                              </p>
+                              <Price amount={(item.price ?? 0) * (item.quantity ?? 1)} size="sm" />
                             </div>
                           )
                         })}
                       </div>
                       <div className="flex justify-between items-center mt-2">
                         <span className="text-sm text-muted-foreground">Order Total</span>
-                        <span className="font-bold">${(dispute.order.totalAmount ?? 0).toFixed(2)}</span>
+                        <Price amount={dispute.order.totalAmount ?? 0} size="sm" />
                       </div>
                     </div>
                   </>
@@ -1333,7 +1332,7 @@ export function DisputeDetailPage({ disputeId, userId, isSeller, isAdmin }: Disp
                 />
                 {dispute.order && (
                   <p className="text-[11px] text-muted-foreground">
-                    Order total: ${(dispute.order.totalAmount ?? 0).toFixed(2)}
+                    Order total: <Price amount={dispute.order.totalAmount ?? 0} size="xs" />
                   </p>
                 )}
               </div>

@@ -65,6 +65,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { PRODUCT_TYPE_LABELS } from '@/lib/constants'
 import { cn } from '@/lib/utils'
+import { Price } from '@/components/marketplace/shared/price'
 import { toast } from 'sonner'
 import type {
   WishlistItem,
@@ -352,16 +353,7 @@ function WishlistItemCard({
           <p className="text-xs text-gray-500 truncate">by {shopName}</p>
 
           {/* Price info */}
-          <div className="flex items-baseline gap-2">
-            <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
-              ${item.currentPrice.toFixed(2)}
-            </span>
-            {item.priceWhenSaved !== item.currentPrice && item.priceWhenSaved > 0 && (
-              <span className="text-xs text-gray-400 line-through">
-                ${item.priceWhenSaved.toFixed(2)}
-              </span>
-            )}
-          </div>
+          <Price amount={item.currentPrice} compare={item.priceWhenSaved !== item.currentPrice && item.priceWhenSaved > 0 ? item.priceWhenSaved : undefined} size="lg" />
 
           {/* Price drop indicator */}
           {priceDrop && priceDrop > 0 && (

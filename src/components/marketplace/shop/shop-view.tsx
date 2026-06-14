@@ -31,6 +31,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { Price } from '@/components/marketplace/shared/price'
 import { api } from '@/lib/api'
 import {
   PLATFORM_NAME,
@@ -162,16 +163,7 @@ function ProductGridCard({
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <div className="flex items-baseline gap-2">
-              <span className="font-bold text-lg" style={{ color: shopColors.primary }}>
-                ${(product.price ?? 0).toFixed(2)}
-              </span>
-              {product.comparePrice && (
-                <span className="text-xs text-muted-foreground line-through">
-                  ${(product.comparePrice ?? 0).toFixed(2)}
-                </span>
-              )}
-            </div>
+            <Price amount={product.price ?? 0} compare={product.comparePrice ?? undefined} size="sm" />
           </div>
           {tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-2">
@@ -275,14 +267,7 @@ function ProductListCard({
                 </div>
               </div>
               <div className="text-right flex-shrink-0">
-                <span className="font-bold text-xl" style={{ color: shopColors.primary }}>
-                  ${(product.price ?? 0).toFixed(2)}
-                </span>
-                {product.comparePrice && (
-                  <div className="text-sm text-muted-foreground line-through">
-                    ${(product.comparePrice ?? 0).toFixed(2)}
-                  </div>
-                )}
+                <Price amount={product.price ?? 0} compare={product.comparePrice ?? undefined} size="sm" />
               </div>
             </div>
           </CardContent>
@@ -365,16 +350,7 @@ function FeaturedProductCard({
                 ({product.totalReviews} reviews)
               </span>
             </div>
-            <div className="flex items-baseline gap-3 mb-6">
-              <span className="text-3xl font-bold" style={{ color: shopColors.primary }}>
-                ${(product.price ?? 0).toFixed(2)}
-              </span>
-              {product.comparePrice && (
-                <span className="text-lg text-muted-foreground line-through">
-                  ${(product.comparePrice ?? 0).toFixed(2)}
-                </span>
-              )}
-            </div>
+            <Price amount={product.price ?? 0} compare={product.comparePrice ?? undefined} size="lg" />
             <Button
               size="lg"
               className="w-fit"

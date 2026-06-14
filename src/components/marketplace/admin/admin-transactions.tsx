@@ -52,6 +52,7 @@ import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { api, ApiError } from '@/lib/api'
 import { toast } from 'sonner'
 import type { AdminTransactionsData, Payment, Withdrawal } from '@/types'
+import { Price } from '@/components/marketplace/shared/price'
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -334,7 +335,7 @@ export function AdminTransactions() {
   const summaryCards = [
     {
       label: 'Total Escrow Held',
-      value: `$${totalEscrowHeld.toFixed(2)}`,
+      value: <Price amount={totalEscrowHeld} size="lg" /> as React.ReactNode,
       icon: Shield,
       bgColor: 'bg-amber-50',
       textColor: 'text-amber-600',
@@ -342,7 +343,7 @@ export function AdminTransactions() {
     },
     {
       label: 'Commission Earned',
-      value: `$${totalCommissionEarned.toFixed(2)}`,
+      value: <Price amount={totalCommissionEarned} size="lg" /> as React.ReactNode,
       icon: DollarSign,
       bgColor: 'bg-amber-50',
       textColor: 'text-amber-600',
@@ -350,7 +351,7 @@ export function AdminTransactions() {
     },
     {
       label: 'Pending Withdrawals',
-      value: `$${totalPendingWithdrawals.toFixed(2)}`,
+      value: <Price amount={totalPendingWithdrawals} size="lg" /> as React.ReactNode,
       icon: ArrowDownCircle,
       bgColor: 'bg-amber-50',
       textColor: 'text-amber-600',
@@ -519,13 +520,13 @@ export function AdminTransactions() {
                                   {payment.seller?.name || 'N/A'}
                                 </TableCell>
                                 <TableCell className="text-right text-sm font-medium">
-                                  ${(payment.amount ?? 0).toFixed(2)}
+                                  <Price amount={payment.amount ?? 0} size="sm" />
                                 </TableCell>
                                 <TableCell className="text-right text-sm text-amber-600">
-                                  ${(payment.platformFee ?? 0).toFixed(2)}
+                                  <Price amount={payment.platformFee ?? 0} size="sm" />
                                 </TableCell>
                                 <TableCell className="text-right text-sm text-amber-600">
-                                  ${(payment.sellerPayout ?? 0).toFixed(2)}
+                                  <Price amount={payment.sellerPayout ?? 0} size="sm" />
                                 </TableCell>
                                 <TableCell>
                                   <Badge variant="outline" className="text-[10px] px-1.5 py-0">
@@ -592,15 +593,15 @@ export function AdminTransactions() {
                                             </p>
                                             <p>
                                               <span className="text-muted-foreground">Total:</span>{' '}
-                                              ${(payment.amount ?? 0).toFixed(2)}
+                                              <Price amount={payment.amount ?? 0} size="sm" />
                                             </p>
                                             <p>
                                               <span className="text-muted-foreground">Platform Fee:</span>{' '}
-                                              ${(payment.platformFee ?? 0).toFixed(2)}
+                                              <Price amount={payment.platformFee ?? 0} size="sm" />
                                             </p>
                                             <p>
                                               <span className="text-muted-foreground">Seller Payout:</span>{' '}
-                                              ${(payment.sellerPayout ?? 0).toFixed(2)}
+                                              <Price amount={payment.sellerPayout ?? 0} size="sm" />
                                             </p>
                                           </div>
                                           {payment.failureReason && (
@@ -763,13 +764,13 @@ export function AdminTransactions() {
                                   {w.user?.name || 'N/A'}
                                 </TableCell>
                                 <TableCell className="text-right text-sm font-medium">
-                                  ${(w.amount ?? 0).toFixed(2)}
+                                  <Price amount={w.amount ?? 0} size="sm" />
                                 </TableCell>
                                 <TableCell className="text-right text-sm text-amber-600">
-                                  ${(w.fee ?? 0).toFixed(2)}
+                                  <Price amount={w.fee ?? 0} size="sm" />
                                 </TableCell>
                                 <TableCell className="text-right text-sm text-amber-600">
-                                  ${(w.netAmount ?? 0).toFixed(2)}
+                                  <Price amount={w.netAmount ?? 0} size="sm" />
                                 </TableCell>
                                 <TableCell>
                                   <Badge variant="outline" className="text-[10px] px-1.5 py-0">

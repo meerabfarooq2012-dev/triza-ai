@@ -19,6 +19,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { Price } from '@/components/marketplace/shared/price'
 import { usePwa } from '@/components/providers/pwa-provider'
 import { RecentlyViewedSection } from '@/components/marketplace/shared/recently-viewed-section'
 import { PushNotificationPrompt } from '@/components/marketplace/shared/push-notification-prompt'
@@ -316,12 +317,12 @@ export function MobileAppHome() {
         </div>
         <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
           {[
-            { emoji: '🎨', title: 'Graphic Design', price: 'From $5' },
-            { emoji: '💻', title: 'Web Dev', price: 'From $25' },
-            { emoji: '✍️', title: 'Content Writing', price: 'From $10' },
-            { emoji: '📹', title: 'Video Editing', price: 'From $15' },
-            { emoji: '📱', title: 'App Dev', price: 'From $50' },
-            { emoji: '🎵', title: 'Music & Audio', price: 'From $10' },
+            { emoji: '🎨', title: 'Graphic Design', price: <Price amount={5} prefix="From" size="xs" /> },
+            { emoji: '💻', title: 'Web Dev', price: <Price amount={25} prefix="From" size="xs" /> },
+            { emoji: '✍️', title: 'Content Writing', price: <Price amount={10} prefix="From" size="xs" /> },
+            { emoji: '📹', title: 'Video Editing', price: <Price amount={15} prefix="From" size="xs" /> },
+            { emoji: '📱', title: 'App Dev', price: <Price amount={50} prefix="From" size="xs" /> },
+            { emoji: '🎵', title: 'Music & Audio', price: <Price amount={10} prefix="From" size="xs" /> },
           ].map((service) => (
             <button
               key={service.title}

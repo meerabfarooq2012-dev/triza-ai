@@ -53,6 +53,7 @@ import {
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { Price } from '@/components/marketplace/shared/price'
 import { useRecentlyViewed } from '@/hooks/use-recently-viewed'
 import { useToast } from '@/hooks/use-toast'
 import { openCartDrawer } from '@/components/marketplace/shared/cart-drawer'
@@ -535,14 +536,7 @@ export default function ProductDetail() {
                   -{activeFlashSale.discountPercent}% OFF
                 </Badge>
               </div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-bold text-red-600 dark:text-red-400">
-                  ${activeFlashSale.salePrice.toFixed(2)}
-                </span>
-                <span className="text-base text-muted-foreground line-through">
-                  ${activeFlashSale.originalPrice.toFixed(2)}
-                </span>
-              </div>
+              <Price amount={activeFlashSale.salePrice} compare={activeFlashSale.originalPrice} size="2xl" />
               <div className="flex items-center gap-1.5 text-sm text-orange-600 dark:text-orange-400 font-medium">
                 <Clock size={14} />
                 <span>Ends in: {flashCountdown}</span>
@@ -559,22 +553,13 @@ export default function ProductDetail() {
           <div className="flex items-baseline gap-3">
             {product.hasVariants && !selectedVariantId ? (
               <>
-                <span className="text-3xl font-bold">
-                  From ${(product.variantPriceMin ?? product.price ?? 0).toFixed(2)}
-                </span>
+                <Price amount={product.variantPriceMin ?? product.price ?? 0} prefix="From" size="2xl" />
                 {product.variantPriceMax && product.variantPriceMax !== product.variantPriceMin && (
-                  <span className="text-lg text-muted-foreground">
-                    – ${(product.variantPriceMax ?? 0).toFixed(2)}
-                  </span>
+                  <Price amount={product.variantPriceMax ?? 0} size="lg" />
                 )}
               </>
             ) : (
-              <span className="text-3xl font-bold">${(displayPrice ?? 0).toFixed(2)}</span>
-            )}
-            {product.comparePrice && (
-              <span className="text-lg text-muted-foreground line-through">
-                ${(product.comparePrice ?? 0).toFixed(2)}
-              </span>
+              <Price amount={displayPrice ?? 0} compare={product.comparePrice ?? undefined} size="2xl" />
             )}
             {discount > 0 && (
               <Badge variant="destructive" className="text-xs">

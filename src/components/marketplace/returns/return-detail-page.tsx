@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
+import { Price } from '@/components/marketplace/shared/price'
 import {
   ArrowLeft,
   RotateCcw,
@@ -878,12 +879,10 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium">{item.product?.name || 'Product'}</p>
                             <p className="text-xs text-muted-foreground">
-                              Qty: {item.quantity} × ${(item.price ?? 0).toFixed(2)}
+                              Qty: {item.quantity} × <Price amount={item.price ?? 0} size="xs" />
                             </p>
                           </div>
-                          <p className="text-sm font-semibold">
-                            ${((item.price ?? 0) * (item.quantity ?? 1)).toFixed(2)}
-                          </p>
+                          <Price amount={(item.price ?? 0) * (item.quantity ?? 1)} size="sm" />
                         </div>
                       )
                     })}
@@ -893,7 +892,7 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
 
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Order Total</span>
-                    <span className="font-bold">${(returnData.order.totalAmount ?? 0).toFixed(2)}</span>
+                    <Price amount={returnData.order.totalAmount ?? 0} size="sm" />
                   </div>
 
                   {/* Shipping info */}
@@ -938,7 +937,7 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
                   </h4>
                   <div className="rounded-lg bg-amber-50 p-3 text-center">
                     <p className="text-2xl font-bold text-amber-700">
-                      ${returnData.refundAmount.toFixed(2)}
+                      <Price amount={returnData.refundAmount} size="2xl" />
                     </p>
                     <p className="text-xs text-amber-600">Refund Amount</p>
                   </div>
@@ -1170,7 +1169,7 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
               />
               {returnData.order && (
                 <p className="text-[11px] text-muted-foreground">
-                  Order total: ${(returnData.order.totalAmount ?? 0).toFixed(2)}
+                  Order total: <Price amount={returnData.order.totalAmount ?? 0} size="xs" />
                 </p>
               )}
             </div>
@@ -1263,7 +1262,7 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
           <div className="space-y-3 py-2">
             <div className="rounded-lg bg-amber-50 border border-amber-200 p-4 text-center">
               <p className="text-2xl font-bold text-amber-700">
-                ${returnData.refundAmount?.toFixed(2) || '0.00'}
+                <Price amount={returnData.refundAmount ?? 0} size="2xl" />
               </p>
               <p className="text-sm text-amber-600">
                 via {REFUND_METHOD_LABELS[returnData.refundMethod || 'original']}
@@ -1380,7 +1379,7 @@ export function ReturnDetailPage({ returnId, isSeller }: ReturnDetailPageProps) 
                   />
                   {returnData.order && (
                     <p className="text-[11px] text-muted-foreground">
-                      Order total: ${(returnData.order.totalAmount ?? 0).toFixed(2)}
+                      Order total: <Price amount={returnData.order.totalAmount ?? 0} size="xs" />
                     </p>
                   )}
                 </div>

@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { Price } from '@/components/marketplace/shared/price'
 import type { Product } from '@/types'
 
 export function FeaturedProductsSection() {
@@ -129,9 +130,7 @@ export function FeaturedProductsSection() {
                         {product.shortDesc || product.shop?.name || 'Unknown Shop'}
                       </p>
                       <div className="flex items-center justify-between mt-3">
-                        <span className="text-lg font-bold gold-gradient-text bg-clip-text text-transparent">
-                          ${(product.price ?? 0).toFixed(2)}
-                        </span>
+                        <Price amount={product.price ?? 0} size="lg" />
                         {product.averageRating > 0 && (
                           <div className="flex items-center gap-1 text-xs text-muted-foreground">
                             <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />

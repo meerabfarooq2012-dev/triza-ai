@@ -50,6 +50,7 @@ import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { api, ApiError } from '@/lib/api'
 import { toast } from 'sonner'
 import type { ReturnRequest, ReturnStatus, RefundMethod } from '@/types'
+import { Price } from '@/components/marketplace/shared/price'
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bgColor: string }> = {
   requested: { label: 'Requested', color: 'text-amber-700', bgColor: 'bg-amber-50' },
@@ -411,7 +412,7 @@ export default function AdminReturns() {
               {selectedReturn.refundAmount != null && (
                 <div>
                   <p className="text-xs text-muted-foreground">Refund Amount</p>
-                  <p className="text-sm font-bold">${selectedReturn.refundAmount.toFixed(2)}</p>
+                  <p className="text-sm font-bold"><Price amount={selectedReturn.refundAmount} size="sm" /></p>
                 </div>
               )}
               {isEscalated(selectedReturn) && (

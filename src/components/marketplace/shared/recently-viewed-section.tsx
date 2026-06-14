@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useRecentlyViewed } from '@/hooks/use-recently-viewed'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { Price } from '@/components/marketplace/shared/price'
 import { PRODUCT_TYPE_LABELS } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import type { Product, ProductType } from '@/types'
@@ -260,9 +261,7 @@ export function RecentlyViewedSection({ hideWhenEmpty = false }: RecentlyViewedS
                         </h3>
 
                         {/* Price */}
-                        <p className="text-sm font-bold text-foreground">
-                          ${(product.price ?? 0).toFixed(2)}
-                        </p>
+                        <Price amount={product.price ?? 0} size="sm" />
 
                         {/* Shop name */}
                         {product.shop && (

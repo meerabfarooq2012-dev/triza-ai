@@ -25,6 +25,7 @@ import { FollowButton } from '@/components/marketplace/social/follow-button'
 import { StoryViewer } from '@/components/marketplace/social/story-viewer'
 import { CreateStoryDialog } from '@/components/marketplace/social/create-story-dialog'
 import { toast } from 'sonner'
+import { Price } from '@/components/marketplace/shared/price'
 import type { Activity as ActivityType, ShopStory, Shop } from '@/types'
 
 // ---------------------------------------------------------------------------
@@ -153,9 +154,7 @@ function ActivityCard({ activity }: { activity: ActivityType }) {
                   )}
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium truncate">{activity.product.name}</p>
-                    <p className="text-xs text-amber-600 font-semibold">
-                      ${activity.product.price?.toFixed(2)}
-                    </p>
+                    <Price amount={activity.product.price ?? 0} size="xs" />
                   </div>
                 </div>
               )}

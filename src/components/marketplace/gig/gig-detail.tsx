@@ -34,6 +34,7 @@ import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { api } from '@/lib/api'
 import { PLATFORM_NAME } from '@/lib/constants'
 import { RatingStars } from '@/components/marketplace/shared/rating-stars'
+import { Price } from '@/components/marketplace/shared/price'
 import { ReviewSection } from '@/components/marketplace/shared/review-section'
 import { ProductQA } from '@/components/marketplace/shared/product-qa'
 import type { Gig, GigPackage, GigFAQ, CartItem } from '@/types'
@@ -94,7 +95,7 @@ function PackageCard({
 
         {/* Price */}
         <div className="text-center mb-4">
-          <span className="text-3xl font-bold">${(pkg.price ?? 0).toFixed(2)}</span>
+          <Price amount={pkg.price ?? 0} size="xl" />
         </div>
 
         {/* Delivery */}
@@ -645,7 +646,7 @@ export default function GigDetail() {
                   <div className="bg-amber-500 p-4 text-white">
                     <div className="flex items-center justify-between">
                       <h3 className="font-bold text-lg">{selectedPkg.name}</h3>
-                      <span className="text-2xl font-bold">${(selectedPkg.price ?? 0).toFixed(2)}</span>
+                      <Price amount={selectedPkg.price ?? 0} size="lg" />
                     </div>
                     <div className="flex items-center gap-1.5 text-amber-100 text-sm mt-1">
                       <Clock size={14} />
@@ -762,7 +763,7 @@ export default function GigDetail() {
                 <p className="text-sm font-medium truncate">{selectedPkg.name}</p>
                 <div className="flex items-center gap-2">
                   <span className="text-lg font-bold text-amber-600">
-                    ${(selectedPkg.price ?? 0).toFixed(2)}
+                    <Price amount={selectedPkg.price ?? 0} size="lg" />
                   </span>
                   <span className="text-xs text-muted-foreground flex items-center gap-1">
                     <Clock size={10} />

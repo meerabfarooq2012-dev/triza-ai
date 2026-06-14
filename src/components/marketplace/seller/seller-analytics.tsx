@@ -37,6 +37,7 @@ import {
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { Price, formatPriceUtil } from '@/components/marketplace/shared/price'
 
 // ─── Dynamic imports for recharts (code-split into separate chunk) ──────────
 
@@ -584,7 +585,7 @@ function RevenueTooltip({ active, payload, label }: {
       {payload.map((entry) => (
         <p key={entry.dataKey} className="text-xs" style={{ color: entry.color || '#d97706' }}>
           {entry.dataKey === 'revenue'
-            ? `Revenue: $${entry.value.toLocaleString()}`
+            ? `Revenue: ${formatPriceUtil(entry.value)}`
             : `Orders: ${entry.value}`}
         </p>
       ))}
@@ -619,7 +620,7 @@ function ForecastTooltip({ active, payload, label }: {
     <div className="rounded-lg border bg-white dark:bg-gray-800 px-4 py-3 shadow-lg">
       <p className="mb-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{label}</p>
       <p className={`text-xs ${isForecast ? 'text-gray-500' : 'text-amber-600'}`}>
-        {isForecast ? '📈 Forecast: ' : 'Revenue: '}${payload[0].value.toLocaleString()}
+        {isForecast ? '📈 Forecast: ' : 'Revenue: '}{formatPriceUtil(payload[0].value)}
       </p>
     </div>
   )
@@ -635,22 +636,13 @@ function AOVTooltip({ active, payload, label }: {
     <div className="rounded-lg border bg-white dark:bg-gray-800 px-4 py-3 shadow-lg">
       <p className="mb-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{label}</p>
       <p className="text-xs text-amber-600">
-        Avg Order Value: ${payload[0].value.toLocaleString()}
+        Avg Order Value: {formatPriceUtil(payload[0].value)}
       </p>
     </div>
   )
 }
 
 // ─── Format helpers ─────────────────────────────────────────────────────────
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(value)
-}
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', {
@@ -772,7 +764,7 @@ function SalesHeatmap({ data }: { data: HeatmapDataPoint[] }) {
                   className={`h-3.5 w-3.5 rounded-sm cursor-pointer transition-all hover:ring-1 hover:ring-amber-400 ${
                     day.date ? getIntensity(day.revenue) : ''
                   } ${selectedDay?.date === day.date ? 'ring-2 ring-amber-500' : ''}`}
-                  title={day.date ? `${day.date}: ${formatCurrency(day.revenue)} (${day.orders} orders)` : ''}
+                  title={day.date ? `${day.date}: ${formatPriceUtil(day.revenue)} (${day.orders} orders)` : ''}
                   onClick={() => day.date && setSelectedDay(day)}
                 />
               ))}
@@ -794,7 +786,7 @@ function SalesHeatmap({ data }: { data: HeatmapDataPoint[] }) {
         {selectedDay?.date && (
           <div className="text-xs text-gray-500 dark:text-gray-400">
             <span className="font-medium text-gray-700 dark:text-gray-200">{selectedDay.date}</span>
-            {' — '}{formatCurrency(selectedDay.revenue)} · {selectedDay.orders} orders
+            {' — '}{formatPriceUtil(selectedDay.revenue)} · {selectedDay.orders} orders
           </div>
         )}
       </div>
@@ -1150,14 +1142,14 @@ export function SellerAnalytics() {
     ? (summary.completedOrders / summary.totalOrders * 100).toFixed(1)
     : null
   const avgOrderValue = summary.totalOrders > 0
-    ? formatCurrency(summary.totalRevenue / summary.totalOrders)
+    ? formatPriceUtil(summary.totalRevenue / summary.totalOrders)
     : 'N/A'
 
   // ── Stats Cards ──
   const statsCards = [
     {
       label: 'Total Revenue',
-      value: formatCurrency(summary.totalRevenue),
+      value: formatPriceUtil(summary.totalRevenue),
       icon: DollarSign,
       bgColor: 'bg-amber-50 dark:bg-amber-950/50',
       textColor: 'text-amber-600 dark:text-amber-400',
@@ -1731,7 +1723,7 @@ export function SellerAnalytics() {
                                 {item.name}
                               </p>
                               <p className="text-xs text-gray-600">
-                                {formatCurrency(item.value as number)}
+                                {formatPriceUtil(item.value as number)}
                               </p>
                             </div>
                           )
@@ -1759,7 +1751,7 @@ export function SellerAnalytics() {
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                {formatCurrency(entry.value)}
+                                {formatPriceUtil(entry.value)}
                               </span>
                               <span className="text-xs text-gray-400">({pct}%)</span>
                             </div>
@@ -1870,7 +1862,7 @@ export function SellerAnalytics() {
                             {product.totalSales}
                           </TableCell>
                           <TableCell className="text-right text-sm font-medium text-gray-900 dark:text-gray-100">
-                            {formatCurrency(product.totalRevenue)}
+                            {formatPriceUtil(product.totalRevenue)}
                           </TableCell>
                           <TableCell className="text-right">
                             <span className="inline-flex items-center gap-1 text-sm">
@@ -1953,7 +1945,7 @@ export function SellerAnalytics() {
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                          {formatCurrency(customer.totalSpent)}
+                          {formatPriceUtil(customer.totalSpent)}
                         </p>
                         <p className="text-xs text-gray-400">total spent</p>
                       </div>

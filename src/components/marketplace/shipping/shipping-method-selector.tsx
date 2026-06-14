@@ -20,6 +20,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
 import type { ShippingRate } from '@/types'
+import { Price } from '@/components/marketplace/shared/price'
 
 // ---------------------------------------------------------------------------
 // Props
@@ -272,7 +273,7 @@ export function ShippingMethodSelector({
                   {rate.freeAbove && !isFree && (
                     <p className="text-[11px] text-amber-700 mt-1.5 flex items-center gap-1">
                       <Gift className="h-3 w-3" />
-                      Free shipping on orders over Rs. {rate.freeAbove.toLocaleString()}
+                      Free shipping on orders over <Price amount={rate.freeAbove} size="xs" />
                     </p>
                   )}
                 </div>
@@ -282,12 +283,12 @@ export function ShippingMethodSelector({
                   {isFree ? (
                     <div className="flex items-center gap-1">
                       <span className="text-sm line-through text-muted-foreground">
-                        Rs. {rate.price.toLocaleString()}
+                        <Price amount={rate.price} size="xs" />
                       </span>
                       <Badge className="bg-amber-600 text-gray-900 text-[10px] px-1.5 py-0.5">FREE</Badge>
                     </div>
                   ) : (
-                    <span className="text-sm font-bold">Rs. {rate.price.toLocaleString()}</span>
+                    <Price amount={rate.price} size="sm" />
                   )}
                 </div>
               </label>
@@ -310,7 +311,7 @@ export function ShippingMethodSelector({
                 {' — '}
                 Est. delivery: {selected.estimatedDate}
                 {' — '}
-                {isFree ? 'Free shipping' : `Rs. ${selected.price.toLocaleString()}`}
+                {isFree ? 'Free shipping' : <Price amount={selected.price} size="xs" />}
               </p>
             </div>
           </motion.div>

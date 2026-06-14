@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { AlertCircle, Check, Package } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Price } from '@/components/marketplace/shared/price'
 import type { ProductVariantOption, ProductVariant } from '@/types'
 
 interface VariantSelectorProps {
@@ -227,19 +228,19 @@ export function VariantSelector({
           >
             <div className="flex items-center gap-2 text-sm">
               <span className="text-muted-foreground">Base:</span>
-              <span className="font-medium">${basePrice.toFixed(2)}</span>
+              <Price amount={basePrice} size="sm" />
               {priceAdjustment !== 0 && (
                 <>
                   <span className="text-muted-foreground">+</span>
                   <span className={priceAdjustment > 0 ? 'text-amber-600' : 'text-red-500'}>
-                    {priceAdjustment > 0 ? '+' : ''}${priceAdjustment.toFixed(2)} adjustment
+                    {priceAdjustment > 0 ? '+' : ''}<Price amount={Math.abs(priceAdjustment)} size="xs" /> adjustment
                   </span>
                 </>
               )}
             </div>
             <div className="flex items-center gap-2 text-sm font-semibold">
               <span>Total:</span>
-              <span className="text-lg text-amber-600">${effectivePrice.toFixed(2)}</span>
+              <Price amount={effectivePrice} size="lg" />
             </div>
           </motion.div>
         ) : !allOptionsSelected ? (

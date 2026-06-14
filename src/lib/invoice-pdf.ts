@@ -1,5 +1,6 @@
 import PDFDocument from 'pdfkit';
 import type { Order, OrderItem, User, Shop } from '@prisma/client';
+import { formatPriceUtil } from '@/components/marketplace/shared/price';
 
 interface InvoiceData {
   order: Order & {
@@ -84,8 +85,8 @@ export function generateInvoicePDF(data: InvoiceData): Buffer {
     doc.text(String(index + 1), 55, y);
     doc.text(item.product?.name || `Product #${item.productId.substring(0, 8)}`, 80, y, { width: 230 });
     doc.text(String(item.quantity), 320, y, { width: 50, align: 'center' });
-    doc.text(`$${item.price.toFixed(2)}`, 380, y, { width: 80, align: 'right' });
-    doc.text(`$${(item.price * item.quantity).toFixed(2)}`, 470, y, { width: 80, align: 'right' });
+    doc.text(formatPriceUtil(item.price), 380, y, { width: 80, align: 'right' });
+    doc.text(formatPriceUtil(item.price * item.quantity), 470, y, { width: 80, align: 'right' });
     y += 25;
   });
 
@@ -99,24 +100,24 @@ export function generateInvoicePDF(data: InvoiceData): Buffer {
 
   doc.fontSize(10).fill('#475569');
   doc.text('Subtotal:', 400, y, { width: 80, align: 'right' });
-  doc.text(`$${subtotal.toFixed(2)}`, 470, y, { width: 80, align: 'right' });
+  doc.text(formatPriceUtil(subtotal), 470, y, { width: 80, align: 'right' });
   y += 18;
 
   if (order.shippingCost > 0) {
     doc.text('Shipping:', 400, y, { width: 80, align: 'right' });
-    doc.text(`$${order.shippingCost.toFixed(2)}`, 470, y, { width: 80, align: 'right' });
+    doc.text(formatPriceUtil(order.shippingCost), 470, y, { width: 80, align: 'right' });
     y += 18;
   }
 
   if (order.taxAmount > 0) {
     doc.text('Tax:', 400, y, { width: 80, align: 'right' });
-    doc.text(`$${order.taxAmount.toFixed(2)}`, 470, y, { width: 80, align: 'right' });
+    doc.text(formatPriceUtil(order.taxAmount), 470, y, { width: 80, align: 'right' });
     y += 18;
   }
 
   if (order.platformFee > 0) {
     doc.text('Processing Fee:', 400, y, { width: 80, align: 'right' });
-    doc.text(`$${order.platformFee.toFixed(2)}`, 470, y, { width: 80, align: 'right' });
+    doc.text(formatPriceUtil(order.platformFee), 470, y, { width: 80, align: 'right' });
     y += 18;
   }
 
@@ -124,7 +125,7 @@ export function generateInvoicePDF(data: InvoiceData): Buffer {
   y += 5;
   doc.rect(350, y, 200, 25).fill('#1e293b');
   doc.fontSize(12).fill('#ffffff').text('Total:', 370, y + 6);
-  doc.text(`$${order.totalAmount.toFixed(2)}`, 470, y + 6, { width: 80, align: 'right' });
+  doc.text(formatPriceUtil(order.totalAmount), 470, y + 6, { width: 80, align: 'right' });
 
   // Payment method
   y += 45;

@@ -35,16 +35,17 @@ import {
 } from 'recharts'
 import { api } from '@/lib/api'
 import type { AdminStats, User, Order } from '@/types'
+import { Price, formatPriceUtil } from '@/components/marketplace/shared/price'
 
 // Empty placeholder chart data for when API data is not available
 const emptyChartData: Array<{ date: string; revenue: number }> = []
 
 interface StatCardProps {
   title: string
-  value: string | number
+  value: React.ReactNode
   icon: React.ReactNode
   change?: number
-  subtitle?: string
+  subtitle?: React.ReactNode
   accentColor?: string
 }
 
@@ -94,7 +95,7 @@ function PaymentActivityTooltip({ active, payload, label }: { active?: boolean; 
         <p className="font-medium mb-1">{label}</p>
         {payload.map((entry, idx) => (
           <p key={idx} style={{ color: entry.color }}>
-            {entry.name}: ${(entry.value ?? 0).toFixed(2)}
+            {entry.name}: <Price amount={entry.value ?? 0} size="xs" />
           </p>
         ))}
       </div>
@@ -210,7 +211,7 @@ export default function AdminDashboard() {
         >
           <StatCard
             title="Revenue"
-            value={`$${(overview?.totalRevenue ?? 0).toLocaleString()}`}
+            value={<Price amount={overview?.totalRevenue ?? 0} size="lg" compact />}
             icon={<DollarSign size={24} />}
           />
         </motion.div>
@@ -242,7 +243,7 @@ export default function AdminDashboard() {
           >
             <StatCard
               title="Total Escrow Held"
-              value={`$${(paymentStats?.totalEscrowHeld ?? 0).toFixed(2)}`}
+              value={<Price amount={paymentStats?.totalEscrowHeld ?? 0} size="lg" />}
               icon={<Shield size={22} />}
               subtitle="Funds in escrow"
               accentColor="bg-amber-50 text-amber-600"
@@ -255,7 +256,7 @@ export default function AdminDashboard() {
           >
             <StatCard
               title="Commission Earned"
-              value={`$${(paymentStats?.totalCommissionEarned ?? 0).toFixed(2)}`}
+              value={<Price amount={paymentStats?.totalCommissionEarned ?? 0} size="lg" />}
               icon={<DollarSign size={22} />}
               subtitle="10% platform fee"
               accentColor="bg-amber-50 text-amber-600"
@@ -270,7 +271,7 @@ export default function AdminDashboard() {
               title="Active Withdrawals"
               value={paymentStats?.activeWithdrawals ?? 0}
               icon={<Banknote size={22} />}
-              subtitle={`$${(paymentStats?.activeWithdrawalsAmount ?? 0).toFixed(2)} total`}
+              subtitle={<><Price amount={paymentStats?.activeWithdrawalsAmount ?? 0} size="sm" /> total</>}
               accentColor="bg-amber-50 text-amber-600"
             />
           </motion.div>
@@ -346,7 +347,7 @@ export default function AdminDashboard() {
                           border: 'none',
                           boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                         }}
-                        formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
+                        formatter={(value: number) => [formatPriceUtil(value), 'Revenue']}
                       />
                       <Line
                         type="monotone"
@@ -388,7 +389,7 @@ export default function AdminDashboard() {
                     <BarChart data={paymentActivity}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis dataKey="month" fontSize={12} tickLine={false} axisLine={false} />
-                      <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v: number) => `$${v}`} />
+                      <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v: number) => formatPriceUtil(v)} />
                       <Tooltip content={<PaymentActivityTooltip />} />
                       <Bar dataKey="payments" fill="#10b981" radius={[4, 4, 0, 0]} name="Payments" />
                       <Bar dataKey="commission" fill="#f59e0b" radius={[4, 4, 0, 0]} name="Commission" />
@@ -479,7 +480,7 @@ export default function AdminDashboard() {
                         </p>
                       </div>
                       <span className="text-sm font-semibold">
-                        ${(order.totalAmount ?? 0).toFixed(2)}
+                        <Price amount={order.totalAmount ?? 0} size="sm" />
                       </span>
                       <Badge variant="outline" className="text-xs">
                         {order.status}

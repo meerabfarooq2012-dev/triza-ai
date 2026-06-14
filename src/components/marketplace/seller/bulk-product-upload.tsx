@@ -28,6 +28,7 @@ import {
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import { Price, formatPriceUtil } from '@/components/marketplace/shared/price'
 
 interface ParsedRow {
   name: string
@@ -524,7 +525,7 @@ export function BulkProductUpload() {
                             {row.name || '—'}
                           </TableCell>
                           <TableCell className="text-sm">
-                            {row.price ? `$${parseFloat(row.price).toFixed(2)}` : '—'}
+                            {row.price ? <Price amount={parseFloat(row.price)} size="sm" /> : '—'}
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline" className="text-xs capitalize">

@@ -24,6 +24,7 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { DashboardSkeleton } from '@/components/marketplace/shared/loading-skeletons'
+import { Price } from '@/components/marketplace/shared/price'
 import {
   ORDER_STATUS_LABELS,
   ORDER_STATUS_COLORS,
@@ -245,7 +246,7 @@ export function SellerOverview() {
     },
     {
       label: 'Revenue',
-      value: `$${(stats?.totalRevenue || 0).toFixed(2)}`,
+      value: <Price amount={stats?.totalRevenue || 0} size="sm" />,
       icon: DollarSign,
       bgColor: 'bg-amber-50',
       textColor: 'text-amber-600',
@@ -635,7 +636,7 @@ export function SellerOverview() {
                             {product.name}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {product.totalSales} sales • ${(product.price ?? 0).toFixed(2)}
+                            {product.totalSales} sales • <Price amount={product.price ?? 0} size="xs" />
                           </p>
                         </div>
                       </div>

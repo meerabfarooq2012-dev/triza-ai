@@ -39,6 +39,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { Price, formatPriceUtil } from '@/components/marketplace/shared/price'
 import { toast } from 'sonner'
 import { PLATFORM_FEE_PERCENT } from '@/lib/constants'
 import type { PaymentMethod, PaymentInfo, PaymentInfoAccountDetails, Coupon, ApplyCouponResult, ShippingRate } from '@/types'
@@ -346,7 +347,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
           discountAmount: data.data.discountAmount,
           freeShipping: data.data.freeShipping || false,
         })
-        toast.success(`Coupon applied! You save $${data.data.discountAmount.toFixed(2)}${data.data.freeShipping ? ' + Free Shipping' : ''}`)
+        toast.success(`Coupon applied! You save ${formatPriceUtil(data.data.discountAmount)}${data.data.freeShipping ? ' + Free Shipping' : ''}`)
       } else {
         setCouponError(data.data?.message || data.error || 'Invalid coupon code')
         setAppliedCoupon(null)
@@ -852,7 +853,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                           </p>
                         </div>
                         <span className="text-sm font-semibold">
-                          ${((item.price ?? 0) * (item.quantity ?? 1)).toFixed(2)}
+                          <Price amount={(item.price ?? 0) * (item.quantity ?? 1)} size="sm" />
                         </span>
                       </div>
                     ))}
@@ -860,7 +861,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                     {isMultiShop && (
                       <div className="flex justify-between text-xs text-muted-foreground px-1 ml-5">
                         <span>Subtotal for {group.shopName}</span>
-                        <span className="font-medium">${group.subtotal.toFixed(2)}</span>
+                        <span className="font-medium"><Price amount={group.subtotal} size="sm" /></span>
                       </div>
                     )}
                   </div>
@@ -886,13 +887,13 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                         {appliedCoupon.coupon.type === 'percentage'
                           ? `${appliedCoupon.coupon.value}% off`
                           : appliedCoupon.coupon.type === 'fixed'
-                            ? `$${appliedCoupon.coupon.value.toFixed(2)} off`
+                            ? `${formatPriceUtil(appliedCoupon.coupon.value)} off`
                             : 'Free Shipping'}
                         {appliedCoupon.freeShipping && appliedCoupon.coupon.type !== 'free_shipping' ? ' + Free Shipping' : ''}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-bold text-amber-700">-${appliedCoupon.discountAmount.toFixed(2)}</p>
+                      <p className="text-sm font-bold text-amber-700">-<Price amount={appliedCoupon.discountAmount} size="sm" /></p>
                     </div>
                     <Button
                       variant="ghost"
@@ -945,7 +946,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span>${(cartTotal ?? 0).toFixed(2)}</span>
+                  <Price amount={cartTotal ?? 0} size="sm" />
                 </div>
                 {appliedCoupon && (
                   <div className="flex justify-between text-sm text-amber-600">
@@ -953,23 +954,23 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                       <Tag className="h-3 w-3" />
                       Coupon ({appliedCoupon.coupon.code})
                     </span>
-                    <span>-${appliedCoupon.discountAmount.toFixed(2)}</span>
+                    <span>-<Price amount={appliedCoupon.discountAmount} size="sm" /></span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Platform Fee (10%)</span>
-                  <span>${(platformFee ?? 0).toFixed(2)}</span>
+                  <Price amount={platformFee ?? 0} size="sm" />
                 </div>
                 <div className="flex justify-between text-sm text-amber-600">
                   <span>Seller Receives (90%)</span>
-                  <span>${(sellerPayout ?? 0).toFixed(2)}</span>
+                  <Price amount={sellerPayout ?? 0} size="sm" />
                 </div>
                 {taxInfo.taxRate > 0 && taxInfo.taxAmount > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">
                       {taxInfo.taxLabel} ({taxInfo.taxRate}%{taxInfo.taxInclusive ? ' incl.' : ''})
                     </span>
-                    <span>${taxInfo.taxAmount.toFixed(2)}</span>
+                    <Price amount={taxInfo.taxAmount} size="sm" />
                   </div>
                 )}
                 {hasPhysicalItems && shippingCost > 0 && (
@@ -978,7 +979,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                       <Truck className="h-3 w-3" />
                       Shipping
                     </span>
-                    <span>${shippingCost.toFixed(2)}</span>
+                    <Price amount={shippingCost} size="sm" />
                   </div>
                 )}
                 {hasPhysicalItems && shippingCost === 0 && shippingRates.length > 0 && (
@@ -993,7 +994,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 <Separator />
                 <div className="flex justify-between font-bold text-lg">
                   <span>Total</span>
-                  <span>${(effectiveCartTotal + (taxInfo.taxInclusive ? 0 : taxInfo.taxAmount) + (hasPhysicalItems ? shippingCost : 0)).toFixed(2)}</span>
+                  <Price amount={effectiveCartTotal + (taxInfo.taxInclusive ? 0 : taxInfo.taxAmount) + (hasPhysicalItems ? shippingCost : 0)} size="lg" />
                 </div>
               </div>
 
@@ -1385,7 +1386,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                     }
                   }}
                 >
-                  {hasPhysicalItems ? 'Continue to Shipping' : `Pay $${(cartTotal ?? 0).toFixed(2)}`}
+                  {hasPhysicalItems ? 'Continue to Shipping' : <>Pay <Price amount={cartTotal ?? 0} size="sm" /></>}
                 </Button>
               </div>
             </motion.div>
@@ -1611,7 +1612,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                               {isFree ? (
                                 <Badge className="bg-amber-600 text-gray-900 text-[10px] px-2 py-0.5">FREE</Badge>
                               ) : (
-                                <span className="text-sm font-bold">${rate.price.toFixed(2)}</span>
+                                <Price amount={rate.price} size="sm" />
                               )}
                             </div>
                           </label>
@@ -1640,7 +1641,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 </Button>
                 <Button className="flex-1" onClick={handlePayNow}>
                   <Globe className="h-4 w-4 mr-2" />
-                  Pay ${(effectiveCartTotal + (taxInfo.taxInclusive ? 0 : taxInfo.taxAmount) + (hasPhysicalItems ? shippingCost : 0)).toFixed(2)}
+                  <>Pay <Price amount={effectiveCartTotal + (taxInfo.taxInclusive ? 0 : taxInfo.taxAmount) + (hasPhysicalItems ? shippingCost : 0)} size="sm" /></>
                 </Button>
               </div>
             </motion.div>
@@ -1719,7 +1720,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
               <Card className="w-full p-4 bg-muted/30">
                 <div className="text-center space-y-1">
                   <p className="text-xs text-muted-foreground uppercase tracking-wider">Amount to Pay</p>
-                  <p className="text-3xl font-bold text-amber-600">${(cartTotal ?? 0).toFixed(2)}</p>
+                  <p className="text-3xl font-bold text-amber-600"><Price amount={cartTotal ?? 0} size="2xl" /></p>
                   <p className="text-xs text-muted-foreground">
                     via {paymentMethod === 'easypaisa' ? 'Easypaisa' : 'JazzCash'}
                   </p>
@@ -1809,7 +1810,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
               <Card className="w-full p-4 bg-[#FFF3E0]/50 border-[#F7931A]/30">
                 <div className="text-center space-y-1">
                   <p className="text-xs text-orange-600 uppercase tracking-wider font-medium">Amount to Send</p>
-                  <p className="text-3xl font-bold text-[#F7931A]">${(cartTotal ?? 0).toFixed(2)}</p>
+                  <p className="text-3xl font-bold text-[#F7931A]"><Price amount={cartTotal ?? 0} size="2xl" /></p>
                   <p className="text-xs text-muted-foreground">in {payCurrency.toUpperCase()}</p>
                 </div>
               </Card>
@@ -1869,15 +1870,15 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
               <div className="w-full rounded-lg bg-muted/30 p-3 text-xs space-y-1">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Order Total</span>
-                  <span className="font-medium">${(cartTotal ?? 0).toFixed(2)}</span>
+                  <span className="font-medium"><Price amount={cartTotal ?? 0} size="sm" /></span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Platform Fee (10%)</span>
-                  <span className="font-medium">${((cartTotal ?? 0) * 0.1).toFixed(2)}</span>
+                  <span className="font-medium"><Price amount={(cartTotal ?? 0) * 0.1} size="sm" /></span>
                 </div>
                 <div className="flex justify-between border-t pt-1">
                   <span className="text-muted-foreground">Seller Receives</span>
-                  <span className="font-medium text-green-600">${((cartTotal ?? 0) * 0.9).toFixed(2)}</span>
+                  <span className="font-medium text-green-600"><Price amount={(cartTotal ?? 0) * 0.9} size="sm" /></span>
                 </div>
               </div>
 
@@ -2004,7 +2005,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Amount Paid</span>
-                  <span className="font-semibold">${(cartTotal ?? 0).toFixed(2)}</span>
+                  <span className="font-semibold"><Price amount={cartTotal ?? 0} size="sm" /></span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Method</span>

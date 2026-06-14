@@ -28,6 +28,7 @@ import {
   RefreshCw,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Price } from '@/components/marketplace/shared/price'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -960,13 +961,11 @@ export default function OrderTrackingPage() {
                             {item.type}
                           </Badge>
                           <span className="text-xs text-muted-foreground">
-                            Qty: {item.quantity} × ${(item.price ?? 0).toFixed(2)}
+                            Qty: {item.quantity} × <Price amount={item.price ?? 0} size="xs" />
                           </span>
                         </div>
                       </div>
-                      <p className="font-bold text-sm">
-                        ${((item.price ?? 0) * (item.quantity ?? 1)).toFixed(2)}
-                      </p>
+                      <Price amount={(item.price ?? 0) * (item.quantity ?? 1)} size="sm" />
                     </div>
                   )
                 })}
@@ -977,30 +976,30 @@ export default function OrderTrackingPage() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span>${(order.totalAmount ?? 0).toFixed(2)}</span>
+                  <Price amount={order.totalAmount ?? 0} size="sm" />
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Platform Fee</span>
-                  <span>${(order.platformFee ?? 0).toFixed(2)}</span>
+                  <Price amount={order.platformFee ?? 0} size="sm" />
                 </div>
                 {(order.taxAmount ?? 0) > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">
                       Tax ({order.taxRate}%)
                     </span>
-                    <span>${(order.taxAmount ?? 0).toFixed(2)}</span>
+                    <Price amount={order.taxAmount ?? 0} size="sm" />
                   </div>
                 )}
                 {(order.shippingCost ?? 0) > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Shipping</span>
-                    <span>${(order.shippingCost ?? 0).toFixed(2)}</span>
+                    <Price amount={order.shippingCost ?? 0} size="sm" />
                   </div>
                 )}
                 <Separator />
                 <div className="flex justify-between font-bold">
                   <span>Total</span>
-                  <span className="text-lg">${((order.totalAmount ?? 0) + (order.platformFee ?? 0) + (order.taxAmount ?? 0) + (order.shippingCost ?? 0)).toFixed(2)}</span>
+                  <Price amount={(order.totalAmount ?? 0) + (order.platformFee ?? 0) + (order.taxAmount ?? 0) + (order.shippingCost ?? 0)} size="lg" />
                 </div>
               </div>
             </CardContent>

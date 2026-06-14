@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useComparisonStore } from '@/store/use-comparison-store'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { Price } from '@/components/marketplace/shared/price'
 import { cn } from '@/lib/utils'
 import type { ProductType } from '@/types'
 
@@ -146,7 +147,7 @@ export function CompareBar() {
                           </div>
                         </TooltipTrigger>
                         <TooltipContent side="top" className="text-xs">
-                          {product.name} — ${product.price.toFixed(2)}
+                          {product.name} — <Price amount={product.price} size="xs" />
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>

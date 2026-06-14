@@ -14,6 +14,7 @@ import {
   Loader2,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
+import { Price } from '@/components/marketplace/shared/price'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -286,12 +287,10 @@ export function SellerOrders() {
                                 {item.product?.name || 'Product'}
                               </p>
                               <p className="text-xs text-gray-500">
-                                Qty: {item.quantity} × ${(item.price ?? 0).toFixed(2)}
+                                Qty: {item.quantity} × <Price amount={item.price ?? 0} size="xs" />
                               </p>
                             </div>
-                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                              ${((item.price ?? 0) * (item.quantity ?? 1)).toFixed(2)}
-                            </p>
+                            <Price amount={(item.price ?? 0) * (item.quantity ?? 1)} size="sm" />
                           </div>
                         )
                       })}
@@ -302,9 +301,7 @@ export function SellerOrders() {
                       <div className="flex items-center gap-4 text-sm">
                         <span className="text-gray-500">
                           Total:{' '}
-                          <span className="font-bold text-gray-900 dark:text-gray-100">
-                            ${(order.totalAmount ?? 0).toFixed(2)}
-                          </span>
+                          <Price amount={order.totalAmount ?? 0} size="sm" />
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
@@ -451,12 +448,10 @@ export function SellerOrders() {
                         {item.product?.name || 'Product'}
                       </p>
                       <p className="text-xs text-gray-500">
-                        Qty: {item.quantity} × ${(item.price ?? 0).toFixed(2)}
+                        Qty: {item.quantity} × <Price amount={item.price ?? 0} size="xs" />
                       </p>
                     </div>
-                    <p className="text-sm font-semibold">
-                      ${((item.price ?? 0) * (item.quantity ?? 1)).toFixed(2)}
-                    </p>
+                    <Price amount={(item.price ?? 0) * (item.quantity ?? 1)} size="sm" />
                   </div>
                 ))}
               </div>

@@ -15,6 +15,7 @@ import {
   Package,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
+import { Price } from '@/components/marketplace/shared/price'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -448,12 +449,7 @@ export function SellerFlashSales() {
 
                   {/* Prices */}
                   <div className="flex items-baseline gap-2">
-                    <span className="text-lg font-bold text-amber-600">
-                      ${sale.salePrice.toFixed(2)}
-                    </span>
-                    <span className="text-sm text-muted-foreground line-through">
-                      ${sale.originalPrice.toFixed(2)}
-                    </span>
+                    <Price amount={sale.salePrice} compare={sale.originalPrice} size="lg" />
                   </div>
 
                   {/* Countdown / Date */}
@@ -564,7 +560,7 @@ export function SellerFlashSales() {
                   <SelectContent>
                     {products.map((p) => (
                       <SelectItem key={p.id} value={p.id}>
-                        {p.name} — ${p.price.toFixed(2)}
+                        {p.name} — <Price amount={p.price} size="sm" />
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -572,7 +568,7 @@ export function SellerFlashSales() {
               )}
               {selectedProduct && !editingSale && (
                 <p className="text-xs text-muted-foreground">
-                  Original price: ${selectedProduct.price.toFixed(2)}
+                  Original price: <Price amount={selectedProduct.price} size="sm" />
                 </p>
               )}
             </div>

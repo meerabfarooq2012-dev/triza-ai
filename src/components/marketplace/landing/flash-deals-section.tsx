@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { Price } from '@/components/marketplace/shared/price'
 import type { FlashSale } from '@/types'
 
 function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
@@ -222,12 +223,7 @@ export function FlashDealsSection() {
 
                   {/* Prices */}
                   <div className="flex items-baseline gap-2">
-                    <span className="text-xl font-bold text-amber-600">
-                      ${deal.salePrice.toFixed(2)}
-                    </span>
-                    <span className="text-sm text-muted-foreground line-through">
-                      ${deal.originalPrice.toFixed(2)}
-                    </span>
+                    <Price amount={deal.salePrice} compare={deal.originalPrice} size="xl" />
                   </div>
 
                   {/* Countdown */}

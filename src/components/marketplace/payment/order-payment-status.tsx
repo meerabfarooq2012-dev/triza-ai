@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { Price } from '@/components/marketplace/shared/price'
 import { Input } from '@/components/ui/input'
 import {
   AlertDialog,
@@ -208,15 +209,15 @@ export function OrderPaymentStatus({
             <div className="rounded-lg bg-muted/30 p-3 space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Total Paid</span>
-                <span className="font-semibold">${(totalAmount ?? 0).toFixed(2)}</span>
+                <span className="font-semibold"><Price amount={totalAmount ?? 0} size="sm" /></span>
               </div>
               <div className="flex justify-between text-sm text-amber-600">
                 <span>Platform Fee (10%)</span>
-                <span>-${(platformFee ?? 0).toFixed(2)}</span>
+                <span>-<Price amount={platformFee ?? 0} size="sm" /></span>
               </div>
               <div className="flex justify-between text-sm text-amber-600">
                 <span>Seller Payout (90%)</span>
-                <span>+${(sellerPayout ?? 0).toFixed(2)}</span>
+                <span>+<Price amount={sellerPayout ?? 0} size="sm" /></span>
               </div>
             </div>
           </div>
@@ -295,12 +296,12 @@ export function OrderPaymentStatus({
                 <AlertDialogDescription className="space-y-3 text-left">
                   <p>
                     By confirming delivery, you authorize Thiora to release the payment of{' '}
-                    <span className="font-semibold text-foreground">${(totalAmount ?? 0).toFixed(2)}</span>{' '}
+                    <span className="font-semibold text-foreground"><Price amount={totalAmount ?? 0} size="sm" /></span>{' '}
                     to the seller. This action <span className="font-semibold text-foreground">cannot be undone</span>.
                   </p>
                   <p>
                     The seller will receive{' '}
-                    <span className="font-semibold text-amber-600">${(sellerPayout ?? 0).toFixed(2)}</span>{' '}
+                    <span className="font-semibold text-amber-600"><Price amount={sellerPayout ?? 0} size="sm" /></span>{' '}
                     (after 10% platform fee).
                   </p>
                   <div className="pt-2">

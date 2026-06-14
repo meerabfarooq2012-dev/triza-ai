@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
+import { Price } from '@/components/marketplace/shared/price'
 
 interface SuggestionProduct {
   id: string
@@ -215,7 +216,7 @@ export function SearchAutocomplete({
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{product.name}</p>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span className="font-semibold text-amber-600">${product.price.toFixed(2)}</span>
+                          <Price amount={product.price} size="xs" className="text-amber-600" />
                           {product.shop?.name && (
                             <>
                               <span className="text-muted-foreground/40">·</span>

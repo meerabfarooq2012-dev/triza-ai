@@ -27,6 +27,7 @@ import { useComparisonStore } from '@/store/use-comparison-store'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { PRODUCT_TYPE_LABELS } from '@/lib/constants'
 import { cn } from '@/lib/utils'
+import { Price } from '@/components/marketplace/shared/price'
 import type { Product, ProductType } from '@/types'
 
 interface CompareProduct {
@@ -249,25 +250,16 @@ export function ComparisonView() {
       render: (p) => (
         <div className="text-center">
           {p.hasVariants && p.variantPriceMin != null ? (
-            <div>
-              <span className="text-lg font-bold">
-                ${p.variantPriceMin.toFixed(2)}
-              </span>
+            <div className="flex items-baseline justify-center gap-1">
+              <Price amount={p.variantPriceMin} size="lg" />
               {p.variantPriceMax != null && p.variantPriceMax !== p.variantPriceMin && (
                 <span className="text-sm text-muted-foreground">
-                  {' '}&ndash; ${p.variantPriceMax.toFixed(2)}
+                  {' '}&ndash; <Price amount={p.variantPriceMax} size="sm" />
                 </span>
               )}
             </div>
           ) : (
-            <div>
-              <span className="text-lg font-bold">${p.price.toFixed(2)}</span>
-              {p.comparePrice && p.comparePrice > p.price && (
-                <span className="text-sm text-muted-foreground line-through ml-1.5">
-                  ${p.comparePrice.toFixed(2)}
-                </span>
-              )}
-            </div>
+            <Price amount={p.price} compare={p.comparePrice ?? undefined} size="lg" />
           )}
           {(() => {
             const effectivePrice = p.hasVariants && p.variantPriceMin != null ? p.variantPriceMin : p.price

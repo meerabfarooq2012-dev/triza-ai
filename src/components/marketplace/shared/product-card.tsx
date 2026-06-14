@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { RatingStars } from '@/components/marketplace/shared/rating-stars'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { Price } from '@/components/marketplace/shared/price'
 import { useComparisonStore } from '@/store/use-comparison-store'
 import { useRecentlyViewed } from '@/hooks/use-recently-viewed'
 import { api } from '@/lib/api'
@@ -178,26 +179,13 @@ export function ProductCard({ product, className }: ProductCardProps) {
           <div className="flex items-baseline gap-2 pt-0.5">
             {product.hasVariants && product.variantPriceMin != null ? (
               <>
-                <span className="text-lg font-bold text-foreground">
-                  From ${(product.variantPriceMin ?? 0).toFixed(2)}
-                </span>
+                <Price amount={product.variantPriceMin ?? 0} prefix="From" size="md" />
                 {product.variantPriceMax != null && product.variantPriceMax !== product.variantPriceMin && (
-                  <span className="text-xs text-muted-foreground">
-                    – ${(product.variantPriceMax ?? 0).toFixed(2)}
-                  </span>
+                  <Price amount={product.variantPriceMax ?? 0} size="sm" />
                 )}
               </>
             ) : (
-              <>
-                <span className="text-lg font-bold text-foreground">
-                  ${(product.price ?? 0).toFixed(2)}
-                </span>
-                {product.comparePrice && product.comparePrice > product.price && (
-                  <span className="text-xs text-muted-foreground line-through">
-                    ${(product.comparePrice ?? 0).toFixed(2)}
-                  </span>
-                )}
-              </>
+              <Price amount={product.price ?? 0} compare={product.comparePrice ?? undefined} size="md" />
             )}
             {product.hasVariants && (
               <Badge variant="outline" className="text-[10px] gap-0.5 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800">

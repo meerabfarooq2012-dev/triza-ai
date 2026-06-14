@@ -32,6 +32,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { useChatSocket } from '@/hooks/use-chat-socket'
+import { Price } from '@/components/marketplace/shared/price'
 import type { Conversation, Message, User } from '@/types'
 
 // =============================================================================
@@ -1067,14 +1068,16 @@ export function MessagesPage() {
                           <p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">
                             {selectedConversation.product?.name || selectedConversation.gig?.title}
                           </p>
-                          <p className="text-xs text-amber-600 font-semibold mt-0.5">
-                            $
-                            {selectedConversation.product
-                              ? (selectedConversation.product.price ?? 0).toFixed(2)
-                              : parseGigBasePrice(selectedConversation.gig?.packages ?? null)
-                                ? `From $${(parseGigBasePrice(selectedConversation.gig?.packages ?? null) ?? 0).toFixed(2)}`
-                                : 'Price varies'}
-                          </p>
+                          <Price
+                            amount={selectedConversation.product
+                              ? (selectedConversation.product.price ?? 0)
+                              : (parseGigBasePrice(selectedConversation.gig?.packages ?? null) ?? 0)}
+                            prefix={selectedConversation.product ? undefined : (parseGigBasePrice(selectedConversation.gig?.packages ?? null) ? 'From' : undefined)}
+                            size="xs"
+                          />
+                          {!selectedConversation.product && !parseGigBasePrice(selectedConversation.gig?.packages ?? null) && (
+                            <span className="text-xs text-amber-600 font-semibold">Price varies</span>
+                          )}
                         </div>
 
                         {/* View Link */}
@@ -1429,13 +1432,16 @@ export function MessagesPage() {
                     <h4 className="font-semibold text-gray-900 dark:text-gray-100 text-sm line-clamp-2">
                       {selectedConversation.product?.name || selectedConversation.gig?.title}
                     </h4>
-                    <p className="text-lg font-bold text-amber-600 mt-1">
-                      {selectedConversation.product
-                        ? `$${(selectedConversation.product.price ?? 0).toFixed(2)}`
-                        : parseGigBasePrice(selectedConversation.gig?.packages ?? null)
-                          ? `From $${(parseGigBasePrice(selectedConversation.gig?.packages ?? null) ?? 0).toFixed(2)}`
-                          : 'Price varies'}
-                    </p>
+                    <Price
+                      amount={selectedConversation.product
+                        ? (selectedConversation.product.price ?? 0)
+                        : (parseGigBasePrice(selectedConversation.gig?.packages ?? null) ?? 0)}
+                      prefix={selectedConversation.product ? undefined : (parseGigBasePrice(selectedConversation.gig?.packages ?? null) ? 'From' : undefined)}
+                      size="lg"
+                    />
+                    {!selectedConversation.product && !parseGigBasePrice(selectedConversation.gig?.packages ?? null) && (
+                      <span className="text-lg font-bold text-amber-600 mt-1">Price varies</span>
+                    )}
                   </div>
 
                   <Separator />

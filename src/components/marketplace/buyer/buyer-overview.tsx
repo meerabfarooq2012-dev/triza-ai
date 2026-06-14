@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { DashboardSkeleton } from '@/components/marketplace/shared/loading-skeletons'
+import { Price } from '@/components/marketplace/shared/price'
 import { RecentlyViewedSection } from '@/components/marketplace/shared/recently-viewed-section'
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/lib/constants'
 import type { Order, BuyerDashboardStats } from '@/types'
@@ -107,7 +108,7 @@ export function BuyerOverview() {
     },
     {
       label: 'Total Spent',
-      value: `$${(stats?.totalSpent || 0).toFixed(2)}`,
+      value: <Price amount={stats?.totalSpent || 0} size="sm" />,
       icon: DollarSign,
       color: 'from-amber-500 to-amber-600',
       bgColor: 'bg-amber-50',

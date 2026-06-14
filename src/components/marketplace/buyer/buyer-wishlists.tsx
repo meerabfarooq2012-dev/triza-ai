@@ -44,6 +44,7 @@ import {
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import { Price } from '@/components/marketplace/shared/price'
 import type { Wishlist, WishlistItem, Product } from '@/types'
 
 function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
@@ -440,9 +441,7 @@ export function BuyerWishlists() {
                           <p className="text-xs text-gray-500 truncate">by {product.shop.name}</p>
                         )}
                         <div className="flex items-center justify-between pt-1">
-                          <span className="text-lg font-bold gold-gradient-text bg-clip-text text-transparent">
-                            ${(product.price ?? 0).toFixed(2)}
-                          </span>
+                          <Price amount={product.price ?? 0} size="lg" />
                           <Button
                             size="sm"
                             variant="outline"
@@ -643,7 +642,7 @@ export function BuyerWishlists() {
                           <div className="mt-2 space-y-0.5">
                             {previewProducts.slice(0, 3).map((product, i) => (
                               <p key={i} className="text-xs text-gray-600 truncate">
-                                {product.name} — <span className="font-semibold text-gray-900 dark:text-gray-100">${(product.price ?? 0).toFixed(2)}</span>
+                                {product.name} — <Price amount={product.price ?? 0} size="xs" />
                               </p>
                             ))}
                             {totalItems > 3 && (

@@ -23,6 +23,7 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Price, formatPriceUtil } from '@/components/marketplace/shared/price'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -165,7 +166,7 @@ function formatValue(coupon: Coupon) {
     case 'percentage':
       return `${coupon.value}% OFF`
     case 'fixed':
-      return `$${coupon.value.toFixed(2)} OFF`
+      return `${formatPriceUtil(coupon.value)} OFF`
     case 'free_shipping':
       return 'FREE SHIPPING'
     default:
@@ -555,10 +556,10 @@ export function SellerCoupons() {
                           {/* Details grid */}
                           <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-gray-500">
                             {coupon.minOrderAmount > 0 && (
-                              <span>Min. order: ${coupon.minOrderAmount.toFixed(2)}</span>
+                              <span>Min. order: <Price amount={coupon.minOrderAmount} size="xs" /></span>
                             )}
                             {coupon.maxDiscount && coupon.type === 'percentage' && (
-                              <span>Max discount: ${coupon.maxDiscount.toFixed(2)}</span>
+                              <span>Max discount: <Price amount={coupon.maxDiscount} size="xs" /></span>
                             )}
                             <span>
                               <Calendar className="mr-0.5 inline h-3 w-3" />

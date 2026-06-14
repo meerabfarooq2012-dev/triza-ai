@@ -26,6 +26,7 @@ import {
   Layers,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
+import { Price } from '@/components/marketplace/shared/price'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -945,16 +946,7 @@ export function SellerProducts() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <div>
-                            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                              ${(product.price ?? 0).toFixed(2)}
-                            </span>
-                            {product.comparePrice && (
-                              <span className="ml-1 text-xs text-gray-400 line-through">
-                                ${(product.comparePrice ?? 0).toFixed(2)}
-                              </span>
-                            )}
-                          </div>
+                          <Price amount={product.price ?? 0} compare={product.comparePrice ?? undefined} size="sm" />
                         </TableCell>
                         <TableCell>
                           <span className="text-sm text-gray-600">
@@ -1085,9 +1077,7 @@ export function SellerProducts() {
                               )}
                             </div>
                             <div className="mt-2 flex items-center justify-between">
-                              <span className="text-sm font-bold text-amber-600">
-                                ${(product.price ?? 0).toFixed(2)}
-                              </span>
+                              <Price amount={product.price ?? 0} size="sm" className="text-amber-600" />
                               <div className="flex items-center gap-1">
                                 <Button
                                   variant="ghost"

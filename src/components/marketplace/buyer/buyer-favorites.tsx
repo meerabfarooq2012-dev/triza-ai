@@ -34,6 +34,7 @@ import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { api } from '@/lib/api'
 import { PRODUCT_TYPE_LABELS } from '@/lib/constants'
 import { cn } from '@/lib/utils'
+import { Price } from '@/components/marketplace/shared/price'
 import type { Favorite, Product, ProductType } from '@/types'
 
 type SortOption = 'recent' | 'price_low' | 'price_high' | 'name_az'
@@ -486,17 +487,7 @@ export function BuyerFavorites() {
 
                       {/* Price + Stock + Cart */}
                       <div className="flex items-center justify-between pt-1">
-                        <div className="flex items-baseline gap-1.5">
-                          <span className="text-lg font-bold gold-gradient-text bg-clip-text text-transparent">
-                            ${(product.price ?? 0).toFixed(2)}
-                          </span>
-                          {product.comparePrice &&
-                            product.comparePrice > product.price && (
-                              <span className="text-xs text-gray-400 line-through">
-                                ${(product.comparePrice ?? 0).toFixed(2)}
-                              </span>
-                            )}
-                        </div>
+                        <Price amount={product.price ?? 0} compare={product.comparePrice ?? undefined} size="lg" />
                       </div>
 
                       {/* Stock status + Added date + Cart button */}

@@ -26,6 +26,7 @@ import {
   Loader2,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
+import { Price } from '@/components/marketplace/shared/price'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -848,9 +849,7 @@ export function SellerGigs() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                            ${(startingPrice ?? 0).toFixed(2)}
-                          </span>
+                          <Price amount={startingPrice ?? 0} size="sm" />
                         </TableCell>
                         <TableCell>
                           <span className="text-sm text-gray-600">
@@ -977,9 +976,7 @@ export function SellerGigs() {
                             </div>
                             <div className="mt-2 flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <span className="text-sm font-bold text-amber-600">
-                                  ${(startingPrice ?? 0).toFixed(2)}
-                                </span>
+                                <Price amount={startingPrice ?? 0} size="sm" className="text-amber-600" />
                                 <div className="flex items-center gap-0.5">
                                   <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
                                   <span className="text-xs text-gray-500">

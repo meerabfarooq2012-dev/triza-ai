@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/select'
 import { toast } from 'sonner'
 import { useUpload } from '@/hooks/use-upload'
+import { Price } from '@/components/marketplace/shared/price'
 
 interface CreateStoryDialogProps {
   shopId: string
@@ -352,9 +353,7 @@ export function CreateStoryDialog({
                             <span className="truncate max-w-[180px]">
                               {product.name}
                             </span>
-                            <span className="text-muted-foreground">
-                              ${product.price}
-                            </span>
+                            <Price amount={product.price} size="xs" />
                           </div>
                         </SelectItem>
                       )

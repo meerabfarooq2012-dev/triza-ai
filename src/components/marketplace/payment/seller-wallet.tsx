@@ -53,6 +53,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { Price, formatPriceUtil } from '@/components/marketplace/shared/price'
 import { WalletSkeleton } from '@/components/marketplace/shared/loading-skeletons'
 import { EmptyState } from '@/components/marketplace/shared/empty-state'
 import { toast } from 'sonner'
@@ -144,7 +145,7 @@ function EarningsChartTooltip({ active, payload, label }: { active?: boolean; pa
     return (
       <div className="rounded-lg border bg-background p-2 shadow-md">
         <p className="text-xs font-medium text-muted-foreground">{label}</p>
-        <p className="text-sm font-bold text-amber-600">${(payload[0].value ?? 0).toFixed(2)}</p>
+        <Price amount={payload[0].value ?? 0} size="sm" />
       </div>
     )
   }
@@ -376,7 +377,7 @@ export function SellerWallet() {
   const statCards = [
     {
       label: 'Available Balance',
-      value: `$${(wallet?.balance || 0).toFixed(2)}`,
+      value: <Price amount={wallet?.balance || 0} size="sm" />,
       icon: WalletIcon,
       bgColor: 'bg-amber-50',
       textColor: 'text-amber-600',
@@ -384,7 +385,7 @@ export function SellerWallet() {
     },
     {
       label: 'Pending (Escrow)',
-      value: `$${(wallet?.pendingBalance || 0).toFixed(2)}`,
+      value: <Price amount={wallet?.pendingBalance || 0} size="sm" />,
       icon: Clock,
       bgColor: 'bg-amber-50',
       textColor: 'text-amber-600',
@@ -392,7 +393,7 @@ export function SellerWallet() {
     },
     {
       label: 'Lifetime Earnings',
-      value: `$${(wallet?.totalEarnings || 0).toFixed(2)}`,
+      value: <Price amount={wallet?.totalEarnings || 0} size="sm" />,
       icon: TrendingUp,
       bgColor: 'bg-amber-50',
       textColor: 'text-amber-600',
@@ -400,7 +401,7 @@ export function SellerWallet() {
     },
     {
       label: 'Total Withdrawn',
-      value: `$${(wallet?.totalWithdrawn || 0).toFixed(2)}`,
+      value: <Price amount={wallet?.totalWithdrawn || 0} size="sm" />,
       icon: ArrowDownCircle,
       bgColor: 'bg-gray-50',
       textColor: 'text-gray-600',
@@ -576,10 +577,10 @@ export function SellerWallet() {
                                 isCredit ? 'text-amber-600' : 'text-red-600'
                               }`}
                             >
-                              {isCredit ? '+' : '-'}${(Math.abs(tx.amount ?? 0)).toFixed(2)}
+                              {isCredit ? '+' : '-'}<Price amount={Math.abs(tx.amount ?? 0)} size="sm" />
                             </TableCell>
                             <TableCell className="text-sm text-right">
-                              ${(tx.balance ?? 0).toFixed(2)}
+                              <Price amount={tx.balance ?? 0} size="sm" />
                             </TableCell>
                             <TableCell>
                               <Badge
@@ -728,7 +729,7 @@ export function SellerWallet() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Available: ${(availableBalance ?? 0).toFixed(2)}
+                  Available: <Price amount={availableBalance ?? 0} size="xs" />
                 </p>
                 {/* Quick Amount Buttons */}
                 <div className="flex flex-wrap gap-1.5 mt-2">
@@ -922,7 +923,7 @@ export function SellerWallet() {
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-sm font-medium">
-                              ${(w.amount ?? 0).toFixed(2)}
+                              <Price amount={w.amount ?? 0} size="sm" />
                             </p>
                             <p className="text-xs text-muted-foreground capitalize">
                               via {w.method.replace('_', ' ')}
@@ -1043,13 +1044,13 @@ export function SellerWallet() {
                             {new Date(w.createdAt).toLocaleDateString()}
                           </TableCell>
                           <TableCell className="text-sm font-medium text-right">
-                            ${(w.amount ?? 0).toFixed(2)}
+                            <Price amount={w.amount ?? 0} size="sm" />
                           </TableCell>
                           <TableCell className="text-xs text-right text-muted-foreground">
-                            ${(w.fee ?? 0).toFixed(2)}
+                            <Price amount={w.fee ?? 0} size="xs" />
                           </TableCell>
                           <TableCell className="text-sm text-right text-amber-600">
-                            ${(w.netAmount ?? 0).toFixed(2)}
+                            <Price amount={w.netAmount ?? 0} size="sm" />
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize">

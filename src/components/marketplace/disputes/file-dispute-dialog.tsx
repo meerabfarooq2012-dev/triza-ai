@@ -18,14 +18,8 @@ import {
   File,
   Flag,
 } from 'lucide-react'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
+import { Price, formatPriceUtil } from '@/components/marketplace/shared/price'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
@@ -312,7 +306,7 @@ export function FileDisputeDialog({
                       <SelectItem key={order.id} value={order.id}>
                         <span className="flex items-center gap-2">
                           <Package className="h-3.5 w-3.5" />
-                          #{order.id.slice(-8)} — ${(order.totalAmount ?? 0).toFixed(2)}
+                          #{order.id.slice(-8)} — <Price amount={order.totalAmount ?? 0} size="sm" />
                         </span>
                       </SelectItem>
                     ))

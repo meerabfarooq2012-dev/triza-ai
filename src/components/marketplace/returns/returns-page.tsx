@@ -25,6 +25,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { Price } from '@/components/marketplace/shared/price'
 import { toast } from 'sonner'
 import { RequestReturnDialog } from './request-return-dialog'
 import type { ReturnRequest, ReturnStatus } from '@/types'
@@ -381,7 +382,7 @@ export function ReturnsPage({ userId, isSeller, shopId }: ReturnsPageProps) {
                                 {returnItem.refundAmount != null && (
                                   <span className="text-xs font-semibold text-amber-700 flex items-center gap-0.5">
                                     <DollarSign className="h-3 w-3" />
-                                    {returnItem.refundAmount.toFixed(2)}
+                                    <Price amount={returnItem.refundAmount} size="xs" />
                                   </span>
                                 )}
                               </div>
