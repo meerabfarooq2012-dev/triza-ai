@@ -1,33 +1,39 @@
 // =============================================================================
 // Thiora - Web Push Notification Helper
 // Configures web-push with VAPID keys and provides send/broadcast utilities
+// Uses vapid-keys.ts for key management (env vars > auto-generated)
 // =============================================================================
 
 import webpush from 'web-push'
 import { db } from '@/lib/db'
+import { getVapidKeys, areVapidKeysAvailable } from '@/lib/vapid-keys'
 
 // ----- VAPID Configuration -----
 
 let _vapidConfigured = false
+let _vapidConfigFailed = false
 
 function configureVapid(): boolean {
   if (_vapidConfigured) return true
-
-  const publicKey = process.env.VAPID_PUBLIC_KEY
-  const privateKey = process.env.VAPID_PRIVATE_KEY
-  const subject = process.env.VAPID_SUBJECT || 'https://thiora.vercel.app'
-
-  if (!publicKey || !privateKey) {
-    console.warn('[web-push] VAPID keys not configured. Push notifications will not work.')
-    return false
-  }
+  if (_vapidConfigFailed) return false
 
   try {
-    webpush.setVapidDetails(subject, publicKey, privateKey)
+    if (!areVapidKeysAvailable()) {
+      console.warn('[web-push] VAPID keys not available. Push notifications will not work.')
+      _vapidConfigFailed = true
+      return false
+    }
+
+    const keys = getVapidKeys()
+    const subject = process.env.VAPID_SUBJECT || 'https://thiora.vercel.app'
+
+    webpush.setVapidDetails(subject, keys.publicKey, keys.privateKey)
     _vapidConfigured = true
+    console.log('[web-push] VAPID configured successfully')
     return true
   } catch (error) {
     console.error('[web-push] Failed to configure VAPID:', error)
+    _vapidConfigFailed = true
     return false
   }
 }
@@ -36,14 +42,20 @@ function configureVapid(): boolean {
  * Check if web push is properly configured with VAPID keys
  */
 export function isWebPushConfigured(): boolean {
-  return !!(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY)
+  return areVapidKeysAvailable()
 }
 
 /**
  * Get the VAPID public key (safe for client-side use)
+ * Uses vapid-keys.ts which falls back to auto-generated keys
  */
 export function getVapidPublicKey(): string | null {
-  return process.env.VAPID_PUBLIC_KEY || null
+  try {
+    if (!areVapidKeysAvailable()) return null
+    return getVapidKeys().publicKey
+  } catch {
+    return null
+  }
 }
 
 // ----- Push Notification Payload -----

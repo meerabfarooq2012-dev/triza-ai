@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/badge'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { usePwa } from '@/components/providers/pwa-provider'
 import { RecentlyViewedSection } from '@/components/marketplace/shared/recently-viewed-section'
+import { PushNotificationPrompt } from '@/components/marketplace/shared/push-notification-prompt'
 
 // ---------------------------------------------------------------------------
 // Quick category chips — horizontal scrollable
@@ -138,6 +139,9 @@ export function MobileAppHome() {
           <span>Search services, products...</span>
         </button>
       </motion.div>
+
+      {/* ── Push Notification Prompt ── */}
+      <PushNotificationPrompt />
 
       {/* ── Quick Category Chips ── */}
       <motion.div

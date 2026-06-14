@@ -42,7 +42,7 @@ function getInitialPushState(): PushNotificationsState {
 }
 
 export function usePushNotifications() {
-  const { currentUser } = useMarketplaceStore()
+  const { currentUser, authToken } = useMarketplaceStore()
   const [state, setState] = useState<PushNotificationsState>(getInitialPushState)
 
   /**
@@ -117,7 +117,7 @@ export function usePushNotifications() {
         setState(prev => ({
           ...prev,
           isLoading: false,
-          error: 'Push notifications are not configured on the server',
+          error: keyData.error || 'Push notifications are not configured on the server',
         }))
         return false
       }
@@ -131,11 +131,18 @@ export function usePushNotifications() {
         applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
       })
 
-      // Step 4: Send subscription to backend
+      // Step 4: Send subscription to backend with auth token
       const subscriptionJson = subscription.toJSON()
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      }
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`
+      }
+
       const subscribeResponse = await fetch('/api/push/subscribe', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           endpoint: subscriptionJson.endpoint,
           keys: {
@@ -173,7 +180,7 @@ export function usePushNotifications() {
       }))
       return false
     }
-  }, [currentUser])
+  }, [currentUser, authToken])
 
   /**
    * Unsubscribe from push notifications
@@ -195,10 +202,17 @@ export function usePushNotifications() {
         // Unsubscribe from push service
         await subscription.unsubscribe()
 
-        // Remove from backend
+        // Remove from backend with auth token
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        }
+        if (authToken) {
+          headers['Authorization'] = `Bearer ${authToken}`
+        }
+
         await fetch('/api/push/unsubscribe', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({ endpoint: subscription.endpoint }),
         })
       }
@@ -220,7 +234,7 @@ export function usePushNotifications() {
       }))
       return false
     }
-  }, [])
+  }, [authToken])
 
   /**
    * Send a test push notification
@@ -229,16 +243,23 @@ export function usePushNotifications() {
     if (!state.isSubscribed || !currentUser) return false
 
     try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      }
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`
+      }
+
       const response = await fetch('/api/push/test', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
       })
       const data = await response.json()
       return data.success
     } catch {
       return false
     }
-  }, [state.isSubscribed, currentUser])
+  }, [state.isSubscribed, currentUser, authToken])
 
   return {
     ...state,

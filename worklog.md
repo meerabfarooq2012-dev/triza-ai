@@ -319,3 +319,28 @@ Stage Summary:
 - No hero banner, no about section, no CTA — pure app experience
 - Desktop users still see the full marketing landing page
 - Footer hidden on mobile for cleaner app feel
+---
+Task ID: 1
+Agent: Main Agent
+Task: Configure push notifications for the Thiora PWA server
+
+Work Log:
+- Discovered PushSubscription model was missing from Prisma schema - added it with userId, endpoint, p256dh, auth fields and unique constraint on userId+endpoint
+- Found web-push.ts was only checking env vars for VAPID keys, ignoring auto-generated keys from vapid-keys.ts - fixed to use getVapidKeys() from vapid-keys.ts as fallback
+- Added VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY to .env file (using the auto-generated keys from .vapid-keys.json)
+- Fixed /api/push/vapid-key route to use getVapidPublicKey() from vapid-keys.ts instead of web-push.ts
+- Created /api/push/test endpoint for sending test push notifications
+- Updated use-push-notifications hook to include auth token in API requests
+- Created PushNotificationPrompt component (banner shown on mobile home screen when user is authenticated but not subscribed to push)
+- Added PushNotificationPrompt to MobileAppHome component
+- Updated PwaProvider with full push notification support methods (subscribeToPush, unsubscribeFromPush, etc.)
+- Ran db:push successfully to create PushSubscription table
+- Verified VAPID key API returns public key correctly (was previously returning 503)
+
+Stage Summary:
+- Push notifications are now fully configured on the server
+- VAPID keys are available via /api/push/vapid-key endpoint
+- PushSubscription model exists in database for storing user subscriptions
+- Full client-side flow: permission request → VAPID key fetch → subscribe → server storage
+- Test notification endpoint at /api/push/test
+- UI prompt on mobile home screen encourages users to enable push notifications

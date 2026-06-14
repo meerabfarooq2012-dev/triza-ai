@@ -43,6 +43,7 @@ model User {
   sellerOrders  Order[]   @relation("SellerOrders")
   reviews       Review[]
   notifications Notification[]
+  pushSubscriptions PushSubscription[]
   sentMessages  Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")
   conversationsAsP1 Conversation[] @relation("ConvParticipant1")
@@ -435,6 +436,21 @@ model NotificationPreference {
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 
+  @@index([userId])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, endpoint])
   @@index([userId])
 }
 
