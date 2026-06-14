@@ -315,6 +315,21 @@ const MobileBottomNav = dynamic(
   { ssr: false }
 )
 
+const MobileHeader = dynamic(
+  withChunkRetry(() => import('@/components/marketplace/layout/mobile-header'), 'MobileHeader'),
+  { ssr: false }
+)
+
+const MobileAppShell = dynamic(
+  withChunkRetry(() => import('@/components/marketplace/layout/mobile-app-shell'), 'MobileAppShell'),
+  { ssr: false }
+)
+
+const PageTransition = dynamic(
+  withChunkRetry(() => import('@/components/marketplace/layout/mobile-app-shell'), 'PageTransition'),
+  { ssr: false }
+)
+
 // Error boundary component to catch rendering errors in child components
 type ErrorBoundaryProps = { children: React.ReactNode; fallback?: React.ReactNode }
 type ErrorBoundaryState = { hasError: boolean; error: Error | null }
@@ -677,28 +692,38 @@ function MarketplaceApp() {
   }, [currentView, isAuthenticated, currentUser, activeRole, setCurrentView, viewParams])
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1 pb-16 md:pb-0">
-        <ErrorBoundary key={currentView}>
-          {renderView()}
-        </ErrorBoundary>
-      </main>
-      <Footer />
-      <MobileBottomNav />
-      <CartDrawer />
-      <CompareBar />
-      <DynamicSEO />
-      <FeedbackWidget />
-      <CookieConsent />
-      <CartSync />
-      <AIGuideMascot />
-      <EmailVerificationDialog
-        open={showEmailVerify}
-        onOpenChange={setShowEmailVerify}
-        userId={currentUser?.id}
-        userEmail={currentUser?.email}
-      />
-    </div>
+    <MobileAppShell>
+      <div className="min-h-screen flex flex-col">
+        {/* Desktop header — hidden on mobile/PWA, mobile uses MobileHeader instead */}
+        <div className="hidden md:block">
+          <Header />
+        </div>
+        {/* Mobile-only Fiverr-style compact header */}
+        <MobileHeader />
+        {/* Main content with page transition animation */}
+        <PageTransition currentView={currentView}>
+          <main className="flex-1 pb-16 md:pb-0">
+            <ErrorBoundary key={currentView}>
+              {renderView()}
+            </ErrorBoundary>
+          </main>
+        </PageTransition>
+        <Footer />
+        <MobileBottomNav />
+        <CartDrawer />
+        <CompareBar />
+        <DynamicSEO />
+        <FeedbackWidget />
+        <CookieConsent />
+        <CartSync />
+        <AIGuideMascot />
+        <EmailVerificationDialog
+          open={showEmailVerify}
+          onOpenChange={setShowEmailVerify}
+          userId={currentUser?.id}
+          userEmail={currentUser?.email}
+        />
+      </div>
+    </MobileAppShell>
   )
 }
