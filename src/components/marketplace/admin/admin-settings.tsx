@@ -193,8 +193,14 @@ export default function AdminSettings() {
     setSyncingSchema(true)
     setSyncResult(null)
     try {
-      const res = await fetch('/api/admin/sync-schema', { method: 'POST' })
-      const data = await res.json()
+      // Use the api client's request helper so auth token and CSRF token are included
+      const data = await api.request<{
+        success: boolean
+        summary?: { total: number; applied: number; skipped: number; errors: number }
+        results?: { name: string; status: string; error?: string }[]
+        newTables?: string[]
+        output?: string
+      }>('/admin/sync-schema', { method: 'POST' })
       setSyncResult(data)
       if (data.success) {
         toast.success(`Schema synced! ${data.summary?.applied || 0} applied, ${data.summary?.skipped || 0} skipped`)
