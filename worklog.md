@@ -280,3 +280,42 @@ Stage Summary:
   - 3-option Install dialog (Android, iOS, Web App)
   - Mobile header install button
   - App Store-style install prompts
+
+---
+Task ID: 6
+Agent: Main Agent
+Task: Replace marketing landing page with mobile app home screen for installed PWA
+
+Work Log:
+- Created MobileAppHome component (mobile-app-home.tsx) — Fiverr-like app home screen:
+  - Time-based greeting (Good Morning/Afternoon/Evening) + user name
+  - Compact search bar
+  - Quick category chips: Digital, Physical, Freelance, Popular, Deals, New
+  - Explore grid with 8 emoji categories: Design, Dev, Writing, Video, Apps, Fashion, Music, Home
+  - Quick action buttons: Products (amber gradient), Services (emerald gradient)
+  - Browse by Type: 3 compact cards (Digital, Physical, Freelance)
+  - Popular Services: horizontal scroll with 6 items and prices
+  - Why Thiora: 3 compact items (90% Yours, Secure, Fast)
+  - Start Selling CTA for unauthenticated users
+- Updated page.tsx:
+  - Added MobileAppHome dynamic import
+  - Added useIsMobile() and usePwa() hooks
+  - Added shouldShowAppHome = isMobile || isStandalone
+  - Changed landing case: shouldShowAppHome ? <MobileAppHome /> : <LandingPage />
+  - Desktop still sees the full marketing landing page
+- Updated footer.tsx:
+  - Added useIsMobile() hook
+  - Footer now hidden on mobile AND standalone mode (was only standalone before)
+- Agent browser verification confirmed:
+  - Old marketing landing page (Hero, About, Commission, HowItWorks, CTA) is GONE on mobile
+  - Mobile app home screen shows all 9 components correctly
+  - Footer is hidden on mobile
+  - Bottom nav and mobile header with install icon working
+  - Products quick action navigates to search page
+- Pushed to GitHub and deployed to Vercel
+
+Stage Summary:
+- Installed PWA and mobile users now see a proper app home screen instead of a marketing website
+- No hero banner, no about section, no CTA — pure app experience
+- Desktop users still see the full marketing landing page
+- Footer hidden on mobile for cleaner app feel
