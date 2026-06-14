@@ -8,7 +8,7 @@ export type UserRole = 'buyer' | 'seller' | 'both'
 export type ProductType = 'digital' | 'physical' | 'freelance'
 export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded'
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded'
-export type PaymentMethod = 'easypaisa' | 'jazzcash' | 'payoneer' | 'wise' | 'card' | 'bank_transfer'
+export type PaymentMethod = 'easypaisa' | 'jazzcash' | 'payfast' | 'crypto' | 'bank_transfer'
 export type EscrowStatus = 'held' | 'released' | 'refunded'
 export type TransactionType = 'credit' | 'debit' | 'commission' | 'withdrawal' | 'refund' | 'escrow_hold' | 'escrow_release'
 export type WithdrawalStatus = 'pending' | 'processing' | 'approved' | 'rejected' | 'completed' | 'cancelled'
@@ -909,7 +909,7 @@ export interface AdminTransactionsData {
 // ----- Payment Info Types (Saved payment methods) -----
 
 export type PaymentInfoType = 'buyer' | 'seller'
-export type PaymentInfoMethod = 'easypaisa' | 'jazzcash' | 'card' | 'payoneer' | 'wise' | 'bank_transfer'
+export type PaymentInfoMethod = 'easypaisa' | 'jazzcash' | 'payfast' | 'crypto' | 'bank_transfer'
 
 export interface PaymentInfo {
   id: string
@@ -928,16 +928,12 @@ export interface PaymentInfoAccountDetails {
   // Easypaisa / JazzCash
   accountName?: string
   mobileNumber?: string
-  // Card
-  cardHolder?: string
-  cardLast4?: string
-  expiryMonth?: string
-  expiryYear?: string
-  cardType?: 'visa' | 'master' | 'unionpay'
-  // Payoneer
+  // PayFast
   email?: string
-  // Wise
   iban?: string
+  // Crypto (NOWPayments)
+  walletAddress?: string
+  preferredCrypto?: string
   // Bank Transfer
   accountNumber?: string
   bankName?: string

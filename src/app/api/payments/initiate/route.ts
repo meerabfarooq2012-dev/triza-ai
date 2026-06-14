@@ -4,7 +4,8 @@ import { authenticateRequestWithSession } from '@/lib/auth-middleware';
 import {
   initiateEasypaisaPayment,
   initiateJazzCashPayment,
-  initiateStripePayment,
+  initiatePayFastPayment,
+  initiateCryptoPayment,
   getGatewayMode,
 } from '@/lib/payment-gateway';
 import { withCsrf } from '@/lib/with-csrf';
@@ -28,7 +29,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
     }
 
     const body = await request.json();
-    const { orderId, paymentMethod, buyerId, amount } = body;
+    const { orderId, paymentMethod, buyerId, amount, payCurrency } = body;
 
     // Verify the authenticated user matches the buyerId
     if (auth.userId !== buyerId) {
@@ -49,7 +50,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
       );
     }
 
-    const validMethods = ['easypaisa', 'jazzcash', 'stripe'];
+    const validMethods = ['easypaisa', 'jazzcash', 'payfast', 'crypto'];
     if (!validMethods.includes(paymentMethod)) {
       return NextResponse.json(
         {
@@ -140,19 +141,33 @@ export const POST = withCsrf(async (request: NextRequest) => {
         paymentMethod: 'jazzcash',
         description: `Thiora Order #${orderId.slice(-8)}`,
       });
-    } else if (paymentMethod === 'stripe') {
-      gatewayResult = await initiateStripePayment({
+    } else if (paymentMethod === 'payfast') {
+      gatewayResult = await initiatePayFastPayment({
         orderId,
         amount,
         buyerId,
         buyerEmail,
         buyerPhone,
         buyerName,
-        paymentMethod: 'stripe',
+        paymentMethod: 'payfast',
         description: `Thiora Order #${orderId.slice(-8)}`,
         sellerId: payment.sellerId,
         platformFee: payment.platformFee,
         sellerPayout: payment.sellerPayout,
+      });
+    } else if (paymentMethod === 'crypto') {
+      gatewayResult = await initiateCryptoPayment({
+        orderId,
+        amount,
+        buyerId,
+        buyerEmail,
+        buyerPhone,
+        buyerName,
+        paymentMethod: 'crypto',
+        description: `Thiora Order #${orderId.slice(-8)}`,
+        payCurrency: payCurrency || 'btc',
+        successUrl: `${process.env.PAYMENT_CALLBACK_BASE_URL || ''}?crypto_success=1&order=${orderId}`,
+        cancelUrl: `${process.env.PAYMENT_CALLBACK_BASE_URL || ''}?crypto_cancel=1`,
       });
     } else {
       return NextResponse.json(

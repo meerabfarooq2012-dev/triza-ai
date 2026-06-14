@@ -240,7 +240,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
     const {
       buyerId,
       items,
-      paymentMethod = 'card',
+      paymentMethod = 'payfast',
       shippingName,
       shippingAddr,
       shippingCity,

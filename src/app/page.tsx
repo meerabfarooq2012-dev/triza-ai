@@ -485,19 +485,30 @@ function MarketplaceApp() {
     const productId = searchParams.get('product')
     const gigId = searchParams.get('gig')
     const wishlistSlug = searchParams.get('wishlist')
-    const stripeSuccess = searchParams.get('stripe_success')
-    const stripeCancel = searchParams.get('stripe_cancel')
+    const payfastSuccess = searchParams.get('payfast_success')
+    const payfastCancel = searchParams.get('payfast_cancel')
+    const cryptoSuccess = searchParams.get('crypto_success')
+    const cryptoCancel = searchParams.get('crypto_cancel')
 
-    // Handle Stripe payment return
-    if (stripeSuccess) {
+    // Handle PayFast payment return
+    if (payfastSuccess) {
       // Clean URL
       window.history.replaceState({}, '', window.location.pathname)
       // Show success — user will see their orders
       if (isAuthenticated) {
         setCurrentView('buyer-dashboard')
       }
-    } else if (stripeCancel) {
+    } else if (payfastCancel) {
       // Clean URL — payment was cancelled
+      window.history.replaceState({}, '', window.location.pathname)
+    } else if (cryptoSuccess) {
+      // Crypto payment return
+      window.history.replaceState({}, '', window.location.pathname)
+      if (isAuthenticated) {
+        setCurrentView('buyer-dashboard')
+      }
+    } else if (cryptoCancel) {
+      // Crypto payment was cancelled
       window.history.replaceState({}, '', window.location.pathname)
     } else if (shopSlug) {
       setCurrentView('shop-view', { shopSlug })

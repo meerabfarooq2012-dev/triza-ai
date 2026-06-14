@@ -332,7 +332,7 @@ export function FeedbackWidget() {
         return "To start selling on Thiora, you can set up your shop from the Seller Dashboard. Go to your profile, switch to seller mode, and follow the shop setup steps. You can list digital products, physical goods, or freelance service gigs. Need step-by-step help?"
       }
       if (lowerMsg.includes('pay') || lowerMsg.includes('payment') || lowerMsg.includes('checkout')) {
-        return "Thiora supports multiple payment methods including Easypaisa, JazzCash, Payoneer, and Wise. All payments go through our secure escrow system to protect both buyers and sellers. Would you like to know more about a specific payment method?"
+        return "Thiora supports multiple payment methods including Easypaisa, JazzCash, PayFast, and crypto (Bitcoin, Ethereum, Solana). All payments go through our secure escrow system to protect both buyers and sellers. Would you like to know more about a specific payment method?"
       }
       if (lowerMsg.includes('refund') || lowerMsg.includes('cancel')) {
         return "For refunds and cancellations, you can request them through your order details page. Our support team reviews each request, and if approved, the refund is processed back to your original payment method. Need help with a specific order?"

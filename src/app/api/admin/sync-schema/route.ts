@@ -443,6 +443,40 @@ const MIGRATIONS: { name: string; sql: string }[] = [
       END IF;
     END $$`
   },
+  // ── CryptoWallet Table ── Stores dynamic wallet addresses for crypto escrow
+  {
+    name: 'CryptoWallet table',
+    sql: `CREATE TABLE IF NOT EXISTS "CryptoWallet" (
+      "id" TEXT NOT NULL,
+      "currency" TEXT NOT NULL,
+      "address" TEXT NOT NULL,
+      "label" TEXT,
+      "isActive" BOOLEAN NOT NULL DEFAULT true,
+      "depositCount" INTEGER NOT NULL DEFAULT 0,
+      "maxDeposits" INTEGER,
+      "notes" TEXT,
+      "previousAddresses" TEXT NOT NULL DEFAULT '[]',
+      "updatedAt" TIMESTAMP(3) NOT NULL,
+      "updatedBy" TEXT,
+      CONSTRAINT "CryptoWallet_pkey" PRIMARY KEY ("id")
+    )`
+  },
+  {
+    name: 'CryptoWallet.currency unique',
+    sql: `DO $$ BEGIN
+      IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'CryptoWallet_currency_key') THEN
+        ALTER TABLE "CryptoWallet" ADD CONSTRAINT "CryptoWallet_currency_key" UNIQUE ("currency");
+      END IF;
+    END $$`
+  },
+  {
+    name: 'CryptoWallet.currency index',
+    sql: `CREATE INDEX IF NOT EXISTS "CryptoWallet_currency_idx" ON "CryptoWallet"("currency")`
+  },
+  {
+    name: 'CryptoWallet.isActive index',
+    sql: `CREATE INDEX IF NOT EXISTS "CryptoWallet_isActive_idx" ON "CryptoWallet"("isActive")`
+  },
 ]
 
 export async function POST(request: NextRequest) {

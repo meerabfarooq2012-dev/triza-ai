@@ -30,9 +30,9 @@ export async function GET(request: NextRequest) {
   const jsGateway = encodeURIComponent(rawGateway);
   const jsOrderId = encodeURIComponent(rawOrderId);
 
-  const gatewayName = gateway === 'easypaisa' ? 'Easypaisa' : 'JazzCash';
-  const gatewayColor = gateway === 'easypaisa' ? '#00C853' : '#F44336';
-  const gatewayLogo = gateway === 'easypaisa' ? 'EP' : 'JC';
+  const gatewayName = gateway === 'easypaisa' ? 'Easypaisa' : gateway === 'jazzcash' ? 'JazzCash' : gateway === 'payfast' ? 'PayFast' : gateway === 'crypto' ? 'Crypto (BTC/ETH/SOL)' : 'PayFast';
+  const gatewayColor = gateway === 'easypaisa' ? '#00C853' : gateway === 'jazzcash' ? '#F44336' : gateway === 'crypto' ? '#F7931A' : '#00A3E0';
+  const gatewayLogo = gateway === 'easypaisa' ? 'EP' : gateway === 'jazzcash' ? 'JC' : gateway === 'crypto' ? '₿' : 'PF';
 
   const html = `<!DOCTYPE html>
 <html lang="en">

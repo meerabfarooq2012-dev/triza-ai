@@ -184,7 +184,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate payment method
-    const validMethods = ['easypaisa', 'jazzcash', 'card', 'payoneer', 'wise'];
+    const validMethods = ['easypaisa', 'jazzcash', 'payfast', 'crypto'];
     if (!validMethods.includes(paymentMethod)) {
       return NextResponse.json(
         { success: false, error: `Invalid payment method. Must be one of: ${validMethods.join(', ')}` },

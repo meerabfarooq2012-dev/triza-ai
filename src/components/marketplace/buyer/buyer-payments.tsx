@@ -123,20 +123,15 @@ const PAYMENT_METHOD_CONFIG: Record<
     icon: <Banknote className="h-4 w-4" />,
     color: 'text-red-600',
   },
-  payoneer: {
-    label: 'Payoneer',
-    icon: <DollarSign className="h-4 w-4" />,
+  payfast: {
+    label: 'PayFast',
+    icon: <CreditCard className="h-4 w-4" />,
     color: 'text-blue-600',
   },
-  wise: {
-    label: 'Wise',
-    icon: <CreditCard className="h-4 w-4" />,
-    color: 'text-yellow-600',
-  },
-  card: {
-    label: 'Card',
-    icon: <CreditCard className="h-4 w-4" />,
-    color: 'text-gray-600',
+  crypto: {
+    label: 'Crypto',
+    icon: <Wallet className="h-4 w-4" />,
+    color: 'text-orange-600',
   },
 }
 
@@ -470,7 +465,7 @@ export function BuyerPayments() {
               const escrowConfig =
                 ESCROW_STATUS_CONFIG[payment.escrowStatus] || ESCROW_STATUS_CONFIG.held
               const methodConfig =
-                PAYMENT_METHOD_CONFIG[payment.paymentMethod] || PAYMENT_METHOD_CONFIG.card
+                PAYMENT_METHOD_CONFIG[payment.paymentMethod] || PAYMENT_METHOD_CONFIG.payfast
               const orderData = payment.order as Record<string, unknown> | undefined
               const orderStatus = orderData?.status as string | undefined
               const orderItems = orderData?.items as
@@ -829,7 +824,7 @@ export function BuyerPayments() {
               <CreditCard className="h-5 w-5 text-amber-600" />
               <div>
                 <p className="text-sm font-medium text-amber-900">Manage Payment Methods</p>
-                <p className="text-xs text-amber-700">Add or update your saved debit cards, wallets, and payment details</p>
+                <p className="text-xs text-amber-700">Add or update your saved wallets and payment details</p>
               </div>
             </div>
             <Button

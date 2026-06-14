@@ -18,6 +18,7 @@ import {
   Download,
   RotateCcw,
   Store,
+  Wallet,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -36,8 +37,9 @@ import { AdminReports } from './admin-reports'
 import { AdminAuditLog } from './admin-audit-log'
 import { AdminDataExport } from './admin-data-export'
 import { AdminShops } from './admin-shops'
+import AdminCryptoWallets from './admin-crypto-wallets'
 
-type AdminTab = 'dashboard' | 'users' | 'shops' | 'products' | 'orders' | 'transactions' | 'disputes' | 'categories' | 'verifications' | 'reports' | 'audit-log' | 'data-export' | 'settings' | 'returns'
+type AdminTab = 'dashboard' | 'users' | 'shops' | 'products' | 'orders' | 'returns' | 'transactions' | 'disputes' | 'categories' | 'verifications' | 'reports' | 'audit-log' | 'data-export' | 'crypto-wallets' | 'settings'
 
 const tabs: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
@@ -53,6 +55,7 @@ const tabs: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
   { id: 'reports', label: 'Reports', icon: <ShieldAlert size={18} /> },
   { id: 'audit-log', label: 'Audit Log', icon: <ScrollText size={18} /> },
   { id: 'data-export', label: 'Data Export', icon: <Download size={18} /> },
+  { id: 'crypto-wallets', label: 'Crypto Wallets', icon: <Wallet size={18} /> },
   { id: 'settings', label: 'Settings', icon: <Settings size={18} /> },
 ]
 
@@ -116,6 +119,8 @@ export default function AdminPanel() {
         return <AdminAuditLog />
       case 'data-export':
         return <AdminDataExport />
+      case 'crypto-wallets':
+        return <AdminCryptoWallets />
       case 'settings':
         return <AdminSettings />
       default:

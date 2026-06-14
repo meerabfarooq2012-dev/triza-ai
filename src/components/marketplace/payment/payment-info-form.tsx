@@ -6,7 +6,6 @@ import {
   CreditCard,
   Wallet,
   Building2,
-  Mail,
   Globe,
   Plus,
   Trash2,
@@ -14,6 +13,8 @@ import {
   StarOff,
   CheckCircle2,
   Loader2,
+  ShieldCheck,
+  Bitcoin,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -23,8 +24,8 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -69,16 +70,15 @@ interface MethodConfig {
 const BUYER_METHODS: MethodConfig[] = [
   { id: 'easypaisa', name: 'Easypaisa', icon: Wallet, color: 'text-amber-600', bgColor: 'bg-amber-50', description: 'Mobile wallet payment' },
   { id: 'jazzcash', name: 'JazzCash', icon: Wallet, color: 'text-red-600', bgColor: 'bg-red-50', description: 'Mobile wallet payment' },
-  { id: 'card', name: 'Debit/Credit Card', icon: CreditCard, color: 'text-amber-600', bgColor: 'bg-amber-50', description: 'Visa, Mastercard, UnionPay' },
-  { id: 'payoneer', name: 'Payoneer', icon: Globe, color: 'text-blue-600', bgColor: 'bg-blue-50', description: 'Global payment platform' },
-  { id: 'wise', name: 'Wise', icon: Mail, color: 'text-yellow-600', bgColor: 'bg-yellow-50', description: 'International transfer' },
+  { id: 'payfast', name: 'PayFast', icon: ShieldCheck, color: 'text-blue-700', bgColor: 'bg-[#E8F7FD]', description: 'International card payments' },
+  { id: 'crypto', name: 'Crypto', icon: Bitcoin, color: 'text-orange-700', bgColor: 'bg-[#FFF3E0]', description: 'Pay with Bitcoin, Ethereum, Solana & more' },
 ]
 
 const SELLER_METHODS: MethodConfig[] = [
   { id: 'easypaisa', name: 'Easypaisa', icon: Wallet, color: 'text-amber-600', bgColor: 'bg-amber-50', description: 'Mobile wallet' },
   { id: 'jazzcash', name: 'JazzCash', icon: Wallet, color: 'text-red-600', bgColor: 'bg-red-50', description: 'Mobile wallet' },
-  { id: 'payoneer', name: 'Payoneer', icon: Globe, color: 'text-blue-600', bgColor: 'bg-blue-50', description: 'Global payment platform' },
-  { id: 'wise', name: 'Wise', icon: Mail, color: 'text-yellow-600', bgColor: 'bg-yellow-50', description: 'International transfer' },
+  { id: 'payfast', name: 'PayFast', icon: ShieldCheck, color: 'text-blue-700', bgColor: 'bg-[#E8F7FD]', description: 'International card payments' },
+  { id: 'crypto', name: 'Crypto', icon: Bitcoin, color: 'text-orange-700', bgColor: 'bg-[#FFF3E0]', description: 'Bitcoin, Ethereum, Solana & more' },
   { id: 'bank_transfer', name: 'Bank Transfer', icon: Building2, color: 'text-amber-600', bgColor: 'bg-amber-50', description: 'Direct bank transfer' },
 ]
 
@@ -123,12 +123,10 @@ function maskedDetail(method: PaymentInfoMethod, details: PaymentInfoAccountDeta
     case 'easypaisa':
     case 'jazzcash':
       return details.mobileNumber ? `0300 ****${details.mobileNumber.slice(-3)}` : '****'
-    case 'card':
-      return details.cardLast4 ? `**** ${details.cardLast4}` : '****'
-    case 'payoneer':
-      return details.email ? details.email.replace(/^(..)(.*)(@.*)$/, '$1***$3') : '****'
-    case 'wise':
+    case 'payfast':
       return details.iban ? `IBAN ****${details.iban.slice(-4)}` : details.email ? details.email.replace(/^(..)(.*)(@.*)$/, '$1***$3') : '****'
+    case 'crypto':
+      return details.walletAddress ? `${details.walletAddress.slice(0, 6)}...${details.walletAddress.slice(-4)}` : details.preferredCrypto ? details.preferredCrypto.toUpperCase() : '****'
     case 'bank_transfer':
       return details.accountNumber ? `**** ${details.accountNumber.slice(-4)}` : '****'
     default:
@@ -158,13 +156,10 @@ export function PaymentInfoForm({ type, userId }: PaymentInfoFormProps) {
   // Dynamic fields
   const [accountName, setAccountName] = useState('')
   const [mobileNumber, setMobileNumber] = useState('')
-  const [cardHolder, setCardHolder] = useState('')
-  const [cardNumberRaw, setCardNumberRaw] = useState('') // raw input for masking display
-  const [expiryMonth, setExpiryMonth] = useState('')
-  const [expiryYear, setExpiryYear] = useState('')
-  const [cardType, setCardType] = useState<'visa' | 'master' | 'unionpay'>('visa')
   const [email, setEmail] = useState('')
   const [iban, setIban] = useState('')
+  const [walletAddress, setWalletAddress] = useState('')
+  const [preferredCrypto, setPreferredCrypto] = useState('btc')
   const [accountNumber, setAccountNumber] = useState('')
   const [bankName, setBankName] = useState('')
   const [routingNumber, setRoutingNumber] = useState('')
@@ -211,40 +206,15 @@ export function PaymentInfoForm({ type, userId }: PaymentInfoFormProps) {
     setLabel('')
     setAccountName('')
     setMobileNumber('')
-    setCardHolder('')
-    setCardNumberRaw('')
-    setExpiryMonth('')
-    setExpiryYear('')
-    setCardType('visa')
     setEmail('')
     setIban('')
+    setWalletAddress('')
+    setPreferredCrypto('btc')
     setAccountNumber('')
     setBankName('')
     setRoutingNumber('')
     setSwiftCode('')
     setIsDefault(false)
-  }
-
-  // -----------------------------------------------------------------------
-  // Card number input handler – mask all but last 4 digits
-  // -----------------------------------------------------------------------
-
-  const handleCardNumberChange = (value: string) => {
-    // Only allow digits
-    const digits = value.replace(/\D/g, '')
-    // Limit to 16 digits
-    const limited = digits.slice(0, 16)
-    setCardNumberRaw(limited)
-  }
-
-  const displayCardNumber = (raw: string) => {
-    if (raw.length <= 4) return raw
-    const last4 = raw.slice(-4)
-    const maskedLength = raw.length - 4
-    const masked = '•'.repeat(maskedLength)
-    // Format in groups of 4
-    const combined = masked + last4
-    return combined.replace(/(.{4})/g, '$1 ').trim()
   }
 
   // -----------------------------------------------------------------------
@@ -256,18 +226,10 @@ export function PaymentInfoForm({ type, userId }: PaymentInfoFormProps) {
       case 'easypaisa':
       case 'jazzcash':
         return { accountName, mobileNumber }
-      case 'card':
-        return {
-          cardHolder,
-          cardLast4: cardNumberRaw.slice(-4),
-          expiryMonth,
-          expiryYear,
-          cardType,
-        }
-      case 'payoneer':
-        return { email, accountName }
-      case 'wise':
+      case 'payfast':
         return { email, iban, accountName }
+      case 'crypto':
+        return { walletAddress, preferredCrypto }
       case 'bank_transfer':
         return {
           accountName,
@@ -294,19 +256,13 @@ export function PaymentInfoForm({ type, userId }: PaymentInfoFormProps) {
         if (!accountName.trim()) return 'Please enter the account name'
         if (!mobileNumber.trim()) return 'Please enter the mobile number'
         break
-      case 'card':
-        if (!cardHolder.trim()) return 'Please enter the card holder name'
-        if (cardNumberRaw.length < 4) return 'Please enter a valid card number'
-        if (!expiryMonth || !expiryYear) return 'Please enter the card expiry date'
-        break
-      case 'payoneer':
-        if (!email.trim()) return 'Please enter your Payoneer email'
-        if (!accountName.trim()) return 'Please enter the account name'
-        break
-      case 'wise':
-        if (!email.trim()) return 'Please enter your Wise email'
+      case 'payfast':
+        if (!email.trim()) return 'Please enter your PayFast email'
         if (!iban.trim()) return 'Please enter your IBAN'
         if (!accountName.trim()) return 'Please enter the account name'
+        break
+      case 'crypto':
+        if (!walletAddress.trim()) return 'Please enter your crypto wallet address'
         break
       case 'bank_transfer':
         if (!accountName.trim()) return 'Please enter the account name'
@@ -712,101 +668,13 @@ export function PaymentInfoForm({ type, userId }: PaymentInfoFormProps) {
                     </>
                   )}
 
-                  {/* Card */}
-                  {selectedMethod === 'card' && (
+                  {/* PayFast */}
+                  {selectedMethod === 'payfast' && (
                     <>
                       <div className="space-y-1.5">
-                        <Label htmlFor="pi-card-holder">Card Holder Name *</Label>
+                        <Label htmlFor="pi-payfast-email">PayFast Email *</Label>
                         <Input
-                          id="pi-card-holder"
-                          value={cardHolder}
-                          onChange={(e) => setCardHolder(e.target.value)}
-                          placeholder="Name on card"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="pi-card-number">Card Number *</Label>
-                        <Input
-                          id="pi-card-number"
-                          value={displayCardNumber(cardNumberRaw)}
-                          onChange={(e) => handleCardNumberChange(e.target.value)}
-                          placeholder="•••• •••• •••• 4242"
-                          inputMode="numeric"
-                        />
-                        <p className="text-[11px] text-muted-foreground">
-                          Only the last 4 digits are stored for your security.
-                        </p>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1.5">
-                          <Label htmlFor="pi-expiry-month">Expiry Month *</Label>
-                          <Select value={expiryMonth} onValueChange={setExpiryMonth}>
-                            <SelectTrigger id="pi-expiry-month">
-                              <SelectValue placeholder="MM" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {Array.from({ length: 12 }, (_, i) => {
-                                const val = String(i + 1).padStart(2, '0')
-                                return (
-                                  <SelectItem key={val} value={val}>
-                                    {val}
-                                  </SelectItem>
-                                )
-                              })}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label htmlFor="pi-expiry-year">Expiry Year *</Label>
-                          <Select value={expiryYear} onValueChange={setExpiryYear}>
-                            <SelectTrigger id="pi-expiry-year">
-                              <SelectValue placeholder="YY" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {Array.from({ length: 10 }, (_, i) => {
-                                const year = new Date().getFullYear() + i
-                                const val = String(year).slice(-2)
-                                return (
-                                  <SelectItem key={val} value={val}>
-                                    {year}
-                                  </SelectItem>
-                                )
-                              })}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label>Card Type *</Label>
-                        <RadioGroup
-                          value={cardType}
-                          onValueChange={(val) => setCardType(val as 'visa' | 'master' | 'unionpay')}
-                          className="flex gap-4"
-                        >
-                          <div className="flex items-center gap-1.5">
-                            <RadioGroupItem value="visa" id="visa" />
-                            <Label htmlFor="visa" className="text-sm cursor-pointer">Visa</Label>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <RadioGroupItem value="master" id="master" />
-                            <Label htmlFor="master" className="text-sm cursor-pointer">Mastercard</Label>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <RadioGroupItem value="unionpay" id="unionpay" />
-                            <Label htmlFor="unionpay" className="text-sm cursor-pointer">UnionPay</Label>
-                          </div>
-                        </RadioGroup>
-                      </div>
-                    </>
-                  )}
-
-                  {/* Payoneer */}
-                  {selectedMethod === 'payoneer' && (
-                    <>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="pi-payoneer-email">Email *</Label>
-                        <Input
-                          id="pi-payoneer-email"
+                          id="pi-payfast-email"
                           type="email"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
@@ -814,47 +682,57 @@ export function PaymentInfoForm({ type, userId }: PaymentInfoFormProps) {
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label htmlFor="pi-payoneer-name">Account Name *</Label>
+                        <Label htmlFor="pi-payfast-iban">IBAN *</Label>
                         <Input
-                          id="pi-payoneer-name"
-                          value={accountName}
-                          onChange={(e) => setAccountName(e.target.value)}
-                          placeholder="Full name on account"
-                        />
-                      </div>
-                    </>
-                  )}
-
-                  {/* Wise */}
-                  {selectedMethod === 'wise' && (
-                    <>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="pi-wise-email">Email *</Label>
-                        <Input
-                          id="pi-wise-email"
-                          type="email"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          placeholder="email@example.com"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="pi-wise-iban">IBAN *</Label>
-                        <Input
-                          id="pi-wise-iban"
+                          id="pi-payfast-iban"
                           value={iban}
                           onChange={(e) => setIban(e.target.value)}
-                          placeholder="IBAN number"
+                          placeholder="e.g., GB29 NWBK 6016 1331 9268 19"
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label htmlFor="pi-wise-name">Account Name *</Label>
+                        <Label htmlFor="pi-payfast-name">PayFast Account Name *</Label>
                         <Input
-                          id="pi-wise-name"
+                          id="pi-payfast-name"
                           value={accountName}
                           onChange={(e) => setAccountName(e.target.value)}
-                          placeholder="Full name on account"
+                          placeholder="Full name on PayFast account"
                         />
+                      </div>
+                    </>
+                  )}
+
+                  {/* Crypto */}
+                  {selectedMethod === 'crypto' && (
+                    <>
+                      <div className="rounded-lg bg-[#FFF3E0] border border-[#F7931A]/30 p-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Bitcoin className="h-4 w-4 text-[#F7931A]" />
+                          <span className="text-sm font-semibold text-orange-700">Crypto Wallet</span>
+                        </div>
+                        <p className="text-xs text-orange-700/80">Enter your crypto wallet address for receiving payments. Direct to wallet, no KYC required!</p>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="pi-wallet-address">Wallet Address *</Label>
+                        <Input
+                          id="pi-wallet-address"
+                          value={walletAddress}
+                          onChange={(e) => setWalletAddress(e.target.value)}
+                          placeholder="Your crypto wallet address"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="pi-preferred-crypto">Preferred Cryptocurrency</Label>
+                        <Select value={preferredCrypto} onValueChange={setPreferredCrypto}>
+                          <SelectTrigger id="pi-preferred-crypto">
+                            <SelectValue placeholder="Select currency" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="btc">₿ BTC - Bitcoin</SelectItem>
+                            <SelectItem value="eth">Ξ ETH - Ethereum</SelectItem>
+                            <SelectItem value="sol">◎ SOL - Solana</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </>
                   )}
@@ -929,9 +807,9 @@ export function PaymentInfoForm({ type, userId }: PaymentInfoFormProps) {
                 </div>
 
                 {/* Security note */}
-                <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
-                  <p className="text-xs text-amber-700">
-                    🔒 Your payment details are securely stored. Card numbers are never saved in full — only the last 4 digits are kept.
+                <div className="rounded-lg bg-[#F0FFE6] border border-[#9FE870] p-3">
+                  <p className="text-xs text-green-700">
+                    🔒 Your payment details are securely stored and encrypted. Sensitive information is never shared.
                   </p>
                 </div>
 

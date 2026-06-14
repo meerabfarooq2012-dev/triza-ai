@@ -380,3 +380,5 @@
 [NotificationService] HTTP push endpoint running on port 3005
 [NotificationService] Socket.io notification service running on port 3004
 [NotificationService] HTTP push endpoint running on port 3005
+[NotificationService] Socket.io notification service running on port 3004
+[NotificationService] HTTP push endpoint running on port 3005

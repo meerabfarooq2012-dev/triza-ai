@@ -3,6 +3,8 @@ import { db } from '@/lib/db';
 import {
   verifyEasypaisaCallback,
   verifyJazzCashCallback,
+  verifyPayFastCallback,
+  verifyCryptoCallback,
   completeSimulatedPayment,
 } from '@/lib/payment-gateway';
 import { rateLimit, getRateLimitKey } from '@/lib/rate-limit';
@@ -32,9 +34,9 @@ export async function POST(request: NextRequest) {
   try {
     const gateway = request.nextUrl.searchParams.get('gateway');
 
-    if (!gateway || !['easypaisa', 'jazzcash'].includes(gateway)) {
+    if (!gateway || !['easypaisa', 'jazzcash', 'payfast', 'crypto'].includes(gateway)) {
       return NextResponse.json(
-        { success: false, error: 'Invalid or missing gateway parameter. Use ?gateway=easypaisa or ?gateway=jazzcash' },
+        { success: false, error: 'Invalid or missing gateway parameter. Use ?gateway=easypaisa, jazzcash, payfast, or crypto' },
         { status: 400 }
       );
     }
@@ -81,6 +83,26 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
+    } else if (gateway === 'payfast') {
+      const verification = verifyPayFastCallback(callbackData);
+      if (!verification.valid) {
+        console.error('[Payment Callback] PayFast verification failed:', verification.error);
+        return NextResponse.json(
+          { success: false, error: verification.error },
+          { status: 400 }
+        );
+      }
+    } else if (gateway === 'crypto') {
+      // Direct Crypto Escrow: verify via blockchain, not IPN
+      // Admin can also manually trigger confirmation
+      const verification = verifyCryptoCallback('', '');
+      if (!verification.valid) {
+        console.error('[Payment Callback] Crypto verification failed:', verification.error);
+        return NextResponse.json(
+          { success: false, error: verification.error },
+          { status: 400 }
+        );
+      }
     }
 
     // ----- Extract payment info from callback -----
@@ -97,12 +119,25 @@ export async function POST(request: NextRequest) {
       amount = callbackData.transactionAmount
         ? parseFloat(callbackData.transactionAmount)
         : undefined;
-    } else {
+    } else if (gateway === 'jazzcash') {
       // JazzCash callback fields
       orderId = callbackData.pp_BillReference || '';
       transactionId = callbackData.pp_TxnRefNo || callbackData.pp_RetreivalReferenceNo || '';
       paymentStatus = callbackData.pp_ResponseCode || callbackData.pp_AuthCode || '';
       amount = callbackData.pp_Amount ? parseFloat(callbackData.pp_Amount) / 100 : undefined;
+    } else if (gateway === 'payfast') {
+      // PayFast ITN callback fields
+      orderId = callbackData.custom_str1 || callbackData.m_payment_id || '';
+      transactionId = callbackData.pf_payment_id || callbackData.m_payment_id || '';
+      paymentStatus = callbackData.payment_status || '';
+      amount = callbackData.amount_gross ? parseFloat(callbackData.amount_gross) : undefined;
+    } else if (gateway === 'crypto') {
+      // Direct Crypto Escrow callback fields
+      // Can come from blockchain verification poll or admin manual confirm
+      orderId = callbackData.orderId || callbackData.order_id || '';
+      transactionId = callbackData.txHash || callbackData.transactionId || callbackData.payment_id || '';
+      paymentStatus = callbackData.status || callbackData.payment_status || 'pending';
+      amount = callbackData.amount ? parseFloat(callbackData.amount) : undefined;
     }
 
     if (!orderId) {
@@ -205,6 +240,16 @@ function isPaymentSuccessful(
     // Also check pp_AuthCode for SUCCESS
     const authCode = (callbackData.pp_AuthCode || '').toUpperCase();
     return paymentStatus === '000' || authCode === 'SUCCESS' || paymentStatus === 'SUCCESS';
+  }
+
+  if (gateway === 'payfast') {
+    // PayFast success: COMPLETE payment_status
+    return paymentStatus.toUpperCase() === 'COMPLETE';
+  }
+
+  if (gateway === 'crypto') {
+    // Direct Crypto Escrow success: confirmed or completed
+    return ['confirmed', 'completed', 'finished'].includes(paymentStatus.toLowerCase());
   }
 
   return false;

@@ -13,6 +13,8 @@ import {
   AlertCircle,
   Receipt,
   ShieldAlert,
+  Database,
+  RefreshCw,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -78,6 +80,14 @@ export default function AdminSettings() {
   const [taxRate, setTaxRate] = useState('0')
   const [taxInclusive, setTaxInclusive] = useState(false)
   const [taxLabel, setTaxLabel] = useState('Tax')
+
+  // Sync Schema state
+  const [syncingSchema, setSyncingSchema] = useState(false)
+  const [syncResult, setSyncResult] = useState<{
+    success: boolean
+    summary?: { total: number; applied: number; skipped: number; errors: number }
+    results?: { name: string; status: string; error?: string }[]
+  } | null>(null)
 
   // Load settings from the database via API on mount
   // Uses the api client so the auth token and CSRF cookie are included automatically
@@ -174,6 +184,27 @@ export default function AdminSettings() {
       toast.error(err instanceof Error ? err.message : 'Failed to save settings')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleSyncSchema = async () => {
+    setSyncingSchema(true)
+    setSyncResult(null)
+    try {
+      const res = await fetch('/api/admin/sync-schema', { method: 'POST' })
+      const data = await res.json()
+      setSyncResult(data)
+      if (data.success) {
+        toast.success(`Schema synced! ${data.summary?.applied || 0} applied, ${data.summary?.skipped || 0} skipped`)
+      } else {
+        toast.error('Schema sync failed — check details below')
+      }
+    } catch (err) {
+      console.error('Schema sync error:', err)
+      toast.error('Failed to sync schema')
+      setSyncResult({ success: false })
+    } finally {
+      setSyncingSchema(false)
     }
   }
 
@@ -558,6 +589,71 @@ export default function AdminSettings() {
                 Configurable in a future update
               </p>
             </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Database Schema Sync */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2, delay: 0.35 }}
+      >
+        <Card className="border-0 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Database size={18} className="text-primary" />
+              Database Schema
+            </CardTitle>
+            <CardDescription>
+              Sync database tables with the latest schema (run after deployments)
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              When new features are added (like Crypto Wallets), new database tables need to be created.
+              Click the button below to sync the schema and create any missing tables.
+            </p>
+            <Button
+              onClick={handleSyncSchema}
+              disabled={syncingSchema}
+              variant="outline"
+              className="gap-2"
+            >
+              {syncingSchema ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Syncing Schema...
+                </>
+              ) : (
+                <>
+                  <RefreshCw size={16} />
+                  Sync Schema
+                </>
+              )}
+            </Button>
+
+            {syncResult && (
+              <div className={`p-3 rounded-lg text-sm ${syncResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+                <p className={`font-medium ${syncResult.success ? 'text-green-800' : 'text-red-800'}`}>
+                  {syncResult.success ? '✓ Schema sync complete' : '✗ Schema sync had errors'}
+                </p>
+                {syncResult.summary && (
+                  <p className="text-xs mt-1 text-muted-foreground">
+                    {syncResult.summary.applied} applied, {syncResult.summary.skipped} already exist, {syncResult.summary.errors} errors
+                  </p>
+                )}
+                {syncResult.results && syncResult.results.filter(r => r.status === 'error').length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    {syncResult.results.filter(r => r.status === 'error').map((r, i) => (
+                      <p key={i} className="text-xs text-red-700">
+                        ✗ {r.name}: {r.error}
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       </motion.div>

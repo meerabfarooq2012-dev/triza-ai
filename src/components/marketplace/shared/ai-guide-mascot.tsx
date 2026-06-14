@@ -47,7 +47,7 @@ const LANDING_TOUR_STEPS = [
   {
     targetId: 'how-it-works',
     title: 'Simple 3 Steps 📋',
-    description: 'Sign Up → Pay Securely with Escrow → Confirm & Get Paid. It\'s that easy!',
+    description: 'Sign Up → Pay Securely with Escrow (Easypaisa, JazzCash, PayFast, or crypto) → Confirm & Get Paid. It\'s that easy!',
   },
   {
     targetId: 'categories-section',
@@ -86,7 +86,7 @@ const LOGIN_TOUR_STEPS = [
   },
   {
     title: 'Secure Escrow Payments 🔒',
-    description: 'Payments are held safely until delivery is confirmed. Withdraw via PayPal, Payoneer, bank transfer, or crypto.',
+    description: 'Payments are held safely until delivery is confirmed. Withdraw via PayPal, PayFast, bank transfer, or crypto.',
   },
   {
     title: 'Real-time Messages 💬',

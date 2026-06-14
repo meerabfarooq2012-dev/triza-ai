@@ -104,7 +104,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
       );
     }
 
-    const validMethods = ['easypaisa', 'jazzcash', 'payoneer', 'wise', 'bank_transfer'];
+    const validMethods = ['easypaisa', 'jazzcash', 'payfast', 'crypto', 'bank_transfer'];
     if (!validMethods.includes(method)) {
       return NextResponse.json(
         { success: false, error: `Invalid method. Must be one of: ${validMethods.join(', ')}` },

@@ -881,8 +881,10 @@ export const CUSTOM_SECTION_TYPES = [
 // ----- Payment Methods -----
 
 export const PAYMENT_METHODS = [
-  { value: 'card', label: 'Credit/Debit Card' },
-  { value: 'paypal', label: 'PayPal' },
+  { value: 'payfast', label: 'PayFast' },
+  { value: 'easypaisa', label: 'Easypaisa' },
+  { value: 'jazzcash', label: 'JazzCash' },
+  { value: 'crypto', label: 'Crypto (BTC/ETH/SOL)' },
   { value: 'bank_transfer', label: 'Bank Transfer' },
 ] as const
 

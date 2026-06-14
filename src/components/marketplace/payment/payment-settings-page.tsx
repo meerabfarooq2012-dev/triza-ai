@@ -6,7 +6,6 @@ import {
   CreditCard,
   Wallet,
   Building2,
-  Mail,
   Globe,
   Plus,
   Trash2,
@@ -19,6 +18,7 @@ import {
   X,
   Save,
   Info,
+  Bitcoin,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -28,9 +28,9 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -79,9 +79,8 @@ interface MethodConfig {
 const ALL_METHODS: MethodConfig[] = [
   { id: 'easypaisa', name: 'Easypaisa', icon: Wallet, color: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-300', description: 'Mobile wallet payment', buyerAvailable: true, sellerAvailable: true },
   { id: 'jazzcash', name: 'JazzCash', icon: Wallet, color: 'text-red-600', bgColor: 'bg-red-50', borderColor: 'border-red-300', description: 'Mobile wallet payment', buyerAvailable: true, sellerAvailable: true },
-  { id: 'card', name: 'Debit/Credit Card', icon: CreditCard, color: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-300', description: 'Visa, Mastercard, UnionPay', buyerAvailable: true, sellerAvailable: false },
-  { id: 'payoneer', name: 'Payoneer', icon: Globe, color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-300', description: 'Global payment platform', buyerAvailable: true, sellerAvailable: true },
-  { id: 'wise', name: 'Wise', icon: Mail, color: 'text-yellow-600', bgColor: 'bg-yellow-50', borderColor: 'border-yellow-300', description: 'International transfer', buyerAvailable: true, sellerAvailable: true },
+  { id: 'payfast', name: 'PayFast', icon: ShieldCheck, color: 'text-blue-700', bgColor: 'bg-[#E8F7FD]', borderColor: 'border-[#00A3E0]', description: 'PayFast processes international card payments via Visa & Mastercard', buyerAvailable: true, sellerAvailable: true },
+  { id: 'crypto', name: 'Crypto', icon: Bitcoin, color: 'text-orange-700', bgColor: 'bg-[#FFF3E0]', borderColor: 'border-[#F7931A]', description: 'Pay with Bitcoin, Ethereum, Solana & more. No KYC required!', buyerAvailable: true, sellerAvailable: true },
   { id: 'bank_transfer', name: 'Bank Transfer', icon: Building2, color: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-300', description: 'Direct bank transfer', buyerAvailable: false, sellerAvailable: true },
 ]
 
@@ -131,12 +130,10 @@ function maskedDetail(method: PaymentInfoMethod, details: PaymentInfoAccountDeta
     case 'easypaisa':
     case 'jazzcash':
       return details.mobileNumber ? `0300 ****${details.mobileNumber?.slice(-3)}` : '****'
-    case 'card':
-      return details.cardLast4 ? `**** **** **** ${details.cardLast4}` : '****'
-    case 'payoneer':
-      return details.email ? details.email.replace(/^(..)(.*)(@.*)$/, '$1***$3') : '****'
-    case 'wise':
+    case 'payfast':
       return details.iban ? `IBAN ****${details.iban.slice(-4)}` : details.email ? details.email.replace(/^(..)(.*)(@.*)$/, '$1***$3') : '****'
+    case 'crypto':
+      return details.walletAddress ? `${details.walletAddress.slice(0, 6)}...${details.walletAddress.slice(-4)}` : details.preferredCrypto ? details.preferredCrypto.toUpperCase() : '****'
     case 'bank_transfer':
       return details.accountNumber ? `**** ${details.accountNumber.slice(-4)}` : '****'
     default:
@@ -153,20 +150,14 @@ function detailSummary(method: PaymentInfoMethod, details: PaymentInfoAccountDet
       if (details.accountName) items.push({ label: 'Account Name', value: details.accountName })
       if (details.mobileNumber) items.push({ label: 'Mobile Number', value: details.mobileNumber })
       break
-    case 'card':
-      if (details.cardHolder) items.push({ label: 'Card Holder', value: details.cardHolder })
-      if (details.cardLast4) items.push({ label: 'Card Number', value: `**** **** **** ${details.cardLast4}` })
-      if (details.expiryMonth && details.expiryYear) items.push({ label: 'Expires', value: `${details.expiryMonth}/${details.expiryYear}` })
-      if (details.cardType) items.push({ label: 'Card Type', value: details.cardType.charAt(0).toUpperCase() + details.cardType.slice(1) })
-      break
-    case 'payoneer':
-      if (details.email) items.push({ label: 'Email', value: details.email })
-      if (details.accountName) items.push({ label: 'Account Name', value: details.accountName })
-      break
-    case 'wise':
+    case 'payfast':
       if (details.email) items.push({ label: 'Email', value: details.email })
       if (details.iban) items.push({ label: 'IBAN', value: details.iban })
       if (details.accountName) items.push({ label: 'Account Name', value: details.accountName })
+      break
+    case 'crypto':
+      if (details.walletAddress) items.push({ label: 'Wallet Address', value: `${details.walletAddress.slice(0, 6)}...${details.walletAddress.slice(-4)}` })
+      if (details.preferredCrypto) items.push({ label: 'Preferred Crypto', value: details.preferredCrypto.toUpperCase() })
       break
     case 'bank_transfer':
       if (details.accountName) items.push({ label: 'Account Name', value: details.accountName })
@@ -208,13 +199,10 @@ function PaymentMethodForm({
   const existingDetails = editItem ? parseDetails(editItem.accountDetails) : {}
   const [accountName, setAccountName] = useState(existingDetails.accountName || '')
   const [mobileNumber, setMobileNumber] = useState(existingDetails.mobileNumber || '')
-  const [cardHolder, setCardHolder] = useState(existingDetails.cardHolder || '')
-  const [cardNumberRaw, setCardNumberRaw] = useState('')
-  const [expiryMonth, setExpiryMonth] = useState(existingDetails.expiryMonth || '')
-  const [expiryYear, setExpiryYear] = useState(existingDetails.expiryYear || '')
-  const [cardType, setCardType] = useState<'visa' | 'master' | 'unionpay'>(existingDetails.cardType as 'visa' | 'master' | 'unionpay' || 'visa')
   const [email, setEmail] = useState(existingDetails.email || '')
   const [iban, setIban] = useState(existingDetails.iban || '')
+  const [walletAddress, setWalletAddress] = useState(existingDetails.walletAddress || '')
+  const [preferredCrypto, setPreferredCrypto] = useState(existingDetails.preferredCrypto || 'btc')
   const [accountNumber, setAccountNumber] = useState(existingDetails.accountNumber || '')
   const [bankName, setBankName] = useState(existingDetails.bankName || '')
   const [routingNumber, setRoutingNumber] = useState(existingDetails.routingNumber || '')
@@ -227,18 +215,10 @@ function PaymentMethodForm({
       case 'easypaisa':
       case 'jazzcash':
         return { accountName, mobileNumber }
-      case 'card':
-        return {
-          cardHolder,
-          cardLast4: cardNumberRaw.slice(-4) || existingDetails.cardLast4,
-          expiryMonth,
-          expiryYear,
-          cardType,
-        }
-      case 'payoneer':
-        return { email, accountName }
-      case 'wise':
+      case 'payfast':
         return { email, iban, accountName }
+      case 'crypto':
+        return { walletAddress, preferredCrypto }
       case 'bank_transfer':
         return {
           accountName,
@@ -261,19 +241,13 @@ function PaymentMethodForm({
         if (!accountName.trim()) return 'Please enter the account name'
         if (!mobileNumber.trim()) return 'Please enter the mobile number'
         break
-      case 'card':
-        if (!cardHolder.trim()) return 'Please enter the card holder name'
-        if (!isEditing && cardNumberRaw.length < 4) return 'Please enter a valid card number'
-        if (!expiryMonth || !expiryYear) return 'Please enter the card expiry date'
-        break
-      case 'payoneer':
-        if (!email.trim()) return 'Please enter your Payoneer email'
-        if (!accountName.trim()) return 'Please enter the account name'
-        break
-      case 'wise':
-        if (!email.trim()) return 'Please enter your Wise email'
+      case 'payfast':
+        if (!email.trim()) return 'Please enter your PayFast email'
         if (!iban.trim()) return 'Please enter your IBAN'
         if (!accountName.trim()) return 'Please enter the account name'
+        break
+      case 'crypto':
+        if (!walletAddress.trim()) return 'Please enter your crypto wallet address'
         break
       case 'bank_transfer':
         if (!accountName.trim()) return 'Please enter the account name'
@@ -427,114 +401,13 @@ function PaymentMethodForm({
             </>
           )}
 
-          {/* Card */}
-          {selectedMethod === 'card' && (
+          {/* PayFast */}
+          {selectedMethod === 'payfast' && (
             <>
               <div className="space-y-1.5">
-                <Label htmlFor="ps-card-holder">Card Holder Name *</Label>
+                <Label htmlFor="ps-payfast-email">Email *</Label>
                 <Input
-                  id="ps-card-holder"
-                  value={cardHolder}
-                  onChange={(e) => setCardHolder(e.target.value)}
-                  placeholder="Name on card"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="ps-card-number">
-                  Card Number {isEditing ? '' : '*'}
-                </Label>
-                <Input
-                  id="ps-card-number"
-                  value={isEditing && !cardNumberRaw ? `**** **** **** ${existingDetails.cardLast4 || ''}` : cardNumberRaw.replace(/(.{4})/g, '$1 ').trim()}
-                  onChange={(e) => {
-                    const digits = e.target.value.replace(/\D/g, '').slice(0, 16)
-                    setCardNumberRaw(digits)
-                  }}
-                  placeholder="4242 4242 4242 4242"
-                  inputMode="numeric"
-                  disabled={isEditing && !cardNumberRaw}
-                />
-                {isEditing && (
-                  <p className="text-[11px] text-muted-foreground">
-                    Leave as-is to keep current card on file, or enter a new number to update.
-                  </p>
-                )}
-                {!isEditing && (
-                  <p className="text-[11px] text-muted-foreground">
-                    Only the last 4 digits are stored for your security.
-                  </p>
-                )}
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="ps-expiry-month">Expiry Month *</Label>
-                  <Select value={expiryMonth} onValueChange={setExpiryMonth}>
-                    <SelectTrigger id="ps-expiry-month">
-                      <SelectValue placeholder="MM" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: 12 }, (_, i) => {
-                        const val = String(i + 1).padStart(2, '0')
-                        return (
-                          <SelectItem key={val} value={val}>
-                            {val}
-                          </SelectItem>
-                        )
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="ps-expiry-year">Expiry Year *</Label>
-                  <Select value={expiryYear} onValueChange={setExpiryYear}>
-                    <SelectTrigger id="ps-expiry-year">
-                      <SelectValue placeholder="YY" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: 10 }, (_, i) => {
-                        const year = new Date().getFullYear() + i
-                        const val = String(year).slice(-2)
-                        return (
-                          <SelectItem key={val} value={val}>
-                            {year}
-                          </SelectItem>
-                        )
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Card Type *</Label>
-                <RadioGroup
-                  value={cardType}
-                  onValueChange={(val) => setCardType(val as 'visa' | 'master' | 'unionpay')}
-                  className="flex gap-4"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <RadioGroupItem value="visa" id="ps-visa" />
-                    <Label htmlFor="ps-visa" className="text-sm cursor-pointer">Visa</Label>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <RadioGroupItem value="master" id="ps-master" />
-                    <Label htmlFor="ps-master" className="text-sm cursor-pointer">Mastercard</Label>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <RadioGroupItem value="unionpay" id="ps-unionpay" />
-                    <Label htmlFor="ps-unionpay" className="text-sm cursor-pointer">UnionPay</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-            </>
-          )}
-
-          {/* Payoneer */}
-          {selectedMethod === 'payoneer' && (
-            <>
-              <div className="space-y-1.5">
-                <Label htmlFor="ps-payoneer-email">Email *</Label>
-                <Input
-                  id="ps-payoneer-email"
+                  id="ps-payfast-email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -542,47 +415,57 @@ function PaymentMethodForm({
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="ps-payoneer-name">Account Name *</Label>
+                <Label htmlFor="ps-payfast-iban">IBAN *</Label>
                 <Input
-                  id="ps-payoneer-name"
-                  value={accountName}
-                  onChange={(e) => setAccountName(e.target.value)}
-                  placeholder="Full name on account"
-                />
-              </div>
-            </>
-          )}
-
-          {/* Wise */}
-          {selectedMethod === 'wise' && (
-            <>
-              <div className="space-y-1.5">
-                <Label htmlFor="ps-wise-email">Email *</Label>
-                <Input
-                  id="ps-wise-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="email@example.com"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="ps-wise-iban">IBAN *</Label>
-                <Input
-                  id="ps-wise-iban"
+                  id="ps-payfast-iban"
                   value={iban}
                   onChange={(e) => setIban(e.target.value)}
                   placeholder="IBAN number"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="ps-wise-name">Account Name *</Label>
+                <Label htmlFor="ps-payfast-name">Account Name *</Label>
                 <Input
-                  id="ps-wise-name"
+                  id="ps-payfast-name"
                   value={accountName}
                   onChange={(e) => setAccountName(e.target.value)}
                   placeholder="Full name on account"
                 />
+              </div>
+            </>
+          )}
+
+          {/* Crypto */}
+          {selectedMethod === 'crypto' && (
+            <>
+              <div className="rounded-lg bg-[#FFF3E0] border border-[#F7931A]/30 p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <Bitcoin className="h-4 w-4 text-[#F7931A]" />
+                  <span className="text-sm font-semibold text-orange-700">Crypto Wallet</span>
+                </div>
+                <p className="text-xs text-orange-700/80">Enter your crypto wallet address for receiving payments. Direct to wallet, no KYC required!</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="ps-wallet-address">Wallet Address *</Label>
+                <Input
+                  id="ps-wallet-address"
+                  value={walletAddress}
+                  onChange={(e) => setWalletAddress(e.target.value)}
+                  placeholder="Your crypto wallet address"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="ps-preferred-crypto">Preferred Cryptocurrency</Label>
+                <Select value={preferredCrypto} onValueChange={setPreferredCrypto}>
+                  <SelectTrigger id="ps-preferred-crypto">
+                    <SelectValue placeholder="Select currency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="btc">₿ BTC - Bitcoin</SelectItem>
+                    <SelectItem value="eth">Ξ ETH - Ethereum</SelectItem>
+                    <SelectItem value="sol">◎ SOL - Solana</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </>
           )}
@@ -661,7 +544,7 @@ function PaymentMethodForm({
           <div className="flex items-start gap-2">
             <ShieldCheck className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
             <p className="text-xs text-amber-700">
-              Your payment details are securely stored. Card numbers are never saved in full — only the last 4 digits are kept.
+              Your payment details are securely stored and encrypted. Sensitive data is never saved in plain text.
             </p>
           </div>
         </div>
@@ -1031,7 +914,7 @@ export function PaymentSettingsPage({ userId, userRole }: PaymentSettingsPagePro
             </p>
             <p className="text-xs text-amber-700 mt-1">
               {activeType === 'buyer'
-                ? 'Save your card, mobile wallet, or international payment details for faster checkout.'
+                ? 'Save your PayFast account, mobile wallet, or international payment details for faster checkout.'
                 : 'Add your bank, mobile wallet, or international account to receive payouts.'}
             </p>
           </div>
@@ -1087,8 +970,8 @@ export function PaymentSettingsPage({ userId, userRole }: PaymentSettingsPagePro
               </p>
               <p className="text-sm text-muted-foreground mt-1 max-w-sm">
                 {activeType === 'buyer'
-                  ? 'Add a payment method like a debit/credit card, Easypaisa, or JazzCash to speed up checkout.'
-                  : 'Add a receiving method like a bank account, Easypaisa, or Payoneer so you can withdraw your earnings.'}
+                  ? 'Add a payment method like PayFast, Easypaisa, or JazzCash to speed up checkout.'
+                  : 'Add a receiving method like a bank account, Easypaisa, or PayFast so you can withdraw your earnings.'}
               </p>
               <Button
                 className="mt-4 bg-amber-600 hover:bg-amber-700"
@@ -1129,7 +1012,7 @@ export function PaymentSettingsPage({ userId, userRole }: PaymentSettingsPagePro
             <span className="text-sm font-medium text-gray-700">Security & Privacy</span>
           </div>
           <ul className="text-xs text-gray-500 space-y-1 ml-6 list-disc">
-            <li>Card numbers are never stored in full — only the last 4 digits are kept</li>
+            <li>Payment details are encrypted and never stored in plain text</li>
             <li>All payment information is securely stored and encrypted</li>
             <li>You can remove any payment method at any time</li>
             <li>Payment methods are only used for their intended purpose (buying or receiving)</li>

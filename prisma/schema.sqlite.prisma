@@ -659,7 +659,7 @@ model Payment {
   amount          Float                     // Total amount paid by buyer
   platformFee     Float    @default(0)      // 10% commission
   sellerPayout    Float    @default(0)      // Amount seller receives (90%)
-  paymentMethod   String   @default("easypaisa")  // easypaisa, jazzcash, payoneer, wise
+  paymentMethod   String   @default("easypaisa")  // easypaisa, jazzcash, payfast
   paymentProvider String?                     // External transaction/reference ID
   status          String   @default("pending")    // pending, processing, completed, failed, refunded, escrow
   escrowStatus    String   @default("held")       // held, released, refunded
@@ -714,7 +714,7 @@ model Withdrawal {
   amount          Float
   fee             Float    @default(0)       // Withdrawal processing fee
   netAmount       Float                       // amount - fee
-  method          String   // easypaisa, jazzcash, payoneer, wise, bank_transfer
+  method          String   // easypaisa, jazzcash, payfast, bank_transfer
   accountDetails  String                       // JSON: { accountName, accountNumber, bankName, etc. }
   status          String   @default("pending") // pending, processing, approved, rejected, completed
   adminNote       String?
@@ -742,7 +742,7 @@ model PaymentInfo {
   id              String   @id @default(cuid())
   userId          String
   type            String   // "buyer" = paying method, "seller" = receiving method
-  method          String   // easypaisa, jazzcash, payoneer, wise, bank_transfer, card
+  method          String   // easypaisa, jazzcash, payfast, bank_transfer, card
   label           String   // User-friendly name like "My Easypaisa", "HBL Account"
   accountDetails  String   // JSON: method-specific details (see below)
   isDefault       Boolean  @default(false)
@@ -761,7 +761,7 @@ model PaymentInfo {
   // Easypaisa/JazzCash: { accountName, mobileNumber }
   // Card: { cardHolder, cardNumber (last 4), expiryMonth, expiryYear, cardType (visa/master) }
   // Payoneer: { email, accountName }
-  // Wise: { email, iban, accountName }
+  // PayFast: { email, iban, accountName }
   // Bank Transfer: { accountName, accountNumber, bankName, routingNumber, swiftCode }
 }
 
@@ -1477,6 +1477,28 @@ model AuditLog {
 }
 
 // =============================================================================
+// CRYPTO WALLET MODEL — Dynamic escrow wallet addresses
+// Stores wallet addresses in DB so admin can update them anytime
+// (e.g. C Wallet regenerates LTC address after every 8 deposits)
+// =============================================================================
+
+model CryptoWallet {
+  id          String   @id @default(cuid())
+  currency    String   @unique  // btc, eth, sol, ltc
+  address     String              // Current active wallet address
+  label       String?             // e.g. "Exodus BTC", "C Wallet LTC"
+  isActive    Boolean  @default(true)
+  depositCount Int     @default(0) // Track deposits (C Wallet regenerates after 8)
+  maxDeposits Int?     // If set, warn admin when approaching limit (e.g. 8 for C Wallet)
+  notes       String?             // Admin notes about this wallet
+  previousAddresses String @default("[]") // JSON array of old addresses for reference
+  updatedAt   DateTime @updatedAt
+  updatedBy   String?             // Admin userId who last updated
+
+  @@index([currency])
+  @@index([isActive])
+}
+
 // CART MODEL — Server-side cart persistence for abandoned cart recovery
 // =============================================================================
 

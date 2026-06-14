@@ -21,7 +21,7 @@ const features = [
   {
     icon: <ShieldCheck className="h-6 w-6" />,
     title: 'Escrow Payments',
-    description: 'Funds held securely in escrow until you confirm delivery. Supports Easypaisa, JazzCash, Payoneer, and Wise.',
+    description: 'Funds held securely in escrow until you confirm delivery. Supports Easypaisa, JazzCash, PayFast, and crypto.',
     gradient: 'from-amber-500 to-yellow-600',
   },
   {

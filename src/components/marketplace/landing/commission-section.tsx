@@ -164,7 +164,7 @@ export function CommissionSection() {
             </div>
             <div>
               <p className="font-semibold text-sm">Fast Withdrawals</p>
-              <p className="text-xs text-muted-foreground">Withdraw via Easypaisa, JazzCash, Payoneer, Wise</p>
+              <p className="text-xs text-muted-foreground">Withdraw via Easypaisa, JazzCash, PayFast, or crypto</p>
             </div>
           </div>
           <div className="flex items-center gap-3 p-4 rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-sm border border-border/30">

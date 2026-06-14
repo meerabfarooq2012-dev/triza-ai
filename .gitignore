@@ -61,3 +61,4 @@ db/*.db
 !public/apple-touch-icon.png
 !public/mascot.png
 !public/mascot-3d.png
+tool-results/

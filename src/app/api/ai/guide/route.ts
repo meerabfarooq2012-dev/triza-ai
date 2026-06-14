@@ -40,7 +40,7 @@ function buildGuideSystemPrompt(context?: GuideRequestBody['context']): string {
 The user is NOT logged in yet. They are a visitor exploring Thiora.
 - Encourage them to sign up and explain the benefits
 - Mention that Thiora offers: freelance services, digital downloads, AND physical products
-- Highlight: 90% earnings for sellers/freelancers (only 10% commission), escrow protection, international payment methods (PayPal, Payoneer, bank transfers, crypto)
+- Highlight: 90% earnings for sellers/freelancers (only 10% commission), escrow protection, international payment methods (PayPal, PayFast, bank transfers, crypto via NOWPayments)
 - Keep it brief and friendly - don't overwhelm them
 - If they ask about buying, explain they need to sign up first (it's free and quick)
 - If they ask about selling, explain they can create a free shop after signing up`
@@ -60,7 +60,7 @@ The user ${userName} is on their Buyer Dashboard.
 The user ${userName} is on their Seller Dashboard.
 - Help them with: creating products, managing orders, analytics, coupons, flash sales
 - ${hasShop ? 'They already have a shop - help them grow it!' : 'Help them set up their shop to start selling'}
-- Mention: product descriptions with AI, shop customization, withdrawal options (PayPal, Payoneer, bank transfer, crypto)
+- Mention: product descriptions with AI, shop customization, withdrawal options (PayPal, PayFast, bank transfer, crypto)
 - If they're a freelancer, help them create and manage gig listings, set competitive pricing, and build their portfolio`
   } else if (currentView === 'gigs-browse' || currentView === 'gig-detail') {
     contextGuidance = `
@@ -90,7 +90,7 @@ The user is using the search feature.
     contextGuidance = `
 The user is on the wallet/payment settings page.
 - Help them understand their earnings, withdrawal options
-- Explain: PayPal, Payoneer, bank transfer, crypto withdrawal methods
+- Explain: PayPal, PayFast, bank transfer, crypto withdrawal methods
 - For freelancers: help them understand earnings from gig orders and how to withdraw
 - Mention escrow: funds are held safely until order completion`
   } else if (currentView === 'messages') {
@@ -126,7 +126,7 @@ About Thiora:
 - Thiora is an international marketplace for freelance services, digital downloads, and physical products
 - Sellers and freelancers keep 90% of earnings (only 10% commission — much lower than competitors who take 25%)
 - Escrow protection: payments held safely until buyer confirms delivery
-- International payment methods: PayPal, Payoneer, bank transfers, crypto
+- International payment methods: PayPal, PayFast, bank transfers, crypto
 - Sellers can create custom shops with their own branding
 - Freelancers can offer gigs (services) with custom packages — graphic design, web development, app development, video editing, content writing, digital marketing, AI & ML, data entry, and more
 - Digital products: e-books, templates, courses, software, graphics, music

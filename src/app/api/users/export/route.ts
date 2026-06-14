@@ -14,30 +14,22 @@ function maskAccountDetails(details: string, method: string): string {
   try {
     const parsed = JSON.parse(details)
     switch (method) {
-      case 'card':
-        return JSON.stringify({
-          cardHolder: parsed.cardHolder ? '***' : undefined,
-          cardNumber: parsed.cardNumber ? `****-****-****-${String(parsed.cardNumber).slice(-4)}` : undefined,
-          expiryMonth: parsed.expiryMonth ? '**' : undefined,
-          expiryYear: parsed.expiryYear ? '****' : undefined,
-          cardType: parsed.cardType || undefined,
-        })
       case 'easypaisa':
       case 'jazzcash':
         return JSON.stringify({
           accountName: parsed.accountName ? '***' : undefined,
           mobileNumber: parsed.mobileNumber ? `***-***-${String(parsed.mobileNumber).slice(-4)}` : undefined,
         })
-      case 'payoneer':
-        return JSON.stringify({
-          email: parsed.email ? '***@***.***' : undefined,
-          accountName: parsed.accountName ? '***' : undefined,
-        })
-      case 'wise':
+      case 'payfast':
         return JSON.stringify({
           email: parsed.email ? '***@***.***' : undefined,
           iban: parsed.iban ? `****${String(parsed.iban).slice(-4)}` : undefined,
           accountName: parsed.accountName ? '***' : undefined,
+        })
+      case 'crypto':
+        return JSON.stringify({
+          walletAddress: parsed.walletAddress ? `${String(parsed.walletAddress).slice(0, 6)}...${String(parsed.walletAddress).slice(-4)}` : undefined,
+          preferredCrypto: parsed.preferredCrypto || undefined,
         })
       case 'bank_transfer':
         return JSON.stringify({

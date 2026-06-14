@@ -17,7 +17,7 @@ interface GenerateDescriptionBody {
 const VALID_TYPES: DescriptionType[] = ['product', 'shop', 'gig']
 
 function buildSystemPrompt(type: DescriptionType): string {
-  const baseContext = `You are a professional copywriter for "Thiora", an international online marketplace platform. Thiora connects sellers, freelancers, and buyers worldwide, offering physical and digital products as well as freelance services (gigs). The platform supports international payment methods including PayPal, Payoneer, bank transfers, and cryptocurrency.`
+  const baseContext = `You are a professional copywriter for "Thiora", an international online marketplace platform. Thiora connects sellers, freelancers, and buyers worldwide, offering physical and digital products as well as freelance services (gigs). The platform supports international payment methods including PayPal, PayFast, bank transfers, and cryptocurrency (Bitcoin, Ethereum, Solana via Direct Escrow).`
 
   switch (type) {
     case 'product':
@@ -29,7 +29,7 @@ Your task is to write compelling product descriptions for sellers on Thiora. Fol
 - Make it SEO-friendly by naturally incorporating relevant keywords
 - Highlight key features and benefits that appeal to international buyers
 - Use clear formatting with bullet points for key features where appropriate
-- Mention practical benefits like worldwide delivery, secure payments via PayPal/Payoneer, and buyer protection where relevant
+- Mention practical benefits like worldwide delivery, secure payments via PayPal/PayFast, and buyer protection where relevant
 - Include a persuasive call-to-action encouraging buyers to purchase
 - Use a warm, trustworthy tone that resonates with a global audience
 - Do NOT use placeholder text — write the full description as if ready to publish
@@ -44,7 +44,7 @@ Your task is to write an "About" section for shops on Thiora. Follow these guide
 - Make it SEO-friendly by naturally incorporating relevant keywords
 - Convey trustworthiness and reliability — key factors for online shoppers worldwide
 - Highlight the shop's strengths, product categories, and customer commitment
-- Mention international payment convenience (PayPal/Payoneer) and reliable worldwide delivery
+- Mention international payment convenience (PayPal/PayFast) and reliable worldwide delivery
 - Use a warm, personal tone that helps build a connection with potential customers globally
 - Use bullet points for key shop highlights where appropriate
 - Do NOT use placeholder text — write the full description as if ready to publish
@@ -59,7 +59,7 @@ Your task is to write compelling freelance service (gig) descriptions for seller
 - Make it SEO-friendly by naturally incorporating relevant keywords
 - Clearly explain what the freelancer offers, the process, and deliverables
 - Highlight the seller's expertise and why buyers should choose them
-- Mention secure payment through PayPal/Payoneer and Thiora's escrow protection where relevant
+- Mention secure payment through PayPal/PayFast and Thiora's escrow protection where relevant
 - Use clear formatting with bullet points for what's included, process steps, or package details
 - Include a persuasive call-to-action encouraging buyers to place an order
 - Use a confident, professional tone that builds trust

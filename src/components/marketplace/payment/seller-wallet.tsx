@@ -110,40 +110,19 @@ function getStepIndex(status: string): number {
   return idx >= 0 ? idx : 0
 }
 
-function Globe2Icon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <circle cx="12" cy="12" r="10" />
-      <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
-      <path d="M2 12h20" />
-    </svg>
-  )
-}
-
 const WITHDRAWAL_METHODS = [
   { id: 'easypaisa', name: 'Easypaisa', icon: WalletIcon },
   { id: 'jazzcash', name: 'JazzCash', icon: CreditCard },
-  { id: 'payoneer', name: 'Payoneer', icon: Globe2Icon },
-  { id: 'wise', name: 'Wise', icon: Send },
+  { id: 'payfast', name: 'PayFast', icon: CreditCard },
+  { id: 'crypto', name: 'Crypto Wallet', icon: Send },
   { id: 'bank_transfer', name: 'Bank Transfer', icon: Building2 },
 ]
 
 const WITHDRAWAL_FEE: Record<string, number> = {
   easypaisa: 0,
   jazzcash: 0,
-  payoneer: 0,
-  wise: 0,
+  payfast: 0,
+  crypto: 0,
   bank_transfer: 0,
 }
 
@@ -309,12 +288,7 @@ export function SellerWallet() {
       return
     }
 
-    if (withdrawMethod === 'payoneer' && !email) {
-      toast.error('Please enter email')
-      return
-    }
-
-    if (withdrawMethod === 'wise' && (!email || !iban)) {
+    if (withdrawMethod === 'payfast' && (!email || !iban)) {
       toast.error('Please enter email and IBAN')
       return
     }
@@ -329,10 +303,7 @@ export function SellerWallet() {
       const accountDetails: Record<string, string> = { accountName }
       if (withdrawMethod === 'easypaisa' || withdrawMethod === 'jazzcash') {
         accountDetails.accountNumber = mobileNumber
-      } else if (withdrawMethod === 'payoneer') {
-        accountDetails.email = email
-        accountDetails.accountNumber = email
-      } else if (withdrawMethod === 'wise') {
+      } else if (withdrawMethod === 'payfast') {
         accountDetails.email = email
         accountDetails.accountNumber = iban
         accountDetails.iban = iban
@@ -669,8 +640,7 @@ export function SellerWallet() {
                           <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${
                             pm.method === 'easypaisa' ? 'bg-amber-50' :
                             pm.method === 'jazzcash' ? 'bg-red-50' :
-                            pm.method === 'payoneer' ? 'bg-blue-50' :
-                            pm.method === 'wise' ? 'bg-yellow-50' :
+                            pm.method === 'payfast' ? 'bg-[#E8F7FD]' :
                             'bg-amber-50'
                           }`}>
                             {pm.method === 'easypaisa' || pm.method === 'jazzcash' ? (
@@ -678,7 +648,7 @@ export function SellerWallet() {
                             ) : pm.method === 'bank_transfer' ? (
                               <Building2 className="h-3.5 w-3.5 text-amber-600" />
                             ) : (
-                              <Send className="h-3.5 w-3.5 text-blue-600" />
+                              <CreditCard className="h-3.5 w-3.5 text-[#00A3E0]" />
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -835,27 +805,13 @@ export function SellerWallet() {
                   </div>
                 )}
 
-                {/* Payoneer: Email */}
-                {withdrawMethod === 'payoneer' && (
-                  <div className="space-y-1.5">
-                    <Label htmlFor="pay-email">Payoneer Email *</Label>
-                    <Input
-                      id="pay-email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="email@example.com"
-                    />
-                  </div>
-                )}
-
-                {/* Wise: Email + IBAN */}
-                {withdrawMethod === 'wise' && (
+                {/* PayFast: Email + IBAN */}
+                {withdrawMethod === 'payfast' && (
                   <>
                     <div className="space-y-1.5">
-                      <Label htmlFor="wise-email">Wise Email *</Label>
+                      <Label htmlFor="payfast-email">PayFast Email *</Label>
                       <Input
-                        id="wise-email"
+                        id="payfast-email"
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -863,9 +819,9 @@ export function SellerWallet() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label htmlFor="wise-iban">IBAN *</Label>
+                      <Label htmlFor="payfast-iban">IBAN *</Label>
                       <Input
-                        id="wise-iban"
+                        id="payfast-iban"
                         value={iban}
                         onChange={(e) => setIban(e.target.value)}
                         placeholder="IBAN number"

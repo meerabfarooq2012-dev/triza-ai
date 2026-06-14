@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  CreditCard,
   ShieldCheck,
   Truck,
   CheckCircle2,
@@ -22,6 +21,7 @@ import {
   Zap,
   Gift,
   Clock,
+  Bitcoin,
 } from 'lucide-react'
 import {
   Dialog,
@@ -79,40 +79,30 @@ const PAYMENT_METHODS: {
     description: 'Mobile wallet payment',
   },
   {
-    id: 'card',
-    name: 'Debit / Credit Card',
-    region: 'International',
-    flag: '💳',
-    color: 'text-amber-700',
-    bgColor: 'bg-amber-50',
-    borderColor: 'border-amber-200 data-[state=checked]:border-amber-500',
-    description: 'Visa, Mastercard, UnionPay',
-  },
-  {
-    id: 'payoneer',
-    name: 'Payoneer',
+    id: 'payfast',
+    name: 'PayFast',
     region: 'International',
     flag: '🌍',
     color: 'text-blue-700',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-200 data-[state=checked]:border-blue-500',
-    description: 'Global payment platform',
+    bgColor: 'bg-[#E8F7FD]',
+    borderColor: 'border-[#00A3E0] data-[state=checked]:border-[#00A3E0]',
+    description: 'International card payments via Visa & Mastercard',
   },
   {
-    id: 'wise',
-    name: 'Wise',
+    id: 'crypto',
+    name: 'Crypto',
     region: 'International',
-    flag: '🌍',
-    color: 'text-yellow-700',
-    bgColor: 'bg-yellow-50',
-    borderColor: 'border-yellow-200 data-[state=checked]:border-yellow-500',
-    description: 'International transfer',
+    flag: '🌐',
+    color: 'text-orange-700',
+    bgColor: 'bg-[#FFF3E0]',
+    borderColor: 'border-[#F7931A] data-[state=checked]:border-[#F7931A]',
+    description: 'Pay with Bitcoin, Ethereum, Solana & more',
   },
 ]
 
 // Commission percent is now imported from constants
 
-type CheckoutStep = 'summary' | 'payment' | 'payment_details' | 'shipping' | 'processing' | 'gateway_redirect' | 'success'
+type CheckoutStep = 'summary' | 'payment' | 'payment_details' | 'shipping' | 'processing' | 'gateway_redirect' | 'crypto_invoice' | 'success'
 
 export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   const { cart, cartTotal, currentUser, clearCart } = useMarketplaceStore()
@@ -148,13 +138,9 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   // Payment details state
   const [accountName, setAccountName] = useState('')
   const [mobileNumber, setMobileNumber] = useState('')
-  const [cardHolder, setCardHolder] = useState('')
-  const [cardNumber, setCardNumber] = useState('')
-  const [expiryMonth, setExpiryMonth] = useState('')
-  const [expiryYear, setExpiryYear] = useState('')
-  const [cardType, setCardType] = useState<'visa' | 'master' | 'unionpay'>('visa')
   const [payEmail, setPayEmail] = useState('')
   const [wiseIban, setWiseIban] = useState('')
+  const [payCurrency, setPayCurrency] = useState('btc')
   const [savePaymentInfo, setSavePaymentInfo] = useState(true)
 
   // Coupon state
@@ -197,13 +183,9 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
     // Pre-fill fields from saved method
     setAccountName(details.accountName || '')
     setMobileNumber(details.mobileNumber || '')
-    setCardHolder(details.cardHolder || '')
-    setCardNumber('') // Never pre-fill card number for security
-    setExpiryMonth(details.expiryMonth || '')
-    setExpiryYear(details.expiryYear || '')
-    setCardType(details.cardType || 'visa')
     setPayEmail(details.email || '')
     setWiseIban(details.iban || '')
+    setPayCurrency(details.preferredCrypto || 'btc')
   }
 
   const handleUseNewMethod = () => {
@@ -211,11 +193,6 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
     setUseSavedMethod(false)
     setAccountName('')
     setMobileNumber('')
-    setCardHolder('')
-    setCardNumber('')
-    setExpiryMonth('')
-    setExpiryYear('')
-    setCardType('visa')
     setPayEmail('')
     setWiseIban('')
   }
@@ -417,13 +394,9 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
     setPollingPayment(false)
     setAccountName('')
     setMobileNumber('')
-    setCardHolder('')
-    setCardNumber('')
-    setExpiryMonth('')
-    setExpiryYear('')
-    setCardType('visa')
     setPayEmail('')
     setWiseIban('')
+    setPayCurrency('btc')
     setSavePaymentInfo(true)
     setSelectedSavedMethodId(null)
     setUseSavedMethod(false)
@@ -463,19 +436,13 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
           if (paymentMethod === 'easypaisa' || paymentMethod === 'jazzcash') {
             details.accountName = accountName
             details.mobileNumber = mobileNumber
-          } else if (paymentMethod === 'card') {
-            details.cardHolder = cardHolder
-            details.cardLast4 = cardNumber.replace(/\s/g, '').slice(-4)
-            details.expiryMonth = expiryMonth
-            details.expiryYear = expiryYear
-            details.cardType = cardType
-          } else if (paymentMethod === 'payoneer') {
-            details.email = payEmail
-            details.accountName = accountName
-          } else if (paymentMethod === 'wise') {
+          } else if (paymentMethod === 'payfast') {
             details.email = payEmail
             details.iban = wiseIban
             details.accountName = accountName
+          } else if (paymentMethod === 'crypto') {
+            details.walletAddress = '' // Crypto uses gateway-provided address
+            details.preferredCrypto = payCurrency
           }
 
           await fetch('/api/payment-info', {
@@ -585,37 +552,75 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
       const firstPaymentId = paymentResults[0]?.data?.id || ''
       setPaymentId(firstPaymentId)
 
-      // Step 3: For Stripe (card payments), redirect to Stripe Checkout
-      if (paymentMethod === 'card') {
+      // Step 3: For Crypto, show wallet address invoice instead of redirecting
+      if (paymentMethod === 'crypto') {
         try {
-          const stripeRes = await fetch('/api/payments/stripe/checkout', {
+          const cryptoRes = await fetch('/api/payments/initiate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orderId: firstOrderId,
+              paymentMethod: 'crypto',
+              buyerId: currentUser.id,
+              amount: cartTotal,
+              payCurrency,
+            }),
+          })
+
+          const cryptoData = await cryptoRes.json()
+
+          if (cryptoData.success && cryptoData.data?.redirectUrl) {
+            // Set crypto invoice state instead of redirecting
+            setGatewayRedirectUrl(cryptoData.data.redirectUrl)
+            setPaymentToken(cryptoData.data.paymentToken || '')
+            setGatewayMode(cryptoData.data.gatewayMode || 'sandbox')
+            setStep('crypto_invoice')
+            return
+          }
+
+          // If crypto not configured, fall back to sandbox/verification flow
+          if (cryptoData.error?.includes('wallet address not configured')) {
+            toast.warning('Crypto wallet address not configured. Using sandbox mode.')
+          } else {
+            throw new Error(cryptoData.error || 'Crypto checkout failed')
+          }
+        } catch (err) {
+          console.warn('Crypto checkout error, falling back to verification flow:', err)
+          // Fall through to verify flow below
+        }
+      }
+
+      // Step 3b: For PayFast, redirect to PayFast Checkout
+      if (paymentMethod === 'payfast') {
+        try {
+          const payfastRes = await fetch('/api/payments/payfast/checkout', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               orderId: firstOrderId,
               buyerId: currentUser.id,
               amount: cartTotal,
-              successUrl: `${window.location.origin}?stripe_success=1&order=${firstOrderId}`,
-              cancelUrl: `${window.location.origin}?stripe_cancel=1`,
+              successUrl: `${window.location.origin}?payfast_success=1&order=${firstOrderId}`,
+              cancelUrl: `${window.location.origin}?payfast_cancel=1`,
             }),
           })
 
-          const stripeData = await stripeRes.json()
+          const payfastData = await payfastRes.json()
 
-          if (stripeData.success && stripeData.data?.redirectUrl) {
-            // Redirect to Stripe Checkout
-            window.location.href = stripeData.data.redirectUrl
+          if (payfastData.success && payfastData.data?.redirectUrl) {
+            // Redirect to PayFast Checkout
+            window.location.href = payfastData.data.redirectUrl
             return
           }
 
-          // If Stripe not configured, fall back to sandbox/verification flow
-          if (stripeData.error?.includes('not configured')) {
-            toast.warning('Card payments require Stripe configuration. Using sandbox mode.')
+          // If PayFast not configured, fall back to sandbox/verification flow
+          if (payfastData.error?.includes('not configured')) {
+            toast.warning('PayFast payments require configuration. Using sandbox mode.')
           } else {
-            throw new Error(stripeData.error || 'Stripe checkout failed')
+            throw new Error(payfastData.error || 'PayFast checkout failed')
           }
         } catch (err) {
-          console.warn('Stripe checkout error, falling back to verification flow:', err)
+          console.warn('PayFast checkout error, falling back to verification flow:', err)
           // Fall through to verify flow below
         }
       }
@@ -653,7 +658,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
         }
       }
 
-      // Step 4: For card/payoneer/wise, verify payments with tokens
+      // Step 4: For payfast, verify payments with tokens
       for (const paymentResult of paymentResults) {
         const metadata = paymentResult.data?.metadata
         let verificationToken = ''
@@ -1058,7 +1063,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                               className={`text-[10px] px-1.5 py-0 ${
                                 method.region === 'Local'
                                   ? 'border-amber-200 text-amber-700'
-                                  : 'border-blue-200 text-blue-700'
+                                  : 'border-green-200 text-green-700'
                               }`}
                             >
                               {method.region}
@@ -1079,8 +1084,8 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                               ? 'bg-amber-500'
                               : method.id === 'jazzcash'
                                 ? 'bg-red-500'
-                                : method.id === 'payoneer'
-                                  ? 'bg-blue-500'
+                                : method.id === 'payfast'
+                                  ? 'bg-[#00A3E0]'
                                   : 'bg-yellow-500'
                           }`}
                         />
@@ -1175,16 +1180,16 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                           <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${
                             pm.method === 'easypaisa' ? 'bg-amber-50' :
                             pm.method === 'jazzcash' ? 'bg-red-50' :
-                            pm.method === 'card' ? 'bg-amber-50' :
-                            pm.method === 'payoneer' ? 'bg-blue-50' :
+                            pm.method === 'payfast' ? 'bg-[#E8F7FD]' :
+                            pm.method === 'crypto' ? 'bg-[#FFF3E0]' :
                             'bg-yellow-50'
                           }`}>
                             {pm.method === 'easypaisa' || pm.method === 'jazzcash' ? (
                               <Wallet className={`h-4 w-4 ${pm.method === 'easypaisa' ? 'text-amber-600' : 'text-red-600'}`} />
-                            ) : pm.method === 'card' ? (
-                              <CreditCard className="h-4 w-4 text-amber-600" />
+                            ) : pm.method === 'crypto' ? (
+                              <Bitcoin className="h-4 w-4 text-[#F7931A]" />
                             ) : (
-                              <Globe className="h-4 w-4 text-blue-600" />
+                              <ShieldCheck className="h-4 w-4 text-[#00A3E0]" />
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -1195,15 +1200,17 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                               )}
                             </div>
                             <p className="text-xs text-muted-foreground font-mono">
-                              {pm.method === 'card' && details.cardLast4
-                                ? `**** **** **** ${details.cardLast4}`
-                                : pm.method === 'easypaisa' || pm.method === 'jazzcash'
+                              {pm.method === 'easypaisa' || pm.method === 'jazzcash'
                                   ? details.mobileNumber
                                     ? `0300 ****${details.mobileNumber?.slice(-3)}`
                                     : '****'
-                                  : details.email
-                                    ? details.email.replace(/^(..)(.*)(@.*)$/, '$1***$3')
-                                    : '****'
+                                  : pm.method === 'crypto'
+                                    ? details.walletAddress
+                                      ? `${details.walletAddress.slice(0, 6)}...${details.walletAddress.slice(-4)}`
+                                      : details.preferredCrypto?.toUpperCase() || 'Crypto'
+                                    : details.email
+                                      ? details.email.replace(/^(..)(.*)(@.*)$/, '$1***$3')
+                                      : '****'
                               }
                             </p>
                           </div>
@@ -1224,7 +1231,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                     >
                       <RadioGroupItem value="new-method" />
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gray-100">
-                        <CreditCard className="h-4 w-4 text-gray-500" />
+                        <Globe className="h-4 w-4 text-gray-500" />
                       </div>
                       <span className="text-sm font-medium">Enter new payment details</span>
                     </label>
@@ -1235,14 +1242,16 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
 
               {/* Current method indicator */}
               <div className="flex items-center gap-2 rounded-lg bg-muted/50 p-2.5">
-                {paymentMethod === 'card' ? (
-                  <CreditCard className="h-4 w-4 text-amber-600" />
+                {paymentMethod === 'payfast' ? (
+                  <ShieldCheck className="h-4 w-4 text-[#00A3E0]" />
                 ) : paymentMethod === 'easypaisa' ? (
                   <Wallet className="h-4 w-4 text-amber-600" />
                 ) : paymentMethod === 'jazzcash' ? (
                   <Wallet className="h-4 w-4 text-red-600" />
+                ) : paymentMethod === 'crypto' ? (
+                  <Bitcoin className="h-4 w-4 text-[#F7931A]" />
                 ) : (
-                  <Globe className="h-4 w-4 text-blue-600" />
+                  <ShieldCheck className="h-4 w-4 text-[#00A3E0]" />
                 )}
                 <span className="text-sm font-medium capitalize">
                   {PAYMENT_METHODS.find(m => m.id === paymentMethod)?.name || paymentMethod}
@@ -1281,80 +1290,13 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                     </div>
                   )}
 
-                  {/* Debit / Credit Card */}
-                  {paymentMethod === 'card' && (
+                  {/* PayFast */}
+                  {paymentMethod === 'payfast' && (
                     <div className="space-y-3">
                       <div className="space-y-1.5">
-                        <Label htmlFor="pd-card-holder">Card Holder Name *</Label>
+                        <Label htmlFor="pd-payfast-email">PayFast Email *</Label>
                         <Input
-                          id="pd-card-holder"
-                          value={cardHolder}
-                          onChange={(e) => setCardHolder(e.target.value)}
-                          placeholder="Name on card"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="pd-card-number">Card Number *</Label>
-                        <Input
-                          id="pd-card-number"
-                          value={cardNumber}
-                          onChange={(e) => {
-                            const raw = e.target.value.replace(/\D/g, '').slice(0, 16)
-                            const masked = raw.replace(/(.{4})/g, '$1 ').trim()
-                            setCardNumber(masked)
-                          }}
-                          placeholder="4242 4242 4242 4242"
-                        />
-                      </div>
-                      <div className="grid grid-cols-3 gap-3">
-                        <div className="space-y-1.5">
-                          <Label htmlFor="pd-exp-month">Month *</Label>
-                          <Input
-                            id="pd-exp-month"
-                            value={expiryMonth}
-                            onChange={(e) => setExpiryMonth(e.target.value.replace(/\D/g, '').slice(0, 2))}
-                            placeholder="MM"
-                            maxLength={2}
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label htmlFor="pd-exp-year">Year *</Label>
-                          <Input
-                            id="pd-exp-year"
-                            value={expiryYear}
-                            onChange={(e) => setExpiryYear(e.target.value.replace(/\D/g, '').slice(0, 2))}
-                            placeholder="YY"
-                            maxLength={2}
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label>Card Type *</Label>
-                          <Select value={cardType} onValueChange={(v) => setCardType(v as 'visa' | 'master' | 'unionpay')}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="visa">Visa</SelectItem>
-                              <SelectItem value="master">Mastercard</SelectItem>
-                              <SelectItem value="unionpay">UnionPay</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 p-2.5">
-                        <ShieldCheck className="h-3.5 w-3.5 text-amber-600 mt-0.5 flex-shrink-0" />
-                        <p className="text-[11px] text-amber-700">
-                          Only the last 4 digits of your card are stored. Full card numbers are never saved on our servers.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Payoneer */}
-                  {paymentMethod === 'payoneer' && (
-                    <div className="space-y-3">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="pd-pay-email">Payoneer Email *</Label>
-                        <Input
-                          id="pd-pay-email"
+                          id="pd-payfast-email"
                           type="email"
                           value={payEmail}
                           onChange={(e) => setPayEmail(e.target.value)}
@@ -1362,43 +1304,18 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label htmlFor="pd-pay-name">Account Name *</Label>
+                        <Label htmlFor="pd-payfast-iban">IBAN *</Label>
                         <Input
-                          id="pd-pay-name"
-                          value={accountName}
-                          onChange={(e) => setAccountName(e.target.value)}
-                          placeholder="Full name on account"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Wise */}
-                  {paymentMethod === 'wise' && (
-                    <div className="space-y-3">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="pd-wise-email">Wise Email *</Label>
-                        <Input
-                          id="pd-wise-email"
-                          type="email"
-                          value={payEmail}
-                          onChange={(e) => setPayEmail(e.target.value)}
-                          placeholder="email@example.com"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="pd-wise-iban">IBAN *</Label>
-                        <Input
-                      id="pd-wise-iban"
+                      id="pd-payfast-iban"
                       value={wiseIban}
                       onChange={(e) => setWiseIban(e.target.value)}
                       placeholder="IBAN number"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="pd-wise-name">Account Name *</Label>
+                    <Label htmlFor="pd-payfast-name">Account Name *</Label>
                     <Input
-                      id="pd-wise-name"
+                      id="pd-payfast-name"
                       value={accountName}
                       onChange={(e) => setAccountName(e.target.value)}
                       placeholder="Full name on account"
@@ -1406,6 +1323,32 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                   </div>
                 </div>
               )}
+
+                  {/* Crypto */}
+                  {paymentMethod === 'crypto' && (
+                    <div className="space-y-3">
+                      <div className="rounded-lg bg-[#FFF3E0] border border-[#F7931A]/30 p-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Bitcoin className="h-5 w-5 text-[#F7931A]" />
+                          <span className="text-sm font-semibold text-orange-700">Pay with Cryptocurrency</span>
+                        </div>
+                        <p className="text-xs text-orange-700/80">Send crypto directly to our escrow wallet. No KYC required! Supports Bitcoin, Ethereum, and Solana.</p>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="pd-crypto-currency">Select Cryptocurrency *</Label>
+                        <Select value={payCurrency} onValueChange={setPayCurrency}>
+                          <SelectTrigger id="pd-crypto-currency">
+                            <SelectValue placeholder="Select currency" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="btc">₿ BTC - Bitcoin</SelectItem>
+                            <SelectItem value="eth">Ξ ETH - Ethereum</SelectItem>
+                            <SelectItem value="sol">◎ SOL - Solana</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
               </>
               )}
 
@@ -1696,7 +1639,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                   Back
                 </Button>
                 <Button className="flex-1" onClick={handlePayNow}>
-                  <CreditCard className="h-4 w-4 mr-2" />
+                  <Globe className="h-4 w-4 mr-2" />
                   Pay ${(effectiveCartTotal + (taxInfo.taxInclusive ? 0 : taxInfo.taxAmount) + (hasPhysicalItems ? shippingCost : 0)).toFixed(2)}
                 </Button>
               </div>
@@ -1713,7 +1656,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
             >
               <div className="relative">
                 <div className="h-16 w-16 rounded-full border-4 border-amber-200 border-t-amber-500 animate-spin" />
-                <CreditCard className="absolute inset-0 m-auto h-6 w-6 text-amber-600" />
+                <Globe className="absolute inset-0 m-auto h-6 w-6 text-green-600" />
               </div>
               <div className="text-center">
                 <h3 className="font-semibold text-lg">Processing Payment</h3>
@@ -1818,6 +1761,177 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 ) : (
                   <span>Checking payment status...</span>
                 )}
+              </div>
+
+              <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 p-3 w-full">
+                <ShieldCheck className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-amber-700">
+                  Your payment is protected by escrow. Funds will only be released to the seller after you confirm delivery.
+                </p>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Step: Crypto Invoice - Show wallet address for direct payment */}
+          {step === 'crypto_invoice' && (
+            <motion.div
+              key="crypto_invoice"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="p-6 flex flex-col items-center py-8 space-y-4"
+            >
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#FFF3E0]">
+                <Bitcoin className="h-8 w-8 text-[#F7931A]" />
+              </div>
+
+              <div className="text-center space-y-1">
+                <h3 className="font-bold text-lg">Send Cryptocurrency</h3>
+                <p className="text-sm text-muted-foreground">
+                  Send the exact amount to the wallet address below
+                </p>
+              </div>
+
+              {gatewayMode === 'sandbox' && (
+                <div className="w-full rounded-lg bg-amber-50 border border-amber-200 p-3">
+                  <div className="flex items-start gap-2">
+                    <Info className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs font-medium text-amber-800">Sandbox Mode (Testing)</p>
+                      <p className="text-[11px] text-amber-700 mt-0.5">
+                        This is a test payment. In production, buyers will send real crypto to your wallet.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Amount to send */}
+              <Card className="w-full p-4 bg-[#FFF3E0]/50 border-[#F7931A]/30">
+                <div className="text-center space-y-1">
+                  <p className="text-xs text-orange-600 uppercase tracking-wider font-medium">Amount to Send</p>
+                  <p className="text-3xl font-bold text-[#F7931A]">${(cartTotal ?? 0).toFixed(2)}</p>
+                  <p className="text-xs text-muted-foreground">in {payCurrency.toUpperCase()}</p>
+                </div>
+              </Card>
+
+              {/* Wallet Address */}
+              <div className="w-full space-y-2">
+                <Label className="text-xs font-medium text-muted-foreground">Escrow Wallet Address ({payCurrency.toUpperCase()})</Label>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 rounded-lg border bg-muted/50 p-3 font-mono text-xs break-all">
+                    {gatewayRedirectUrl
+                      ? decodeURIComponent(new URL(gatewayRedirectUrl).searchParams.get('wallet') || 'Not configured')
+                      : 'Loading...'
+                    }
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-shrink-0"
+                    onClick={() => {
+                      const walletAddr = gatewayRedirectUrl
+                        ? decodeURIComponent(new URL(gatewayRedirectUrl).searchParams.get('wallet') || '')
+                        : ''
+                      navigator.clipboard.writeText(walletAddr)
+                      toast.success('Wallet address copied!')
+                    }}
+                  >
+                    Copy
+                  </Button>
+                </div>
+              </div>
+
+              {/* QR Code placeholder - using a simple text-based QR */}
+              <div className="w-full rounded-lg bg-white border p-4 flex flex-col items-center space-y-2">
+                <div className="w-40 h-40 bg-muted/30 rounded flex items-center justify-center border-2 border-dashed border-muted-foreground/20">
+                  <div className="text-center space-y-1">
+                    <Bitcoin className="h-8 w-8 text-[#F7931A] mx-auto" />
+                    <p className="text-[10px] text-muted-foreground">Scan with your<br />crypto wallet</p>
+                  </div>
+                </div>
+                <p className="text-[10px] text-muted-foreground text-center">
+                  Open your wallet app (Exodus, Trust Wallet, etc.) and scan or paste the address above
+                </p>
+              </div>
+
+              {/* Important notes */}
+              <div className="w-full rounded-lg bg-orange-50 border border-orange-200 p-3 space-y-1.5">
+                <p className="text-xs font-semibold text-orange-800">⚠️ Important:</p>
+                <ul className="text-[11px] text-orange-700 space-y-1 list-disc ml-4">
+                  <li>Send only <strong>{payCurrency.toUpperCase()}</strong> to this address</li>
+                  <li>Send the exact amount shown above</li>
+                  <li>Payment will be confirmed after blockchain verification (usually 5-30 minutes)</li>
+                  <li>Your funds are protected by escrow until delivery</li>
+                </ul>
+              </div>
+
+              {/* Fee breakdown */}
+              <div className="w-full rounded-lg bg-muted/30 p-3 text-xs space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Order Total</span>
+                  <span className="font-medium">${(cartTotal ?? 0).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Platform Fee (10%)</span>
+                  <span className="font-medium">${((cartTotal ?? 0) * 0.1).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between border-t pt-1">
+                  <span className="text-muted-foreground">Seller Receives</span>
+                  <span className="font-medium text-green-600">${((cartTotal ?? 0) * 0.9).toFixed(2)}</span>
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="w-full space-y-2">
+                <Button
+                  className="w-full bg-[#F7931A] hover:bg-[#E8850F] text-white"
+                  size="lg"
+                  onClick={() => {
+                    if (gatewayMode === 'sandbox') {
+                      // In sandbox, simulate payment confirmation
+                      setPollingPayment(true)
+                      setTimeout(() => {
+                        setPollingPayment(false)
+                        setStep('success')
+                        clearCart()
+                      }, 3000)
+                    } else {
+                      // In live mode, start polling for blockchain confirmation
+                      setPollingPayment(true)
+                      toast.info('Waiting for blockchain confirmation... This may take 5-30 minutes.')
+                    }
+                  }}
+                  disabled={pollingPayment}
+                >
+                  {pollingPayment ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Waiting for Confirmation...
+                    </>
+                  ) : gatewayMode === 'sandbox' ? (
+                    <>
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      Simulate Crypto Payment
+                    </>
+                  ) : (
+                    <>
+                      <Bitcoin className="h-4 w-4 mr-2" />
+                      I've Sent the Payment
+                    </>
+                  )}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    setStep('payment_details')
+                    setPollingPayment(false)
+                  }}
+                  disabled={pollingPayment}
+                >
+                  Back to Payment Details
+                </Button>
               </div>
 
               <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 p-3 w-full">

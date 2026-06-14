@@ -14,7 +14,7 @@ const steps = [
     number: '02',
     icon: <ShieldCheck className="h-7 w-7" />,
     title: 'Pay Securely with Escrow',
-    description: 'Buy with confidence — payments are held in escrow until you confirm delivery. Supports Easypaisa, JazzCash, Payoneer & Wise.',
+    description: 'Buy with confidence — payments are held in escrow until you confirm delivery. Supports Easypaisa, JazzCash, PayFast & crypto.',
   },
   {
     number: '03',

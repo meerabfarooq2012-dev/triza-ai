@@ -4,7 +4,7 @@ import { authenticateRequest } from '@/lib/auth-middleware';
 import type { PaymentInfoMethod, PaymentInfoAccountDetails } from '@/types';
 
 import { withCsrf } from '@/lib/with-csrf';
-const VALID_METHODS: PaymentInfoMethod[] = ['easypaisa', 'jazzcash', 'card', 'payoneer', 'wise', 'bank_transfer'];
+const VALID_METHODS: PaymentInfoMethod[] = ['easypaisa', 'jazzcash', 'payfast', 'crypto', 'bank_transfer'];
 
 function validateAccountDetails(method: PaymentInfoMethod, details: PaymentInfoAccountDetails): string | null {
   switch (method) {
@@ -14,19 +14,14 @@ function validateAccountDetails(method: PaymentInfoMethod, details: PaymentInfoA
         return `${method} requires accountName and mobileNumber`;
       }
       break;
-    case 'card':
-      if (!details.cardHolder || !details.cardLast4 || !details.expiryMonth || !details.expiryYear || !details.cardType) {
-        return 'Card requires cardHolder, cardLast4, expiryMonth, expiryYear, and cardType';
-      }
-      break;
-    case 'payoneer':
-      if (!details.email || !details.accountName) {
-        return 'Payoneer requires email and accountName';
-      }
-      break;
-    case 'wise':
+    case 'payfast':
       if (!details.email || !details.iban || !details.accountName) {
-        return 'Wise requires email, iban, and accountName';
+        return 'PayFast requires email, iban, and accountName';
+      }
+      break;
+    case 'crypto':
+      if (!details.walletAddress) {
+        return 'Crypto requires walletAddress';
       }
       break;
     case 'bank_transfer':
