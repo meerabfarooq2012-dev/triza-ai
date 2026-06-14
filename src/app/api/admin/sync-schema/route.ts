@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { authenticateRequestWithSession } from '@/lib/auth-middleware'
+import { authenticateRequest } from '@/lib/auth-middleware'
 import { getSafeErrorMessage } from '@/lib/error-handler'
 import { execFile } from 'child_process'
 import { promisify } from 'util'
@@ -19,8 +19,10 @@ const execFileAsync = promisify(execFile)
 
 export async function POST(request: NextRequest) {
   try {
-    // Require JWT admin authentication
-    const auth = await authenticateRequestWithSession(request)
+    // Require JWT admin authentication (using authenticateRequest instead of
+    // authenticateRequestWithSession because session records may not exist
+    // when the admin is accessing from a fresh login or API client)
+    const auth = await authenticateRequest(request)
     if (!auth) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
@@ -135,7 +137,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   // Require JWT admin authentication
-  const auth = await authenticateRequestWithSession(request)
+  const auth = await authenticateRequest(request)
   if (!auth) {
     return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
   }
