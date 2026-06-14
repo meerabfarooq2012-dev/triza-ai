@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useState, createContext, useContext, useCallback } from 'react';
-import { PwaInstallPrompt } from '@/components/marketplace/shared/pwa-install-prompt';
-import { IosInstallInstructions } from '@/components/marketplace/shared/ios-install-instructions';
+import { InstallAppDialog } from '@/components/marketplace/shared/install-app-dialog';
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
@@ -19,7 +18,9 @@ interface PwaContextValue {
   canInstall: boolean;
   isStandalone: boolean;
   isIOS: boolean;
+  isAndroid: boolean;
   promptInstall: () => Promise<void>;
+  openInstallDialog: () => void;
   registration: ServiceWorkerRegistration | null;
 }
 
@@ -29,6 +30,11 @@ const isIOSSafari = (): boolean => {
   const isIOS = /iPad|iPhone|iPod/.test(ua);
   const isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua);
   return isIOS && isSafari;
+};
+
+const isAndroidDevice = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return /Android/.test(window.navigator.userAgent);
 };
 
 const isStandaloneMode = (): boolean => {
@@ -45,7 +51,9 @@ const PwaContext = createContext<PwaContextValue>({
   canInstall: false,
   isStandalone: false,
   isIOS: false,
+  isAndroid: false,
   promptInstall: async () => {},
+  openInstallDialog: () => {},
   registration: null,
 });
 
@@ -60,8 +68,10 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
   const [isOnline, setIsOnline] = useState(true);
   const [isStandalone, setIsStandalone] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
+  const [installDialogOpen, setInstallDialogOpen] = useState(false);
 
   // Register service worker
   useEffect(() => {
@@ -75,10 +85,9 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
         });
         setRegistration(reg);
 
-        // Check for updates periodically
         const interval = setInterval(() => {
           reg.update();
-        }, 60 * 60 * 1000); // every hour
+        }, 60 * 60 * 1000);
 
         return () => clearInterval(interval);
       } catch (error) {
@@ -89,15 +98,17 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
     registerSW();
   }, []);
 
-  // Check if already installed (standalone mode) and set isStandalone/isIOS
+  // Check if already installed and detect device
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     const standalone = isStandaloneMode();
     const ios = isIOSSafari();
+    const android = isAndroidDevice();
 
     setIsStandalone(standalone);
     setIsIOS(ios);
+    setIsAndroid(android);
     setIsInstalled(standalone);
   }, []);
 
@@ -132,9 +143,26 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
-  // Prompt install function
+  // Listen for appinstalled
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handler = () => {
+      setIsInstalled(true);
+      setDeferredPrompt(null);
+    };
+
+    window.addEventListener('appinstalled', handler);
+    return () => window.removeEventListener('appinstalled', handler);
+  }, []);
+
+  // Legacy prompt install function (for backward compatibility)
   const promptInstall = useCallback(async () => {
-    if (!deferredPrompt) return;
+    if (!deferredPrompt) {
+      // No deferred prompt — open the install dialog instead
+      setInstallDialogOpen(true);
+      return;
+    }
 
     try {
       await deferredPrompt.prompt();
@@ -149,21 +177,32 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
     }
   }, [deferredPrompt]);
 
+  // Open the install dialog with 3 options
+  const openInstallDialog = useCallback(() => {
+    setInstallDialogOpen(true);
+  }, []);
+
   const contextValue: PwaContextValue = {
     isInstalled,
     isOnline,
     canInstall: !!deferredPrompt,
     isStandalone,
     isIOS,
+    isAndroid,
     promptInstall,
+    openInstallDialog,
     registration,
   };
 
   return (
     <PwaContext.Provider value={contextValue}>
       {children}
-      <PwaInstallPrompt />
-      <IosInstallInstructions />
+      <InstallAppDialog
+        open={installDialogOpen}
+        onOpenChange={setInstallDialogOpen}
+        deferredPrompt={deferredPrompt}
+        isStandalone={isStandalone}
+      />
     </PwaContext.Provider>
   );
 }

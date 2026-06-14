@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useEffect, useMemo, useSyncExternalStore, useCallback } from 'react'
-import { Search, ShoppingCart, Bell, User } from 'lucide-react'
+import { Search, ShoppingCart, Bell, User, Download } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { useIsMobile } from '@/hooks/use-mobile'
+import { usePwa } from '@/components/providers/pwa-provider'
 import { cn } from '@/lib/utils'
 
 // ---------------------------------------------------------------------------
@@ -59,6 +60,9 @@ export function MobileHeader() {
   const cart = useMarketplaceStore((s) => s.cart)
   const unreadNotifications = useMarketplaceStore((s) => s.unreadNotifications)
   const setCurrentView = useMarketplaceStore((s) => s.setCurrentView)
+
+  // PWA install
+  const { openInstallDialog, isStandalone: isPwaStandalone } = usePwa()
 
   // Scroll shadow state
   const scrollY = useSyncExternalStore(subscribeToScroll, getScrollY, getScrollYServerSnapshot)
@@ -216,6 +220,18 @@ export function MobileHeader() {
                 {unreadNotifications > 99 ? '99+' : unreadNotifications}
               </span>
             )}
+          </button>
+        )}
+
+        {/* Install App — always visible when not in standalone mode */}
+        {!isPwaStandalone && (
+          <button
+            type="button"
+            onClick={openInstallDialog}
+            aria-label="Install Thiora App"
+            className="rounded-full p-1.5 text-amber-500 transition-colors hover:bg-amber-500/10 hover:text-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1"
+          >
+            <Download className="h-5 w-5" />
           </button>
         )}
 

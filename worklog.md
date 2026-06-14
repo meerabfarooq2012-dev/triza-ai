@@ -219,3 +219,42 @@ Stage Summary:
 - iOS spring-like easing on all page transitions
 - Pinch zoom disabled for native app feel
 - Status bar immersive mode (black-translucent)
+
+---
+Task ID: 4
+Agent: Main Agent
+Task: Add 3-option Install button (Android, iOS, Web) to the web app
+
+Work Log:
+- Created new InstallAppDialog component with 3 tab options:
+  - **Android tab**: 3-step instructions (Open Chrome Menu → Tap Install App → Confirm) + Quick Install button if Chrome supports beforeinstallprompt
+  - **iOS tab**: 3-step instructions (Tap Share → Add to Home Screen → Tap Add) with Safari-specific guidance
+  - **Web App tab**: Feature highlights (Fast/Offline, Secure, Native Feel, Free) + Install Web App button with progress bar
+- Each tab has its own colored gradient icon badges (green for Android, blue for iOS, amber for Web)
+- Auto-detects user's device and pre-selects the appropriate tab (iOS users see iOS tab, Android users see Android tab)
+- Updated PwaProvider to:
+  - Add `openInstallDialog` function to context
+  - Add `isAndroid` detection
+  - Replace old PwaInstallPrompt + IosInstallInstructions with unified InstallAppDialog
+  - Keep `promptInstall` as backward-compatible (now opens dialog if no deferred prompt)
+- Updated desktop header (header.tsx):
+  - Install App button now ALWAYS visible (not just when canInstall is true)
+  - Uses `openInstallDialog` instead of `promptInstall`
+  - Shows in header bar, dropdown menu, and mobile menu
+  - Hidden when already in standalone mode (isStandalone)
+- Updated mobile header (mobile-header.tsx):
+  - Added download icon button between notifications and user avatar
+  - Uses `openInstallDialog` from usePwa hook
+  - Amber colored to stand out
+  - Hidden when already in standalone mode
+- All lint checks pass (0 errors)
+- Agent browser verification confirms: Install dialog opens with 3 tabs, all tabs switch correctly, content is accurate
+
+Stage Summary:
+- Users now see an "Install App" button in both desktop and mobile headers
+- Clicking it opens a beautiful dialog with 3 options: Android, iOS, Web App
+- Android tab has step-by-step instructions + direct install (if Chrome)
+- iOS tab has step-by-step Safari instructions
+- Web App tab has feature highlights + PWA install button with progress bar
+- Install button is always visible (not just when browser supports install API)
+- Button hides when app is already installed (standalone mode)

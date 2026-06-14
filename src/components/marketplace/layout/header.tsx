@@ -77,7 +77,7 @@ export function Header() {
   } = useMarketplaceStore()
 
   const { t } = useLanguage()
-  const { canInstall, promptInstall } = usePwa()
+  const { canInstall, promptInstall, openInstallDialog, isStandalone } = usePwa()
 
   const [searchInput, setSearchInput] = useState('')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -289,12 +289,12 @@ export function Header() {
               <PushNotificationManager />
             )}
 
-            {/* Install App Button */}
-            {canInstall && (
+            {/* Install App Button — always visible, opens dialog with Android/iOS/Web options */}
+            {!isStandalone && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={promptInstall}
+                onClick={openInstallDialog}
                 className="hidden sm:flex h-8 gap-1.5 border-amber-500/50 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 hover:border-amber-500"
               >
                 <Download className="h-3.5 w-3.5" />
@@ -439,11 +439,11 @@ export function Header() {
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
 
-                  {/* Install App */}
-                  {canInstall && (
+                  {/* Install App — always visible in menu when not installed */}
+                  {!isStandalone && (
                     <>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={promptInstall} className="text-amber-600 dark:text-amber-400 focus:text-amber-600">
+                      <DropdownMenuItem onClick={openInstallDialog} className="text-amber-600 dark:text-amber-400 focus:text-amber-600">
                         <Download className="mr-2 h-4 w-4" />
                         Install Thiora App
                       </DropdownMenuItem>
@@ -777,12 +777,12 @@ export function Header() {
                     {t('nav.activityFeed')}
                   </Button>
 
-                  {/* Install App - Mobile */}
-                  {canInstall && (
+                  {/* Install App - Mobile — always visible when not installed */}
+                  {!isStandalone && (
                     <Button
                       variant="outline"
                       className="w-full justify-start gap-3 border-amber-500/50 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
-                      onClick={() => { promptInstall(); setMobileMenuOpen(false) }}
+                      onClick={() => { openInstallDialog(); setMobileMenuOpen(false) }}
                     >
                       <Download className="h-4.5 w-4.5" />
                       Install Thiora App
