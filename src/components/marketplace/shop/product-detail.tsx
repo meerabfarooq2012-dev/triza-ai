@@ -28,6 +28,7 @@ import {
   ListChecks,
   Check,
   Loader2,
+  Banknote,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -67,6 +68,7 @@ import {
   PLATFORM_NAME,
 } from '@/lib/constants'
 import { countryCodeData } from '@/lib/country-codes'
+import { CURRENCIES, type CurrencyCode } from '@/lib/currency'
 import { VariantSelector } from '@/components/marketplace/shared/variant-selector'
 import { ProductRecommendations } from '@/components/marketplace/shared/product-recommendations'
 import { ReportProductDialog } from '@/components/marketplace/shared/report-product-dialog'
@@ -567,6 +569,36 @@ export default function ProductDetail() {
               </Badge>
             )}
           </div>
+
+          {/* Accepted Currencies */}
+          {(() => {
+            const accepted = safeJsonParse<CurrencyCode[]>(product.acceptedCurrencies as unknown as string, [])
+            if (!accepted.length) return null
+            return (
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <Banknote size={14} />
+                  <span>Accepted Currencies</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {accepted.map((code) => {
+                    const config = CURRENCIES[code]
+                    if (!config) return null
+                    return (
+                      <Badge
+                        key={code}
+                        variant="outline"
+                        className="gap-1 text-xs bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800"
+                      >
+                        <span className="text-sm">{config.flag}</span>
+                        {config.symbol} {code}
+                      </Badge>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })()}
 
           {/* Short description */}
           {product.shortDesc && (

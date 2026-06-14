@@ -63,6 +63,7 @@ export async function GET(
       images: JSON.parse(product.images || '[]'),
       tags: JSON.parse(product.tags || '[]'),
       deliveryCountries: JSON.parse(product.deliveryCountries || '[]'),
+      acceptedCurrencies: JSON.parse(product.acceptedCurrencies || '[]'),
       variants: product.variants?.map((v: { images: string; [key: string]: unknown }) => ({
         ...v,
         images: JSON.parse(v.images || '[]'),
@@ -111,7 +112,7 @@ async function handleUpdateProduct(
     const allowedFields = [
       'name', 'description', 'shortDesc', 'price', 'comparePrice',
       'type', 'images', 'fileUrl', 'fileSize', 'stock', 'sku',
-      'tags', 'isFeatured', 'isActive', 'categoryId', 'deliveryInfo', 'deliveryCountries', 'requirements',
+      'tags', 'isFeatured', 'isActive', 'categoryId', 'deliveryInfo', 'deliveryCountries', 'acceptedCurrencies', 'requirements',
       'hasVariants',
     ];
 
@@ -120,7 +121,7 @@ async function handleUpdateProduct(
     const data: Record<string, unknown> = {};
     for (const field of allowedFields) {
       if (body[field] !== undefined) {
-        if ((field === 'images' || field === 'tags' || field === 'deliveryCountries') && typeof body[field] !== 'string') {
+        if ((field === 'images' || field === 'tags' || field === 'deliveryCountries' || field === 'acceptedCurrencies') && typeof body[field] !== 'string') {
           data[field] = JSON.stringify(body[field]);
         } else if (field === 'price' || field === 'comparePrice') {
           data[field] = body[field] !== null ? parseFloat(String(body[field])) : null;
@@ -167,6 +168,7 @@ async function handleUpdateProduct(
         images: JSON.parse(updatedProduct.images || '[]'),
         tags: JSON.parse(updatedProduct.tags || '[]'),
         deliveryCountries: JSON.parse(updatedProduct.deliveryCountries || '[]'),
+        acceptedCurrencies: JSON.parse(updatedProduct.acceptedCurrencies || '[]'),
       },
     });
   } catch (error) {

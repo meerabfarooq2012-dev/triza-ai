@@ -173,6 +173,7 @@ model Product {
   deliveryInfo       String?   // Shipping info for physical, or delivery timeline for freelance
   deliveryCountries  String    @default("[]") // JSON array of country codes seller can deliver to
   requirements       String?   // For freelance services - what buyer needs to provide
+  acceptedCurrencies  String    @default("[]") // JSON array of currency codes seller accepts (e.g. ["USD","PKR","EUR"])
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

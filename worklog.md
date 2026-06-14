@@ -604,3 +604,34 @@ Files updated:
 
 Lint check: 0 errors, 1 pre-existing warning
 Dev server: Running cleanly
+
+---
+Task ID: 1
+Agent: Main Agent
+Task: Add acceptedCurrencies to Product model so sellers can select which currencies they accept when creating/editing a product
+
+Work Log:
+- Added `acceptedCurrencies String @default("[]")` field to Product model in Prisma schema
+- Ran `bun run db:push` to apply schema migration
+- Created `CurrencyMultiSelect` component at `src/components/marketplace/seller/currency-multi-select.tsx` with search, region grouping, popular currencies, select all/clear
+- Updated `ProductFormData` interface to include `acceptedCurrencies: CurrencyCode[]`
+- Updated `emptyForm` defaults to `acceptedCurrencies: ['USD']`
+- Updated `handleOpenEdit` to parse `acceptedCurrencies` from product JSON
+- Updated `handleSubmit` payload to include `acceptedCurrencies`
+- Added `CurrencyMultiSelect` UI in seller product form after Delivery Countries section
+- Updated `POST /api/products` route to accept and store `acceptedCurrencies`, parse in response
+- Updated `GET /api/products` list to parse `acceptedCurrencies` in response
+- Updated `GET /api/products/[id]` to parse `acceptedCurrencies` in response
+- Updated `PATCH/PUT /api/products/[id]` to accept `acceptedCurrencies` in allowedFields and JSON stringify
+- Added `acceptedCurrencies` to Product interface in `src/types/index.ts`
+- Added "Accepted Currencies" display section in product-detail.tsx below the price, showing currency badges with flags and symbols
+- Added `Banknote` icon import to seller-products.tsx and product-detail.tsx
+- Added `CURRENCIES` and `CurrencyCode` imports to product-detail.tsx
+
+Stage Summary:
+- Sellers can now select which currencies they accept when creating/editing a product
+- The CurrencyMultiSelect component supports search, popular currencies, region grouping, select all/clear
+- Product detail page shows accepted currencies as green badges with flags and currency symbols
+- All API routes properly handle the new acceptedCurrencies field
+- Lint: 0 errors, 1 pre-existing warning
+- Dev server: Running cleanly

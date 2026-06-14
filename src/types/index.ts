@@ -157,6 +157,7 @@ export interface Product {
   averageRating: number
   deliveryInfo: string | null
   deliveryCountries: string // JSON string of string[] (country codes)
+  acceptedCurrencies: string // JSON string of CurrencyCode[] (e.g. ["USD","PKR","EUR"])
   requirements: string | null
   hasVariants?: boolean
   createdAt: string

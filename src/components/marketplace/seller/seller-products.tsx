@@ -24,6 +24,7 @@ import {
   Cloud,
   Loader2,
   Layers,
+  Banknote,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Price } from '@/components/marketplace/shared/price'
@@ -75,6 +76,8 @@ import {
 } from '@/lib/constants'
 import { countryCodeData } from '@/lib/country-codes'
 import { VariantManager } from '@/components/marketplace/seller/variant-manager'
+import { CurrencyMultiSelect } from '@/components/marketplace/seller/currency-multi-select'
+import type { CurrencyCode } from '@/lib/currency'
 import type { Product, ProductType, Category, ProductVariantOption, ProductVariant } from '@/types'
 
 interface ProductFormData {
@@ -90,6 +93,7 @@ interface ProductFormData {
   tags: string
   deliveryInfo: string
   deliveryCountries: string[] // array of country codes
+  acceptedCurrencies: CurrencyCode[] // currencies seller accepts
   requirements: string
   isFeatured: boolean
   images: string[] // base64 encoded images
@@ -108,6 +112,7 @@ const emptyForm: ProductFormData = {
   tags: '',
   deliveryInfo: '',
   deliveryCountries: [],
+  acceptedCurrencies: ['USD'],
   requirements: '',
   isFeatured: false,
   images: [],
@@ -607,6 +612,12 @@ export function SellerProducts() {
       const parsed = JSON.parse(typeof raw === 'string' && raw ? raw : '[]')
       deliveryCountries = Array.isArray(parsed) ? parsed : []
     } catch { deliveryCountries = [] }
+    let acceptedCurrencies: CurrencyCode[] = ['USD']
+    try {
+      const raw = (product as unknown as Record<string, unknown>).acceptedCurrencies
+      const parsed = JSON.parse(typeof raw === 'string' && raw ? raw : '[]')
+      acceptedCurrencies = Array.isArray(parsed) ? parsed : ['USD']
+    } catch { acceptedCurrencies = ['USD'] }
     // Determine subcategoryId from category parent chain
     let subcategoryId = ''
     const catId = product.categoryId || ''
@@ -633,6 +644,7 @@ export function SellerProducts() {
       tags: tags.join(', '),
       deliveryInfo: product.deliveryInfo || '',
       deliveryCountries,
+      acceptedCurrencies,
       requirements: product.requirements || '',
       isFeatured: product.isFeatured,
       images,
@@ -677,6 +689,7 @@ export function SellerProducts() {
         tags,
         deliveryInfo: formData.deliveryInfo || undefined,
         deliveryCountries: formData.deliveryCountries,
+        acceptedCurrencies: formData.acceptedCurrencies,
         requirements: formData.requirements || undefined,
         isFeatured: formData.isFeatured,
         images: formData.images,
@@ -1418,6 +1431,23 @@ export function SellerProducts() {
                 selected={formData.deliveryCountries || []}
                 onChange={(countries) =>
                   setFormData({ ...formData, deliveryCountries: countries })
+                }
+              />
+            </div>
+
+            {/* Accepted Currencies */}
+            <div className="grid gap-2">
+              <Label className="flex items-center gap-1.5">
+                <Banknote className="h-4 w-4 text-gray-500" />
+                Accepted Currencies
+                <span className="text-xs text-gray-400">
+                  ({(formData.acceptedCurrencies || []).length} selected) — Select which currencies you accept for this product
+                </span>
+              </Label>
+              <CurrencyMultiSelect
+                selected={formData.acceptedCurrencies || ['USD']}
+                onChange={(currencies) =>
+                  setFormData({ ...formData, acceptedCurrencies: currencies })
                 }
               />
             </div>

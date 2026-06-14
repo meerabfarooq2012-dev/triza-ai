@@ -265,6 +265,7 @@ export async function GET(request: NextRequest) {
       images: JSON.parse(p.images || '[]'),
       tags: JSON.parse(p.tags || '[]'),
       deliveryCountries: JSON.parse(p.deliveryCountries || '[]'),
+      acceptedCurrencies: JSON.parse(p.acceptedCurrencies || '[]'),
     }));
 
     // For products with hasVariants=true, add variantPriceMin and variantPriceMax
@@ -359,6 +360,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
       isFeatured,
       deliveryInfo,
       deliveryCountries,
+      acceptedCurrencies,
       requirements,
     } = body;
 
@@ -432,6 +434,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
         isApproved: true, // Auto-approve products
         deliveryInfo: deliveryInfo ? sanitizeString(deliveryInfo) : null,
         deliveryCountries: typeof deliveryCountries === 'string' ? deliveryCountries : JSON.stringify(deliveryCountries || []),
+        acceptedCurrencies: typeof acceptedCurrencies === 'string' ? acceptedCurrencies : JSON.stringify(acceptedCurrencies || []),
         requirements: requirements ? sanitizeString(requirements) : null,
       },
       include: {
@@ -451,6 +454,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
           images: JSON.parse(product.images || '[]'),
           tags: JSON.parse(product.tags || '[]'),
           deliveryCountries: JSON.parse(product.deliveryCountries || '[]'),
+          acceptedCurrencies: JSON.parse(product.acceptedCurrencies || '[]'),
         },
       },
       { status: 201 }
