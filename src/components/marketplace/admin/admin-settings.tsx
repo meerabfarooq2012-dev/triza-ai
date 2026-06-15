@@ -15,6 +15,9 @@ import {
   ShieldAlert,
   Database,
   RefreshCw,
+  CreditCard,
+  Check,
+  Search,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -27,6 +30,7 @@ import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { api } from '@/lib/api'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
+import { PAYMENT_METHODS, type PaymentMethodId, getPaymentMethodsByCategory, getPaymentCategoryOrder, searchPaymentMethods } from '@/lib/payment-methods'
 
 interface PlatformSettingsData {
   id: string
@@ -48,6 +52,7 @@ interface PlatformSettingsData {
   taxRate: number
   taxInclusive: boolean
   taxLabel: string
+  enabledPaymentMethods: string
   createdAt: string
   updatedAt: string
 }
@@ -80,6 +85,10 @@ export default function AdminSettings() {
   const [taxRate, setTaxRate] = useState('0')
   const [taxInclusive, setTaxInclusive] = useState(false)
   const [taxLabel, setTaxLabel] = useState('Tax')
+
+  // Payment methods state
+  const [enabledPaymentMethods, setEnabledPaymentMethods] = useState<PaymentMethodId[]>([])
+  const [paymentSearch, setPaymentSearch] = useState('')
 
   // Sync Schema state
   const [syncingSchema, setSyncingSchema] = useState(false)
@@ -135,6 +144,13 @@ export default function AdminSettings() {
       setTaxRate(String(s.taxRate ?? 0))
       setTaxInclusive(s.taxInclusive ?? false)
       setTaxLabel(s.taxLabel ?? 'Tax')
+
+      // Load enabled payment methods
+      let methods: PaymentMethodId[] = []
+      try {
+        methods = JSON.parse(s.enabledPaymentMethods || '[]')
+      } catch { methods = [] }
+      setEnabledPaymentMethods(methods)
     } catch (err) {
       console.error('Failed to load admin settings:', err)
       // Check if it's an auth error
@@ -178,6 +194,7 @@ export default function AdminSettings() {
         taxRate: parseFloat(taxRate) || 0,
         taxInclusive,
         taxLabel: taxLabel || 'Tax',
+        enabledPaymentMethods,
       })
 
       toast.success('Settings saved successfully')
@@ -385,6 +402,166 @@ export default function AdminSettings() {
                   Warning: A fee above 20% may discourage sellers
                 </p>
               )}
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Payment Methods */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        <Card className="border-0 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <CreditCard size={18} className="text-primary" />
+              Payment Methods
+            </CardTitle>
+            <CardDescription>
+              Enable payment methods that your platform supports. Sellers will only see enabled methods.
+              Only enable methods where you have API keys configured.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search payment methods..."
+                value={paymentSearch}
+                onChange={(e) => setPaymentSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            {/* Enabled count */}
+            <div className="flex items-center justify-between">
+              <Badge variant="outline" className="gap-1">
+                <Check size={12} className="text-emerald-600" />
+                {enabledPaymentMethods.length} of {Object.keys(PAYMENT_METHODS).length} enabled
+              </Badge>
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs text-emerald-600"
+                  onClick={() => setEnabledPaymentMethods(Object.keys(PAYMENT_METHODS) as PaymentMethodId[])}
+                >
+                  Enable All
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs text-red-500"
+                  onClick={() => setEnabledPaymentMethods([])}
+                >
+                  Disable All
+                </Button>
+              </div>
+            </div>
+
+            {/* Payment methods grid */}
+            <div className="max-h-96 overflow-y-auto space-y-1 border rounded-lg p-2">
+              {(() => {
+                const categoryOrder = getPaymentCategoryOrder()
+                const methodsByCategory = getPaymentMethodsByCategory()
+                const searchResults = paymentSearch.trim()
+                  ? searchPaymentMethods(paymentSearch)
+                  : null
+
+                if (searchResults) {
+                  if (searchResults.length === 0) {
+                    return (
+                      <div className="text-center text-sm text-muted-foreground py-4">
+                        No payment method found
+                      </div>
+                    )
+                  }
+                  return searchResults.map((id) => {
+                    const config = PAYMENT_METHODS[id]
+                    if (!config) return null
+                    const isEnabled = enabledPaymentMethods.includes(id)
+                    return (
+                      <div
+                        key={id}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer transition-colors text-sm ${
+                          isEnabled
+                            ? 'bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800'
+                            : 'hover:bg-gray-50 dark:hover:bg-gray-800 border border-transparent'
+                        }`}
+                        onClick={() => {
+                          setEnabledPaymentMethods(
+                            isEnabled
+                              ? enabledPaymentMethods.filter((m) => m !== id)
+                              : [...enabledPaymentMethods, id]
+                          )
+                        }}
+                      >
+                        <span className="text-lg">{config.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className={`font-medium ${isEnabled ? 'text-emerald-700 dark:text-emerald-400' : 'text-gray-700 dark:text-gray-300'}`}>
+                            {config.name}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground truncate">{config.description}</div>
+                        </div>
+                        {isEnabled ? (
+                          <Check size={16} className="text-emerald-600 flex-shrink-0" />
+                        ) : (
+                          <span className="inline-block h-4 w-4 rounded border border-gray-300 flex-shrink-0" />
+                        )}
+                      </div>
+                    )
+                  })
+                }
+
+                return categoryOrder.map((category) => {
+                  const ids = methodsByCategory[category]
+                  if (!ids?.length) return null
+                  return (
+                    <div key={category}>
+                      <div className="px-2 pt-3 pb-1 first:pt-0">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          {category}
+                        </span>
+                      </div>
+                      {ids.map((id) => {
+                        const config = PAYMENT_METHODS[id]
+                        if (!config) return null
+                        const isEnabled = enabledPaymentMethods.includes(id)
+                        return (
+                          <div
+                            key={id}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-md cursor-pointer transition-colors text-sm ${
+                              isEnabled
+                                ? 'bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800'
+                                : 'hover:bg-gray-50 dark:hover:bg-gray-800 border border-transparent'
+                            }`}
+                            onClick={() => {
+                              setEnabledPaymentMethods(
+                                isEnabled
+                                  ? enabledPaymentMethods.filter((m) => m !== id)
+                                  : [...enabledPaymentMethods, id]
+                              )
+                            }}
+                          >
+                            <span className="text-base">{config.icon}</span>
+                            <span className={`flex-1 ${isEnabled ? 'font-medium text-emerald-700 dark:text-emerald-400' : 'text-gray-600 dark:text-gray-400'}`}>
+                              {config.name}
+                            </span>
+                            {isEnabled ? (
+                              <Check size={14} className="text-emerald-600 flex-shrink-0" />
+                            ) : (
+                              <span className="inline-block h-3.5 w-3.5 rounded border border-gray-300 flex-shrink-0" />
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )
+                })
+              })()}
             </div>
           </CardContent>
         </Card>
