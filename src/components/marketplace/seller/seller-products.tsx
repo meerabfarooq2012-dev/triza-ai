@@ -81,6 +81,7 @@ import { CurrencyMultiSelect } from '@/components/marketplace/seller/currency-mu
 import { PaymentMethodMultiSelect } from '@/components/marketplace/seller/payment-method-select'
 import type { CurrencyCode } from '@/lib/currency'
 import type { PaymentMethodId } from '@/lib/payment-methods'
+import { PAYMENT_METHODS as PM_CONFIG, getCryptoPaymentMethods } from '@/lib/payment-methods'
 import type { Product, ProductType, Category, ProductVariantOption, ProductVariant } from '@/types'
 
 interface ProductFormData {
@@ -98,6 +99,7 @@ interface ProductFormData {
   deliveryCountries: string[] // array of country codes
   acceptedCurrencies: CurrencyCode[] // currencies seller accepts
   paymentMethods: PaymentMethodId[] // payment methods seller accepts
+  cryptoWallets: Record<string, string> // crypto wallet addresses: { "bitcoin": "bc1q...", "ethereum": "0x..." }
   requirements: string
   isFeatured: boolean
   images: string[] // base64 encoded images
@@ -118,6 +120,7 @@ const emptyForm: ProductFormData = {
   deliveryCountries: [],
   acceptedCurrencies: ['USD'],
   paymentMethods: [],
+  cryptoWallets: {},
   requirements: '',
   isFeatured: false,
   images: [],
@@ -629,6 +632,12 @@ export function SellerProducts() {
       const parsed = JSON.parse(typeof raw === 'string' && raw ? raw : '[]')
       paymentMethods = Array.isArray(parsed) ? parsed : []
     } catch { paymentMethods = [] }
+    let cryptoWallets: Record<string, string> = {}
+    try {
+      const raw = (product as unknown as Record<string, unknown>).cryptoWallets
+      const parsed = JSON.parse(typeof raw === 'string' && raw ? raw : '{}')
+      cryptoWallets = (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {}
+    } catch { cryptoWallets = {} }
     // Determine subcategoryId from category parent chain
     let subcategoryId = ''
     const catId = product.categoryId || ''
@@ -657,6 +666,7 @@ export function SellerProducts() {
       deliveryCountries,
       acceptedCurrencies,
       paymentMethods,
+      cryptoWallets,
       requirements: product.requirements || '',
       isFeatured: product.isFeatured,
       images,
@@ -703,6 +713,7 @@ export function SellerProducts() {
         deliveryCountries: formData.deliveryCountries,
         acceptedCurrencies: formData.acceptedCurrencies,
         paymentMethods: formData.paymentMethods,
+        cryptoWallets: formData.cryptoWallets,
         requirements: formData.requirements || undefined,
         isFeatured: formData.isFeatured,
         images: formData.images,
@@ -1481,6 +1492,63 @@ export function SellerProducts() {
                 }
               />
             </div>
+
+            {/* Crypto Wallet Addresses — Show only if crypto methods are selected */}
+            {(() => {
+              const cryptoMethods = (formData.paymentMethods || []).filter((id) =>
+                PM_CONFIG[id]?.walletField
+              )
+              if (!cryptoMethods.length) return null
+              return (
+                <div className="grid gap-3">
+                  <Label className="flex items-center gap-1.5">
+                    <span className="text-base">₿</span>
+                    Crypto Wallet Addresses
+                    <span className="text-xs text-gray-400">
+                      — Where buyers will send payment
+                    </span>
+                  </Label>
+                  <div className="rounded-lg border border-orange-200 bg-orange-50/50 dark:bg-orange-950/10 dark:border-orange-900 p-3 space-y-3">
+                    <p className="text-xs text-orange-700 dark:text-orange-400">
+                      Enter your wallet addresses for each selected cryptocurrency. Buyers will see these addresses to send payment directly to you.
+                    </p>
+                    {cryptoMethods.map((methodId) => {
+                      const config = PM_CONFIG[methodId]
+                      if (!config?.walletField) return null
+                      const walletKey = config.walletField === 'generic' ? methodId : config.walletField
+                      return (
+                        <div key={methodId} className="grid gap-1.5">
+                          <Label className="text-xs font-medium flex items-center gap-1">
+                            <span className="text-sm">{config.icon}</span>
+                            {config.name} Address
+                          </Label>
+                          <Input
+                            placeholder={
+                              walletKey === 'bitcoin' ? 'bc1q...' :
+                              walletKey === 'ethereum' ? '0x...' :
+                              walletKey === 'usdt' ? '0x... (ERC-20 / TRC-20)' :
+                              walletKey === 'usdc' ? '0x... (ERC-20)' :
+                              'Enter wallet address...'
+                            }
+                            value={formData.cryptoWallets?.[walletKey] || ''}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                cryptoWallets: {
+                                  ...formData.cryptoWallets,
+                                  [walletKey]: e.target.value,
+                                },
+                              })
+                            }
+                            className="text-sm font-mono"
+                          />
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })()}
 
             {/* Featured toggle */}
             <div className="flex items-center justify-between rounded-lg border p-3">

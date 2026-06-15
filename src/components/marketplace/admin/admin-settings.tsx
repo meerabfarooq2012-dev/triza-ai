@@ -18,6 +18,9 @@ import {
   CreditCard,
   Check,
   Search,
+  Clock,
+  Lock,
+  Zap,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -30,7 +33,7 @@ import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { api } from '@/lib/api'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
-import { PAYMENT_METHODS, type PaymentMethodId, getPaymentMethodsByCategory, getPaymentCategoryOrder, searchPaymentMethods } from '@/lib/payment-methods'
+import { PAYMENT_METHODS, type PaymentMethodId, getPaymentMethodsByCategory, getPaymentCategoryOrder, searchPaymentMethods, getActivePaymentMethodIds, getComingSoonPaymentMethodIds } from '@/lib/payment-methods'
 
 interface PlatformSettingsData {
   id: string
@@ -436,20 +439,30 @@ export default function AdminSettings() {
               />
             </div>
 
-            {/* Enabled count */}
-            <div className="flex items-center justify-between">
-              <Badge variant="outline" className="gap-1">
-                <Check size={12} className="text-emerald-600" />
-                {enabledPaymentMethods.length} of {Object.keys(PAYMENT_METHODS).length} enabled
-              </Badge>
+            {/* Stats bar */}
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="gap-1">
+                  <Check size={12} className="text-emerald-600" />
+                  {enabledPaymentMethods.length} enabled
+                </Badge>
+                <Badge variant="outline" className="gap-1 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800">
+                  <Zap size={12} />
+                  {getActivePaymentMethodIds().length} active
+                </Badge>
+                <Badge variant="outline" className="gap-1 bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800">
+                  <Clock size={12} />
+                  {getComingSoonPaymentMethodIds().length} coming soon
+                </Badge>
+              </div>
               <div className="flex gap-2">
                 <Button
                   variant="ghost"
                   size="sm"
                   className="h-7 text-xs text-emerald-600"
-                  onClick={() => setEnabledPaymentMethods(Object.keys(PAYMENT_METHODS) as PaymentMethodId[])}
+                  onClick={() => setEnabledPaymentMethods(getActivePaymentMethodIds() as PaymentMethodId[])}
                 >
-                  Enable All
+                  Enable Active
                 </Button>
                 <Button
                   variant="ghost"
@@ -463,7 +476,7 @@ export default function AdminSettings() {
             </div>
 
             {/* Payment methods grid */}
-            <div className="max-h-96 overflow-y-auto space-y-1 border rounded-lg p-2">
+            <div className="max-h-[500px] overflow-y-auto space-y-1 border rounded-lg p-2">
               {(() => {
                 const categoryOrder = getPaymentCategoryOrder()
                 const methodsByCategory = getPaymentMethodsByCategory()
@@ -483,13 +496,16 @@ export default function AdminSettings() {
                     const config = PAYMENT_METHODS[id]
                     if (!config) return null
                     const isEnabled = enabledPaymentMethods.includes(id)
+                    const isActive = config.active
                     return (
                       <div
                         key={id}
                         className={`flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer transition-colors text-sm ${
                           isEnabled
                             ? 'bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800'
-                            : 'hover:bg-gray-50 dark:hover:bg-gray-800 border border-transparent'
+                            : isActive
+                              ? 'hover:bg-gray-50 dark:hover:bg-gray-800 border border-transparent'
+                              : 'opacity-60 border border-transparent'
                         }`}
                         onClick={() => {
                           setEnabledPaymentMethods(
@@ -501,13 +517,28 @@ export default function AdminSettings() {
                       >
                         <span className="text-lg">{config.icon}</span>
                         <div className="flex-1 min-w-0">
-                          <div className={`font-medium ${isEnabled ? 'text-emerald-700 dark:text-emerald-400' : 'text-gray-700 dark:text-gray-300'}`}>
+                          <div className={`flex items-center gap-1.5 font-medium ${isEnabled ? 'text-emerald-700 dark:text-emerald-400' : isActive ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500'}`}>
                             {config.name}
+                            {isActive ? (
+                              <Badge className="text-[8px] h-3.5 px-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400 border-0">
+                                Active
+                              </Badge>
+                            ) : (
+                              <Badge className="text-[8px] h-3.5 px-1 bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400 border-0">
+                                <Clock className="h-2 w-2 mr-0.5" />
+                                Soon
+                              </Badge>
+                            )}
                           </div>
-                          <div className="text-[10px] text-muted-foreground truncate">{config.description}</div>
+                          <div className="text-[10px] text-muted-foreground truncate">
+                            {config.description}
+                            {!isActive && config.reason && ` — ${config.reason}`}
+                          </div>
                         </div>
                         {isEnabled ? (
                           <Check size={16} className="text-emerald-600 flex-shrink-0" />
+                        ) : !isActive ? (
+                          <Lock size={14} className="text-gray-400 flex-shrink-0" />
                         ) : (
                           <span className="inline-block h-4 w-4 rounded border border-gray-300 flex-shrink-0" />
                         )}
@@ -519,6 +550,10 @@ export default function AdminSettings() {
                 return categoryOrder.map((category) => {
                   const ids = methodsByCategory[category]
                   if (!ids?.length) return null
+
+                  const activeIds = ids.filter((id) => PAYMENT_METHODS[id]?.active)
+                  const comingSoonIds = ids.filter((id) => !PAYMENT_METHODS[id]?.active)
+
                   return (
                     <div key={category}>
                       <div className="px-2 pt-3 pb-1 first:pt-0">
@@ -526,7 +561,8 @@ export default function AdminSettings() {
                           {category}
                         </span>
                       </div>
-                      {ids.map((id) => {
+                      {/* Active methods in this category */}
+                      {activeIds.map((id) => {
                         const config = PAYMENT_METHODS[id]
                         if (!config) return null
                         const isEnabled = enabledPaymentMethods.includes(id)
@@ -547,13 +583,53 @@ export default function AdminSettings() {
                             }}
                           >
                             <span className="text-base">{config.icon}</span>
-                            <span className={`flex-1 ${isEnabled ? 'font-medium text-emerald-700 dark:text-emerald-400' : 'text-gray-600 dark:text-gray-400'}`}>
+                            <span className={`flex-1 flex items-center gap-1.5 ${isEnabled ? 'font-medium text-emerald-700 dark:text-emerald-400' : 'text-gray-600 dark:text-gray-400'}`}>
                               {config.name}
+                              <Badge className="text-[8px] h-3.5 px-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400 border-0">
+                                Active
+                              </Badge>
                             </span>
                             {isEnabled ? (
                               <Check size={14} className="text-emerald-600 flex-shrink-0" />
                             ) : (
                               <span className="inline-block h-3.5 w-3.5 rounded border border-gray-300 flex-shrink-0" />
+                            )}
+                          </div>
+                        )
+                      })}
+                      {/* Coming soon methods in this category */}
+                      {comingSoonIds.map((id) => {
+                        const config = PAYMENT_METHODS[id]
+                        if (!config) return null
+                        const isEnabled = enabledPaymentMethods.includes(id)
+                        return (
+                          <div
+                            key={id}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-md cursor-pointer transition-colors text-sm ${
+                              isEnabled
+                                ? 'bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800'
+                                : 'opacity-50 border border-transparent'
+                            }`}
+                            onClick={() => {
+                              setEnabledPaymentMethods(
+                                isEnabled
+                                  ? enabledPaymentMethods.filter((m) => m !== id)
+                                  : [...enabledPaymentMethods, id]
+                              )
+                            }}
+                          >
+                            <span className="text-base">{config.icon}</span>
+                            <span className={`flex-1 flex items-center gap-1.5 ${isEnabled ? 'font-medium text-amber-700 dark:text-amber-400' : 'text-gray-400 dark:text-gray-500'}`}>
+                              {config.name}
+                              <Badge className="text-[8px] h-3.5 px-1 bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400 border-0">
+                                <Clock className="h-2 w-2 mr-0.5" />
+                                Soon
+                              </Badge>
+                            </span>
+                            {isEnabled ? (
+                              <Check size={14} className="text-amber-600 flex-shrink-0" />
+                            ) : (
+                              <Lock size={12} className="text-gray-400 flex-shrink-0" />
                             )}
                           </div>
                         )

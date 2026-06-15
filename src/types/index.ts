@@ -8,7 +8,17 @@ export type UserRole = 'buyer' | 'seller' | 'both'
 export type ProductType = 'digital' | 'physical' | 'freelance'
 export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded'
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded'
-export type PaymentMethod = 'easypaisa' | 'jazzcash' | 'payfast' | 'crypto' | 'bank_transfer'
+export type PaymentMethod =
+  | 'easypaisa' | 'jazzcash' | 'sadapay' | 'nayapay' | 'zindigi'
+  | 'bkash' | 'nagad' | 'rocket'
+  | 'upi' | 'phonepe' | 'googlepay_in' | 'paytm'
+  | 'wise' | 'revolut'
+  | 'paypal' | 'stripe' | 'payoneer' | 'skrill'
+  | 'bank_transfer' | 'iban_transfer'
+  | 'bitcoin' | 'ethereum' | 'usdt' | 'usdc' | 'binance_pay' | 'crypto_other'
+  | 'cod'
+  | 'apple_pay' | 'google_pay' | 'visa_mastercard'
+  | 'western_union' | 'moneygram' | 'remittance'
 export type EscrowStatus = 'held' | 'released' | 'refunded'
 export type TransactionType = 'credit' | 'debit' | 'commission' | 'withdrawal' | 'refund' | 'escrow_hold' | 'escrow_release'
 export type WithdrawalStatus = 'pending' | 'processing' | 'approved' | 'rejected' | 'completed' | 'cancelled'
@@ -911,7 +921,7 @@ export interface AdminTransactionsData {
 // ----- Payment Info Types (Saved payment methods) -----
 
 export type PaymentInfoType = 'buyer' | 'seller'
-export type PaymentInfoMethod = 'easypaisa' | 'jazzcash' | 'payfast' | 'crypto' | 'bank_transfer'
+export type PaymentInfoMethod = PaymentMethod
 
 export interface PaymentInfo {
   id: string

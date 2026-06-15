@@ -79,9 +79,15 @@ interface MethodConfig {
 const ALL_METHODS: MethodConfig[] = [
   { id: 'easypaisa', name: 'Easypaisa', icon: Wallet, color: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-300', description: 'Mobile wallet payment', buyerAvailable: true, sellerAvailable: true },
   { id: 'jazzcash', name: 'JazzCash', icon: Wallet, color: 'text-red-600', bgColor: 'bg-red-50', borderColor: 'border-red-300', description: 'Mobile wallet payment', buyerAvailable: true, sellerAvailable: true },
-  { id: 'payfast', name: 'PayFast', icon: ShieldCheck, color: 'text-blue-700', bgColor: 'bg-[#E8F7FD]', borderColor: 'border-[#00A3E0]', description: 'PayFast processes international card payments via Visa & Mastercard', buyerAvailable: true, sellerAvailable: true },
-  { id: 'crypto', name: 'Crypto', icon: Bitcoin, color: 'text-orange-700', bgColor: 'bg-[#FFF3E0]', borderColor: 'border-[#F7931A]', description: 'Pay with Bitcoin, Ethereum, Solana & more. No KYC required!', buyerAvailable: true, sellerAvailable: true },
   { id: 'bank_transfer', name: 'Bank Transfer', icon: Building2, color: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-300', description: 'Direct bank transfer', buyerAvailable: false, sellerAvailable: true },
+  { id: 'iban_transfer', name: 'IBAN / Wire Transfer', icon: Building2, color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-300', description: 'International wire transfer via IBAN', buyerAvailable: false, sellerAvailable: true },
+  { id: 'bitcoin', name: 'Bitcoin (BTC)', icon: Bitcoin, color: 'text-orange-700', bgColor: 'bg-[#FFF3E0]', borderColor: 'border-[#F7931A]', description: 'Pay with Bitcoin', buyerAvailable: true, sellerAvailable: true },
+  { id: 'ethereum', name: 'Ethereum (ETH)', icon: Bitcoin, color: 'text-purple-700', bgColor: 'bg-purple-50', borderColor: 'border-purple-300', description: 'Pay with Ethereum', buyerAvailable: true, sellerAvailable: true },
+  { id: 'usdt', name: 'USDT (Tether)', icon: Bitcoin, color: 'text-green-700', bgColor: 'bg-green-50', borderColor: 'border-green-300', description: 'Pay with USDT stablecoin', buyerAvailable: true, sellerAvailable: true },
+  { id: 'usdc', name: 'USDC', icon: Bitcoin, color: 'text-blue-700', bgColor: 'bg-blue-50', borderColor: 'border-blue-300', description: 'Pay with USDC stablecoin', buyerAvailable: true, sellerAvailable: true },
+  { id: 'binance_pay', name: 'Binance Pay', icon: Bitcoin, color: 'text-yellow-700', bgColor: 'bg-yellow-50', borderColor: 'border-yellow-300', description: 'Pay via Binance Pay', buyerAvailable: true, sellerAvailable: true },
+  { id: 'crypto_other', name: 'Other Crypto', icon: Bitcoin, color: 'text-orange-700', bgColor: 'bg-[#FFF3E0]', borderColor: 'border-[#F7931A]', description: 'Other cryptocurrency payment', buyerAvailable: true, sellerAvailable: true },
+  { id: 'cod', name: 'Cash on Delivery', icon: Wallet, color: 'text-green-600', bgColor: 'bg-green-50', borderColor: 'border-green-300', description: 'Pay cash when you receive the product', buyerAvailable: true, sellerAvailable: true },
 ]
 
 function getMethodConfig(method: PaymentInfoMethod): MethodConfig {
@@ -130,12 +136,19 @@ function maskedDetail(method: PaymentInfoMethod, details: PaymentInfoAccountDeta
     case 'easypaisa':
     case 'jazzcash':
       return details.mobileNumber ? `0300 ****${details.mobileNumber?.slice(-3)}` : '****'
-    case 'payfast':
-      return details.iban ? `IBAN ****${details.iban.slice(-4)}` : details.email ? details.email.replace(/^(..)(.*)(@.*)$/, '$1***$3') : '****'
     case 'crypto':
+    case 'bitcoin':
+    case 'ethereum':
+    case 'usdt':
+    case 'usdc':
+    case 'binance_pay':
+    case 'crypto_other':
       return details.walletAddress ? `${details.walletAddress.slice(0, 6)}...${details.walletAddress.slice(-4)}` : details.preferredCrypto ? details.preferredCrypto.toUpperCase() : '****'
     case 'bank_transfer':
+    case 'iban_transfer':
       return details.accountNumber ? `**** ${details.accountNumber.slice(-4)}` : '****'
+    case 'cod':
+      return 'Cash on Delivery'
     default:
       return '****'
   }
@@ -150,21 +163,26 @@ function detailSummary(method: PaymentInfoMethod, details: PaymentInfoAccountDet
       if (details.accountName) items.push({ label: 'Account Name', value: details.accountName })
       if (details.mobileNumber) items.push({ label: 'Mobile Number', value: details.mobileNumber })
       break
-    case 'payfast':
-      if (details.email) items.push({ label: 'Email', value: details.email })
-      if (details.iban) items.push({ label: 'IBAN', value: details.iban })
-      if (details.accountName) items.push({ label: 'Account Name', value: details.accountName })
-      break
     case 'crypto':
+    case 'bitcoin':
+    case 'ethereum':
+    case 'usdt':
+    case 'usdc':
+    case 'binance_pay':
+    case 'crypto_other':
       if (details.walletAddress) items.push({ label: 'Wallet Address', value: `${details.walletAddress.slice(0, 6)}...${details.walletAddress.slice(-4)}` })
       if (details.preferredCrypto) items.push({ label: 'Preferred Crypto', value: details.preferredCrypto.toUpperCase() })
       break
     case 'bank_transfer':
+    case 'iban_transfer':
       if (details.accountName) items.push({ label: 'Account Name', value: details.accountName })
       if (details.accountNumber) items.push({ label: 'Account Number', value: `****${details.accountNumber.slice(-4)}` })
       if (details.bankName) items.push({ label: 'Bank Name', value: details.bankName })
       if (details.routingNumber) items.push({ label: 'Routing No.', value: details.routingNumber })
       if (details.swiftCode) items.push({ label: 'SWIFT Code', value: details.swiftCode })
+      break
+    case 'cod':
+      items.push({ label: 'Payment', value: 'Cash on Delivery' })
       break
   }
   return items
@@ -215,11 +233,16 @@ function PaymentMethodForm({
       case 'easypaisa':
       case 'jazzcash':
         return { accountName, mobileNumber }
-      case 'payfast':
-        return { email, iban, accountName }
       case 'crypto':
+      case 'bitcoin':
+      case 'ethereum':
+      case 'usdt':
+      case 'usdc':
+      case 'binance_pay':
+      case 'crypto_other':
         return { walletAddress, preferredCrypto }
       case 'bank_transfer':
+      case 'iban_transfer':
         return {
           accountName,
           accountNumber,
@@ -227,6 +250,8 @@ function PaymentMethodForm({
           routingNumber: routingNumber || undefined,
           swiftCode: swiftCode || undefined,
         }
+      case 'cod':
+        return {}
       default:
         return {}
     }
@@ -241,18 +266,22 @@ function PaymentMethodForm({
         if (!accountName.trim()) return 'Please enter the account name'
         if (!mobileNumber.trim()) return 'Please enter the mobile number'
         break
-      case 'payfast':
-        if (!email.trim()) return 'Please enter your PayFast email'
-        if (!iban.trim()) return 'Please enter your IBAN'
-        if (!accountName.trim()) return 'Please enter the account name'
-        break
       case 'crypto':
+      case 'bitcoin':
+      case 'ethereum':
+      case 'usdt':
+      case 'usdc':
+      case 'binance_pay':
+      case 'crypto_other':
         if (!walletAddress.trim()) return 'Please enter your crypto wallet address'
         break
       case 'bank_transfer':
+      case 'iban_transfer':
         if (!accountName.trim()) return 'Please enter the account name'
         if (!accountNumber.trim()) return 'Please enter the account number'
         if (!bankName.trim()) return 'Please enter the bank name'
+        break
+      case 'cod':
         break
     }
     return null
@@ -401,42 +430,8 @@ function PaymentMethodForm({
             </>
           )}
 
-          {/* PayFast */}
-          {selectedMethod === 'payfast' && (
-            <>
-              <div className="space-y-1.5">
-                <Label htmlFor="ps-payfast-email">Email *</Label>
-                <Input
-                  id="ps-payfast-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="email@example.com"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="ps-payfast-iban">IBAN *</Label>
-                <Input
-                  id="ps-payfast-iban"
-                  value={iban}
-                  onChange={(e) => setIban(e.target.value)}
-                  placeholder="IBAN number"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="ps-payfast-name">Account Name *</Label>
-                <Input
-                  id="ps-payfast-name"
-                  value={accountName}
-                  onChange={(e) => setAccountName(e.target.value)}
-                  placeholder="Full name on account"
-                />
-              </div>
-            </>
-          )}
-
           {/* Crypto */}
-          {selectedMethod === 'crypto' && (
+          {(selectedMethod === 'crypto' || selectedMethod === 'bitcoin' || selectedMethod === 'ethereum' || selectedMethod === 'usdt' || selectedMethod === 'usdc' || selectedMethod === 'binance_pay' || selectedMethod === 'crypto_other') && (
             <>
               <div className="rounded-lg bg-[#FFF3E0] border border-[#F7931A]/30 p-3">
                 <div className="flex items-center gap-2 mb-1">

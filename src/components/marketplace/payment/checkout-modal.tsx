@@ -49,7 +49,11 @@ interface CheckoutModalProps {
   onOpenChange: (open: boolean) => void
 }
 
-const PAYMENT_METHODS: {
+// Checkout payment method display config
+// Build display config from the central payment-methods registry
+import { PAYMENT_METHODS as PM_CONFIG, getActivePaymentMethodIds, type PaymentMethodId } from '@/lib/payment-methods'
+
+const CHECKOUT_PAYMENT_METHODS: {
   id: PaymentMethod
   name: string
   region: string
@@ -58,48 +62,47 @@ const PAYMENT_METHODS: {
   bgColor: string
   borderColor: string
   description: string
-}[] = [
-  {
-    id: 'easypaisa',
-    name: 'Easypaisa',
-    region: 'Local',
-    flag: '🇵🇰',
-    color: 'text-amber-700',
-    bgColor: 'bg-amber-50',
-    borderColor: 'border-amber-200 data-[state=checked]:border-amber-500',
-    description: 'Mobile wallet payment',
-  },
-  {
-    id: 'jazzcash',
-    name: 'JazzCash',
-    region: 'Local',
-    flag: '🇵🇰',
-    color: 'text-red-700',
-    bgColor: 'bg-red-50',
-    borderColor: 'border-red-200 data-[state=checked]:border-red-500',
-    description: 'Mobile wallet payment',
-  },
-  {
-    id: 'payfast',
-    name: 'PayFast',
-    region: 'International',
-    flag: '🌍',
-    color: 'text-blue-700',
-    bgColor: 'bg-[#E8F7FD]',
-    borderColor: 'border-[#00A3E0] data-[state=checked]:border-[#00A3E0]',
-    description: 'International card payments via Visa & Mastercard',
-  },
-  {
-    id: 'crypto',
-    name: 'Crypto',
-    region: 'International',
-    flag: '🌐',
-    color: 'text-orange-700',
-    bgColor: 'bg-[#FFF3E0]',
-    borderColor: 'border-[#F7931A] data-[state=checked]:border-[#F7931A]',
-    description: 'Pay with Bitcoin, Ethereum, Solana & more',
-  },
-]
+  accentColor: string
+}[] = (() => {
+  const regionMap: Record<string, string> = {
+    'Mobile Wallet — Pakistan': '🇵🇰 Local',
+    'Mobile Wallet — Bangladesh': '🇧🇩 Local',
+    'Mobile Wallet — India': '🇮🇳 Local',
+    'International': '🌍 International',
+    'Bank Transfer': '🏦 Bank',
+    'Cryptocurrency': '🌐 Crypto',
+    'Card / Digital': '💳 Card',
+    'Cash': '💵 Cash',
+    'Remittance': '📬 Remittance',
+  }
+  const colorMap: Record<string, { color: string; bgColor: string; borderColor: string; accentColor: string }> = {
+    'Mobile Wallet — Pakistan': { color: 'text-amber-700', bgColor: 'bg-amber-50', borderColor: 'border-amber-200 data-[state=checked]:border-amber-500', accentColor: 'bg-amber-500' },
+    'Mobile Wallet — Bangladesh': { color: 'text-pink-700', bgColor: 'bg-pink-50', borderColor: 'border-pink-200 data-[state=checked]:border-pink-500', accentColor: 'bg-pink-500' },
+    'Mobile Wallet — India': { color: 'text-orange-700', bgColor: 'bg-orange-50', borderColor: 'border-orange-200 data-[state=checked]:border-orange-500', accentColor: 'bg-orange-500' },
+    'International': { color: 'text-blue-700', bgColor: 'bg-blue-50', borderColor: 'border-blue-200 data-[state=checked]:border-blue-500', accentColor: 'bg-blue-500' },
+    'Bank Transfer': { color: 'text-emerald-700', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200 data-[state=checked]:border-emerald-500', accentColor: 'bg-emerald-500' },
+    'Cryptocurrency': { color: 'text-orange-700', bgColor: 'bg-orange-50', borderColor: 'border-orange-200 data-[state=checked]:border-orange-500', accentColor: 'bg-yellow-500' },
+    'Card / Digital': { color: 'text-violet-700', bgColor: 'bg-violet-50', borderColor: 'border-violet-200 data-[state=checked]:border-violet-500', accentColor: 'bg-violet-500' },
+    'Cash': { color: 'text-green-700', bgColor: 'bg-green-50', borderColor: 'border-green-200 data-[state=checked]:border-green-500', accentColor: 'bg-green-500' },
+    'Remittance': { color: 'text-cyan-700', bgColor: 'bg-cyan-50', borderColor: 'border-cyan-200 data-[state=checked]:border-cyan-500', accentColor: 'bg-cyan-500' },
+  }
+  return getActivePaymentMethodIds().map((id: PaymentMethodId) => {
+    const config = PM_CONFIG[id]
+    const colors = colorMap[config.category] || colorMap['International']
+    const region = regionMap[config.category] || '🌍 International'
+    return {
+      id: id as PaymentMethod,
+      name: config.name,
+      region,
+      flag: config.icon,
+      color: colors.color,
+      bgColor: colors.bgColor,
+      borderColor: colors.borderColor,
+      description: config.description,
+      accentColor: colors.accentColor,
+    }
+  })
+})()
 
 // Commission percent is now imported from constants
 
@@ -108,7 +111,7 @@ type CheckoutStep = 'summary' | 'payment' | 'payment_details' | 'shipping' | 'pr
 export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   const { cart, cartTotal, currentUser, clearCart } = useMarketplaceStore()
   const [step, setStep] = useState<CheckoutStep>('summary')
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('easypaisa')
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(CHECKOUT_PAYMENT_METHODS[0]?.id || 'easypaisa')
   const [shippingInfo, setShippingInfo] = useState({
     name: currentUser?.name || '',
     address: '',
@@ -369,7 +372,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
 
   const resetState = () => {
     setStep('summary')
-    setPaymentMethod('easypaisa')
+    setPaymentMethod(CHECKOUT_PAYMENT_METHODS[0]?.id || 'easypaisa')
     setShippingInfo({
       name: currentUser?.name || '',
       address: '',
@@ -453,7 +456,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
               userId: currentUser.id,
               type: 'buyer',
               method: paymentMethod,
-              label: `My ${PAYMENT_METHODS.find(m => m.id === paymentMethod)?.name || paymentMethod}`,
+              label: `My ${CHECKOUT_PAYMENT_METHODS.find(m => m.id === paymentMethod)?.name || paymentMethod}`,
               accountDetails: details,
               isDefault: false,
             }),
@@ -1034,7 +1037,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 onValueChange={(val) => setPaymentMethod(val as PaymentMethod)}
                 className="space-y-3"
               >
-                {PAYMENT_METHODS.map((method) => (
+                {CHECKOUT_PAYMENT_METHODS.map((method) => (
                   <label key={method.id} className="block cursor-pointer">
                     <Card
                       className={`relative overflow-hidden border-2 transition-all ${
@@ -1080,15 +1083,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                       </div>
                       {paymentMethod === method.id && (
                         <div
-                          className={`absolute bottom-0 left-0 h-0.5 w-full ${
-                            method.id === 'easypaisa'
-                              ? 'bg-amber-500'
-                              : method.id === 'jazzcash'
-                                ? 'bg-red-500'
-                                : method.id === 'payfast'
-                                  ? 'bg-[#00A3E0]'
-                                  : 'bg-yellow-500'
-                          }`}
+                          className={`absolute bottom-0 left-0 h-0.5 w-full ${method.accentColor}`}
                         />
                       )}
                     </Card>
@@ -1159,7 +1154,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                       const details = typeof pm.accountDetails === 'string'
                         ? JSON.parse(pm.accountDetails)
                         : pm.accountDetails as PaymentInfoAccountDetails
-                      const methodConfig = PAYMENT_METHODS.find(m => m.id === pm.method)
+                      const methodConfig = CHECKOUT_PAYMENT_METHODS.find(m => m.id === pm.method)
                       const isMethodMatch = pm.method === paymentMethod
                       const isSelected = selectedSavedMethodId === pm.id
                       return (
@@ -1255,7 +1250,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                   <ShieldCheck className="h-4 w-4 text-[#00A3E0]" />
                 )}
                 <span className="text-sm font-medium capitalize">
-                  {PAYMENT_METHODS.find(m => m.id === paymentMethod)?.name || paymentMethod}
+                  {CHECKOUT_PAYMENT_METHODS.find(m => m.id === paymentMethod)?.name || paymentMethod}
                 </span>
                 {useSavedMethod && selectedSavedMethodId && (
                   <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 text-[10px] px-1.5 py-0">

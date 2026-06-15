@@ -114,17 +114,23 @@ function getStepIndex(status: string): number {
 const WITHDRAWAL_METHODS = [
   { id: 'easypaisa', name: 'Easypaisa', icon: WalletIcon },
   { id: 'jazzcash', name: 'JazzCash', icon: CreditCard },
-  { id: 'payfast', name: 'PayFast', icon: CreditCard },
-  { id: 'crypto', name: 'Crypto Wallet', icon: Send },
+  { id: 'bitcoin', name: 'Bitcoin (BTC)', icon: Send },
+  { id: 'ethereum', name: 'Ethereum (ETH)', icon: Send },
+  { id: 'usdt', name: 'USDT (Tether)', icon: Send },
+  { id: 'usdc', name: 'USDC', icon: Send },
   { id: 'bank_transfer', name: 'Bank Transfer', icon: Building2 },
+  { id: 'iban_transfer', name: 'IBAN / Wire Transfer', icon: Building2 },
 ]
 
 const WITHDRAWAL_FEE: Record<string, number> = {
   easypaisa: 0,
   jazzcash: 0,
-  payfast: 0,
-  crypto: 0,
+  bitcoin: 0,
+  ethereum: 0,
+  usdt: 0,
+  usdc: 0,
   bank_transfer: 0,
+  iban_transfer: 0,
 }
 
 const QUICK_AMOUNTS = [50, 100, 250, 500]
@@ -166,12 +172,11 @@ export function SellerWallet() {
   const [withdrawMethod, setWithdrawMethod] = useState<string>('easypaisa')
   const [accountName, setAccountName] = useState('')
   const [mobileNumber, setMobileNumber] = useState('')
-  const [email, setEmail] = useState('')
+  const [walletAddress, setWalletAddress] = useState('')
   const [accountNumber, setAccountNumber] = useState('')
   const [bankName, setBankName] = useState('')
   const [routingNumber, setRoutingNumber] = useState('')
   const [swiftCode, setSwiftCode] = useState('')
-  const [iban, setIban] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   // Saved seller receiving methods
@@ -289,12 +294,12 @@ export function SellerWallet() {
       return
     }
 
-    if (withdrawMethod === 'payfast' && (!email || !iban)) {
-      toast.error('Please enter email and IBAN')
+    if ((withdrawMethod === 'bitcoin' || withdrawMethod === 'ethereum' || withdrawMethod === 'usdt' || withdrawMethod === 'usdc') && !walletAddress) {
+      toast.error('Please enter wallet address')
       return
     }
 
-    if (withdrawMethod === 'bank_transfer' && (!accountNumber || !bankName)) {
+    if ((withdrawMethod === 'bank_transfer' || withdrawMethod === 'iban_transfer') && (!accountNumber || !bankName)) {
       toast.error('Please enter account number and bank name')
       return
     }
@@ -304,11 +309,10 @@ export function SellerWallet() {
       const accountDetails: Record<string, string> = { accountName }
       if (withdrawMethod === 'easypaisa' || withdrawMethod === 'jazzcash') {
         accountDetails.accountNumber = mobileNumber
-      } else if (withdrawMethod === 'payfast') {
-        accountDetails.email = email
-        accountDetails.accountNumber = iban
-        accountDetails.iban = iban
-      } else if (withdrawMethod === 'bank_transfer') {
+      } else if (withdrawMethod === 'bitcoin' || withdrawMethod === 'ethereum' || withdrawMethod === 'usdt' || withdrawMethod === 'usdc') {
+        accountDetails.walletAddress = walletAddress
+        accountDetails.cryptoType = withdrawMethod
+      } else if (withdrawMethod === 'bank_transfer' || withdrawMethod === 'iban_transfer') {
         accountDetails.accountNumber = accountNumber
         accountDetails.bankName = bankName
         if (routingNumber) accountDetails.routingNumber = routingNumber
@@ -641,15 +645,18 @@ export function SellerWallet() {
                           <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${
                             pm.method === 'easypaisa' ? 'bg-amber-50' :
                             pm.method === 'jazzcash' ? 'bg-red-50' :
-                            pm.method === 'payfast' ? 'bg-[#E8F7FD]' :
+                            pm.method === 'bitcoin' || pm.method === 'ethereum' || pm.method === 'usdt' || pm.method === 'usdc' ? 'bg-orange-50' :
+                            pm.method === 'bank_transfer' || pm.method === 'iban_transfer' ? 'bg-emerald-50' :
                             'bg-amber-50'
                           }`}>
                             {pm.method === 'easypaisa' || pm.method === 'jazzcash' ? (
                               <WalletIcon className={`h-3.5 w-3.5 ${pm.method === 'easypaisa' ? 'text-amber-600' : 'text-red-600'}`} />
-                            ) : pm.method === 'bank_transfer' ? (
-                              <Building2 className="h-3.5 w-3.5 text-amber-600" />
+                            ) : pm.method === 'bank_transfer' || pm.method === 'iban_transfer' ? (
+                              <Building2 className="h-3.5 w-3.5 text-emerald-600" />
+                            ) : pm.method === 'bitcoin' || pm.method === 'ethereum' || pm.method === 'usdt' || pm.method === 'usdc' ? (
+                              <Send className="h-3.5 w-3.5 text-orange-600" />
                             ) : (
-                              <CreditCard className="h-3.5 w-3.5 text-[#00A3E0]" />
+                              <CreditCard className="h-3.5 w-3.5 text-gray-600" />
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -806,33 +813,26 @@ export function SellerWallet() {
                   </div>
                 )}
 
-                {/* PayFast: Email + IBAN */}
-                {withdrawMethod === 'payfast' && (
-                  <>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="payfast-email">PayFast Email *</Label>
-                      <Input
-                        id="payfast-email"
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="email@example.com"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="payfast-iban">IBAN *</Label>
-                      <Input
-                        id="payfast-iban"
-                        value={iban}
-                        onChange={(e) => setIban(e.target.value)}
-                        placeholder="IBAN number"
-                      />
-                    </div>
-                  </>
+                {/* Crypto: Wallet Address */}
+                {(withdrawMethod === 'bitcoin' || withdrawMethod === 'ethereum' || withdrawMethod === 'usdt' || withdrawMethod === 'usdc') && (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="wallet-addr">Wallet Address *</Label>
+                    <Input
+                      id="wallet-addr"
+                      value={walletAddress}
+                      onChange={(e) => setWalletAddress(e.target.value)}
+                      placeholder={
+                        withdrawMethod === 'bitcoin' ? 'bc1q...' :
+                        withdrawMethod === 'ethereum' ? '0x...' :
+                        'Enter wallet address...'
+                      }
+                      className="font-mono"
+                    />
+                  </div>
                 )}
 
-                {/* Bank Transfer: Account Number, Bank Name, Routing/Swift */}
-                {withdrawMethod === 'bank_transfer' && (
+                {/* Bank Transfer / IBAN: Account Number, Bank Name, Routing/Swift */}
+                {(withdrawMethod === 'bank_transfer' || withdrawMethod === 'iban_transfer') && (
                   <>
                     <div className="space-y-1.5">
                       <Label htmlFor="bank-acc-num">Account Number *</Label>

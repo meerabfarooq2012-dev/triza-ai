@@ -4,7 +4,8 @@ import { authenticateRequest } from '@/lib/auth-middleware';
 import type { PaymentInfoMethod, PaymentInfoAccountDetails } from '@/types';
 
 import { withCsrf } from '@/lib/with-csrf';
-const VALID_METHODS: PaymentInfoMethod[] = ['easypaisa', 'jazzcash', 'payfast', 'crypto', 'bank_transfer'];
+import { getActivePaymentMethodIds } from '@/lib/payment-methods';
+const VALID_METHODS: PaymentInfoMethod[] = getActivePaymentMethodIds() as PaymentInfoMethod[];
 
 function validateAccountDetails(method: PaymentInfoMethod, details: PaymentInfoAccountDetails): string | null {
   switch (method) {
@@ -14,23 +15,29 @@ function validateAccountDetails(method: PaymentInfoMethod, details: PaymentInfoA
         return `${method} requires accountName and mobileNumber`;
       }
       break;
-    case 'payfast':
-      if (!details.email || !details.iban || !details.accountName) {
-        return 'PayFast requires email, iban, and accountName';
-      }
-      break;
     case 'crypto':
+    case 'bitcoin':
+    case 'ethereum':
+    case 'usdt':
+    case 'usdc':
+    case 'binance_pay':
+    case 'crypto_other':
       if (!details.walletAddress) {
         return 'Crypto requires walletAddress';
       }
       break;
     case 'bank_transfer':
+    case 'iban_transfer':
       if (!details.accountName || !details.accountNumber || !details.bankName) {
         return 'Bank transfer requires accountName, accountNumber, and bankName';
       }
       break;
+    case 'cod':
+      // COD doesn't require account details
+      break;
     default:
-      return `Unknown method: ${method}`;
+      // Allow other active payment methods (coming soon methods are filtered by VALID_METHODS)
+      break;
   }
   return null;
 }

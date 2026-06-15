@@ -606,6 +606,9 @@ export default function ProductDetail() {
           {(() => {
             const methods = safeJsonParse<PaymentMethodId[]>(product.paymentMethods as unknown as string, [])
             if (!methods.length) return null
+            // Only show active methods; filter out coming-soon
+            const activeMethods = methods.filter((id) => PAYMENT_METHODS[id]?.active)
+            const comingSoonMethods = methods.filter((id) => !PAYMENT_METHODS[id]?.active)
             return (
               <div className="space-y-1.5">
                 <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -613,18 +616,34 @@ export default function ProductDetail() {
                   <span>Payment Methods</span>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
-                  {methods.map((id) => {
+                  {activeMethods.map((id) => {
                     const config = PAYMENT_METHODS[id]
                     if (!config) return null
                     return (
                       <Badge
                         key={id}
                         variant="outline"
-                        className="gap-1 text-xs bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/30 dark:text-violet-400 dark:border-violet-800"
+                        className="gap-1 text-xs bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800"
                         title={config.description}
                       >
                         <span className="text-sm">{config.icon}</span>
                         {config.name}
+                      </Badge>
+                    )
+                  })}
+                  {comingSoonMethods.map((id) => {
+                    const config = PAYMENT_METHODS[id]
+                    if (!config) return null
+                    return (
+                      <Badge
+                        key={id}
+                        variant="outline"
+                        className="gap-1 text-xs bg-amber-50 text-amber-600 border-amber-200 opacity-60 dark:bg-amber-950/20 dark:text-amber-500 dark:border-amber-800"
+                        title={`${config.description} — Coming Soon`}
+                      >
+                        <span className="text-sm">{config.icon}</span>
+                        {config.name}
+                        <span className="text-[9px] font-semibold uppercase tracking-wider ml-0.5">Soon</span>
                       </Badge>
                     )
                   })}
@@ -633,7 +652,47 @@ export default function ProductDetail() {
             )
           })()}
 
-          {/* Short description */}
+          {/* Crypto Wallet Addresses — Show if seller has provided them */}
+          {(() => {
+            const wallets = safeJsonParse<Record<string, string>>((product as unknown as Record<string, unknown>).cryptoWallets as string, {})
+            if (!wallets || typeof wallets !== 'object' || !Object.keys(wallets).length) return null
+            // Map wallet keys to friendly names
+            const walletNames: Record<string, { name: string; icon: string }> = {
+              bitcoin: { name: 'Bitcoin (BTC)', icon: '₿' },
+              ethereum: { name: 'Ethereum (ETH)', icon: '⟠' },
+              usdt: { name: 'USDT (Tether)', icon: '💲' },
+              usdc: { name: 'USDC', icon: '💲' },
+              binance_pay: { name: 'Binance Pay', icon: '🟡' },
+              crypto_other: { name: 'Other Crypto', icon: '🔗' },
+            }
+            return (
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <span className="text-base">₿</span>
+                  <span>Seller&apos;s Wallet Addresses</span>
+                </div>
+                <div className="space-y-1">
+                  {Object.entries(wallets).filter(([, addr]) => addr && addr.trim()).map(([key, address]) => {
+                    const info = walletNames[key] || { name: key, icon: '🔗' }
+                    return (
+                      <div key={key} className="flex items-center gap-2 text-xs rounded-md bg-orange-50 dark:bg-orange-950/10 border border-orange-200 dark:border-orange-900 px-2 py-1.5">
+                        <span className="text-sm">{info.icon}</span>
+                        <span className="font-medium text-orange-700 dark:text-orange-400">{info.name}</span>
+                        <code className="flex-1 truncate font-mono text-[10px] text-gray-600 dark:text-gray-400 select-all">{address}</code>
+                        <button
+                          onClick={() => navigator.clipboard?.writeText(address)}
+                          className="text-[10px] text-orange-600 hover:text-orange-800 dark:text-orange-400 dark:hover:text-orange-300 shrink-0"
+                          title="Copy address"
+                        >
+                          Copy
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })()}
           {product.shortDesc && (
             <p className="text-muted-foreground">{product.shortDesc}</p>
           )}

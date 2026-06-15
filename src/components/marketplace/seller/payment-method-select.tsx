@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { X, ChevronDown, Check, Search, CreditCard, Loader2 } from 'lucide-react'
+import { X, ChevronDown, Check, Search, CreditCard, Loader2, Clock, Lock } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -11,6 +11,7 @@ import {
   getPaymentMethodsByCategory,
   getPaymentCategoryOrder,
   searchPaymentMethods,
+  isPaymentMethodActive,
 } from '@/lib/payment-methods'
 
 interface PaymentMethodMultiSelectProps {
@@ -21,58 +22,56 @@ interface PaymentMethodMultiSelectProps {
 export function PaymentMethodMultiSelect({ selected, onChange }: PaymentMethodMultiSelectProps) {
   const [search, setSearch] = useState('')
   const [dropdownOpen, setDropdownOpen] = useState(false)
-  const [enabledMethods, setEnabledMethods] = useState<PaymentMethodId[] | null>(null)
+  const [showComingSoon, setShowComingSoon] = useState(false)
   const dropdownRef = useRef<HTMLDivElement | null>(null)
 
-  // Fetch platform-enabled payment methods
-  useEffect(() => {
-    async function fetchEnabled() {
-      try {
-        const res = await fetch('/api/payment-methods')
-        const data = await res.json()
-        if (data.success && Array.isArray(data.methods)) {
-          setEnabledMethods(data.methods as PaymentMethodId[])
-        } else {
-          setEnabledMethods([])
-        }
-      } catch {
-        setEnabledMethods([])
-      }
-    }
-    fetchEnabled()
+  // All active payment methods (always available regardless of admin config)
+  const activeMethods = useMemo(() => {
+    return (Object.entries(PAYMENT_METHODS) as [PaymentMethodId, typeof PAYMENT_METHODS[PaymentMethodId]][])
+      .filter(([, config]) => config.active)
+      .map(([id]) => id)
   }, [])
 
-  // Filter methods to only show enabled ones
-  const availableMethods = useMemo(() => {
-    if (!enabledMethods) return null // still loading
-    if (enabledMethods.length === 0) return [] as PaymentMethodId[]
-    return enabledMethods
-  }, [enabledMethods])
+  // Coming soon methods
+  const comingSoonMethods = useMemo(() => {
+    return (Object.entries(PAYMENT_METHODS) as [PaymentMethodId, typeof PAYMENT_METHODS[PaymentMethodId]][])
+      .filter(([, config]) => !config.active)
+      .map(([id]) => id)
+  }, [])
 
-  const popularMethods = useMemo(() => {
-    if (!availableMethods) return []
-    // Popular are the first ones in enabled list (already configured by admin)
-    return availableMethods.filter((id) => PAYMENT_METHODS[id]?.popular)
-  }, [availableMethods])
-
-  const methodsByCategory = useMemo(() => {
-    if (!availableMethods) return {}
+  const activeByCategory = useMemo(() => {
     const groups: Record<string, PaymentMethodId[]> = {}
-    for (const id of availableMethods) {
+    for (const id of activeMethods) {
       const config = PAYMENT_METHODS[id]
       if (!config) continue
       if (!groups[config.category]) groups[config.category] = []
       groups[config.category].push(id)
     }
     return groups
-  }, [availableMethods])
+  }, [activeMethods])
+
+  const comingSoonByCategory = useMemo(() => {
+    const groups: Record<string, PaymentMethodId[]> = {}
+    for (const id of comingSoonMethods) {
+      const config = PAYMENT_METHODS[id]
+      if (!config) continue
+      if (!groups[config.category]) groups[config.category] = []
+      groups[config.category].push(id)
+    }
+    return groups
+  }, [comingSoonMethods])
 
   const categoryOrder = useMemo(() => getPaymentCategoryOrder(), [])
 
-  const filteredSearch = useMemo(() => {
-    if (!search.trim() || !availableMethods) return []
-    return searchPaymentMethods(search).filter((id) => availableMethods.includes(id))
-  }, [search, availableMethods])
+  const filteredActiveSearch = useMemo(() => {
+    if (!search.trim()) return []
+    return searchPaymentMethods(search).filter((id) => activeMethods.includes(id))
+  }, [search, activeMethods])
+
+  const filteredComingSoonSearch = useMemo(() => {
+    if (!search.trim()) return []
+    return searchPaymentMethods(search).filter((id) => comingSoonMethods.includes(id))
+  }, [search, comingSoonMethods])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -86,6 +85,7 @@ export function PaymentMethodMultiSelect({ selected, onChange }: PaymentMethodMu
   }, [])
 
   const toggleMethod = (id: PaymentMethodId) => {
+    if (!isPaymentMethodActive(id)) return // Cannot select coming soon
     if (selected.includes(id)) {
       onChange(selected.filter((s) => s !== id))
     } else {
@@ -94,32 +94,71 @@ export function PaymentMethodMultiSelect({ selected, onChange }: PaymentMethodMu
   }
 
   const selectAll = () => {
-    if (availableMethods) onChange([...availableMethods])
+    onChange([...activeMethods])
   }
 
   const clearAll = () => {
     onChange([])
   }
 
-  // Loading state
-  if (availableMethods === null) {
-    return (
-      <div className="min-h-[42px] flex items-center gap-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2">
-        <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
-        <span className="text-sm text-gray-400">Loading payment methods...</span>
-      </div>
-    )
-  }
+  // Remove any coming-soon methods that somehow got selected
+  const validSelected = useMemo(() => {
+    return selected.filter((id) => isPaymentMethodActive(id))
+  }, [selected])
 
-  // No methods enabled
-  if (availableMethods.length === 0) {
+  // Render a payment method row
+  const renderMethodRow = (id: PaymentMethodId, isComingSoon: boolean) => {
+    const config = PAYMENT_METHODS[id]
+    if (!config) return null
+    const isSelected = validSelected.includes(id)
+
+    if (isComingSoon) {
+      return (
+        <div
+          key={id}
+          className="flex items-center gap-2 px-3 py-1.5 text-left text-sm opacity-50 cursor-not-allowed"
+          title={config.reason || 'Coming Soon'}
+        >
+          <span className="flex-shrink-0">
+            <Lock className="h-3.5 w-3.5 text-gray-400" />
+          </span>
+          <span className="text-sm">{config.icon}</span>
+          <span className="text-gray-400 dark:text-gray-500 line-through decoration-gray-300">
+            {config.name}
+          </span>
+          <Badge
+            variant="outline"
+            className="ml-auto text-[9px] h-4 px-1 bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-950/30 dark:text-amber-500 dark:border-amber-800"
+          >
+            <Clock className="h-2.5 w-2.5 mr-0.5" />
+            Soon
+          </Badge>
+        </div>
+      )
+    }
+
     return (
-      <div className="min-h-[42px] flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800 px-3 py-2">
-        <CreditCard className="h-4 w-4 text-amber-500" />
-        <span className="text-sm text-amber-600 dark:text-amber-400">
-          No payment methods configured yet. Contact admin.
+      <button
+        key={id}
+        type="button"
+        className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors ${
+          isSelected ? 'bg-emerald-50 dark:bg-emerald-950/30' : ''
+        }`}
+        onClick={(e) => { e.stopPropagation(); toggleMethod(id) }}
+      >
+        <span className="flex-shrink-0">
+          {isSelected ? (
+            <Check className="h-3.5 w-3.5 text-emerald-600" />
+          ) : (
+            <span className="inline-block h-3.5 w-3.5 rounded border border-gray-300" />
+          )}
         </span>
-      </div>
+        <span className="text-sm">{config.icon}</span>
+        <span className={isSelected ? 'font-medium text-emerald-700 dark:text-emerald-400' : 'text-gray-700 dark:text-gray-300'}>
+          {config.name}
+        </span>
+        <span className="ml-auto text-[10px] text-gray-400 hidden sm:inline">{config.description}</span>
+      </button>
     )
   }
 
@@ -133,19 +172,19 @@ export function PaymentMethodMultiSelect({ selected, onChange }: PaymentMethodMu
           setSearch('')
         }}
       >
-        {selected.length === 0 ? (
+        {validSelected.length === 0 ? (
           <span className="text-sm text-gray-400 select-none flex items-center gap-1.5">
             <CreditCard className="h-4 w-4" />
             Select payment methods you accept...
           </span>
         ) : (
-          selected.slice(0, 5).map((id) => {
+          validSelected.slice(0, 5).map((id) => {
             const config = PAYMENT_METHODS[id]
             return (
               <Badge
                 key={id}
                 variant="outline"
-                className="gap-1 text-xs bg-violet-50 text-violet-700 border-violet-200 hover:bg-violet-100 dark:bg-violet-950/30 dark:text-violet-400 dark:border-violet-800"
+                className="gap-1 text-xs bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800"
               >
                 <span className="text-sm">{config?.icon}</span>
                 <span>{config?.name}</span>
@@ -155,7 +194,7 @@ export function PaymentMethodMultiSelect({ selected, onChange }: PaymentMethodMu
                     e.stopPropagation()
                     toggleMethod(id)
                   }}
-                  className="ml-0.5 rounded-full hover:bg-violet-200 dark:hover:bg-violet-800"
+                  className="ml-0.5 rounded-full hover:bg-emerald-200 dark:hover:bg-emerald-800"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -163,9 +202,9 @@ export function PaymentMethodMultiSelect({ selected, onChange }: PaymentMethodMu
             )
           })
         )}
-        {selected.length > 5 && (
+        {validSelected.length > 5 && (
           <Badge variant="outline" className="text-xs bg-gray-50 text-gray-600">
-            +{selected.length - 5} more
+            +{validSelected.length - 5} more
           </Badge>
         )}
         <ChevronDown className="ml-auto h-4 w-4 text-gray-400 flex-shrink-0" />
@@ -173,7 +212,7 @@ export function PaymentMethodMultiSelect({ selected, onChange }: PaymentMethodMu
 
       {/* Dropdown */}
       {dropdownOpen && (
-        <div className="absolute z-50 mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg max-h-80 overflow-hidden">
+        <div className="absolute z-50 mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg max-h-96 overflow-hidden">
           {/* Search + Actions */}
           <div className="border-b border-gray-100 dark:border-gray-700 p-2">
             <div className="relative">
@@ -186,15 +225,15 @@ export function PaymentMethodMultiSelect({ selected, onChange }: PaymentMethodMu
                 onClick={(e) => e.stopPropagation()}
               />
             </div>
-            <div className="mt-1.5 flex gap-2 flex-wrap">
+            <div className="mt-1.5 flex gap-2 flex-wrap items-center">
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="h-6 text-xs text-amber-600 hover:text-amber-700"
+                className="h-6 text-xs text-emerald-600 hover:text-emerald-700"
                 onClick={(e) => { e.stopPropagation(); selectAll() }}
               >
-                Select All
+                Select All Active
               </Button>
               <Button
                 type="button"
@@ -206,91 +245,84 @@ export function PaymentMethodMultiSelect({ selected, onChange }: PaymentMethodMu
                 Clear All
               </Button>
               <span className="text-xs text-gray-400 self-center ml-auto">
-                {selected.length} selected · {availableMethods.length} available
+                {validSelected.length} selected · {activeMethods.length} active · {comingSoonMethods.length} coming soon
               </span>
             </div>
           </div>
 
-          {/* Payment methods list */}
-          <div className="max-h-56 overflow-y-auto">
+          {/* Active payment methods */}
+          <div className="max-h-64 overflow-y-auto">
             {search.trim() ? (
-              // Search results
-              filteredSearch.length === 0 ? (
-                <div className="px-3 py-4 text-center text-sm text-gray-400">
-                  No payment method found
-                </div>
-              ) : (
-                filteredSearch.map((id) => {
-                  const config = PAYMENT_METHODS[id]
-                  if (!config) return null
-                  const isSelected = selected.includes(id)
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
-                        isSelected ? 'bg-violet-50 dark:bg-violet-950/30' : ''
-                      }`}
-                      onClick={(e) => { e.stopPropagation(); toggleMethod(id) }}
-                    >
-                      <span className="flex-shrink-0">
-                        {isSelected ? (
-                          <Check className="h-4 w-4 text-violet-600" />
-                        ) : (
-                          <span className="inline-block h-4 w-4 rounded border border-gray-300" />
-                        )}
-                      </span>
-                      <span className="text-base">{config.icon}</span>
-                      <span className={isSelected ? 'font-medium text-violet-700 dark:text-violet-400' : 'text-gray-700 dark:text-gray-300'}>
-                        {config.name}
-                      </span>
-                      <span className="ml-auto text-[10px] text-gray-400">{config.category}</span>
-                    </button>
-                  )
-                })
-              )
+              <>
+                {filteredActiveSearch.length > 0 && (
+                  <div>
+                    <div className="px-3 pt-2 pb-1">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600">✓ Available Now</span>
+                    </div>
+                    {filteredActiveSearch.map((id) => renderMethodRow(id, false))}
+                  </div>
+                )}
+                {filteredComingSoonSearch.length > 0 && (
+                  <div>
+                    <div className="px-3 pt-2 pb-1">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-500">🕐 Coming Soon</span>
+                    </div>
+                    {filteredComingSoonSearch.map((id) => renderMethodRow(id, true))}
+                  </div>
+                )}
+                {filteredActiveSearch.length === 0 && filteredComingSoonSearch.length === 0 && (
+                  <div className="px-3 py-4 text-center text-sm text-gray-400">
+                    No payment method found
+                  </div>
+                )}
+              </>
             ) : (
               <>
-                {/* Grouped by category */}
+                {/* Active methods by category */}
+                <div className="px-3 pt-2 pb-1">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600">✓ Available Now</span>
+                </div>
                 {categoryOrder.map((category) => {
-                  const ids = methodsByCategory[category]
+                  const ids = activeByCategory[category]
                   if (!ids?.length) return null
                   return (
                     <div key={category}>
-                      <div className="px-3 pt-2 pb-1">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">{category}</span>
+                      <div className="px-3 pt-1 pb-0.5">
+                        <span className="text-[9px] font-medium uppercase tracking-wider text-gray-400">{category}</span>
                       </div>
-                      {ids.map((id) => {
-                        const config = PAYMENT_METHODS[id]
-                        if (!config) return null
-                        const isSelected = selected.includes(id)
-                        return (
-                          <button
-                            key={id}
-                            type="button"
-                            className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
-                              isSelected ? 'bg-violet-50 dark:bg-violet-950/30' : ''
-                            }`}
-                            onClick={(e) => { e.stopPropagation(); toggleMethod(id) }}
-                          >
-                            <span className="flex-shrink-0">
-                              {isSelected ? (
-                                <Check className="h-3.5 w-3.5 text-violet-600" />
-                              ) : (
-                                <span className="inline-block h-3.5 w-3.5 rounded border border-gray-300" />
-                              )}
-                            </span>
-                            <span className="text-sm">{config.icon}</span>
-                            <span className={isSelected ? 'font-medium text-violet-700 dark:text-violet-400' : 'text-gray-700 dark:text-gray-300'}>
-                              {config.name}
-                            </span>
-                            <span className="ml-auto text-[10px] text-gray-400 hidden sm:inline">{config.description}</span>
-                          </button>
-                        )
-                      })}
+                      {ids.map((id) => renderMethodRow(id, false))}
                     </div>
                   )
                 })}
+
+                {/* Coming Soon toggle */}
+                <div className="border-t border-gray-100 dark:border-gray-700">
+                  <button
+                    type="button"
+                    className="flex items-center gap-1.5 w-full px-3 py-2 text-xs text-amber-600 dark:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/20 transition-colors"
+                    onClick={(e) => { e.stopPropagation(); setShowComingSoon(!showComingSoon) }}
+                  >
+                    <Clock className="h-3.5 w-3.5" />
+                    {showComingSoon ? 'Hide' : 'Show'} Coming Soon ({comingSoonMethods.length} methods)
+                    <ChevronDown className={`h-3 w-3 ml-auto transition-transform ${showComingSoon ? 'rotate-180' : ''}`} />
+                  </button>
+                  {showComingSoon && (
+                    <>
+                      {categoryOrder.map((category) => {
+                        const ids = comingSoonByCategory[category]
+                        if (!ids?.length) return null
+                        return (
+                          <div key={category}>
+                            <div className="px-3 pt-1 pb-0.5">
+                              <span className="text-[9px] font-medium uppercase tracking-wider text-gray-400">{category}</span>
+                            </div>
+                            {ids.map((id) => renderMethodRow(id, true))}
+                          </div>
+                        )
+                      })}
+                    </>
+                  )}
+                </div>
               </>
             )}
           </div>

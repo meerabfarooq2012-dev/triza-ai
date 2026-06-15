@@ -267,6 +267,7 @@ export async function GET(request: NextRequest) {
       deliveryCountries: JSON.parse(p.deliveryCountries || '[]'),
       acceptedCurrencies: JSON.parse(p.acceptedCurrencies || '[]'),
       paymentMethods: JSON.parse(p.paymentMethods || '[]'),
+      cryptoWallets: JSON.parse(p.cryptoWallets || '{}'),
     }));
 
     // For products with hasVariants=true, add variantPriceMin and variantPriceMax
@@ -363,6 +364,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
       deliveryCountries,
       acceptedCurrencies,
       paymentMethods,
+      cryptoWallets,
       requirements,
     } = body;
 
@@ -438,6 +440,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
         deliveryCountries: typeof deliveryCountries === 'string' ? deliveryCountries : JSON.stringify(deliveryCountries || []),
         acceptedCurrencies: typeof acceptedCurrencies === 'string' ? acceptedCurrencies : JSON.stringify(acceptedCurrencies || []),
         paymentMethods: typeof paymentMethods === 'string' ? paymentMethods : JSON.stringify(paymentMethods || []),
+        cryptoWallets: typeof cryptoWallets === 'string' ? cryptoWallets : JSON.stringify(cryptoWallets || {}),
         requirements: requirements ? sanitizeString(requirements) : null,
       },
       include: {
@@ -459,6 +462,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
           deliveryCountries: JSON.parse(product.deliveryCountries || '[]'),
           acceptedCurrencies: JSON.parse(product.acceptedCurrencies || '[]'),
           paymentMethods: JSON.parse(product.paymentMethods || '[]'),
+          cryptoWallets: JSON.parse(product.cryptoWallets || '{}'),
         },
       },
       { status: 201 }

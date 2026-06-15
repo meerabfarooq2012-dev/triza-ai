@@ -1,6 +1,9 @@
 // =============================================================================
 // Thiora Marketplace - Supported Payment Methods Configuration
 // =============================================================================
+// Active: Methods that are fully integrated and ready to use
+// Coming Soon: Methods that will be available in future updates
+// To activate a coming-soon method, just change `active` to `true`
 
 export type PaymentMethodId =
   // ── Mobile Wallets (Pakistan) ──
@@ -53,7 +56,11 @@ export interface PaymentMethodConfig {
   icon: string        // emoji icon
   category: string    // grouping category
   description: string // short description for tooltip
+  active: boolean     // true = available now, false = coming soon
+  reason?: string     // reason for coming soon status
   popular?: boolean   // show in popular section
+  requiresApi?: boolean // whether this method needs an API key
+  walletField?: 'bitcoin' | 'ethereum' | 'usdt' | 'usdc' | 'generic' // for crypto wallet address input
 }
 
 export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
@@ -64,7 +71,9 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
     icon: '📱',
     category: 'Mobile Wallet — Pakistan',
     description: 'Pay via Easypaisa mobile wallet',
+    active: true,
     popular: true,
+    requiresApi: true,
   },
   jazzcash: {
     id: 'jazzcash',
@@ -72,7 +81,9 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
     icon: '📱',
     category: 'Mobile Wallet — Pakistan',
     description: 'Pay via JazzCash mobile wallet',
+    active: true,
     popular: true,
+    requiresApi: true,
   },
   sadapay: {
     id: 'sadapay',
@@ -80,7 +91,10 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
     icon: '💳',
     category: 'Mobile Wallet — Pakistan',
     description: 'Pay via SadaPay digital wallet',
+    active: false,
+    reason: 'API integration pending',
     popular: true,
+    requiresApi: true,
   },
   nayapay: {
     id: 'nayapay',
@@ -88,6 +102,9 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
     icon: '💳',
     category: 'Mobile Wallet — Pakistan',
     description: 'Pay via NayaPay wallet',
+    active: false,
+    reason: 'API integration pending',
+    requiresApi: true,
   },
   zindigi: {
     id: 'zindigi',
@@ -95,6 +112,9 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
     icon: '💳',
     category: 'Mobile Wallet — Pakistan',
     description: 'Pay via Zindigi digital account',
+    active: false,
+    reason: 'API integration pending',
+    requiresApi: true,
   },
 
   // ── Mobile Wallets (Bangladesh) ─────────────────────────────────────
@@ -104,7 +124,10 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
     icon: '📱',
     category: 'Mobile Wallet — Bangladesh',
     description: 'Pay via bKash mobile wallet',
+    active: false,
+    reason: 'API integration pending',
     popular: true,
+    requiresApi: true,
   },
   nagad: {
     id: 'nagad',
@@ -112,6 +135,9 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
     icon: '📱',
     category: 'Mobile Wallet — Bangladesh',
     description: 'Pay via Nagad mobile wallet',
+    active: false,
+    reason: 'API integration pending',
+    requiresApi: true,
   },
   rocket: {
     id: 'rocket',
@@ -119,6 +145,9 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
     icon: '📱',
     category: 'Mobile Wallet — Bangladesh',
     description: 'Pay via Rocket mobile banking',
+    active: false,
+    reason: 'API integration pending',
+    requiresApi: true,
   },
 
   // ── Mobile Wallets (India) ──────────────────────────────────────────
@@ -128,7 +157,10 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
     icon: '📱',
     category: 'Mobile Wallet — India',
     description: 'Pay via UPI (GPay, PhonePe, etc.)',
+    active: false,
+    reason: 'API integration pending',
     popular: true,
+    requiresApi: true,
   },
   phonepe: {
     id: 'phonepe',
@@ -136,6 +168,9 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
     icon: '📱',
     category: 'Mobile Wallet — India',
     description: 'Pay via PhonePe UPI',
+    active: false,
+    reason: 'API integration pending',
+    requiresApi: true,
   },
   googlepay_in: {
     id: 'googlepay_in',
@@ -143,6 +178,9 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
     icon: '📱',
     category: 'Mobile Wallet — India',
     description: 'Pay via Google Pay UPI',
+    active: false,
+    reason: 'API integration pending',
+    requiresApi: true,
   },
   paytm: {
     id: 'paytm',
@@ -150,6 +188,9 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
     icon: '📱',
     category: 'Mobile Wallet — India',
     description: 'Pay via Paytm wallet',
+    active: false,
+    reason: 'API integration pending',
+    requiresApi: true,
   },
 
   // ── International Wallets ───────────────────────────────────────────
@@ -159,7 +200,10 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
     icon: '🌍',
     category: 'International',
     description: 'Pay via Wise international transfer',
+    active: false,
+    reason: 'API integration pending',
     popular: true,
+    requiresApi: true,
   },
   revolut: {
     id: 'revolut',
@@ -167,6 +211,9 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
     icon: '🌍',
     category: 'International',
     description: 'Pay via Revolut',
+    active: false,
+    reason: 'API integration pending',
+    requiresApi: true,
   },
 
   // ── International Payment Gateways ──────────────────────────────────
@@ -176,7 +223,10 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
     icon: '🅿️',
     category: 'International',
     description: 'Pay via PayPal account',
+    active: false,
+    reason: 'API integration pending',
     popular: true,
+    requiresApi: true,
   },
   stripe: {
     id: 'stripe',
@@ -184,7 +234,10 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
     icon: '💳',
     category: 'International',
     description: 'Pay via Stripe card payment',
+    active: false,
+    reason: 'API integration pending',
     popular: true,
+    requiresApi: true,
   },
   payoneer: {
     id: 'payoneer',
@@ -192,7 +245,10 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
     icon: '💰',
     category: 'International',
     description: 'Pay via Payoneer',
+    active: false,
+    reason: 'API integration pending',
     popular: true,
+    requiresApi: true,
   },
   skrill: {
     id: 'skrill',
@@ -200,6 +256,9 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
     icon: '💰',
     category: 'International',
     description: 'Pay via Skrill wallet',
+    active: false,
+    reason: 'API integration pending',
+    requiresApi: true,
   },
 
   // ── Bank Transfer ───────────────────────────────────────────────────
@@ -209,7 +268,9 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
     icon: '🏦',
     category: 'Bank Transfer',
     description: 'Direct bank-to-bank transfer',
+    active: true,
     popular: true,
+    requiresApi: false,
   },
   iban_transfer: {
     id: 'iban_transfer',
@@ -217,6 +278,8 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
     icon: '🏦',
     category: 'Bank Transfer',
     description: 'International wire transfer via IBAN',
+    active: true,
+    requiresApi: false,
   },
 
   // ── Cryptocurrency ──────────────────────────────────────────────────
@@ -226,7 +289,10 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
     icon: '₿',
     category: 'Cryptocurrency',
     description: 'Pay with Bitcoin',
+    active: true,
     popular: true,
+    requiresApi: false,
+    walletField: 'bitcoin',
   },
   ethereum: {
     id: 'ethereum',
@@ -234,7 +300,10 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
     icon: '⟠',
     category: 'Cryptocurrency',
     description: 'Pay with Ethereum',
+    active: true,
     popular: true,
+    requiresApi: false,
+    walletField: 'ethereum',
   },
   usdt: {
     id: 'usdt',
@@ -242,7 +311,10 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
     icon: '💲',
     category: 'Cryptocurrency',
     description: 'Pay with USDT stablecoin',
+    active: true,
     popular: true,
+    requiresApi: false,
+    walletField: 'usdt',
   },
   usdc: {
     id: 'usdc',
@@ -250,6 +322,9 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
     icon: '💲',
     category: 'Cryptocurrency',
     description: 'Pay with USDC stablecoin',
+    active: true,
+    requiresApi: false,
+    walletField: 'usdc',
   },
   binance_pay: {
     id: 'binance_pay',
@@ -257,7 +332,10 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
     icon: '🟡',
     category: 'Cryptocurrency',
     description: 'Pay via Binance Pay',
+    active: true,
     popular: true,
+    requiresApi: false,
+    walletField: 'generic',
   },
   crypto_other: {
     id: 'crypto_other',
@@ -265,6 +343,9 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
     icon: '🔗',
     category: 'Cryptocurrency',
     description: 'Other cryptocurrency payment',
+    active: true,
+    requiresApi: false,
+    walletField: 'generic',
   },
 
   // ── Cash ────────────────────────────────────────────────────────────
@@ -274,7 +355,9 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
     icon: '💵',
     category: 'Cash',
     description: 'Pay cash when you receive the product',
+    active: true,
     popular: true,
+    requiresApi: false,
   },
 
   // ── Card / Digital ──────────────────────────────────────────────────
@@ -284,6 +367,9 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
     icon: '🍎',
     category: 'Card / Digital',
     description: 'Pay via Apple Pay',
+    active: false,
+    reason: 'API integration pending',
+    requiresApi: true,
   },
   google_pay: {
     id: 'google_pay',
@@ -291,6 +377,9 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
     icon: '🟢',
     category: 'Card / Digital',
     description: 'Pay via Google Pay',
+    active: false,
+    reason: 'API integration pending',
+    requiresApi: true,
   },
   visa_mastercard: {
     id: 'visa_mastercard',
@@ -298,7 +387,10 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
     icon: '💳',
     category: 'Card / Digital',
     description: 'Pay with Visa or Mastercard',
+    active: false,
+    reason: 'API integration pending',
     popular: true,
+    requiresApi: true,
   },
 
   // ── Remittance ──────────────────────────────────────────────────────
@@ -308,6 +400,9 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
     icon: '🟡',
     category: 'Remittance',
     description: 'Send money via Western Union',
+    active: false,
+    reason: 'API integration pending',
+    requiresApi: true,
   },
   moneygram: {
     id: 'moneygram',
@@ -315,6 +410,9 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
     icon: '🔵',
     category: 'Remittance',
     description: 'Send money via MoneyGram',
+    active: false,
+    reason: 'API integration pending',
+    requiresApi: true,
   },
   remittance: {
     id: 'remittance',
@@ -322,6 +420,9 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodConfig> = {
     icon: '📬',
     category: 'Remittance',
     description: 'Other international remittance service',
+    active: false,
+    reason: 'API integration pending',
+    requiresApi: true,
   },
 }
 
@@ -330,7 +431,26 @@ export function getAllPaymentMethodIds(): PaymentMethodId[] {
   return Object.keys(PAYMENT_METHODS) as PaymentMethodId[]
 }
 
-/** Get popular payment methods */
+/** Get only active (available now) payment method IDs */
+export function getActivePaymentMethodIds(): PaymentMethodId[] {
+  return (Object.entries(PAYMENT_METHODS) as [PaymentMethodId, PaymentMethodConfig][])
+    .filter(([, config]) => config.active)
+    .map(([id]) => id)
+}
+
+/** Get only coming soon payment method IDs */
+export function getComingSoonPaymentMethodIds(): PaymentMethodId[] {
+  return (Object.entries(PAYMENT_METHODS) as [PaymentMethodId, PaymentMethodConfig][])
+    .filter(([, config]) => !config.active)
+    .map(([id]) => id)
+}
+
+/** Check if a payment method is active */
+export function isPaymentMethodActive(id: PaymentMethodId): boolean {
+  return PAYMENT_METHODS[id]?.active ?? false
+}
+
+/** Get popular payment methods (only active ones) */
 export function getPopularPaymentMethods(): PaymentMethodId[] {
   return (Object.entries(PAYMENT_METHODS) as [PaymentMethodId, PaymentMethodConfig][])
     .filter(([, config]) => config.popular)
@@ -341,6 +461,19 @@ export function getPopularPaymentMethods(): PaymentMethodId[] {
 export function getPaymentMethodsByCategory(): Record<string, PaymentMethodId[]> {
   const groups: Record<string, PaymentMethodId[]> = {}
   for (const [id, config] of Object.entries(PAYMENT_METHODS) as [PaymentMethodId, PaymentMethodConfig][]) {
+    if (!groups[config.category]) {
+      groups[config.category] = []
+    }
+    groups[config.category].push(id)
+  }
+  return groups
+}
+
+/** Get active payment methods grouped by category */
+export function getActivePaymentMethodsByCategory(): Record<string, PaymentMethodId[]> {
+  const groups: Record<string, PaymentMethodId[]> = {}
+  for (const [id, config] of Object.entries(PAYMENT_METHODS) as [PaymentMethodId, PaymentMethodConfig][]) {
+    if (!config.active) continue
     if (!groups[config.category]) {
       groups[config.category] = []
     }
@@ -376,5 +509,12 @@ export function searchPaymentMethods(query: string): PaymentMethodId[] {
       config.category.toLowerCase().includes(q) ||
       config.id.toLowerCase().includes(q)
     )
+    .map(([id]) => id)
+}
+
+/** Get crypto payment methods that need wallet addresses */
+export function getCryptoPaymentMethods(): PaymentMethodId[] {
+  return (Object.entries(PAYMENT_METHODS) as [PaymentMethodId, PaymentMethodConfig][])
+    .filter(([, config]) => config.walletField)
     .map(([id]) => id)
 }

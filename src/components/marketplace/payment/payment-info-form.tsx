@@ -70,19 +70,30 @@ interface MethodConfig {
 const BUYER_METHODS: MethodConfig[] = [
   { id: 'easypaisa', name: 'Easypaisa', icon: Wallet, color: 'text-amber-600', bgColor: 'bg-amber-50', description: 'Mobile wallet payment' },
   { id: 'jazzcash', name: 'JazzCash', icon: Wallet, color: 'text-red-600', bgColor: 'bg-red-50', description: 'Mobile wallet payment' },
-  { id: 'payfast', name: 'PayFast', icon: ShieldCheck, color: 'text-blue-700', bgColor: 'bg-[#E8F7FD]', description: 'International card payments' },
-  { id: 'crypto', name: 'Crypto', icon: Bitcoin, color: 'text-orange-700', bgColor: 'bg-[#FFF3E0]', description: 'Pay with Bitcoin, Ethereum, Solana & more' },
+  { id: 'bitcoin', name: 'Bitcoin (BTC)', icon: Bitcoin, color: 'text-orange-700', bgColor: 'bg-[#FFF3E0]', description: 'Pay with Bitcoin' },
+  { id: 'ethereum', name: 'Ethereum (ETH)', icon: Bitcoin, color: 'text-purple-700', bgColor: 'bg-purple-50', description: 'Pay with Ethereum' },
+  { id: 'usdt', name: 'USDT (Tether)', icon: Bitcoin, color: 'text-green-700', bgColor: 'bg-green-50', description: 'Pay with USDT stablecoin' },
+  { id: 'usdc', name: 'USDC', icon: Bitcoin, color: 'text-blue-700', bgColor: 'bg-blue-50', description: 'Pay with USDC stablecoin' },
+  { id: 'binance_pay', name: 'Binance Pay', icon: Bitcoin, color: 'text-yellow-700', bgColor: 'bg-yellow-50', description: 'Pay via Binance Pay' },
+  { id: 'crypto_other', name: 'Other Crypto', icon: Bitcoin, color: 'text-orange-700', bgColor: 'bg-[#FFF3E0]', description: 'Other cryptocurrency' },
+  { id: 'cod', name: 'Cash on Delivery', icon: Wallet, color: 'text-green-600', bgColor: 'bg-green-50', description: 'Pay on delivery' },
 ]
 
 const SELLER_METHODS: MethodConfig[] = [
   { id: 'easypaisa', name: 'Easypaisa', icon: Wallet, color: 'text-amber-600', bgColor: 'bg-amber-50', description: 'Mobile wallet' },
   { id: 'jazzcash', name: 'JazzCash', icon: Wallet, color: 'text-red-600', bgColor: 'bg-red-50', description: 'Mobile wallet' },
-  { id: 'payfast', name: 'PayFast', icon: ShieldCheck, color: 'text-blue-700', bgColor: 'bg-[#E8F7FD]', description: 'International card payments' },
-  { id: 'crypto', name: 'Crypto', icon: Bitcoin, color: 'text-orange-700', bgColor: 'bg-[#FFF3E0]', description: 'Bitcoin, Ethereum, Solana & more' },
   { id: 'bank_transfer', name: 'Bank Transfer', icon: Building2, color: 'text-amber-600', bgColor: 'bg-amber-50', description: 'Direct bank transfer' },
+  { id: 'iban_transfer', name: 'IBAN / Wire Transfer', icon: Building2, color: 'text-emerald-600', bgColor: 'bg-emerald-50', description: 'International wire transfer' },
+  { id: 'bitcoin', name: 'Bitcoin (BTC)', icon: Bitcoin, color: 'text-orange-700', bgColor: 'bg-[#FFF3E0]', description: 'Bitcoin' },
+  { id: 'ethereum', name: 'Ethereum (ETH)', icon: Bitcoin, color: 'text-purple-700', bgColor: 'bg-purple-50', description: 'Ethereum' },
+  { id: 'usdt', name: 'USDT (Tether)', icon: Bitcoin, color: 'text-green-700', bgColor: 'bg-green-50', description: 'USDT stablecoin' },
+  { id: 'usdc', name: 'USDC', icon: Bitcoin, color: 'text-blue-700', bgColor: 'bg-blue-50', description: 'USDC stablecoin' },
+  { id: 'binance_pay', name: 'Binance Pay', icon: Bitcoin, color: 'text-yellow-700', bgColor: 'bg-yellow-50', description: 'Binance Pay' },
+  { id: 'crypto_other', name: 'Other Crypto', icon: Bitcoin, color: 'text-orange-700', bgColor: 'bg-[#FFF3E0]', description: 'Other crypto' },
+  { id: 'cod', name: 'Cash on Delivery', icon: Wallet, color: 'text-green-600', bgColor: 'bg-green-50', description: 'Cash on delivery' },
 ]
 
-const ALL_METHODS: MethodConfig[] = [...BUYER_METHODS, { id: 'bank_transfer' as PaymentInfoMethod, name: 'Bank Transfer', icon: Building2, color: 'text-amber-600', bgColor: 'bg-amber-50', description: 'Direct bank transfer' }]
+const ALL_METHODS: MethodConfig[] = [...BUYER_METHODS, ...SELLER_METHODS.filter((m) => !BUYER_METHODS.find((b) => b.id === m.id))]
 
 function getMethodConfig(method: PaymentInfoMethod): MethodConfig {
   return ALL_METHODS.find((m) => m.id === method) ?? ALL_METHODS[0]
@@ -123,12 +134,19 @@ function maskedDetail(method: PaymentInfoMethod, details: PaymentInfoAccountDeta
     case 'easypaisa':
     case 'jazzcash':
       return details.mobileNumber ? `0300 ****${details.mobileNumber.slice(-3)}` : '****'
-    case 'payfast':
-      return details.iban ? `IBAN ****${details.iban.slice(-4)}` : details.email ? details.email.replace(/^(..)(.*)(@.*)$/, '$1***$3') : '****'
     case 'crypto':
+    case 'bitcoin':
+    case 'ethereum':
+    case 'usdt':
+    case 'usdc':
+    case 'binance_pay':
+    case 'crypto_other':
       return details.walletAddress ? `${details.walletAddress.slice(0, 6)}...${details.walletAddress.slice(-4)}` : details.preferredCrypto ? details.preferredCrypto.toUpperCase() : '****'
     case 'bank_transfer':
+    case 'iban_transfer':
       return details.accountNumber ? `**** ${details.accountNumber.slice(-4)}` : '****'
+    case 'cod':
+      return 'Cash on Delivery'
     default:
       return '****'
   }
@@ -226,11 +244,16 @@ export function PaymentInfoForm({ type, userId }: PaymentInfoFormProps) {
       case 'easypaisa':
       case 'jazzcash':
         return { accountName, mobileNumber }
-      case 'payfast':
-        return { email, iban, accountName }
       case 'crypto':
+      case 'bitcoin':
+      case 'ethereum':
+      case 'usdt':
+      case 'usdc':
+      case 'binance_pay':
+      case 'crypto_other':
         return { walletAddress, preferredCrypto }
       case 'bank_transfer':
+      case 'iban_transfer':
         return {
           accountName,
           accountNumber,
@@ -238,6 +261,8 @@ export function PaymentInfoForm({ type, userId }: PaymentInfoFormProps) {
           routingNumber: routingNumber || undefined,
           swiftCode: swiftCode || undefined,
         }
+      case 'cod':
+        return {} // No account details needed for COD
       default:
         return {}
     }
@@ -256,18 +281,23 @@ export function PaymentInfoForm({ type, userId }: PaymentInfoFormProps) {
         if (!accountName.trim()) return 'Please enter the account name'
         if (!mobileNumber.trim()) return 'Please enter the mobile number'
         break
-      case 'payfast':
-        if (!email.trim()) return 'Please enter your PayFast email'
-        if (!iban.trim()) return 'Please enter your IBAN'
-        if (!accountName.trim()) return 'Please enter the account name'
-        break
       case 'crypto':
+      case 'bitcoin':
+      case 'ethereum':
+      case 'usdt':
+      case 'usdc':
+      case 'binance_pay':
+      case 'crypto_other':
         if (!walletAddress.trim()) return 'Please enter your crypto wallet address'
         break
       case 'bank_transfer':
+      case 'iban_transfer':
         if (!accountName.trim()) return 'Please enter the account name'
         if (!accountNumber.trim()) return 'Please enter the account number'
         if (!bankName.trim()) return 'Please enter the bank name'
+        break
+      case 'cod':
+        // No validation needed for COD
         break
     }
     return null
@@ -703,7 +733,7 @@ export function PaymentInfoForm({ type, userId }: PaymentInfoFormProps) {
                   )}
 
                   {/* Crypto */}
-                  {selectedMethod === 'crypto' && (
+                  {(selectedMethod === 'crypto' || selectedMethod === 'bitcoin' || selectedMethod === 'ethereum' || selectedMethod === 'usdt' || selectedMethod === 'usdc' || selectedMethod === 'binance_pay' || selectedMethod === 'crypto_other') && (
                     <>
                       <div className="rounded-lg bg-[#FFF3E0] border border-[#F7931A]/30 p-3">
                         <div className="flex items-center gap-2 mb-1">

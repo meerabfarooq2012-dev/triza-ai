@@ -635,3 +635,53 @@ Stage Summary:
 - All API routes properly handle the new acceptedCurrencies field
 - Lint: 0 errors, 1 pre-existing warning
 - Dev server: Running cleanly
+
+---
+Task ID: 9
+Agent: Main Agent
+Task: Implement Payment Methods Active/Coming Soon system with crypto wallet addresses
+
+Work Log:
+- Updated `src/lib/payment-methods.ts` with `active` boolean flag and `reason` field on all 33 payment methods
+  - 11 Active: Easypaisa, JazzCash, Bank Transfer, IBAN Transfer, Bitcoin, Ethereum, USDT, USDC, Binance Pay, Other Crypto, COD
+  - 22 Coming Soon: SadaPay, NayaPay, Zindigi, bKash, Nagad, Rocket, UPI, PhonePe, Google Pay India, Paytm, Wise, Revolut, PayPal, Stripe, Payoneer, Skrill, Apple Pay, Google Pay, Visa/Mastercard, Western Union, MoneyGram, Other Remittance
+  - Added `walletField` to crypto methods for wallet address input
+  - Added `getActivePaymentMethodIds()`, `getComingSoonPaymentMethodIds()`, `isPaymentMethodActive()`, `getCryptoPaymentMethods()` helper functions
+- Updated `PaymentMethodMultiSelect` component (seller product form)
+  - Active methods selectable with emerald green styling
+  - Coming Soon methods grayed out with lock icon, not selectable
+  - "Show Coming Soon" collapsible section with amber "Soon" badges
+  - Removed dependency on admin-enabled methods API — uses config directly
+- Updated Admin Settings payment methods section
+  - Stats bar showing enabled/active/coming soon counts
+  - Active methods with green "Active" badge
+  - Coming Soon methods with amber "Soon" badge, lock icon, opacity
+  - "Enable Active" button replaces "Enable All"
+- Updated checkout modal
+  - Replaced hardcoded 4-method array with dynamic `CHECKOUT_PAYMENT_METHODS` from config
+  - All 11 active methods now available at checkout
+  - Category-based color coding for each payment method type
+- Updated product detail page
+  - Active methods show emerald badges
+  - Coming Soon methods show amber badges with "Soon" label and reduced opacity
+  - Added "Seller's Wallet Addresses" section with copy-to-clipboard for crypto addresses
+- Added `cryptoWallets` field to Product Prisma model (JSON object)
+- Updated seller product form with crypto wallet address inputs
+  - Shows wallet address fields only when crypto methods are selected
+  - Placeholder hints per crypto type (bc1q... for Bitcoin, 0x... for Ethereum, etc.)
+- Updated all product API routes to handle `cryptoWallets` field
+- Expanded `PaymentMethod` and `PaymentInfoMethod` types to include all 33 methods
+- Updated payment-info API routes with expanded method validation
+- Updated payment-settings-page, payment-info-form, seller-wallet with new methods
+  - Removed PayFast references (not active)
+  - Added Bitcoin, Ethereum, USDT, USDC, Binance Pay, Other Crypto, COD, IBAN Transfer
+- Updated payment-methods API to return activeMethods and methodDetails
+
+Stage Summary:
+- Payment methods now split into Active (11) and Coming Soon (22) categories
+- To activate a coming-soon method, just change `active: true` in payment-methods.ts config
+- Sellers can add crypto wallet addresses per product
+- Buyers can see wallet addresses on product detail with copy functionality
+- All existing payment flows updated to support expanded method list
+- Lint: 0 errors, 1 pre-existing warning
+- Dev server: Running cleanly
