@@ -114,10 +114,14 @@ export function usePushNotifications() {
       const keyData = await keyResponse.json()
 
       if (!keyData.success || !keyData.data?.publicKey) {
+        // Check if it's a "not configured" error vs other errors
+        const isNotConfigured = keyData.code === 'VAPID_NOT_CONFIGURED' || keyResponse.status === 503
         setState(prev => ({
           ...prev,
           isLoading: false,
-          error: keyData.error || 'Push notifications are not configured on the server',
+          error: isNotConfigured
+            ? 'Push notifications not configured yet. Please set VAPID keys in server settings.'
+            : (keyData.error || 'Push notifications are not configured on the server'),
         }))
         return false
       }

@@ -263,11 +263,29 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
       pushSubscriptionRef.current = subscription;
       setPushSubscribed(true);
 
-      // Step 4: Send subscription to server
+      // Step 4: Send subscription to server with auth token
       const subJson = subscription.toJSON();
+
+      // Get auth token from the marketplace store
+      let authToken: string | null = null;
+      try {
+        const { useMarketplaceStore } = await import('@/store/use-marketplace-store');
+        const state = useMarketplaceStore.getState();
+        authToken = state.authToken;
+      } catch {
+        // Store not available
+      }
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+
       const response = await fetch('/api/push/subscribe', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           endpoint: subJson.endpoint,
           keys: subJson.keys,
@@ -275,8 +293,17 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (!response.ok) {
-        console.error('[Push] Failed to save subscription on server');
-        // Still return true since local subscription works
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[Push] Failed to save subscription on server:', errorData.error);
+        // Roll back local subscription since server save failed
+        try {
+          await subscription.unsubscribe();
+        } catch {
+          // ignore
+        }
+        setPushSubscribed(false);
+        pushSubscriptionRef.current = null;
+        return false;
       }
 
       console.log('[Push] Successfully subscribed to push notifications');
@@ -322,10 +349,26 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
       pushSubscriptionRef.current = null;
       setPushSubscribed(false);
 
-      // Tell server to remove subscription
+      // Tell server to remove subscription with auth token
+      let unsubscribeAuthToken: string | null = null;
+      try {
+        const { useMarketplaceStore } = await import('@/store/use-marketplace-store');
+        const state = useMarketplaceStore.getState();
+        unsubscribeAuthToken = state.authToken;
+      } catch {
+        // Store not available
+      }
+
+      const unsubHeaders: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (unsubscribeAuthToken) {
+        unsubHeaders['Authorization'] = `Bearer ${unsubscribeAuthToken}`;
+      }
+
       await fetch('/api/push/unsubscribe', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: unsubHeaders,
         body: JSON.stringify({ endpoint }),
       });
 

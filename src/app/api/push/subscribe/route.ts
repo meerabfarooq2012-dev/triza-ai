@@ -58,8 +58,9 @@ export const POST = withCsrf(async (request: NextRequest) => {
     })
   } catch (error) {
     console.error('Push subscribe error:', error)
+    const message = error instanceof Error ? error.message : 'Failed to save push subscription'
     return NextResponse.json(
-      { success: false, error: 'Failed to save push subscription' },
+      { success: false, error: message },
       { status: 500 }
     )
   }

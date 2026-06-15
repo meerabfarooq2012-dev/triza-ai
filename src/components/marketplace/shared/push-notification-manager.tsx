@@ -89,6 +89,7 @@ export function PushNotificationManager() {
     if (!isSupported) return 'Not supported'
     if (permission === 'denied') return 'Blocked'
     if (isSubscribed) return 'On'
+    if (error?.includes('not configured')) return 'Not configured'
     return 'Off'
   }
 
