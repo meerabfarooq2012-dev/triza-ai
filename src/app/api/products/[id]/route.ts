@@ -64,6 +64,7 @@ export async function GET(
       tags: JSON.parse(product.tags || '[]'),
       deliveryCountries: JSON.parse(product.deliveryCountries || '[]'),
       acceptedCurrencies: JSON.parse(product.acceptedCurrencies || '[]'),
+      paymentMethods: JSON.parse(product.paymentMethods || '[]'),
       variants: product.variants?.map((v: { images: string; [key: string]: unknown }) => ({
         ...v,
         images: JSON.parse(v.images || '[]'),
@@ -112,7 +113,7 @@ async function handleUpdateProduct(
     const allowedFields = [
       'name', 'description', 'shortDesc', 'price', 'comparePrice',
       'type', 'images', 'fileUrl', 'fileSize', 'stock', 'sku',
-      'tags', 'isFeatured', 'isActive', 'categoryId', 'deliveryInfo', 'deliveryCountries', 'acceptedCurrencies', 'requirements',
+      'tags', 'isFeatured', 'isActive', 'categoryId', 'deliveryInfo', 'deliveryCountries', 'acceptedCurrencies', 'paymentMethods', 'requirements',
       'hasVariants',
     ];
 
@@ -121,7 +122,7 @@ async function handleUpdateProduct(
     const data: Record<string, unknown> = {};
     for (const field of allowedFields) {
       if (body[field] !== undefined) {
-        if ((field === 'images' || field === 'tags' || field === 'deliveryCountries' || field === 'acceptedCurrencies') && typeof body[field] !== 'string') {
+        if ((field === 'images' || field === 'tags' || field === 'deliveryCountries' || field === 'acceptedCurrencies' || field === 'paymentMethods') && typeof body[field] !== 'string') {
           data[field] = JSON.stringify(body[field]);
         } else if (field === 'price' || field === 'comparePrice') {
           data[field] = body[field] !== null ? parseFloat(String(body[field])) : null;
@@ -169,6 +170,7 @@ async function handleUpdateProduct(
         tags: JSON.parse(updatedProduct.tags || '[]'),
         deliveryCountries: JSON.parse(updatedProduct.deliveryCountries || '[]'),
         acceptedCurrencies: JSON.parse(updatedProduct.acceptedCurrencies || '[]'),
+        paymentMethods: JSON.parse(updatedProduct.paymentMethods || '[]'),
       },
     });
   } catch (error) {

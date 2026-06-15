@@ -158,6 +158,7 @@ export interface Product {
   deliveryInfo: string | null
   deliveryCountries: string // JSON string of string[] (country codes)
   acceptedCurrencies: string // JSON string of CurrencyCode[] (e.g. ["USD","PKR","EUR"])
+  paymentMethods: string // JSON string of PaymentMethodId[] (e.g. ["easypaisa","crypto"])
   requirements: string | null
   hasVariants?: boolean
   createdAt: string

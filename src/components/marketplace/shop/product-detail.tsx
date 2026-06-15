@@ -29,6 +29,7 @@ import {
   Check,
   Loader2,
   Banknote,
+  CreditCard,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -69,6 +70,7 @@ import {
 } from '@/lib/constants'
 import { countryCodeData } from '@/lib/country-codes'
 import { CURRENCIES, type CurrencyCode } from '@/lib/currency'
+import { PAYMENT_METHODS, type PaymentMethodId } from '@/lib/payment-methods'
 import { VariantSelector } from '@/components/marketplace/shared/variant-selector'
 import { ProductRecommendations } from '@/components/marketplace/shared/product-recommendations'
 import { ReportProductDialog } from '@/components/marketplace/shared/report-product-dialog'
@@ -592,6 +594,37 @@ export default function ProductDetail() {
                       >
                         <span className="text-sm">{config.flag}</span>
                         {config.symbol} {code}
+                      </Badge>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })()}
+
+          {/* Payment Methods */}
+          {(() => {
+            const methods = safeJsonParse<PaymentMethodId[]>(product.paymentMethods as unknown as string, [])
+            if (!methods.length) return null
+            return (
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <CreditCard size={14} />
+                  <span>Payment Methods</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {methods.map((id) => {
+                    const config = PAYMENT_METHODS[id]
+                    if (!config) return null
+                    return (
+                      <Badge
+                        key={id}
+                        variant="outline"
+                        className="gap-1 text-xs bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/30 dark:text-violet-400 dark:border-violet-800"
+                        title={config.description}
+                      >
+                        <span className="text-sm">{config.icon}</span>
+                        {config.name}
                       </Badge>
                     )
                   })}

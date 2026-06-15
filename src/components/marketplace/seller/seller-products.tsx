@@ -25,6 +25,7 @@ import {
   Loader2,
   Layers,
   Banknote,
+  CreditCard,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Price } from '@/components/marketplace/shared/price'
@@ -77,7 +78,9 @@ import {
 import { countryCodeData } from '@/lib/country-codes'
 import { VariantManager } from '@/components/marketplace/seller/variant-manager'
 import { CurrencyMultiSelect } from '@/components/marketplace/seller/currency-multi-select'
+import { PaymentMethodMultiSelect } from '@/components/marketplace/seller/payment-method-select'
 import type { CurrencyCode } from '@/lib/currency'
+import type { PaymentMethodId } from '@/lib/payment-methods'
 import type { Product, ProductType, Category, ProductVariantOption, ProductVariant } from '@/types'
 
 interface ProductFormData {
@@ -94,6 +97,7 @@ interface ProductFormData {
   deliveryInfo: string
   deliveryCountries: string[] // array of country codes
   acceptedCurrencies: CurrencyCode[] // currencies seller accepts
+  paymentMethods: PaymentMethodId[] // payment methods seller accepts
   requirements: string
   isFeatured: boolean
   images: string[] // base64 encoded images
@@ -113,6 +117,7 @@ const emptyForm: ProductFormData = {
   deliveryInfo: '',
   deliveryCountries: [],
   acceptedCurrencies: ['USD'],
+  paymentMethods: [],
   requirements: '',
   isFeatured: false,
   images: [],
@@ -618,6 +623,12 @@ export function SellerProducts() {
       const parsed = JSON.parse(typeof raw === 'string' && raw ? raw : '[]')
       acceptedCurrencies = Array.isArray(parsed) ? parsed : ['USD']
     } catch { acceptedCurrencies = ['USD'] }
+    let paymentMethods: PaymentMethodId[] = []
+    try {
+      const raw = (product as unknown as Record<string, unknown>).paymentMethods
+      const parsed = JSON.parse(typeof raw === 'string' && raw ? raw : '[]')
+      paymentMethods = Array.isArray(parsed) ? parsed : []
+    } catch { paymentMethods = [] }
     // Determine subcategoryId from category parent chain
     let subcategoryId = ''
     const catId = product.categoryId || ''
@@ -645,6 +656,7 @@ export function SellerProducts() {
       deliveryInfo: product.deliveryInfo || '',
       deliveryCountries,
       acceptedCurrencies,
+      paymentMethods,
       requirements: product.requirements || '',
       isFeatured: product.isFeatured,
       images,
@@ -690,6 +702,7 @@ export function SellerProducts() {
         deliveryInfo: formData.deliveryInfo || undefined,
         deliveryCountries: formData.deliveryCountries,
         acceptedCurrencies: formData.acceptedCurrencies,
+        paymentMethods: formData.paymentMethods,
         requirements: formData.requirements || undefined,
         isFeatured: formData.isFeatured,
         images: formData.images,
@@ -1448,6 +1461,23 @@ export function SellerProducts() {
                 selected={formData.acceptedCurrencies || ['USD']}
                 onChange={(currencies) =>
                   setFormData({ ...formData, acceptedCurrencies: currencies })
+                }
+              />
+            </div>
+
+            {/* Payment Methods */}
+            <div className="grid gap-2">
+              <Label className="flex items-center gap-1.5">
+                <CreditCard className="h-4 w-4 text-gray-500" />
+                Payment Methods
+                <span className="text-xs text-gray-400">
+                  ({(formData.paymentMethods || []).length} selected) — How can buyers pay you?
+                </span>
+              </Label>
+              <PaymentMethodMultiSelect
+                selected={formData.paymentMethods || []}
+                onChange={(methods) =>
+                  setFormData({ ...formData, paymentMethods: methods })
                 }
               />
             </div>

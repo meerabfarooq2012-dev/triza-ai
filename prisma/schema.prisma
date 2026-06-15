@@ -43,7 +43,6 @@ model User {
   sellerOrders  Order[]   @relation("SellerOrders")
   reviews       Review[]
   notifications Notification[]
-  pushSubscriptions PushSubscription[]
   sentMessages  Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")
   conversationsAsP1 Conversation[] @relation("ConvParticipant1")
@@ -174,6 +173,7 @@ model Product {
   deliveryCountries  String    @default("[]") // JSON array of country codes seller can deliver to
   requirements       String?   // For freelance services - what buyer needs to provide
   acceptedCurrencies  String    @default("[]") // JSON array of currency codes seller accepts (e.g. ["USD","PKR","EUR"])
+  paymentMethods      String    @default("[]") // JSON array of payment method IDs seller accepts (e.g. ["easypaisa","crypto"])
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -437,21 +437,6 @@ model NotificationPreference {
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 
-  @@index([userId])
-}
-
-model PushSubscription {
-  id        String   @id @default(cuid())
-  userId    String
-  endpoint  String
-  p256dh    String
-  auth      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, endpoint])
   @@index([userId])
 }
 
