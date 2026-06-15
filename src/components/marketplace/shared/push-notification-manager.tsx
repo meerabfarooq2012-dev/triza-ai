@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Bell,
@@ -12,6 +12,7 @@ import {
   Loader2,
   AlertCircle,
   TestTube,
+  Settings,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
@@ -47,14 +48,32 @@ export function PushNotificationManager() {
   } = usePushNotifications()
 
   const [open, setOpen] = useState(false)
+  const [vapidConfigured, setVapidConfigured] = useState<boolean | null>(null)
 
   // Check subscription status when popover opens
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen)
     if (newOpen) {
       checkSubscription()
+      checkVapidStatus()
     }
   }
+
+  // Check if VAPID keys are configured on the server
+  const checkVapidStatus = async () => {
+    try {
+      const res = await fetch('/api/push/vapid-key')
+      const data = await res.json()
+      setVapidConfigured(data.success && !!data.data?.publicKey)
+    } catch {
+      setVapidConfigured(false)
+    }
+  }
+
+  // Check VAPID on mount
+  useEffect(() => {
+    checkVapidStatus()
+  }, [])
 
   const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState<'success' | 'error' | null>(null)
@@ -78,10 +97,15 @@ export function PushNotificationManager() {
     setTimeout(() => setTestResult(null), 3000)
   }
 
+  // Determine overall status
+  const isNotConfigured = vapidConfigured === false
+  const showNotConfiguredWarning = isNotConfigured && !isSubscribed
+
   const getStatusIcon = () => {
     if (!isSupported) return <Monitor className="h-4 w-4 text-muted-foreground" />
     if (permission === 'denied') return <BellOff className="h-4 w-4 text-red-500" />
     if (isSubscribed) return <BellRing className="h-4 w-4 text-amber-500" />
+    if (isNotConfigured) return <BellOff className="h-4 w-4 text-orange-400" />
     return <Bell className="h-4 w-4 text-muted-foreground" />
   }
 
@@ -89,13 +113,14 @@ export function PushNotificationManager() {
     if (!isSupported) return 'Not supported'
     if (permission === 'denied') return 'Blocked'
     if (isSubscribed) return 'On'
-    if (error?.includes('not configured')) return 'Not configured'
+    if (isNotConfigured) return 'Setup needed'
     return 'Off'
   }
 
   const getStatusColor = () => {
     if (!isSupported || permission === 'denied') return 'text-muted-foreground'
     if (isSubscribed) return 'text-amber-600'
+    if (isNotConfigured) return 'text-orange-500'
     return 'text-muted-foreground'
   }
 
@@ -118,6 +143,9 @@ export function PushNotificationManager() {
                     {getStatusIcon()}
                     {isSubscribed && (
                       <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-amber-500 border-2 border-background" />
+                    )}
+                    {isNotConfigured && !isSubscribed && (
+                      <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-orange-400 border-2 border-background" />
                     )}
                   </>
                 )}
@@ -144,10 +172,11 @@ export function PushNotificationManager() {
               </p>
             </div>
             <Badge
-              variant={isSubscribed ? 'default' : 'secondary'}
+              variant={isSubscribed ? 'default' : isNotConfigured ? 'secondary' : 'secondary'}
               className={cn(
                 'text-[10px] h-5',
-                isSubscribed && 'bg-amber-500 hover:bg-amber-600 text-white'
+                isSubscribed && 'bg-amber-500 hover:bg-amber-600 text-white',
+                isNotConfigured && !isSubscribed && 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
               )}
             >
               {getStatusText()}
@@ -156,6 +185,25 @@ export function PushNotificationManager() {
         </div>
 
         <Separator />
+
+        {/* VAPID Not Configured Warning */}
+        {showNotConfiguredWarning && (
+          <div className="p-4 pb-2">
+            <div className="flex items-start gap-2 p-3 rounded-md bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800">
+              <Settings className="h-4 w-4 text-orange-500 flex-shrink-0 mt-0.5" />
+              <div className="text-xs">
+                <p className="font-medium text-orange-700 dark:text-orange-300">Setup Required</p>
+                <p className="mt-0.5 text-orange-600 dark:text-orange-400">
+                  Push notifications need VAPID keys to be configured. Add{' '}
+                  <code className="bg-orange-100 dark:bg-orange-800/40 px-1 rounded text-[10px]">VAPID_PUBLIC_KEY</code>{' '}
+                  and{' '}
+                  <code className="bg-orange-100 dark:bg-orange-800/40 px-1 rounded text-[10px]">VAPID_PRIVATE_KEY</code>{' '}
+                  in Vercel environment variables, then redeploy.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Main Toggle */}
         <div className="p-4">
@@ -167,13 +215,15 @@ export function PushNotificationManager() {
                   ? 'You\'ll receive push notifications on this device'
                   : permission === 'denied'
                     ? 'Blocked by browser — enable in settings'
-                    : 'Enable to get notifications on this device'}
+                    : isNotConfigured
+                      ? 'Requires server configuration first'
+                      : 'Enable to get notifications on this device'}
               </p>
             </div>
             <Switch
               checked={isSubscribed}
               onCheckedChange={handleToggle}
-              disabled={isLoading || !isSupported || permission === 'denied'}
+              disabled={isLoading || !isSupported || permission === 'denied' || (isNotConfigured && !isSubscribed)}
               className={cn(
                 isSubscribed && 'data-[state=checked]:bg-amber-500'
               )}
@@ -221,7 +271,7 @@ export function PushNotificationManager() {
           )}
         </div>
 
-        {/* Test Button (only when subscribed) */}
+        {/* Test Button (only when subscribed and VAPID is configured) */}
         {isSubscribed && (
           <>
             <Separator />
