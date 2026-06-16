@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const userId = searchParams.get('userId') || '';
+    const userId = searchParams.get('userId') || auth.userId;
     const role = searchParams.get('role') || 'buyer';
     const status = searchParams.get('status') || '';
     const page = parseInt(searchParams.get('page') || '1', 10);

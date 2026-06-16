@@ -458,3 +458,20 @@
 [NotificationService] HTTP push endpoint running on port 3005
 [NotificationService] Socket.io notification service running on port 3004
 [NotificationService] HTTP push endpoint running on port 3005
+[NotificationService] Socket.io notification service running on port 3004
+[NotificationService] HTTP push endpoint running on port 3005
+[NotificationService] Socket.io notification service running on port 3004
+[NotificationService] HTTP push endpoint running on port 3005
+[NotificationService] Socket.io notification service running on port 3004
+[NotificationService] HTTP push endpoint running on port 3005
+[NotificationService] Socket.io notification service running on port 3004
+[NotificationService] HTTP push endpoint running on port 3005
+[NotificationService] Socket.io notification service running on port 3004
+[NotificationService] HTTP push endpoint running on port 3005
+[NotificationService] Socket.io notification service running on port 3004
+[NotificationService] HTTP push endpoint running on port 3005
+[NotificationService] Socket.io notification service running on port 3004
+[NotificationService] HTTP push endpoint running on port 3005
+[NotificationService] HTTP push: notifying user cmqgecb7p0000tqnsjtun1f89: "Welcome to Thiora, Test User! 🎉"
+[NotificationService] Socket.io notification service running on port 3004
+[NotificationService] HTTP push endpoint running on port 3005
