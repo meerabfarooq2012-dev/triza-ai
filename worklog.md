@@ -685,3 +685,38 @@ Stage Summary:
 - All existing payment flows updated to support expanded method list
 - Lint: 0 errors, 1 pre-existing warning
 - Dev server: Running cleanly
+---
+Task ID: security-hardening-1
+Agent: Main Agent
+Task: Comprehensive security audit and hardening of the entire Marketo codebase
+
+Work Log:
+- Performed thorough security audit identifying 21 vulnerabilities (5 CRITICAL, 5 HIGH, 6 MEDIUM, 5 LOW)
+- Removed all hardcoded Supabase URLs and keys from 4 files (supabase.ts, supabase-storage.ts, supabase-realtime.ts, downloads route)
+- Removed hardcoded 'thiora-setup-2024' key from setup/sync-schema and setup/categories routes
+- Removed hardcoded 'thiora-dev-secret' fallback from 2FA verify route
+- Added authentication to /api/deploy-info and /api/health endpoints (were publicly exposing internal state)
+- Removed .env and .vapid-keys.json from git tracking (secrets were committed to repo!)
+- Generated strong 64-char JWT_SECRET to replace weak 'dev-jwt-secret-key-for-testing-12345'
+- Added ADMIN_SETUP_KEY env var for all setup endpoints
+- Added production guard for sandbox payment mode
+- Removed auto-confirm timer from sandbox payments
+- Added SQL injection validation via isValidSqlIdentifier/isValidSqlType
+- Removed fallback JWT secret from chat-service mini-service (now refuses to start without it)
+- Removed database password from switch-to-supabase.sh script
+- Redacted sensitive fields in payment callback logs
+- Replaced real wallet addresses with placeholders in .env.example
+- Removed email provider/domain info from unauthenticated /api/email/status
+- Used safe error messages in setup/admin route
+- Created comprehensive security utility module (src/lib/security.ts)
+- Added startup security checks via instrumentation.ts
+- Removed hardcoded project hostname from next.config.ts (uses *.supabase.co wildcard)
+- All changes committed and pushed to GitHub
+
+Stage Summary:
+- 21 security vulnerabilities identified and fixed
+- 25 files changed, 544 insertions, 102 deletions
+- New security module created with input validation, secret validation, HMAC verification, data redaction
+- All hardcoded secrets removed from source code
+- All sensitive endpoints now require authentication
+- User MUST update Vercel env vars: JWT_SECRET and ADMIN_SETUP_KEY
