@@ -1140,3 +1140,137 @@ Stage Summary:
 - OG image generated for social media sharing
 - Multi-language alternate URLs for en, ur, ar, hi, bn
 - ESLint passes with 0 errors
+
+---
+
+## [Task 2] Automated Testing Infrastructure with Vitest
+
+**Agent:** Task 2 — Vitest setup agent
+**Date:** 2026-06-16
+**Goal:** Set up automated testing infrastructure (Vitest) for unit tests and API route tests without breaking existing functionality. Jest was deliberately avoided due to known incompatibilities with Next.js 16 Turbopack.
+
+### What was done
+
+1. **Installed test dependencies (dev only)**
+   - `vitest@4.1.9`, `@vitejs/plugin-react@6.0.2`, `jsdom@29.1.1`
+   - `@testing-library/react@16.3.2`, `@testing-library/jest-dom@6.9.1`, `@testing-library/user-event@14.6.1`
+   - `@vitest/coverage-v8@4.1.9` (for `bun run test:coverage`)
+
+2. **Created `vitest.config.ts` at project root**
+   - `environment: 'jsdom'`, `globals: true`
+   - Path alias `@` → `./src` (matches `tsconfig.json` `paths`)
+   - Setup file: `./src/test/setup.tsx`
+   - Include pattern: `src/**/__tests__/**/*.{test,spec}.{ts,tsx}` and `src/**/*.{test,spec}.{ts,tsx}`
+   - Excludes `node_modules`, `.next`, `build`, `dist`, `.git`
+   - Coverage provider `v8` with `text`, `text-summary`, `html` reporters, scoped to `src/lib/**` and `src/components/**`
+
+3. **Created `src/test/setup.tsx` (global test setup)**
+   - Imports `@testing-library/jest-dom/vitest` for custom DOM matchers
+   - `afterEach(cleanup)` to unmount React trees between tests
+   - jsdom polyfills: `matchMedia`, `IntersectionObserver`, `ResizeObserver`, `scrollTo`
+   - Mocks for `next/navigation`, `next/link`, `next/image`, `next-themes` so client component imports don't crash in tests
+   - File is `.tsx` (not `.ts`) because the link/image mocks return JSX
+
+4. **Created `src/test/utils.tsx` (test utility helpers)**
+   - `renderWithProviders()` — wraps a component with the Zustand `useMarketplaceStore` and accepts `initialCurrency`, `initialUser`, `initialCart` overrides
+   - `resetMarketplaceStore()` — restores default store state between tests
+   - Mock data factories: `createUser`, `createSeller`, `createAdmin`, `createShop`, `createProduct`, `createCartItem`, `createOrder`, `createReview`, `createNotification` — each takes a `Partial<T>` override
+   - API-route helpers: `buildGetRequest`, `buildPostRequest`, `parseJsonResponse`
+
+5. **Wrote 5 test files (126 tests total, all passing):**
+
+   **a. `src/lib/__tests__/security.test.ts` (50 tests)**
+   - `isValidId`: alphanumeric + hyphen + underscore; rejects SQL injection, empty, whitespace, special chars
+   - `isValidSqlIdentifier`: valid table/column names; rejects digits-as-prefix, SQL injection, special chars
+   - `isValidSqlType`: accepts plain types, parameterised types (VARCHAR(n), DECIMAL(p,s)), types with DEFAULT/NOT NULL/PRIMARY KEY/REFERENCES; rejects injection disguised as type strings
+   - `validateSecret`: passes for strong secret; flags empty, too-short, contains "secret"/"password"/"changeme", low entropy, case-insensitive matching
+   - `createHmacSignature` + `verifyHmacSignature`: round-trip, tamper detection, wrong-secret rejection, hex digest length (64 chars), short-signature rejection
+   - `redactSensitiveFields`: redacts password/token/secret/key fields, recurses into nested objects, preserves arrays, case-insensitive key matching
+   - `maskConnectionString`: masks passwords in postgres/mysql URLs, handles URLs without password, handles invalid input, handles empty input
+   - Bonus: `sanitizeHtml` and `isPrivateIp` smoke tests
+
+   **b. `src/lib/__tests__/payment-methods.test.ts` (31 tests)**
+   - `PAYMENT_METHODS` contract: at least 30 methods, every entry has matching id + required fields
+   - `getAllPaymentMethodIds`: returns every key, includes canonical methods
+   - `getActivePaymentMethodIds`: only `active: true` methods, no overlap with coming-soon, includes/excludes specific known methods
+   - `getComingSoonPaymentMethodIds`: only `active: false`, no overlap with active, union with active = all
+   - `isPaymentMethodActive`: correct for active/coming-soon/unknown ids
+   - `getPaymentMethodsByCategory`: groups all methods, Pakistan/Crypto buckets correct, no cross-contamination, canonical categories present
+   - `getCryptoPaymentMethods`: only methods with `walletField`, includes the 6 crypto methods
+   - Bonus: `searchPaymentMethods`, `getPopularPaymentMethods`, `getPaymentCategoryOrder`
+
+   **c. `src/app/api/health/__tests__/route.test.ts` (6 tests)**
+   - Mocks `@/lib/db` so no real DB connection is opened
+   - GET returns 200 when DB is reachable
+   - Response body has `status: 'ok'` (NOTE: actual API uses `status`, not `success` — see Notes)
+   - Response includes `database: 'connected'`
+   - Response includes a valid ISO-8601 `timestamp`
+   - `db.$queryRaw` called exactly once per request
+   - Returns 503 with `database: 'disconnected'` when DB throws
+
+   **d. `src/app/api/payment-methods/__tests__/route.test.ts` (12 tests)**
+   - Mocks both `@/lib/db` (Prisma `platformSettings.findUnique`/`create`) and `@/lib/cache` (in-memory stand-in)
+   - Cache-miss path: returns 200 with `success: true`, `methods` array from DB row, `methodDetails` keyed by method id; falls back to all active methods when DB row has `[]` or invalid JSON; creates default settings row when none exists; caches the result
+   - Cache-hit path: returns cached methods without touching DB, still returns full `methodDetails`
+   - Error handling: returns 500 with empty payload `{ success: false, methods: [], activeMethods: [], methodDetails: {} }` when DB throws
+   - Contract guarantees: `methodDetails` always contains every entry from `PAYMENT_METHODS`; `activeMethods` always reflects the static active list
+
+   **e. `src/components/__tests__/price.test.tsx` (27 tests)**
+   - Uses `renderWithProviders` + `resetMarketplaceStore` to drive the Zustand currency
+   - Rendering: $19.99, $100.00, $0.00, $1,234,567.89
+   - Prefix: renders "From" text, no prefix element when omitted
+   - Compare-at strikethrough: renders when `compare > amount`, hidden when `compare < amount`, hidden when `compare === amount` (verifies no `.line-through` element), hidden when `showCompare={false}`
+   - Currency conversion: EUR (€9.20 for $10), GBP (£7.90), PKR (₨1,393 for $5, 0 decimals), JPY (¥773, 0 decimals)
+   - `overrideCurrency` prop: documented that current impl doesn't actually reformat (bug noted), test pins safe-rendering contract
+   - `showCode`: appends currency code (e.g., "$10.00 USD", "€9.20 EUR")
+   - `compact`: $1.5K, $2.5M, no compaction under 1000
+   - Size variants: parametrised test for xs/sm/md/lg/xl/2xl classes
+   - `className` pass-through to wrapper span
+
+6. **Updated `package.json` scripts**
+   - `"test": "vitest run"`
+   - `"test:watch": "vitest"`
+   - `"test:coverage": "vitest run --coverage"`
+
+### Test Results
+
+```
+Test Files  5 passed (5)
+     Tests  126 passed (126)
+  Duration  1.77s
+```
+
+Coverage on tested modules:
+- `src/lib/security.ts`: 66.66% statements, 73.33% functions
+- `src/lib/payment-methods.ts`: 77.77% statements, 95% functions
+
+### Lint
+
+`bun run lint` passes with **0 errors**. The only warning is a pre-existing `Unused eslint-disable directive` in `src/app/page.tsx` (not introduced by this task). The unused eslint-disable in `src/test/setup.tsx` was removed.
+
+### Dev server
+
+Dev server (`bun run dev`) continues to start cleanly. Verified via `dev.log` — no regressions from the new test files or vitest.config.ts.
+
+### Notes / Decisions
+
+- **Vitest over Jest**: As required by the task, Vitest was used because Jest has known compatibility issues with Next.js 16 Turbopack. Vitest works seamlessly with the existing ESM/TS setup and reuses the Vite/React plugin ecosystem.
+- **Health endpoint response shape**: The task description said "Response includes success: true", but the actual `/api/health` route returns `{ status: 'ok', timestamp, database }` — there is no `success` field. Tests were written to match the actual implementation (asserting `status: 'ok'` and `database: 'connected'`) rather than the spec, since modifying the route's public response shape would break existing API consumers. The `/api/payment-methods` route does return `success: true`, and that's tested verbatim.
+- **Price component `overrideCurrency` bug**: While writing the Price component test, I noticed that `overrideCurrency` is computed (`const activeCurrency = overrideCurrency || currency`) but never actually used to reformat the amount — `formatPrice` from the `useCurrency()` hook always uses the store currency. Rather than lock in the buggy behavior, the test documents the actual contract (passing the prop doesn't break rendering). Fixing the bug is out of scope for this task (which is testing-only).
+- **Mock-first strategy**: All API-route tests mock `@/lib/db` and `@/lib/cache` at the module boundary so no real Prisma connection or cache state leaks between tests. The health-route test uses `vi.mocked(db.$queryRaw).mockResolvedValue(...)` per-test to drive the connected vs. disconnected branches.
+- **No production code changed**: Only test infrastructure was added. The existing app code (`src/lib/security.ts`, `src/lib/payment-methods.ts`, `src/app/api/health/route.ts`, `src/app/api/payment-methods/route.ts`, `src/components/marketplace/shared/price.tsx`) is untouched.
+
+### Files added / modified
+
+Added:
+- `vitest.config.ts`
+- `src/test/setup.tsx`
+- `src/test/utils.tsx`
+- `src/lib/__tests__/security.test.ts`
+- `src/lib/__tests__/payment-methods.test.ts`
+- `src/app/api/health/__tests__/route.test.ts`
+- `src/app/api/payment-methods/__tests__/route.test.ts`
+- `src/components/__tests__/price.test.tsx`
+
+Modified:
+- `package.json` (added `test`, `test:watch`, `test:coverage` scripts and devDependencies)
