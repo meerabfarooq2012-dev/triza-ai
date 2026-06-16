@@ -4,7 +4,7 @@ import { db } from '@/lib/db';
 const BASE_URL = process.env.NEXT_PUBLIC_PLATFORM_URL || 'https://thiora.vercel.app';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  // Static pages
+  // ── Static pages ─────────────────────────────────────────────────────────
   const staticPages: MetadataRoute.Sitemap = [
     {
       url: BASE_URL,
@@ -13,58 +13,38 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 1.0,
     },
     {
-      url: `${BASE_URL}?view=privacy-policy`,
+      url: `${BASE_URL}/?view=privacy-policy`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.3,
     },
     {
-      url: `${BASE_URL}?view=terms`,
+      url: `${BASE_URL}/?view=terms`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.3,
     },
     {
-      url: `${BASE_URL}?view=about`,
+      url: `${BASE_URL}/?view=about`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.4,
     },
     {
-      url: `${BASE_URL}?view=contact`,
+      url: `${BASE_URL}/?view=contact`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.4,
     },
     {
-      url: `${BASE_URL}?view=sell`,
+      url: `${BASE_URL}/?view=sell`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.6,
     },
   ];
 
-  // Dynamic product pages
-  let productPages: MetadataRoute.Sitemap = [];
-  try {
-    const products = await db.product.findMany({
-      where: { isActive: true, isApproved: true },
-      select: { id: true, name: true, updatedAt: true, shop: { select: { slug: true } } },
-      take: 1000,
-      orderBy: { updatedAt: 'desc' },
-    });
-
-    productPages = products.map((product) => ({
-      url: `${BASE_URL}?view=product&id=${product.id}`,
-      lastModified: product.updatedAt,
-      changeFrequency: 'weekly' as const,
-      priority: 0.8,
-    }));
-  } catch {
-    // If DB query fails, skip product pages
-  }
-
-  // Dynamic shop pages
+  // ── Dynamic shop pages (SSR route: /shop/[slug]) ────────────────────────
   let shopPages: MetadataRoute.Sitemap = [];
   try {
     const shops = await db.shop.findMany({
@@ -75,16 +55,41 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
 
     shopPages = shops.map((shop) => ({
-      url: `${BASE_URL}?view=shop&slug=${shop.slug}`,
+      url: `${BASE_URL}/shop/${shop.slug}`,
       lastModified: shop.updatedAt,
       changeFrequency: 'weekly' as const,
-      priority: 0.7,
+      priority: 0.8,
     }));
   } catch {
     // If DB query fails, skip shop pages
   }
 
-  // Dynamic gig pages
+  // ── Dynamic product pages ────────────────────────────────────────────────
+  let productPages: MetadataRoute.Sitemap = [];
+  try {
+    const products = await db.product.findMany({
+      where: { isActive: true, isApproved: true },
+      select: {
+        id: true,
+        name: true,
+        updatedAt: true,
+        shop: { select: { slug: true } },
+      },
+      take: 1000,
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    productPages = products.map((product) => ({
+      url: `${BASE_URL}/?view=product&id=${product.id}`,
+      lastModified: product.updatedAt,
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    }));
+  } catch {
+    // If DB query fails, skip product pages
+  }
+
+  // ── Dynamic gig pages ────────────────────────────────────────────────────
   let gigPages: MetadataRoute.Sitemap = [];
   try {
     const gigs = await db.gig.findMany({
@@ -95,7 +100,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
 
     gigPages = gigs.map((gig) => ({
-      url: `${BASE_URL}?view=gig&id=${gig.id}`,
+      url: `${BASE_URL}/?view=gig&id=${gig.id}`,
       lastModified: gig.updatedAt,
       changeFrequency: 'weekly' as const,
       priority: 0.7,
@@ -104,7 +109,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // If DB query fails, skip gig pages
   }
 
-  // Dynamic category pages
+  // ── Dynamic category pages ──────────────────────────────────────────────
   let categoryPages: MetadataRoute.Sitemap = [];
   try {
     const categories = await db.category.findMany({
@@ -114,7 +119,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
 
     categoryPages = categories.map((cat) => ({
-      url: `${BASE_URL}?view=category&slug=${cat.slug}`,
+      url: `${BASE_URL}/?view=category&slug=${cat.slug}`,
       lastModified: cat.updatedAt || new Date(),
       changeFrequency: 'monthly' as const,
       priority: 0.6,
@@ -123,5 +128,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // If DB query fails, skip category pages
   }
 
-  return [...staticPages, ...productPages, ...shopPages, ...gigPages, ...categoryPages];
+  return [...staticPages, ...shopPages, ...productPages, ...gigPages, ...categoryPages];
 }

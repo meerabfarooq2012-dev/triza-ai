@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import * as Sentry from '@sentry/nextjs'
 
 const isProduction = process.env.NODE_ENV === 'production'
 
@@ -13,6 +14,12 @@ export default function Error({
 }) {
   useEffect(() => {
     console.error('[Thiora] App error:', error)
+    // Capture the error in Sentry (graceful no-op if Sentry is not configured)
+    try {
+      Sentry.captureException(error)
+    } catch {
+      // Silently fail if Sentry is not initialized
+    }
   }, [error])
 
   return (

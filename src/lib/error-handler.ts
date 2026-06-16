@@ -2,7 +2,10 @@
 // Thiora Error Handler — Safe error message utility for API routes
 // Prevents information leakage in production by returning generic messages
 // while preserving useful error details during development.
+// Also captures errors in Sentry (if configured) for monitoring.
 // =============================================================================
+
+import { captureException } from './sentry';
 
 /**
  * Returns a safe error message for API responses.
@@ -16,6 +19,9 @@
  * @returns A string safe to include in an API JSON response
  */
 export function getSafeErrorMessage(error: unknown, fallbackMessage?: string): string {
+  // Capture the error in Sentry (no-op if not configured)
+  captureException(error);
+
   if (process.env.NODE_ENV === 'production') {
     return fallbackMessage || 'An internal error occurred. Please try again later.'
   }
@@ -25,6 +31,7 @@ export function getSafeErrorMessage(error: unknown, fallbackMessage?: string): s
 /**
  * Returns a safe error response body for API routes.
  * Includes the error message (safe per getSafeErrorMessage) and an optional error code.
+ * Also captures the error in Sentry for monitoring.
  *
  * @param error - The caught error
  * @param fallbackMessage - A contextual fallback message (used in production, or if error has no message)
@@ -34,6 +41,9 @@ export function getSafeErrorBody(
   error: unknown,
   fallbackMessage?: string
 ): { success: false; error: string } {
+  // Capture the error in Sentry (no-op if not configured)
+  captureException(error);
+
   if (process.env.NODE_ENV === 'production') {
     return {
       success: false,

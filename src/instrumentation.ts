@@ -1,7 +1,11 @@
 /**
  * Next.js Instrumentation Hook
  *
- * Automatically starts the chat-service (port 3003) and notification-service
+ * Initializes Sentry error monitoring (if configured) and then starts
+ * application services. Sentry is fully optional — if no DSN is set,
+ * all Sentry calls gracefully no-op.
+ *
+ * Also automatically starts the chat-service (port 3003) and notification-service
  * (port 3004) as background processes when the Next.js server starts.
  * Uses port-checking to avoid spawning duplicates if services are already running.
  *
@@ -12,7 +16,26 @@
  */
 
 export async function register() {
-  // Validate environment variables at startup
+  // ── Sentry Initialization ──────────────────────────────────────────────
+  // Initialize Sentry based on the current runtime.
+  // If no DSN is configured, the init functions gracefully no-op.
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    try {
+      await import('./sentry.server.config');
+    } catch (error) {
+      console.error('[Instrumentation] Failed to initialize Sentry (server):', error);
+    }
+  }
+
+  if (process.env.NEXT_RUNTIME === 'edge') {
+    try {
+      await import('./sentry.edge.config');
+    } catch (error) {
+      console.error('[Instrumentation] Failed to initialize Sentry (edge):', error);
+    }
+  }
+
+  // ── Environment Validation & Security ──────────────────────────────────
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     const { validateEnvironment } = await import('./lib/env-validation');
     validateEnvironment();
@@ -22,6 +45,7 @@ export async function register() {
     runSecurityChecks();
   }
 
+  // ── Mini-Services ──────────────────────────────────────────────────────
   // Skip mini-service spawning on Vercel (serverless environment)
   if (process.env.VERCEL || process.env.VERCEL_ENV) {
     console.log('[Instrumentation] Vercel environment detected — skipping mini-services');

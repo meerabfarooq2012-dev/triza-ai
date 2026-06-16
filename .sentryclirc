@@ -1,0 +1,11 @@
+# Sentry CLI Configuration
+# This file is used by the Sentry CLI during builds for source map uploads.
+# If SENTRY_AUTH_TOKEN is not set, uploads are skipped gracefully.
+
+[defaults]
+url = https://sentry.io/
+# org and project are read from environment variables:
+# SENTRY_ORG and SENTRY_PROJECT
+
+[auth]
+# Token is read from environment variable SENTRY_AUTH_TOKEN

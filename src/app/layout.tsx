@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "next-themes";
 import { PwaProvider } from "@/components/providers/pwa-provider";
+import { RootJsonLd } from "@/components/seo/json-ld";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,11 +26,51 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Thiora - Freelance. Digital. Physical. One Platform.",
-  description: "Freelance services, digital downloads, and physical products — three worlds, one marketplace.",
-  keywords: ["Thiora", "marketplace", "e-commerce", "digital products", "freelance", "online shop", "seller"],
-  authors: [{ name: "Thiora" }],
+  title: {
+    template: "%s | Thiora Marketplace",
+    default: "Thiora - Freelance. Digital. Physical. One Platform.",
+  },
+  description:
+    "Create your own customizable shop, sell digital & physical products, or offer freelance services — all in one place.",
+  keywords: [
+    "marketplace",
+    "freelance",
+    "digital products",
+    "sell online",
+    "Thiora",
+    "Pakistan",
+    "online shop",
+    "e-commerce",
+    "freelance services",
+    "digital downloads",
+    "physical products",
+    "seller",
+  ],
+  authors: [{ name: "Thiora", url: "https://thiora.vercel.app" }],
+  creator: "Thiora",
+  publisher: "Thiora",
+  metadataBase: new URL("https://thiora.vercel.app"),
+  alternates: {
+    canonical: "/",
+    languages: {
+      en: "/",
+      ur: "/?lang=ur",
+      ar: "/?lang=ar",
+      hi: "/?lang=hi",
+      bn: "/?lang=bn",
+    },
+  },
   manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512x512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+    shortcut: "/logo.svg",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -37,15 +78,44 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Thiora - Freelance. Digital. Physical. One Platform.",
-    description: "Freelance services, digital downloads, and physical products — three worlds, one marketplace.",
+    description:
+      "Create your own customizable shop, sell digital & physical products, or offer freelance services — all in one place.",
     siteName: "Thiora",
     type: "website",
+    url: "/",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1344,
+        height: 768,
+        alt: "Thiora Marketplace — Freelance. Digital. Physical.",
+      },
+    ],
+    locale: "en_US",
+    alternateLocale: ["ur_PK", "ar_SA", "hi_IN", "bn_BD"],
   },
   twitter: {
     card: "summary_large_image",
     title: "Thiora - Freelance. Digital. Physical. One Platform.",
-    description: "Freelance services, digital downloads, and physical products — three worlds, one marketplace.",
+    description:
+      "Create your own customizable shop, sell digital & physical products, or offer freelance services — all in one place.",
+    images: ["/og-image.png"],
+    creator: "@thiora",
+    site: "@thiora",
   },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  category: "marketplace",
+  classification: "Marketplace Platform",
 };
 
 export default function RootLayout({
@@ -91,6 +161,8 @@ export default function RootLayout({
         <link rel="icon" type="image/png" sizes="512x512" href="/icon-512x512.png" />
         {/* Prevent phone number detection for native app feel */}
         <meta name="format-detection" content="telephone=no" />
+        {/* JSON-LD Structured Data for SEO rich results */}
+        <RootJsonLd />
       </head>
       <body
         className={`

@@ -56,6 +56,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         : shop.logo
           ? [{ url: shop.logo, width: 200, height: 200, alt: `${shop.name} logo` }]
           : [],
+      locale: 'en_US',
     },
     twitter: {
       card: shop.banner ? 'summary_large_image' : 'summary',
@@ -69,6 +70,23 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     },
     alternates: {
       canonical: shopUrl,
+      languages: {
+        en: shopUrl,
+        ur: `${shopUrl}?lang=ur`,
+        ar: `${shopUrl}?lang=ar`,
+        hi: `${shopUrl}?lang=hi`,
+        bn: `${shopUrl}?lang=bn`,
+      },
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
     },
   }
 }
@@ -87,7 +105,7 @@ export default async function ShopPage({ params }: { params: Promise<{ slug: str
   const baseUrl = await getBaseUrl()
 
   // JSON-LD structured data for the shop (rich results in Google)
-  const jsonLd = {
+  const shopJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Store',
     name: shop.name,
@@ -111,11 +129,35 @@ export default async function ShopPage({ params }: { params: Promise<{ slug: str
     numberOfItems: shop._count?.products || undefined,
   }
 
+  // BreadcrumbList JSON-LD for shop page navigation
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: baseUrl,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: shop.name,
+        item: `${baseUrl}/shop/${shop.slug}`,
+      },
+    ],
+  }
+
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(shopJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <ShopPageClient slug={slug} />
     </>

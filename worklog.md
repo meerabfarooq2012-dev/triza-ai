@@ -967,3 +967,176 @@ Stage Summary:
 - Chat Service no longer has duplicate register-user handler (security bypass fixed)
 - Proxy.ts now has public route definitions and blocks invalid tokens for protected routes
 - All changes verified: lint passes, dev server running, browser test passes
+
+---
+Task ID: 3
+Agent: Main Agent
+Task: Add Arabic, Hindi, and Bengali language support to the i18n system
+
+Work Log:
+- Read existing i18n system: src/lib/i18n/index.ts, src/lib/i18n/locales/en.json, src/lib/i18n/locales/ur.json
+- Read use-language.ts hook (was locked to English-only)
+- Read language-switcher.tsx component (already supported dynamic locale rendering)
+- Read rtl-provider.tsx (already supported RTL detection)
+- Read use-marketplace-store.ts (language was forced to 'en', setLanguage was a no-op)
+- Created src/lib/i18n/locales/ar.json with full Arabic translations (175 keys, RTL)
+- Created src/lib/i18n/locales/hi.json with full Hindi translations (175 keys, LTR)
+- Created src/lib/i18n/locales/bn.json with full Bengali translations (175 keys, LTR)
+- Updated src/lib/i18n/index.ts:
+  - Added imports for ar, hi, bn locale JSON files
+  - Extended Locale type to 'en' | 'ur' | 'ar' | 'hi' | 'bn'
+  - Added 'ar' to RTL_LOCALES array
+  - Added LOCALE_CONFIG entries: ar (🇸🇦, العربية, rtl), hi (🇮🇳, हिन्दी, ltr), bn (🇧🇩, বাংলা, ltr)
+  - Added new locales to translations record
+- Updated src/hooks/use-language.ts:
+  - Re-enabled dynamic language switching (was locked to English)
+  - Now reads language from Zustand store via useMarketplaceStore
+  - Provides working setLocale callback that validates locale against LOCALE_CONFIG
+  - Dynamically computes rtl and direction from current locale
+- Updated src/store/use-marketplace-store.ts:
+  - Re-enabled setLanguage action (was a no-op forcing 'en')
+  - Added 'language' to partialize config so it persists in localStorage
+  - Added 'language' to dataKeys array for merge sanitization
+  - Changed forced language from 'en' to validated locale fallback
+  - Added validLocales check for persisted language values
+- Updated language sections in en.json and ur.json:
+  - Added "hindi" and "bengali" entries to language section
+- All 5 translation files validated: 175 keys each, all match English
+- Lint: 0 errors (4 pre-existing warnings)
+- Dev server: Running cleanly on port 3000
+
+Stage Summary:
+- Arabic (العربية), Hindi (हिन्दी), and Bengali (বাংলা) languages fully integrated
+- Arabic has RTL support via RTL_LOCALES and RTLProvider
+- Language switcher component already dynamically renders all LOCALE_CONFIG entries, no changes needed
+- All 175 translation keys covered across all 5 languages
+- Language switching fully functional: persists to localStorage, RTL auto-detects, fallback to English for missing keys
+
+---
+Task ID: 5
+Agent: Sentry Integration Agent
+Task: Add Sentry error monitoring integration for both client-side and server-side
+
+Work Log:
+- Installed @sentry/nextjs@10.58.0 via bun add
+- Created src/sentry.client.config.ts — client-side Sentry init with:
+  - NEXT_PUBLIC_SENTRY_DSN env var (graceful no-op if not set)
+  - tracesSampleRate: 0.1 (10% of transactions)
+  - replaysSessionSampleRate: 0 (off)
+  - replaysOnErrorSampleRate: 1.0 (100% on error)
+  - Error filtering: ignores ResizeObserver, network errors, browser extension errors
+  - beforeSend hook: drops events from chrome-extension:// and moz-extension://
+- Created src/sentry.server.config.ts — server-side Sentry init with:
+  - SENTRY_DSN env var (no NEXT_PUBLIC_ prefix)
+  - tracesSampleRate: 0.1
+  - Ignores Prisma connection errors (P1001, P1002), network errors (ECONNRESET, ECONNREFUSED, ETIMEDOUT)
+- Created src/sentry.edge.config.ts — Edge Runtime Sentry init with:
+  - Same SENTRY_DSN as server
+  - tracesSampleRate: 0.1
+  - Minimal ignore list for edge constraints
+- Updated src/instrumentation.ts:
+  - Added Sentry server config import for nodejs runtime
+  - Added Sentry edge config import for edge runtime
+  - Both wrapped in try/catch for graceful degradation
+  - Preserved all existing functionality (env validation, security checks, mini-service spawning)
+- Updated next.config.ts:
+  - Added withSentryConfig wrapper from @sentry/nextjs
+  - silent: true (suppress noisy build logs)
+  - hideSourceMaps: true (prevent source map exposure)
+  - automaticVercelMonolithRemoval: true (tree-shake Sentry when not configured)
+- Updated src/app/global-error.tsx:
+  - Added Sentry.captureException(error) in useEffect with try/catch
+- Updated src/app/error.tsx:
+  - Added Sentry.captureException(error) in useEffect with try/catch
+- Created src/lib/sentry.ts — Safe Sentry utility wrapper:
+  - captureException, captureMessage, addBreadcrumb, setUser, setTag, setExtra, startTransaction
+  - All methods no-op when Sentry DSN is not configured
+  - All methods wrapped in try/catch to never break the app
+  - Exported convenience `sentry` object for easy importing
+- Updated src/lib/error-handler.ts:
+  - Integrated captureException from lib/sentry into getSafeErrorMessage and getSafeErrorBody
+  - All API route errors now automatically captured in Sentry
+- Created src/app/api/health/sentry/route.ts — Sentry status API:
+  - Returns configured status, clientSide/serverSide/sourceMaps booleans
+  - Does NOT expose DSN — only whether it's configured
+- Created .sentryclirc — Sentry CLI configuration for source map uploads
+- Updated .env.example — Added Sentry environment variables:
+  - NEXT_PUBLIC_SENTRY_DSN (client-side)
+  - SENTRY_DSN (server-side)
+  - SENTRY_ORG, SENTRY_PROJECT, SENTRY_AUTH_TOKEN (build-time)
+
+Stage Summary:
+- Sentry is fully OPTIONAL — if no DSN is set, app works perfectly fine with zero errors
+- All Sentry calls wrapped in try/catch or conditional checks
+- Client-side: 10% traces, 100% error replay, 0% session replay
+- Server-side: 10% traces, Prisma/network error filtering
+- Edge Runtime: 10% traces, minimal footprint
+- Error boundaries (global-error.tsx, error.tsx) now capture errors in Sentry
+- API routes using error-handler.ts now auto-capture errors
+- Safe utility wrapper (lib/sentry.ts) available for all codebase usage
+- Health endpoint for monitoring Sentry status in admin dashboard
+- ESLint passes with 0 errors
+
+---
+Task ID: 4
+Agent: SEO Agent
+Task: Improve SEO with proper metadata, Open Graph tags, structured data, and sitemap
+
+Work Log:
+- Updated src/app/layout.tsx with comprehensive metadata:
+  - Title template: "%s | Thiora Marketplace" with default title
+  - Expanded description and keywords (including "Pakistan" for regional SEO)
+  - metadataBase for resolving relative OG URLs
+  - alternates with canonical + language variants (en, ur, ar, hi, bn)
+  - Structured icons definitions (192, 512, apple-touch, shortcut)
+  - Full Open Graph: og:image, og:url, og:locale, og:locale:alternate
+  - Enhanced Twitter card: creator, site, image
+  - robots directive with googleBot max-image-preview, max-snippet
+  - category and classification metadata
+  - Imported RootJsonLd component for structured data
+
+- Updated src/app/sitemap.ts:
+  - Shop pages now use /shop/[slug] route format (SSR pages)
+  - Proper lastModified dates from database
+  - Appropriate changeFrequency and priority values
+
+- Created public/robots.txt (static file approach):
+  - Per-user-agent rules (Googlebot, Bingbot, Twitterbot, facebookexternalhit, *)
+  - Disallow /api/, /admin, and private SPA views
+  - Sitemap URL: https://thiora.vercel.app/sitemap.xml
+  - Note: Next.js app/robots.ts convention caused 500 error with proxy.ts middleware
+
+- Created src/components/seo/json-ld.tsx (Server Component):
+  - Organization schema (name, url, logo, description, sameAs, contactPoint)
+  - WebSite schema with SearchAction for sitelinks searchbox
+  - Marketplace schema for rich results
+  - BreadcrumbList for homepage
+
+- Created src/components/seo/dynamic-json-ld.tsx (Client Component):
+  - ProductJsonLd: Product schema with offers, aggregateRating, brand
+  - BreadcrumbJsonLd: Dynamic breadcrumb injection
+  - ShopJsonLd: Store schema with aggregateRating, founder, numberOfItems
+
+- Enhanced src/app/shop/[slug]/page.tsx:
+  - Added og:locale to openGraph
+  - Added alternates.languages for multi-language SEO
+  - Added robots directive with googleBot settings
+  - Added BreadcrumbList JSON-LD alongside Store JSON-LD
+
+- Fixed src/components/marketplace/shared/dynamic-seo.tsx:
+  - Updated DEFAULT_SEO.ogImage from /og-default.png to /og-image.png
+
+- Updated src/proxy.ts matcher:
+  - Added robots.txt, sitemap.xml, manifest.json, sw.js to exclusion pattern
+
+- Generated public/og-image.png (1344x768 AI-generated banner)
+
+Stage Summary:
+- Comprehensive SEO metadata on all pages via Next.js 16 metadata API
+- Sitemap with static + dynamic pages (shops, products, gigs, categories)
+- robots.txt with proper allow/disallow rules
+- 4 JSON-LD structured data schemas on homepage (Organization, WebSite, Marketplace, BreadcrumbList)
+- Shop pages have Store + BreadcrumbList JSON-LD
+- OG image generated for social media sharing
+- Multi-language alternate URLs for en, ur, ar, hi, bn
+- ESLint passes with 0 errors

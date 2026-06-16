@@ -197,7 +197,6 @@ export const useMarketplaceStore = create<MarketplaceState>()(
       selectedShippingMethod: null,
 
       // ----- Language State -----
-      // Language is locked to 'en' — English only. No language switcher in UI.
       language: 'en' as Locale,
 
       // ----- Currency State -----
@@ -507,9 +506,8 @@ export const useMarketplaceStore = create<MarketplaceState>()(
       },
 
       // ----- Language Actions -----
-      // setLanguage is a no-op — app is English only, language cannot be changed
-      setLanguage: (_locale: Locale) => {
-        set({ language: 'en' as Locale })
+      setLanguage: (locale: Locale) => {
+        set({ language: locale })
       },
 
       // ----- Currency Actions -----
@@ -547,8 +545,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         cartTotal: state.cartTotal,
         currentView: state.currentView,
         viewParams: state.viewParams,
-        // Language is always 'en' — no need to persist it
-        // (kept in state but forced to 'en' on merge)
+        language: state.language,
         currency: state.currency,
       }),
       // Synchronously sanitize persisted state BEFORE it's applied to the store.
@@ -570,8 +567,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         const dataKeys = [
           'currentUser', 'isAuthenticated', 'authToken', 'refreshToken',
           'activeRole', 'cart', 'cartTotal', 'currentView', 'viewParams',
-          // 'language' intentionally excluded — always forced to 'en' (English only)
-          'currency'
+          'language', 'currency'
         ]
 
         // Sanitize array fields
@@ -610,8 +606,11 @@ export const useMarketplaceStore = create<MarketplaceState>()(
           ;(merged as Record<string, unknown>).favoriteIds = p.favoriteIds
         }
 
-        // Force language to 'en' — app is English only, ignore any persisted value
-        ;(merged as Record<string, unknown>).language = 'en'
+        // Validate persisted language — fall back to 'en' if invalid
+        const validLocales = ['en', 'ur', 'ar', 'hi', 'bn']
+        if (!p.language || !validLocales.includes(p.language as string)) {
+          ;(merged as Record<string, unknown>).language = 'en'
+        }
 
         return merged as MarketplaceState
       },

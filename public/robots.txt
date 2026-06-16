@@ -1,8 +1,15 @@
+# Thiora Marketplace - robots.txt
+# https://thiora.vercel.app
+
 User-agent: Googlebot
 Allow: /
+Disallow: /api/
+Disallow: /admin
 
 User-agent: Bingbot
 Allow: /
+Disallow: /api/
+Disallow: /admin
 
 User-agent: Twitterbot
 Allow: /
@@ -12,8 +19,14 @@ Allow: /
 
 User-agent: *
 Allow: /
-
 Disallow: /api/
 Disallow: /admin
+Disallow: /?view=cart
+Disallow: /?view=checkout
+Disallow: /?view=orders
+Disallow: /?view=messages
+Disallow: /?view=settings
+Disallow: /?view=seller-dashboard
 
+# Sitemap
 Sitemap: https://thiora.vercel.app/sitemap.xml

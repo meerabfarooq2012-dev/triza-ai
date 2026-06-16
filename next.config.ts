@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -41,4 +42,25 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// ── Sentry Integration ─────────────────────────────────────────────────────
+// Wrap the Next.js config with Sentry's withSentryConfig.
+// This enables:
+// - Automatic source map upload to Sentry during builds (if SENTRY_AUTH_TOKEN is set)
+// - Automatic instrumentation of API routes and server components
+// - Performance monitoring integration
+//
+// If SENTRY_AUTH_TOKEN is not configured, the wrapper gracefully falls back
+// to the original config without any errors.
+//
+// Sentry is OPTIONAL — if no DSN is set, the app works perfectly fine.
+export default withSentryConfig(nextConfig, {
+  // Suppress all Sentry build logs (can be noisy)
+  silent: true,
+
+  // Hide source maps from generated bundles
+  hideSourceMaps: true,
+
+  // Automatically tree-shake Sentry statements from production bundles
+  // when Sentry is not configured (no DSN)
+  automaticVercelMonolithRemoval: true,
+});

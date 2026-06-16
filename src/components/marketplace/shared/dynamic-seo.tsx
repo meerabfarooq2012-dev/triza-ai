@@ -12,7 +12,7 @@ const DEFAULT_SEO = {
     'Freelance services, digital downloads, and physical products — three worlds, one marketplace.',
   keywords:
     'Thiora, marketplace, e-commerce, digital products, freelance, online shop, seller',
-  ogImage: '/og-default.png',
+  ogImage: '/og-image.png',
 }
 
 // ---------------------------------------------------------------------------

@@ -1,16 +1,22 @@
 import en from './locales/en.json'
 import ur from './locales/ur.json'
+import ar from './locales/ar.json'
+import hi from './locales/hi.json'
+import bn from './locales/bn.json'
 
-export type Locale = 'en' | 'ur'
+export type Locale = 'en' | 'ur' | 'ar' | 'hi' | 'bn'
 
-export const RTL_LOCALES: Locale[] = ['ur']
+export const RTL_LOCALES: Locale[] = ['ur', 'ar']
 
 export const LOCALE_CONFIG: Record<Locale, { label: string; nativeLabel: string; direction: 'ltr' | 'rtl'; flag: string }> = {
   en: { label: 'English', nativeLabel: 'English', direction: 'ltr', flag: '🇬🇧' },
   ur: { label: 'Urdu', nativeLabel: 'اردو', direction: 'rtl', flag: '🇵🇰' },
+  ar: { label: 'Arabic', nativeLabel: 'العربية', direction: 'rtl', flag: '🇸🇦' },
+  hi: { label: 'Hindi', nativeLabel: 'हिन्दी', direction: 'ltr', flag: '🇮🇳' },
+  bn: { label: 'Bengali', nativeLabel: 'বাংলা', direction: 'ltr', flag: '🇧🇩' },
 }
 
-export const translations: Record<Locale, typeof en> = { en, ur }
+export const translations: Record<Locale, typeof en> = { en, ur, ar, hi, bn }
 
 // Deep key access like "common.home" or "landing.heroTitle"
 export function t(locale: Locale, key: string, params?: Record<string, string | number>): string {
