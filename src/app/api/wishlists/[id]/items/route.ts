@@ -39,7 +39,7 @@ export const POST = withCsrf(async (req: NextRequest,
     }
 
     // Check if already in wishlist
-    const existing = await db.wishlistItem.findFirst({
+    const existing = await db.wishlistEntry.findFirst({
       where: { wishlistId: id, productId },
     })
 
@@ -47,8 +47,8 @@ export const POST = withCsrf(async (req: NextRequest,
       return NextResponse.json({ success: false, error: 'Product already in wishlist' }, { status: 409 })
     }
 
-    const item = await db.wishlistItem.create({
-      data: { wishlistId: id, productId, userId: bodyUserId },
+    const item = await db.wishlistEntry.create({
+      data: { wishlistId: id, productId },
       include: {
         product: {
           include: {
@@ -93,7 +93,7 @@ export const DELETE = withCsrf(async (req: NextRequest,
       return NextResponse.json({ success: false, error: 'Only the owner can remove items' }, { status: 403 })
     }
 
-    const item = await db.wishlistItem.findFirst({
+    const item = await db.wishlistEntry.findFirst({
       where: { wishlistId: id, productId },
     })
 
@@ -101,7 +101,7 @@ export const DELETE = withCsrf(async (req: NextRequest,
       return NextResponse.json({ success: false, error: 'Item not found in wishlist' }, { status: 404 })
     }
 
-    await db.wishlistItem.delete({ where: { id: item.id } })
+    await db.wishlistEntry.delete({ where: { id: item.id } })
 
     return NextResponse.json({ success: true, message: 'Item removed from wishlist' })
   } catch (error) {

@@ -28,10 +28,10 @@ export async function GET(req: NextRequest) {
     const wishlists = await db.wishlist.findMany({
       where: { userId },
       include: {
-        _count: { select: { items: true } },
-        items: {
+        _count: { select: { entries: true } },
+        entries: {
           take: 4,
-          orderBy: { createdAt: 'desc' },
+          orderBy: { addedAt: 'desc' },
           select: {
             id: true,
             productId: true,
@@ -108,7 +108,7 @@ export const POST = withCsrf(async (req: NextRequest) => {
         isPublic: isPublic ?? false,
       },
       include: {
-        _count: { select: { items: true } },
+        _count: { select: { entries: true } },
       },
     })
 

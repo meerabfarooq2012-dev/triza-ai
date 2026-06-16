@@ -70,7 +70,9 @@ model User {
   answers          ProductAnswer[]
   gigQuestions     GigQuestion[]
   gigAnswers       GigAnswer[]
-  wishlists        Wishlist[]
+  wishlists            Wishlist[]
+  wishlistItems        WishlistItem[]
+  wishlistCollections  WishlistCollection[]
   sessions         Session[]
   downloads        DigitalDownload[]
   reports          ProductReport[]
@@ -192,6 +194,7 @@ model Product {
   variants       ProductVariant[]
   flashSales       FlashSale[]
   questions        ProductQuestion[]
+  wishlistEntries  WishlistEntry[]
   wishlistItems    WishlistItem[]
   reports         ProductReport[]
   downloads       DigitalDownload[]
@@ -615,6 +618,7 @@ model Gig {
   reviews         Review[]
   conversations   Conversation[]
   questions       GigQuestion[]
+  wishlistItems   WishlistItem[]
 
   @@unique([shopId, slug])
   @@index([shopId])
@@ -1335,7 +1339,7 @@ model Wishlist {
   updatedAt   DateTime @updatedAt
 
   user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items       WishlistItem[]
+  entries     WishlistEntry[]
 
   @@index([userId])
   @@index([slug])
@@ -1343,7 +1347,7 @@ model Wishlist {
   @@index([createdAt])
 }
 
-model WishlistItem {
+model WishlistEntry {
   id          String   @id @default(cuid())
   wishlistId  String
   productId   String
@@ -1355,6 +1359,51 @@ model WishlistItem {
   @@unique([wishlistId, productId])
   @@index([wishlistId])
   @@index([productId])
+}
+
+model WishlistCollection {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  icon        String
+  color       String
+  isDefault   Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items       WishlistItem[]
+
+  @@index([userId])
+  @@index([isDefault])
+}
+
+model WishlistItem {
+  id              String   @id @default(cuid())
+  userId          String
+  productId       String?
+  gigId           String?
+  collectionId    String?
+  priceWhenSaved  Float    @default(0)
+  currentPrice    Float    @default(0)
+  notes           String?
+  notifyPriceDrop Boolean  @default(false)
+  notifyRestock   Boolean  @default(false)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product         Product?            @relation(fields: [productId], references: [id], onDelete: Cascade)
+  gig             Gig?                @relation(fields: [gigId], references: [id], onDelete: Cascade)
+  collection      WishlistCollection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([productId])
+  @@index([gigId])
+  @@index([collectionId])
+  @@index([isActive])
 }
 
 // =============================================================================

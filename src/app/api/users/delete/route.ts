@@ -177,7 +177,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
       },
     })
 
-    // 7. Delete user's wishlists and wishlist items
+    // 7. Delete user's wishlists and wishlist entries
     const userWishlists = await db.wishlist.findMany({
       where: { userId },
       select: { id: true },
@@ -185,13 +185,21 @@ export const POST = withCsrf(async (request: NextRequest) => {
     const wishlistIds = userWishlists.map((w) => w.id)
 
     if (wishlistIds.length > 0) {
-      await db.wishlistItem.deleteMany({
+      await db.wishlistEntry.deleteMany({
         where: { wishlistId: { in: wishlistIds } },
       })
       await db.wishlist.deleteMany({
         where: { id: { in: wishlistIds } },
       })
     }
+
+    // 7b. Delete user's new wishlist items and collections
+    await db.wishlistItem.deleteMany({
+      where: { userId },
+    })
+    await db.wishlistCollection.deleteMany({
+      where: { userId },
+    })
 
     // 8. Delete user's favorites
     await db.favorite.deleteMany({

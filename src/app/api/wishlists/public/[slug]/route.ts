@@ -12,7 +12,7 @@ export async function GET(
     const wishlist = await db.wishlist.findUnique({
       where: { slug },
       include: {
-        items: {
+        entries: {
           include: {
             product: {
               select: {

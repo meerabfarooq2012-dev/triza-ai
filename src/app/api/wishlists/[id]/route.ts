@@ -16,7 +16,7 @@ export async function GET(
     const wishlist = await db.wishlist.findUnique({
       where: { id },
       include: {
-        items: {
+        entries: {
           include: {
             product: {
               include: {
@@ -98,7 +98,7 @@ export const PATCH = withCsrf(async (req: NextRequest,
         ...(name ? { slug } : {}),
       },
       include: {
-        _count: { select: { items: true } },
+        _count: { select: { entries: true } },
       },
     })
 
