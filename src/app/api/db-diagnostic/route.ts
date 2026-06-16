@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   const adminSetupKey = process.env.ADMIN_SETUP_KEY;
   if (!adminSetupKey || setupKey !== adminSetupKey) {
     // Fall back to JWT admin auth
-    const auth = authenticateRequest(request);
+    const auth = await authenticateRequest(request);
     if (!auth) {
       return NextResponse.json(
         { error: 'Authentication required. Use ?key=<ADMIN_SETUP_KEY> or JWT admin auth.' },

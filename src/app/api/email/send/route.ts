@@ -7,7 +7,7 @@ import { withCsrf } from '@/lib/with-csrf';
 export const POST = withCsrf(async (request: NextRequest) => {
   try {
     // Require JWT admin authentication
-    const auth = authenticateRequest(request);
+    const auth = await authenticateRequest(request);
     if (!auth) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },

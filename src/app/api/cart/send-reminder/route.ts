@@ -9,7 +9,7 @@ import { withCsrf } from '@/lib/with-csrf';
 async function handler(request: NextRequest) {
   try {
     // Authenticate admin
-    const auth = authenticateRequest(request);
+    const auth = await authenticateRequest(request);
     if (!auth) {
       return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
     }

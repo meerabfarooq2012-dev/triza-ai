@@ -7,7 +7,7 @@ import { authenticateRequest } from '@/lib/auth-middleware'
 export async function GET(request: NextRequest) {
   try {
     // SECURITY: Authenticate and extract userId from JWT
-    const auth = authenticateRequest(request)
+    const auth = await authenticateRequest(request)
     if (!auth) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },

@@ -4,7 +4,7 @@ import { authenticateRequest } from '@/lib/auth-middleware'
 import { withCsrf } from '@/lib/with-csrf';
 // POST /api/verification/seed-badges — Seed default trust badges into the database
 export const POST = withCsrf(async (request: NextRequest) => {
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (!auth) {
     return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
   }

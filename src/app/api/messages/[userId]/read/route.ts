@@ -9,7 +9,7 @@ export const PATCH = withCsrf(async (
   { params }: { params: Promise<{ userId: string }> }
 ) => {
   try {
-    const auth = authenticateRequest(request)
+    const auth = await authenticateRequest(request)
     if (!auth) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },

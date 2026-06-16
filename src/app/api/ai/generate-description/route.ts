@@ -92,7 +92,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
     return NextResponse.json({ success: false, error: 'Too many requests. Please try again later.' }, { status: 429 });
   }
 
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (!auth) {
     return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
   }

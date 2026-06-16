@@ -4,7 +4,7 @@ import { db } from '@/lib/db'
 import { createClient } from '@supabase/supabase-js'
 
 const SUPABASE_URL = 'https://veplxumszgotnkassotw.supabase.co'
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || ''
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 const STORAGE_BUCKET = 'marketplace'
 
 // Content type map for common file extensions

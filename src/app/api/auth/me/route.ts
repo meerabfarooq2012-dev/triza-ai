@@ -8,7 +8,7 @@ import { getSafeErrorMessage } from '@/lib/error-handler'
 export async function GET(request: NextRequest) {
   try {
     // Authenticate via JWT — extract userId from token, not from query params
-    const auth = authenticateRequest(request)
+    const auth = await authenticateRequest(request)
     if (!auth) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },

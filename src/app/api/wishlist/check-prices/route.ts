@@ -5,7 +5,7 @@ import { authenticateRequest } from '@/lib/auth-middleware';
 import { withCsrf } from '@/lib/with-csrf';
 // POST /api/wishlist/check-prices — Check for price drops
 export const POST = withCsrf(async (request: NextRequest) => {
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (!auth) {
     return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
   }

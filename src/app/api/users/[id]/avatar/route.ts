@@ -94,7 +94,7 @@ export const POST = withCsrf(async (request: NextRequest,
     const { id } = await params;
 
     // Authenticate the request
-    const auth = authenticateRequest(request);
+    const auth = await authenticateRequest(request);
     if (!auth || auth.userId !== id) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized — you can only upload your own avatar' },

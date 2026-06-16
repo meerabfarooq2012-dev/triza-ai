@@ -121,7 +121,7 @@ export const POST = withCsrf(async (req: NextRequest) => {
     );
   }
 
-  const auth = authenticateRequest(req);
+  const auth = await authenticateRequest(req);
   if (!auth) {
     return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
   }

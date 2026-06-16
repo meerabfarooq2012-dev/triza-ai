@@ -62,7 +62,7 @@ async function calculateTrustScore(shopId: string): Promise<number> {
 
 // POST /api/verification/review — Admin reviews a verification submission
 export const POST = withCsrf(async (request: NextRequest) => {
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (!auth) {
     return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
   }

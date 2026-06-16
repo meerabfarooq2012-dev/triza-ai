@@ -14,7 +14,7 @@ interface CartItemData {
 // GET /api/cart — get current user's cart with items + product info
 export async function GET(request: NextRequest) {
   try {
-    const auth = authenticateRequest(request);
+    const auth = await authenticateRequest(request);
     if (!auth) {
       return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
     }
@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
 // DELETE /api/cart — clear entire cart
 export const DELETE = withCsrf(async (request: NextRequest) => {
   try {
-    const auth = authenticateRequest(request);
+    const auth = await authenticateRequest(request);
     if (!auth) {
       return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
     }

@@ -7,7 +7,7 @@ import { withCsrf } from '@/lib/with-csrf'
 export async function GET(request: NextRequest) {
   try {
     // SECURITY: Authenticate and extract userId from JWT
-    const auth = authenticateRequest(request)
+    const auth = await authenticateRequest(request)
     if (!auth) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/favorites — Toggle a product as favorite
 export const POST = withCsrf(async (request: NextRequest) => {
-  const auth = authenticateRequest(request)
+  const auth = await authenticateRequest(request)
   if (!auth) {
     return NextResponse.json(
       { success: false, error: 'Authentication required' },

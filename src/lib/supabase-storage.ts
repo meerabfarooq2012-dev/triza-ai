@@ -6,7 +6,7 @@ import { randomBytes } from 'crypto'
 // =============================================================================
 
 const SUPABASE_URL = 'https://veplxumszgotnkassotw.supabase.co'
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || ''
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 export const STORAGE_BUCKET = 'marketplace'
 
 // File upload validation constants

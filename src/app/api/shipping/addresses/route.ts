@@ -64,7 +64,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
     );
   }
 
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (!auth) {
     return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
   }
@@ -147,7 +147,7 @@ export const PUT = withCsrf(async (request: NextRequest) => {
     );
   }
 
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (!auth) {
     return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
   }
@@ -240,7 +240,7 @@ export const DELETE = withCsrf(async (request: NextRequest) => {
     );
   }
 
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (!auth) {
     return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
   }

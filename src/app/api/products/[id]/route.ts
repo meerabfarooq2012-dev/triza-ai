@@ -86,7 +86,7 @@ async function handleUpdateProduct(
   request: NextRequest,
   context?: unknown
 ) {
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (!auth) {
     return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
   }
@@ -191,7 +191,7 @@ export const DELETE = withCsrf(async (
   request: NextRequest,
   context?: unknown
 ) => {
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (!auth) {
     return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
   }

@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/returns/policy — Create or update return policy
 export const POST = withCsrf(async (request: NextRequest) => {
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (!auth) {
     return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
   }

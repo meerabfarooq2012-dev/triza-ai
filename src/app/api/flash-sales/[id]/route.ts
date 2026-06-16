@@ -65,7 +65,7 @@ export async function GET(
 // PATCH /api/flash-sales/[id]
 export const PATCH = withCsrf(async (req: NextRequest,
   { params }: { params: Promise<{ id: string }> }) => {
-  const auth = authenticateRequest(req);
+  const auth = await authenticateRequest(req);
   if (!auth) {
     return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
   }
@@ -163,7 +163,7 @@ export const PATCH = withCsrf(async (req: NextRequest,
 // DELETE /api/flash-sales/[id]
 export const DELETE = withCsrf(async (req: NextRequest,
   { params }: { params: Promise<{ id: string }> }) => {
-  const auth = authenticateRequest(req);
+  const auth = await authenticateRequest(req);
   if (!auth) {
     return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
   }

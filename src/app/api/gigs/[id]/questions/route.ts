@@ -87,7 +87,7 @@ export async function GET(
 // POST /api/gigs/[id]/questions — Ask a question
 export const POST = withCsrf(async (request: NextRequest,
   { params }: { params: Promise<{ id: string }> }) => {
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (!auth) {
     return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
   }

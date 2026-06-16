@@ -8,7 +8,7 @@ import { sendPushNotification, isWebPushConfigured } from '@/lib/web-push'
 export async function GET(request: NextRequest) {
   try {
     // SECURITY: Authenticate and extract userId from JWT, not from query params
-    const auth = authenticateRequest(request)
+    const auth = await authenticateRequest(request)
     if (!auth) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },
@@ -158,7 +158,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
 export const PUT = withCsrf(async (request: NextRequest) => {
   try {
     // SECURITY: Authenticate and use auth.userId for markAll
-    const auth = authenticateRequest(request)
+    const auth = await authenticateRequest(request)
     if (!auth) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },
@@ -230,7 +230,7 @@ export const PUT = withCsrf(async (request: NextRequest) => {
 export const DELETE = withCsrf(async (request: NextRequest) => {
   try {
     // SECURITY: Authenticate and verify ownership
-    const auth = authenticateRequest(request)
+    const auth = await authenticateRequest(request)
     if (!auth) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },

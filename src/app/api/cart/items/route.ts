@@ -15,7 +15,7 @@ interface CartItemData {
 // POST /api/cart/items — add item to cart
 async function postHandler(request: NextRequest) {
   try {
-    const auth = authenticateRequest(request);
+    const auth = await authenticateRequest(request);
     if (!auth) {
       return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
     }

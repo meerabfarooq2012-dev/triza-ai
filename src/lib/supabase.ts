@@ -7,7 +7,7 @@ const SUPABASE_URL = 'https://veplxumszgotnkassotw.supabase.co'
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlcGxseHVtc3pnb3Rua2Fzc290dyIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzQ4NTIwNDg5LCJleHAiOjIwNjQwOTY0ODl9.4nJSB3U3lMDlVgM1Yq7bM-xI0kVQcx2b6t5dGVKiXNs'
 
 // Server-side client with service role key for admin operations (bypasses RLS)
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || ''
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
 // Public client (respects RLS policies)
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)

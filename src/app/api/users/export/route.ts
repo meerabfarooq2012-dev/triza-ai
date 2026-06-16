@@ -50,7 +50,7 @@ function maskAccountDetails(details: string, method: string): string {
 export async function GET(request: NextRequest) {
   try {
     // Authenticate the request
-    const auth = authenticateRequest(request)
+    const auth = await authenticateRequest(request)
     if (!auth) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },

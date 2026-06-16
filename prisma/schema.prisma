@@ -173,9 +173,6 @@ model Product {
   deliveryInfo       String?   // Shipping info for physical, or delivery timeline for freelance
   deliveryCountries  String    @default("[]") // JSON array of country codes seller can deliver to
   requirements       String?   // For freelance services - what buyer needs to provide
-  acceptedCurrencies  String    @default("[]") // JSON array of currency codes seller accepts (e.g. ["USD","PKR","EUR"])
-  paymentMethods      String    @default("[]") // JSON array of payment method IDs seller accepts (e.g. ["easypaisa","crypto"])
-  cryptoWallets       String    @default("{}") // JSON object: { "bitcoin": "bc1q...", "ethereum": "0x...", "usdt": "0x..." } — seller's wallet addresses
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -1382,7 +1379,6 @@ model PlatformSettings {
   taxRate           Float    @default(0)     // Default tax rate percentage
   taxInclusive      Boolean  @default(false) // If true, tax is included in prices; if false, added at checkout
   taxLabel          String   @default("Tax") // Display label (Tax, VAT, GST, etc.)
-  enabledPaymentMethods String @default("[]") // JSON array of PaymentMethodId that platform supports (e.g. ["easypaisa","jazzcash"])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

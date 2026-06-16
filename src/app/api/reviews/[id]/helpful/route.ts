@@ -6,7 +6,7 @@ import { withCsrf } from '@/lib/with-csrf';
 // POST /api/reviews/[id]/helpful - Toggle helpful vote on a review
 export const POST = withCsrf(async (request: NextRequest,
   { params }: { params: Promise<{ id: string }> }) => {
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (!auth) {
     return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
   }

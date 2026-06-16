@@ -70,7 +70,7 @@ async function recalculateRating(productId?: string | null, shopId?: string | nu
 // DELETE /api/reviews/[id] - Delete a review
 export const DELETE = withCsrf(async (request: NextRequest,
   { params }: { params: Promise<{ id: string }> }) => {
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (!auth) {
     return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
   }
@@ -130,7 +130,7 @@ export const DELETE = withCsrf(async (request: NextRequest,
 // PATCH /api/reviews/[id] - Update a review
 export const PATCH = withCsrf(async (request: NextRequest,
   { params }: { params: Promise<{ id: string }> }) => {
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (!auth) {
     return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
   }

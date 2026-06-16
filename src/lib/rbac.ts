@@ -35,7 +35,7 @@ interface RbacResult {
  */
 export function requireRole(...roles: Role[]) {
   return async (request: NextRequest): Promise<RbacResult> => {
-    const auth = authenticateRequest(request)
+    const auth = await authenticateRequest(request)
     if (!auth) {
       return {
         authorized: false,

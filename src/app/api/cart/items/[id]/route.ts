@@ -14,7 +14,7 @@ interface CartItemData {
 // PUT /api/cart/items/[id] — update quantity (id = productId)
 async function putHandler(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const auth = authenticateRequest(request);
+    const auth = await authenticateRequest(request);
     if (!auth) {
       return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
     }
@@ -81,7 +81,7 @@ async function putHandler(request: NextRequest, context: { params: Promise<{ id:
 // DELETE /api/cart/items/[id] — remove item from cart
 async function deleteHandler(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const auth = authenticateRequest(request);
+    const auth = await authenticateRequest(request);
     if (!auth) {
       return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
     }

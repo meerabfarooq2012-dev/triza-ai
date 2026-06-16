@@ -5,7 +5,7 @@ import { authenticateRequest } from '@/lib/auth-middleware'
 import { withCsrf } from '@/lib/with-csrf';
 // PATCH /api/coupons/[id]
 export const PATCH = withCsrf(async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
-  const auth = authenticateRequest(req);
+  const auth = await authenticateRequest(req);
   if (!auth) {
     return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
   }
@@ -60,7 +60,7 @@ export const PATCH = withCsrf(async (req: NextRequest, { params }: { params: Pro
 
 // DELETE /api/coupons/[id]
 export const DELETE = withCsrf(async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
-  const auth = authenticateRequest(req);
+  const auth = await authenticateRequest(req);
   if (!auth) {
     return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
   }
