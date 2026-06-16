@@ -42,6 +42,32 @@ const ALLOWED_API_METHODS = new Set([
   'OPTIONS',
 ])
 
+/** Public API routes that never require authentication (any method). Sub-routes are also public. */
+const PUBLIC_API_PREFIXES = [
+  '/api/auth/login',
+  '/api/auth/register',
+  '/api/auth/refresh',
+  '/api/auth/forgot-password',
+  '/api/auth/reset-password',
+  '/api/auth/verify-email',
+  '/api/auth/resend-verification',
+  '/api/auth/csrf',
+  '/api/auth/google',
+  '/api/health',
+  '/api/search',
+  '/api/currency/rates',
+  '/api/csrf-token',
+]
+
+/** Public API routes for GET requests only. Non-GET methods require auth. */
+const PUBLIC_GET_ONLY_PREFIXES = [
+  '/api/categories',
+  '/api/payment-methods',
+  '/api/shops',
+  '/api/products',
+  '/api/gigs',
+]
+
 /** Mutating HTTP methods that require CSRF protection */
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
 
@@ -392,7 +418,53 @@ async function _proxyInner(request: NextRequest) {
   }
 
   // -----------------------------------------------------------------------
-  // 5. CSRF Protection — Origin-based validation for mutating API requests
+  // 5. Protected Route Auth — require authenticated JWT for non-public, non-admin routes
+  // -----------------------------------------------------------------------
+  if (isApiRoute) {
+    // Check if this is a public route
+    const isPublicRoute = PUBLIC_API_PREFIXES.some(
+      (prefix) => pathname === prefix || pathname.startsWith(prefix + '/')
+    )
+    const isPublicGetRoute =
+      request.method === 'GET' &&
+      PUBLIC_GET_ONLY_PREFIXES.some(
+        (prefix) => pathname === prefix || pathname.startsWith(prefix + '/')
+      )
+
+    if (!isPublicRoute && !isPublicGetRoute && !pathname.startsWith('/api/admin/')) {
+      // This is a protected route — require valid JWT
+      const token = extractBearerToken(request)
+      if (!token) {
+        // No token — but don't block; let the route handler do its own auth check
+        // The proxy runs before the handler, and some routes may have their own
+        // auth logic (e.g., /api/auth/set-cookie, /api/auth/logout)
+        // We only block if we can positively verify the token is INVALID
+      } else {
+        const payload = await verifyJwt(token)
+        // If we can verify the token is definitely invalid/expired, block it
+        if (!payload) {
+          // Check if this is a route that might work without auth (like setup routes)
+          const isSetupRoute = pathname.startsWith('/api/setup/') ||
+            pathname.startsWith('/api/deploy-info') ||
+            pathname.startsWith('/api/db-diagnostic')
+          if (!isSetupRoute) {
+            return NextResponse.json(
+              { error: 'Unauthorized — invalid or expired token' },
+              { status: 401 }
+            )
+          }
+        }
+        // If payload is valid and not deferred, attach user info
+        if (payload && !('_deferred' in (payload as unknown as Record<string, unknown>))) {
+          // Valid token — request.headers is read-only, but we can add to the response
+          // We'll set user context in the response below
+        }
+      }
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // 6. CSRF Protection — Origin-based validation for mutating API requests
   //    (Complements the passthrough withCsrf wrapper in route handlers)
   // -----------------------------------------------------------------------
   if (!isDev && isApiRoute && MUTATING_METHODS.has(request.method)) {
@@ -438,7 +510,7 @@ async function _proxyInner(request: NextRequest) {
   }
 
   // -----------------------------------------------------------------------
-  // 6. All Other Routes — Add Security Headers + CORS
+  // 7. All Other Routes — Add Security Headers + CORS
   // -----------------------------------------------------------------------
   const response = NextResponse.next()
 

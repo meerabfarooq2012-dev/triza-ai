@@ -38,8 +38,9 @@ import { AdminAuditLog } from './admin-audit-log'
 import { AdminDataExport } from './admin-data-export'
 import { AdminShops } from './admin-shops'
 import AdminCryptoWallets from './admin-crypto-wallets'
+import AdminPaymentMethods from './admin-payment-methods'
 
-type AdminTab = 'dashboard' | 'users' | 'shops' | 'products' | 'orders' | 'returns' | 'transactions' | 'disputes' | 'categories' | 'verifications' | 'reports' | 'audit-log' | 'data-export' | 'crypto-wallets' | 'settings'
+type AdminTab = 'dashboard' | 'users' | 'shops' | 'products' | 'orders' | 'returns' | 'transactions' | 'payment-methods' | 'disputes' | 'categories' | 'verifications' | 'reports' | 'audit-log' | 'data-export' | 'crypto-wallets' | 'settings'
 
 const tabs: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
@@ -49,6 +50,7 @@ const tabs: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
   { id: 'orders', label: 'Orders', icon: <ShoppingCart size={18} /> },
   { id: 'returns', label: 'Returns', icon: <RotateCcw size={18} /> },
   { id: 'transactions', label: 'Transactions', icon: <CreditCard size={18} /> },
+  { id: 'payment-methods', label: 'Payment Methods', icon: <CreditCard size={18} /> },
   { id: 'disputes', label: 'Disputes', icon: <AlertTriangle size={18} /> },
   { id: 'categories', label: 'Categories', icon: <FolderTree size={18} /> },
   { id: 'verifications', label: 'Verifications', icon: <ShieldCheck size={18} /> },
@@ -119,6 +121,8 @@ export default function AdminPanel() {
         return <AdminAuditLog />
       case 'data-export':
         return <AdminDataExport />
+      case 'payment-methods':
+        return <AdminPaymentMethods />
       case 'crypto-wallets':
         return <AdminCryptoWallets />
       case 'settings':

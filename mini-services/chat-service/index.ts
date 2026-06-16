@@ -84,25 +84,6 @@ io.on("connection", (socket) => {
     socket.broadcast.emit("user-joined", { userId });
   });
 
-  // ─── Register User ────────────────────────────────────────────────
-  socket.on(
-    "register-user",
-    (data: { userId: string }) => {
-      const { userId } = data;
-      const roomName = `user:${userId}`;
-
-      socketUserMap.set(socket.id, userId);
-      socket.join(roomName);
-
-      console.log(
-        `[ChatService] User ${userId} registered (room: ${roomName})`
-      );
-
-      // Broadcast online presence to all conversations this user may be part of
-      socket.broadcast.emit("user-joined", { userId });
-    }
-  );
-
   // ─── Join Conversation ────────────────────────────────────────────
   socket.on(
     "join-conversation",

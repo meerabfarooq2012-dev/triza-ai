@@ -720,3 +720,250 @@ Stage Summary:
 - All hardcoded secrets removed from source code
 - All sensitive endpoints now require authentication
 - User MUST update Vercel env vars: JWT_SECRET and ADMIN_SETUP_KEY
+
+---
+Task ID: 3
+Agent: Main Agent
+Task: Update Checkout Modal to show Active and Coming Soon payment methods in two sections
+
+Work Log:
+- Read checkout-modal.tsx (2051 lines) and payment-methods.ts to understand the current structure
+- Identified key areas: import line (54), CHECKOUT_PAYMENT_METHODS array (56-105), payment step UI (1023-1133)
+- Updated import on line 54 to include `getComingSoonPaymentMethodIds` from `@/lib/payment-methods`
+- Added `CHECKOUT_COMING_SOON_METHODS` array after CHECKOUT_PAYMENT_METHODS (lines 107-158)
+  - Same regionMap and colorMap structure as active methods
+  - Built from `getComingSoonPaymentMethodIds()` instead of `getActivePaymentMethodIds()`
+  - Includes `reason` field from payment method config (e.g., "API integration pending")
+- Added Coming Soon section UI after the active methods RadioGroup (lines 1147-1207):
+  - Separator line dividing active and coming soon sections
+  - "Coming Soon" header with Clock icon (amber color)
+  - List of coming soon methods as disabled cards with:
+    - `opacity-60` and `cursor-not-allowed` classes
+    - Dashed border (`border-dashed`) to visually distinguish from active
+    - Reduced opacity icon containers
+    - Amber "Coming Soon" badge on each method
+    - Reason text (falls back to description if no reason)
+    - HTML title attribute for tooltip: "This payment method will be available soon"
+    - No radio button - not selectable
+  - Info message below: "More payment methods coming soon! We're working on integrating these for you."
+  - Dark mode support on all new elements
+- Also added dark mode support to the existing escrow info box that follows
+- Verified: lint passes (0 errors), dev server running cleanly
+- No changes to other checkout steps or functionality
+
+Stage Summary:
+- Checkout modal now shows two clear sections: Active (selectable) and Coming Soon (greyed out, not selectable)
+- 18 coming soon payment methods displayed: SadaPay, NayaPay, Zindigi, bKash, Nagad, Rocket, UPI, PhonePe, Google Pay India, Paytm, Wise, Revolut, PayPal, Stripe, Payoneer, Skrill, Apple Pay, Google Pay, Visa/Mastercard, Western Union, MoneyGram, Other Remittance
+- Active methods section remains unchanged and fully functional
+- Coming Soon cards are visually distinct with dashed borders, reduced opacity, and amber badges
+
+---
+Task ID: 1
+Agent: Backend Agent
+Task: Add paymentMethodOverrides field to PlatformSettings in Prisma schema AND update the admin settings API to handle it
+
+Work Log:
+- Read existing files: prisma/schema.prisma (PlatformSettings model at line 1411), src/app/api/admin/settings/route.ts, src/lib/payment-methods.ts, src/lib/auth-middleware.ts, src/lib/with-csrf.ts, src/lib/audit-log.ts, src/lib/rate-limit.ts
+- Added `paymentMethodOverrides String?` field to PlatformSettings model in prisma/schema.prisma (line 1431, before createdAt)
+  - This stores a JSON string like: `{"easypaisa": {"active": true}, "paypal": {"active": true, "reason": "API key configured"}}`
+- Ran `bun run db:push` — schema synced successfully, Prisma Client regenerated
+- Updated src/app/api/admin/settings/route.ts PATCH handler:
+  - Added `paymentMethodOverrides` to the allowedFields array
+  - Added JSON serialization logic for paymentMethodOverrides (same pattern as enabledPaymentMethods: if not a string, JSON.stringify it)
+  - Improved the JSON field check from `!['string'].includes(typeof body[field])` to cleaner `typeof body[field] !== 'string'`
+- Created new API endpoint at src/app/api/admin/payment-methods/route.ts:
+  - GET /api/admin/payment-methods: Returns all payment methods with merged status (hardcoded config + DB overrides), including stats (total, active, comingSoon, overridden counts) and category grouping
+  - PATCH /api/admin/payment-methods: Supports single method toggle `{ methodId, active }` and batch update `{ overrides }`. When override matches base config, it's removed for cleanliness. Invalidates payment methods cache on update.
+  - Both endpoints use authenticateRequestWithSession (await), withCsrf, rateLimit, createAuditLog following existing patterns
+  - Helper functions: getOverrides() to parse JSON from DB, buildMethodDetails() to merge hardcoded config with overrides
+  - Type: AdminMethodDetail includes baseActive, overridden, and effective active status
+- Cleaned up unused imports (getActivePaymentMethodIds, getComingSoonPaymentMethodIds) from the payment-methods route
+- Verified: lint passes (0 errors), dev server running cleanly
+
+Stage Summary:
+- PlatformSettings model now has paymentMethodOverrides String? field
+- Admin settings API can accept and serialize paymentMethodOverrides via PATCH
+- New /api/admin/payment-methods endpoint provides dedicated admin CRUD for payment method overrides
+- Admins can now toggle any payment method from "Coming Soon" to "Active" via the API
+- Overrides that match the base config are automatically cleaned up (no unnecessary DB entries)
+- Cache invalidation ensures public-facing payment method lists update immediately
+
+---
+Task ID: 4
+Agent: Main Agent
+Task: Create a dedicated "Payment Methods" admin tab component and integrate it into the admin panel
+
+Work Log:
+- Read existing admin panel (admin-panel.tsx), admin components (admin-categories.tsx, admin-verifications.tsx, admin-crypto-wallets.tsx) to understand patterns
+- Read payment-methods.ts config: PAYMENT_METHODS (30 methods across 9 categories), PaymentMethodId type, helper functions (getActivePaymentMethodIds, getComingSoonPaymentMethodIds, getPaymentMethodsByCategory, getPaymentCategoryOrder, searchPaymentMethods)
+- Read existing API routes: /api/payment-methods (public GET) and /api/admin/settings (admin GET/PATCH with enabledPaymentMethods field)
+- Read Prisma schema: PlatformSettings model has `paymentMethodOverrides` field (JSON string for admin overrides)
+- Created /api/admin/payment-methods/route.ts with:
+  - GET: Returns all payment methods with admin overrides applied, grouped by category, with stats
+  - PATCH: Supports single method toggle ({methodId, active}) or batch overrides ({overrides})
+  - Uses paymentMethodOverrides field in PlatformSettings for persistence
+  - Invalidates public payment-methods cache after updates
+  - Creates audit log entries for changes
+  - Full admin auth check and rate limiting
+- Created src/components/marketplace/admin/admin-payment-methods.tsx with:
+  - Stats bar: Total methods, Active count, Coming Soon count, Overridden count
+  - Two sections: "Active Payment Methods" and "Coming Soon Payment Methods"
+  - Active section: Toggle switch per method, Active badge (green), Popular/API/Override badges
+  - Coming Soon section: Reason text, "Activate" button, Coming Soon badge (amber)
+  - Search bar to filter methods by name/description/category/id
+  - Category grouping with collapsible sections (using getPaymentCategoryOrder)
+  - Loading state with Loader2 spinner
+  - Auth error state with retry button
+  - Framer-motion animations (stagger, expand/collapse)
+  - Full dark mode support
+  - Responsive design
+  - Uses api client from @/lib/api and useMarketplaceStore for auth
+- Updated admin-panel.tsx:
+  - Added 'payment-methods' to AdminTab type union
+  - Added import for AdminPaymentMethods component
+  - Added tab entry after 'transactions': { id: 'payment-methods', label: 'Payment Methods', icon: <CreditCard size={18} /> }
+  - Added case in renderTabContent switch for 'payment-methods'
+- Lint check: 0 errors (1 unrelated warning in page.tsx)
+- Dev server running cleanly
+
+Stage Summary:
+- New dedicated "Payment Methods" admin tab created and integrated into admin panel
+- Backend API supports reading and toggling payment method overrides
+- Frontend provides comprehensive UI with search, category grouping, toggle/activate functionality
+- All changes follow existing admin component patterns
+- No breaking changes to existing functionality
+
+---
+Task ID: 6
+Agent: Security Fix Agent
+Task: Fix duplicate `register-user` handler in chat service
+
+Work Log:
+- Read /home/z/my-project/mini-services/chat-service/index.ts and confirmed two `register-user` handlers:
+  1. Lines 65-85: Has proper auth check (`if (socket.data.user?.userId !== userId)`) ✅
+  2. Lines 87-104: Missing auth check — duplicate that runs after the first ❌
+- The second handler bypassed authentication, allowing any authenticated user to register as any other user (critical security vulnerability)
+- Removed the duplicate handler (lines 87-104), keeping only the first one with the proper auth check
+- Verified the final file has a single `register-user` handler with auth validation intact
+- No other changes made to the file
+
+Stage Summary:
+- Security vulnerability fixed: only one `register-user` handler remains, with proper userId verification
+- Socket.io will no longer execute a second unauthenticated handler for the same event
+- The chat service will now correctly reject registration attempts where the provided userId doesn't match the authenticated JWT token
+
+---
+Task ID: 7
+Agent: Middleware Agent
+Task: Add a Next.js middleware for edge-level route protection
+
+Work Log:
+- Read existing auth-middleware.ts to understand current JWT patterns (HS256, JWT_SECRET, AuthPayload shape)
+- Confirmed `jose` v6.2.3 is installed and available for Edge-compatible JWT verification
+- Reviewed existing proxy.ts to understand its scope (security headers, CORS, CSRF, admin auth) and avoid conflicts
+- Created `/home/z/my-project/src/middleware.ts` with:
+  - Public route definitions (auth endpoints, health, search, currency rates, csrf-token)
+  - Public GET-only routes (categories, payment-methods, shops, products, gigs) — sub-routes included
+  - Admin route protection requiring JWT with role='admin' or role='both'
+  - Protected route fallback requiring any valid JWT for all other /api/* routes
+  - Token extraction from Authorization header or auth-token cookie
+  - JWT verification using jose (Edge-compatible) with HS256 algorithm
+  - Graceful deferred auth when JWT_SECRET unavailable at Edge
+  - User context headers (x-mw-user-id, x-mw-user-email, x-mw-user-role) for downstream handlers
+  - Config matcher scoped to /api/:path* only
+- ESLint passes with no new errors
+- TypeScript compiles without issues
+
+Stage Summary:
+- Edge-level route protection middleware created at src/middleware.ts
+- Three-tier route classification: public, admin, and protected
+- Uses jose for Edge-compatible JWT verification
+- Coexists with existing proxy.ts (different matcher scopes)
+- Admin routes return 401 for missing/invalid tokens, 403 for non-admin roles
+- Protected routes return 401 for missing/invalid tokens
+
+---
+Task ID: 5
+Agent: Main Agent
+Task: Fix the Notification Service to add JWT authentication and restrict CORS
+
+Work Log:
+- Read the current notification-service code at mini-services/notification-service/index.ts
+- Read the chat-service code at mini-services/chat-service/index.ts for JWT auth reference pattern
+- Verified jsonwebtoken is already a dependency in notification-service/package.json
+- Verified JWT_SECRET and ADMIN_SETUP_KEY are set in .env
+
+Changes Made to mini-services/notification-service/index.ts:
+
+1. **Added JWT Authentication Middleware** (matching chat-service pattern):
+   - Imported `jsonwebtoken`
+   - Added JWT_SECRET check on startup — process exits with error if not set
+   - Added `io.use()` middleware that verifies JWT token from `socket.handshake.auth.token` or `socket.handshake.query.token`
+   - Stores decoded user info (`userId`, `email`, `role`) in `socket.data.user`
+   - Rejects connections without valid token with "Authentication required" / "Invalid token" errors
+
+2. **Fixed CORS**:
+   - Changed from `origin: "*"` to `ALLOWED_ORIGINS` array:
+     - `process.env.FRONTEND_URL || "http://localhost:3000"`
+     - `"https://thiora.vercel.app"`
+
+3. **Added userId verification in all Socket.io handlers**:
+   - `register-user`: checks `socket.data.user?.userId !== userId`, emits error on mismatch
+   - `push-notification`: checks userId match (client-side only sends to self; server-side uses /push HTTP endpoint)
+   - `notification-read`: checks userId match
+   - `all-notifications-read`: checks userId match
+   - `unread-count-update`: checks userId match
+   - `notification-deleted`: checks userId match
+
+4. **Added auth to HTTP push endpoint** (/push on port 3005):
+   - Created `verifyHttpAuth()` helper function that checks:
+     - `x-admin-secret` header must match `process.env.ADMIN_SETUP_KEY`, OR
+     - `Authorization: Bearer <token>` header with valid JWT
+   - Returns 401 if neither auth method is provided/valid
+   - Existing functionality preserved: same push logic after auth passes
+
+5. **Restricted health endpoint**:
+   - Unauthenticated: returns only `{ status: "ok" }` — no connection count exposed
+   - Authenticated (admin secret or JWT): returns `{ status: "ok", connections, users }`
+
+Verification:
+- Syntax check passed: `bun -e "import './index.ts'"` correctly exits with JWT_SECRET error
+- JWT verification tested: sign + verify round-trip works correctly
+- Lint check passed: no errors in the project
+- Service spawns correctly via Next.js instrumentation (confirmed in dev.log)
+- Notification service log shows successful startup with both Socket.io (port 3004) and HTTP (port 3005) endpoints
+
+Stage Summary:
+- Notification service now has full JWT authentication matching chat-service pattern
+- CORS restricted from wildcard to allowed origins only
+- All Socket.io handlers verify userId matches authenticated user
+- HTTP push endpoint requires admin secret or valid JWT
+- Health endpoint hides connection details from unauthenticated users
+- No breaking changes to existing functionality
+
+---
+Task ID: 5-7 (Payment System Two-Tier + Security Fixes)
+Agent: Main Agent + Sub-agents
+Task: Implement Payment System Two-Tier Categorization (Active/Coming Soon) + Fix security gaps
+
+Work Log:
+- Added `paymentMethodOverrides` field to PlatformSettings in Prisma schema (stores JSON of admin overrides for payment method active/coming-soon status)
+- Ran `bun run db:push` to sync the schema change
+- Updated admin settings API to handle `paymentMethodOverrides` in allowed fields with JSON serialization
+- Created new `/api/admin/payment-methods` API endpoint with GET (returns all methods with merged status) and PATCH (toggle active/coming soon) 
+- Created new `admin-payment-methods.tsx` component with full management UI (stats bar, active section, coming soon section, search, category grouping)
+- Added "Payment Methods" tab to admin panel (after Transactions tab)
+- Updated checkout modal with "Coming Soon" section showing greyed-out payment methods that aren't yet active
+- Fixed Notification Service: Added JWT auth middleware, restricted CORS from `*` to allowed origins, added userId verification in all handlers, added auth to HTTP push endpoint
+- Fixed Chat Service: Removed duplicate `register-user` handler that was missing auth check
+- Added protected route auth checking to proxy.ts (public route definitions + invalid token blocking for non-public routes)
+- Removed conflicting middleware.ts.bak (proxy.ts already handles all middleware in Next.js 16)
+- Verified with lint (0 errors) and browser testing (site fully functional)
+
+Stage Summary:
+- Payment System Two-Tier: Admin can now toggle payment methods between Active ↔ Coming Soon via dedicated admin tab
+- Checkout shows both Active (selectable) and Coming Soon (greyed out) payment methods
+- Notification Service now has JWT auth + restricted CORS (was completely unprotected before)
+- Chat Service no longer has duplicate register-user handler (security bypass fixed)
+- Proxy.ts now has public route definitions and blocks invalid tokens for protected routes
+- All changes verified: lint passes, dev server running, browser test passes

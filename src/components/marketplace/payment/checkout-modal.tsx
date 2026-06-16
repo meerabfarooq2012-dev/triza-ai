@@ -51,7 +51,7 @@ interface CheckoutModalProps {
 
 // Checkout payment method display config
 // Build display config from the central payment-methods registry
-import { PAYMENT_METHODS as PM_CONFIG, getActivePaymentMethodIds, type PaymentMethodId } from '@/lib/payment-methods'
+import { PAYMENT_METHODS as PM_CONFIG, getActivePaymentMethodIds, getComingSoonPaymentMethodIds, type PaymentMethodId } from '@/lib/payment-methods'
 
 const CHECKOUT_PAYMENT_METHODS: {
   id: PaymentMethod
@@ -100,6 +100,59 @@ const CHECKOUT_PAYMENT_METHODS: {
       borderColor: colors.borderColor,
       description: config.description,
       accentColor: colors.accentColor,
+    }
+  })
+})()
+
+const CHECKOUT_COMING_SOON_METHODS: {
+  id: string
+  name: string
+  region: string
+  flag: string
+  color: string
+  bgColor: string
+  borderColor: string
+  description: string
+  accentColor: string
+  reason?: string
+}[] = (() => {
+  const regionMap: Record<string, string> = {
+    'Mobile Wallet — Pakistan': '🇵🇰 Local',
+    'Mobile Wallet — Bangladesh': '🇧🇩 Local',
+    'Mobile Wallet — India': '🇮🇳 Local',
+    'International': '🌍 International',
+    'Bank Transfer': '🏦 Bank',
+    'Cryptocurrency': '🌐 Crypto',
+    'Card / Digital': '💳 Card',
+    'Cash': '💵 Cash',
+    'Remittance': '📬 Remittance',
+  }
+  const colorMap: Record<string, { color: string; bgColor: string; borderColor: string; accentColor: string }> = {
+    'Mobile Wallet — Pakistan': { color: 'text-amber-700', bgColor: 'bg-amber-50', borderColor: 'border-amber-200', accentColor: 'bg-amber-500' },
+    'Mobile Wallet — Bangladesh': { color: 'text-pink-700', bgColor: 'bg-pink-50', borderColor: 'border-pink-200', accentColor: 'bg-pink-500' },
+    'Mobile Wallet — India': { color: 'text-orange-700', bgColor: 'bg-orange-50', borderColor: 'border-orange-200', accentColor: 'bg-orange-500' },
+    'International': { color: 'text-blue-700', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', accentColor: 'bg-blue-500' },
+    'Bank Transfer': { color: 'text-emerald-700', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', accentColor: 'bg-emerald-500' },
+    'Cryptocurrency': { color: 'text-orange-700', bgColor: 'bg-orange-50', borderColor: 'border-orange-200', accentColor: 'bg-yellow-500' },
+    'Card / Digital': { color: 'text-violet-700', bgColor: 'bg-violet-50', borderColor: 'border-violet-200', accentColor: 'bg-violet-500' },
+    'Cash': { color: 'text-green-700', bgColor: 'bg-green-50', borderColor: 'border-green-200', accentColor: 'bg-green-500' },
+    'Remittance': { color: 'text-cyan-700', bgColor: 'bg-cyan-50', borderColor: 'border-cyan-200', accentColor: 'bg-cyan-500' },
+  }
+  return getComingSoonPaymentMethodIds().map((id: PaymentMethodId) => {
+    const config = PM_CONFIG[id]
+    const colors = colorMap[config.category] || colorMap['International']
+    const region = regionMap[config.category] || '🌍 International'
+    return {
+      id: id as string,
+      name: config.name,
+      region,
+      flag: config.icon,
+      color: colors.color,
+      bgColor: colors.bgColor,
+      borderColor: colors.borderColor,
+      description: config.description,
+      accentColor: colors.accentColor,
+      reason: config.reason,
     }
   })
 })()
@@ -1091,9 +1144,71 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 ))}
               </RadioGroup>
 
-              <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 p-3">
-                <ShieldCheck className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                <p className="text-xs text-amber-700">
+              {/* Coming Soon Payment Methods */}
+              {CHECKOUT_COMING_SOON_METHODS.length > 0 && (
+                <>
+                  <Separator />
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-amber-500" />
+                      <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">
+                        Coming Soon
+                      </h4>
+                    </div>
+                    <div className="space-y-2">
+                      {CHECKOUT_COMING_SOON_METHODS.map((method) => (
+                        <div
+                          key={method.id}
+                          className="opacity-60 cursor-not-allowed"
+                          title="This payment method will be available soon"
+                        >
+                          <Card className="relative overflow-hidden border-2 border-dashed border-muted-foreground/20 bg-muted/30">
+                            <div className="flex items-center gap-3 p-4">
+                              <div
+                                className={`flex h-10 w-10 items-center justify-center rounded-lg ${method.bgColor} opacity-50`}
+                              >
+                                {method.region === 'Local' ? (
+                                  <Wallet className={`h-5 w-5 ${method.color}`} />
+                                ) : (
+                                  <Globe className={`h-5 w-5 ${method.color}`} />
+                                )}
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-sm text-muted-foreground">
+                                    {method.flag} {method.name}
+                                  </span>
+                                  <Badge
+                                    className="text-[10px] px-1.5 py-0 bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/40 dark:text-amber-400 dark:border-amber-700"
+                                  >
+                                    Coming Soon
+                                  </Badge>
+                                </div>
+                                {method.reason ? (
+                                  <p className="text-xs text-muted-foreground/70 mt-0.5">
+                                    {method.reason}
+                                  </p>
+                                ) : (
+                                  <p className="text-xs text-muted-foreground/70 mt-0.5">
+                                    {method.description}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </Card>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground/60 italic text-center">
+                      More payment methods coming soon! We&apos;re working on integrating these for you.
+                    </p>
+                  </div>
+                </>
+              )}
+
+              <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 p-3 dark:bg-amber-950/30 dark:border-amber-800">
+                <ShieldCheck className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-amber-700 dark:text-amber-300">
                   Your payment is held in escrow until you confirm delivery. This protects both
                   buyers and sellers.
                 </p>

@@ -86,13 +86,16 @@ export const PATCH = withCsrf(async (request: NextRequest) => {
       'taxInclusive',
       'taxLabel',
       'enabledPaymentMethods',
+      'paymentMethodOverrides',
     ] as const
 
     const data: Record<string, unknown> = {}
     for (const field of allowedFields) {
       if (field in body) {
-        // Handle JSON array fields
-        if (field === 'enabledPaymentMethods' && !['string'].includes(typeof body[field])) {
+        // Handle JSON array/object fields
+        if (field === 'enabledPaymentMethods' && typeof body[field] !== 'string') {
+          data[field] = JSON.stringify(body[field])
+        } else if (field === 'paymentMethodOverrides' && typeof body[field] !== 'string') {
           data[field] = JSON.stringify(body[field])
         } else {
           data[field] = body[field]

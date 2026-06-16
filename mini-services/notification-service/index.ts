@@ -1,28 +1,78 @@
 import { Server } from "socket.io";
+import jwt from "jsonwebtoken";
 import http from "http";
 
 const PORT = 3004;
+
+// ─── JWT Configuration ────────────────────────────────────────────────────
+// Must match the JWT_SECRET used by the main Next.js app (auth-middleware.ts)
+// SECURITY: JWT_SECRET must be set — no fallback (prevents token forgery)
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error(
+    "[SECURITY] JWT_SECRET environment variable is NOT set! Notification service cannot authenticate users. Refusing to start."
+  );
+  process.exit(1);
+}
+
+// ─── Allowed CORS Origins ─────────────────────────────────────────────────
+const ALLOWED_ORIGINS = [
+  process.env.FRONTEND_URL || "http://localhost:3000",
+  "https://thiora.vercel.app",
+];
 
 // ─── Socket.io Server ─────────────────────────────────────────────────────
 
 const io = new Server(PORT, {
   cors: {
-    origin: "*",
+    origin: ALLOWED_ORIGINS,
     methods: ["GET", "POST"],
   },
+});
+
+// ─── JWT Authentication Middleware ─────────────────────────────────────────
+io.use((socket, next) => {
+  const token =
+    socket.handshake.auth.token ||
+    (socket.handshake.query.token as string | undefined);
+
+  if (!token) {
+    return next(new Error("Authentication required"));
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as {
+      userId: string;
+      email: string;
+      role: string;
+    };
+    socket.data.user = decoded;
+    next();
+  } catch (err) {
+    next(new Error("Invalid token"));
+  }
 });
 
 // Track user-socket mapping: userId -> Set<socketId>
 const userSocketsMap = new Map<string, Set<string>>();
 
 io.on("connection", (socket) => {
-  console.log(`[NotificationService] Socket connected: ${socket.id}`);
+  console.log(
+    `[NotificationService] Socket connected: ${socket.id} (user: ${socket.data.user?.userId})`
+  );
 
   // ─── Register User ─────────────────────────────────────────────
   socket.on(
     "register-user",
     (data: { userId: string }) => {
       const { userId } = data;
+
+      // Verify userId matches the authenticated user
+      if (socket.data.user?.userId !== userId) {
+        socket.emit("error", { message: "User ID mismatch" });
+        return;
+      }
+
       const roomName = `user:${userId}`;
 
       // Track socket mapping
@@ -57,6 +107,13 @@ io.on("connection", (socket) => {
       };
     }) => {
       const { userId, notification } = data;
+
+      // Only allow pushing to yourself (client-side); server-side uses /push HTTP endpoint
+      if (socket.data.user?.userId !== userId) {
+        socket.emit("error", { message: "User ID mismatch" });
+        return;
+      }
+
       const roomName = `user:${userId}`;
 
       console.log(
@@ -73,6 +130,13 @@ io.on("connection", (socket) => {
     "notification-read",
     (data: { userId: string; notificationId: string }) => {
       const { userId, notificationId } = data;
+
+      // Verify userId matches the authenticated user
+      if (socket.data.user?.userId !== userId) {
+        socket.emit("error", { message: "User ID mismatch" });
+        return;
+      }
+
       const roomName = `user:${userId}`;
 
       // Broadcast to all user's sockets that a notification was read
@@ -88,6 +152,13 @@ io.on("connection", (socket) => {
     "all-notifications-read",
     (data: { userId: string }) => {
       const { userId } = data;
+
+      // Verify userId matches the authenticated user
+      if (socket.data.user?.userId !== userId) {
+        socket.emit("error", { message: "User ID mismatch" });
+        return;
+      }
+
       const roomName = `user:${userId}`;
 
       io.to(roomName).emit("all-read", { userId });
@@ -99,6 +170,13 @@ io.on("connection", (socket) => {
     "unread-count-update",
     (data: { userId: string; count: number }) => {
       const { userId, count } = data;
+
+      // Verify userId matches the authenticated user
+      if (socket.data.user?.userId !== userId) {
+        socket.emit("error", { message: "User ID mismatch" });
+        return;
+      }
+
       const roomName = `user:${userId}`;
 
       io.to(roomName).emit("unread-count", { count });
@@ -110,6 +188,13 @@ io.on("connection", (socket) => {
     "notification-deleted",
     (data: { userId: string; notificationId: string }) => {
       const { userId, notificationId } = data;
+
+      // Verify userId matches the authenticated user
+      if (socket.data.user?.userId !== userId) {
+        socket.emit("error", { message: "User ID mismatch" });
+        return;
+      }
+
       const roomName = `user:${userId}`;
 
       io.to(roomName).emit("notification-removed", { notificationId });
@@ -134,12 +219,53 @@ io.on("connection", (socket) => {
   });
 });
 
+// ─── Helper: Verify admin or JWT auth for HTTP endpoints ──────────────────
+function verifyHttpAuth(
+  req: http.IncomingMessage
+): { authorized: boolean; user?: { userId: string; email: string; role: string }; error?: string } {
+  const adminSecret = req.headers["x-admin-secret"] as string | undefined;
+  const adminSetupKey = process.env.ADMIN_SETUP_KEY;
+
+  // Check admin secret first
+  if (adminSecret && adminSetupKey && adminSecret === adminSetupKey) {
+    return { authorized: true };
+  }
+
+  // Check Bearer token (JWT)
+  const authHeader = req.headers["authorization"] as string | undefined;
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.slice(7);
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET!) as {
+        userId: string;
+        email: string;
+        role: string;
+      };
+      return { authorized: true, user: decoded };
+    } catch {
+      return { authorized: false, error: "Invalid token" };
+    }
+  }
+
+  return { authorized: false, error: "Authentication required" };
+}
+
 // ─── HTTP Push Endpoint ───────────────────────────────────────────────────
 // Allows server-side code (e.g., Next.js API routes) to push notifications
-// by POSTing to http://localhost:3004/push with { userId, notification }
+// by POSTing to http://localhost:3005/push with { userId, notification }
+// Requires either x-admin-secret header matching ADMIN_SETUP_KEY or
+// a valid JWT Bearer token in the Authorization header.
 
 const httpServer = http.createServer(async (req, res) => {
   if (req.method === "POST" && req.url === "/push") {
+    // Authenticate
+    const auth = verifyHttpAuth(req);
+    if (!auth.authorized) {
+      res.writeHead(401, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: false, error: auth.error }));
+      return;
+    }
+
     try {
       let body = "";
       for await (const chunk of req) {
@@ -171,8 +297,21 @@ const httpServer = http.createServer(async (req, res) => {
       res.end(JSON.stringify({ success: false, error: "Internal server error" }));
     }
   } else if (req.method === "GET" && req.url === "/health") {
+    // Health endpoint: basic status for unauthenticated, detailed for authenticated
+    const auth = verifyHttpAuth(req);
+
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ status: "ok", connections: userSocketsMap.size }));
+    if (auth.authorized) {
+      res.end(
+        JSON.stringify({
+          status: "ok",
+          connections: userSocketsMap.size,
+          users: Array.from(userSocketsMap.keys()),
+        })
+      );
+    } else {
+      res.end(JSON.stringify({ status: "ok" }));
+    }
   } else {
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Not found" }));
