@@ -784,6 +784,23 @@ function FilterSidebar({
     onFilterChange('maxPrice', max)
   }
 
+  // Build price presets dynamically based on user's currency
+  const { formatPrice: fmtPrice } = useCurrency()
+  const PRICE_PRESETS = useMemo(
+    () =>
+      PRICE_PRESET_RANGES.map((p) => ({
+        label:
+          p.min === undefined
+            ? `Under ${fmtPrice(p.max!)}`
+            : p.max === undefined
+              ? `Over ${fmtPrice(p.min)}`
+              : `${fmtPrice(p.min)} – ${fmtPrice(p.max)}`,
+        min: p.min,
+        max: p.max,
+      })),
+    [fmtPrice]
+  )
+
   // Find matching price preset
   const activePricePresetIdx = PRICE_PRESETS.findIndex(
     (p) => p.min === filters.minPrice && p.max === filters.maxPrice
@@ -1305,21 +1322,6 @@ function QuickFilterChips({
 
 export default function SearchPage() {
   const { setCurrentView, searchQuery, setSearchQuery, searchCategory, searchType } = useMarketplaceStore()
-  const { formatPrice: fmtPrice } = useCurrency()
-
-  // Build price presets dynamically based on user's currency
-  const PRICE_PRESETS = useMemo(() =>
-    PRICE_PRESET_RANGES.map((p) => ({
-      label: p.min === undefined
-        ? `Under ${fmtPrice(p.max!)}`
-        : p.max === undefined
-          ? `Over ${fmtPrice(p.min)}`
-          : `${fmtPrice(p.min)} – ${fmtPrice(p.max)}`,
-      min: p.min,
-      max: p.max,
-    })),
-    [fmtPrice]
-  )
 
   const [activeTab, setActiveTab] = useState<'products' | 'gigs'>('products')
   const [products, setProducts] = useState<Product[]>([])
