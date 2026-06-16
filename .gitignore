@@ -54,6 +54,8 @@ server.log
 # Skills directory
 /skills/.env
 db/*.db
+# VAPID keys (contains private key - NEVER commit)
+src/lib/.vapid-keys.json
 # Ignore PNG images except brand assets needed for PWA/favicon/mascot
 *.png
 !public/logo.png

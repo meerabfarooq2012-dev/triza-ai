@@ -16,6 +16,10 @@ export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     const { validateEnvironment } = await import('./lib/env-validation');
     validateEnvironment();
+
+    // Run security checks at startup
+    const { runSecurityChecks } = await import('./lib/security');
+    runSecurityChecks();
   }
 
   // Skip mini-service spawning on Vercel (serverless environment)

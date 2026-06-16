@@ -216,11 +216,11 @@ export const POST = async (request: NextRequest) => {
     if (errMsg.includes('P1001') || errMsg.includes('Can\'t reach database server')) {
       helpInfo.issue = 'DATABASE_UNREACHABLE';
       helpInfo.cause = 'The database server is not reachable. On Vercel, this usually means DATABASE_URL is wrong or Supabase is paused.';
-      helpInfo.fix = 'Visit /api/db-diagnostic?key=thiora-setup-2024 for detailed diagnostics.';
+      helpInfo.fix = 'Visit /api/db-diagnostic?key=<ADMIN_SETUP_KEY> for detailed diagnostics.';
     } else if (errMsg.includes('P1003') || errMsg.includes('does not exist')) {
       helpInfo.issue = 'DATABASE_NOT_INITIALIZED';
       helpInfo.cause = 'The database schema has not been pushed yet. Tables are missing.';
-      helpInfo.fix = 'Visit /api/setup/sync-schema?key=thiora-setup-2024 to push the schema, then /api/setup/admin?key=thiora-setup-2024 to create the admin.';
+      helpInfo.fix = 'Visit /api/setup/sync-schema?key=<ADMIN_SETUP_KEY> to push the schema, then /api/setup/admin?key=<ADMIN_SETUP_KEY> to create the admin.';
     } else if (errMsg.includes('JWT_SECRET') || errMsg.includes('environment variable')) {
       helpInfo.issue = 'MISSING_ENV_VAR';
       helpInfo.cause = 'A required environment variable is not set on Vercel.';

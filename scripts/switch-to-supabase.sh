@@ -5,6 +5,9 @@
 # Run this script before deploying to Vercel to switch the database to Supabase.
 #
 # Usage: bash scripts/switch-to-supabase.sh
+#
+# SECURITY: This script will NEVER hardcode database passwords.
+# All credentials must be provided via environment variables.
 # =============================================================================
 
 set -e
@@ -17,16 +20,33 @@ echo "📝 Step 1: Switching Prisma schema to PostgreSQL..."
 cp prisma/schema.production.prisma prisma/schema.prisma
 echo "   ✅ Prisma schema switched to PostgreSQL"
 
-# Step 2: Update .env
+# Step 2: Check environment variables
 echo ""
-echo "📝 Step 2: Updating .env for Supabase..."
-echo "   Please make sure your .env has these values:"
-echo ""
-echo "   DATABASE_URL=\"postgresql://postgres.veplxumszgotnkassotw:hyrXGq0aYEohK4AX@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true&sslmode=require\""
-echo "   DIRECT_URL=\"postgresql://postgres:hyrXGq0aYEohK4AX@db.veplxumszgotnkassotw.supabase.co:5432/postgres?sslmode=require\""
-echo ""
+echo "📝 Step 2: Checking environment variables..."
+
+if [ -z "$DATABASE_URL" ]; then
+  echo "   ⚠️  DATABASE_URL is not set!"
+  echo "   Please set it in your .env file or environment:"
+  echo '   DATABASE_URL="postgresql://postgres.[YOUR-PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres?pgbouncer=true&sslmode=require"'
+  echo ""
+  echo "   Get this from: Supabase Dashboard → Settings → Database → Connection string (Transaction mode, port 6543)"
+  exit 1
+fi
+
+if [ -z "$DIRECT_URL" ]; then
+  echo "   ⚠️  DIRECT_URL is not set!"
+  echo "   Please set it in your .env file or environment:"
+  echo '   DIRECT_URL="postgresql://postgres:[YOUR-PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres?sslmode=require"'
+  echo ""
+  echo "   Get this from: Supabase Dashboard → Settings → Database → Connection string (Session mode, port 5432)"
+  exit 1
+fi
+
+echo "   ✅ DATABASE_URL is set"
+echo "   ✅ DIRECT_URL is set"
 
 # Step 3: Push schema to Supabase
+echo ""
 echo "📝 Step 3: Pushing schema to Supabase..."
 npx prisma db push
 echo "   ✅ Schema pushed to Supabase"

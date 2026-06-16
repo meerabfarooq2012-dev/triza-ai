@@ -50,7 +50,11 @@ async function handler(request: NextRequest) {
         isValid = true;
         usedBackupCode = true;
         // Remove used backup code
-        const usedCodeHash = createHmac('sha256', process.env.JWT_SECRET || 'thiora-dev-secret').update(code).digest('hex');
+        // SECURITY: JWT_SECRET must be set — no fallback (prevents predictable hashes)
+        if (!process.env.JWT_SECRET) {
+          return NextResponse.json({ success: false, error: 'Server configuration error' }, { status: 500 });
+        }
+        const usedCodeHash = createHmac('sha256', process.env.JWT_SECRET).update(code).digest('hex');
         const remainingCodes = hashedCodes.filter(hc => hc !== usedCodeHash);
         await db.user.update({
           where: { id: user.id },

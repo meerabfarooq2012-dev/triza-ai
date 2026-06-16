@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { isValidSqlIdentifier, isValidSqlType } from '@/lib/security'
 
 /**
  * Schema Sync Endpoint — Adds missing columns/tables to the production database
  *
- * GET /api/setup/sync-schema?key=thiora-setup-2024
+ * GET /api/setup/sync-schema?key=<ADMIN_SETUP_KEY>
  *
  * This runs ALTER TABLE statements to add any missing columns that the
  * Prisma schema expects but the database doesn't have yet.
+ *
+ * ⚠️ Requires ADMIN_SETUP_KEY env var to be set. NEVER hardcode secrets.
  */
 
 export async function GET(request: NextRequest) {
@@ -15,7 +18,17 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const key = searchParams.get('key')
 
-    if (key !== 'thiora-setup-2024') {
+    // SECURITY: Always use env var for setup key — never hardcode
+    const adminSetupKey = process.env.ADMIN_SETUP_KEY
+    if (!adminSetupKey) {
+      console.error('[SECURITY] ADMIN_SETUP_KEY env var is not set. Schema sync is disabled.')
+      return NextResponse.json(
+        { success: false, error: 'Admin setup is not configured. Set ADMIN_SETUP_KEY environment variable.' },
+        { status: 503 }
+      )
+    }
+
+    if (key !== adminSetupKey) {
       return NextResponse.json(
         { success: false, error: 'Invalid setup key' },
         { status: 403 }
@@ -25,7 +38,13 @@ export async function GET(request: NextRequest) {
     const results: string[] = []
 
     // Helper to safely add a column (ignore if exists)
+    // SECURITY: Validates table/column identifiers and SQL types to prevent injection
     const addColumnIfMissing = async (table: string, column: string, type: string) => {
+      // Validate identifiers to prevent SQL injection
+      if (!isValidSqlIdentifier(table) || !isValidSqlIdentifier(column) || !isValidSqlType(type)) {
+        results.push(`❌ Invalid identifier: ${table}.${column} ${type}`)
+        return
+      }
       try {
         await db.$executeRawUnsafe(`
           ALTER TABLE "${table}" ADD COLUMN IF NOT EXISTS "${column}" ${type};
@@ -42,7 +61,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Helper to safely create a table (single statement only)
+    // SECURITY: Validates table name to prevent SQL injection
     const createTableIfMissing = async (table: string, sql: string) => {
+      if (!isValidSqlIdentifier(table)) {
+        results.push(`❌ Invalid table name: ${table}`)
+        return
+      }
       try {
         await db.$executeRawUnsafe(sql)
         results.push(`✅ Created table ${table}`)
@@ -250,7 +274,7 @@ export async function GET(request: NextRequest) {
 
     // Try running admin setup too
     try {
-      const setupRes = await fetch(new URL('/api/setup/admin?key=thiora-setup-2024', request.url))
+      const setupRes = await fetch(new URL(`/api/setup/admin?key=${encodeURIComponent(adminSetupKey)}`, request.url))
       const setupData = await setupRes.json()
       results.push(`Admin setup: ${setupData.success ? '✅ ' + setupData.message : '❌ ' + setupData.error}`)
     } catch {

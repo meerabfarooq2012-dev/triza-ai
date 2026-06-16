@@ -1,12 +1,18 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Supabase project credentials
-// These are safe to use on the server side - the anon key is designed to be public
-// Row Level Security (RLS) policies protect the data
-const SUPABASE_URL = 'https://veplxumszgotnkassotw.supabase.co'
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlcGxseHVtc3pnb3Rua2Fzc290dyIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzQ4NTIwNDg5LCJleHAiOjIwNjQwOTY0ODl9.4nJSB3U3lMDlVgM1Yq7bM-xI0kVQcx2b6t5dGVKiXNs'
+// =============================================================================
+// Supabase Client — ALL credentials from environment variables only
+// NEVER hardcode URLs or keys — they must be kept secret and configurable
+// =============================================================================
+
+// Supabase project URL (required — must be set in .env or Vercel env vars)
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+
+// Anon key for public client (designed to be public, but read from env for flexibility)
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
 // Server-side client with service role key for admin operations (bypasses RLS)
+// ⚠️ NEVER expose this key to the client side
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
 // Public client (respects RLS policies)

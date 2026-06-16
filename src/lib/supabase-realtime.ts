@@ -62,11 +62,20 @@ export class SupabaseRealtimeManager {
   private channels: Map<string, RealtimeChannel> = new Map()
 
   constructor() {
-    const supabaseUrl =
-      process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://veplxumszgotnkassotw.supabase.co'
-    const supabaseKey =
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlcGxseHVtc3pnb3Rua2Fzc290dyIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzQ4NTIwNDg5LCJleHAiOjIwNjQwOTY0ODl9.4nJSB3U3lMDlVgM1Yq7bM-xI0kVQcx2b6t5dGVKiXNs'
+    // SECURITY: All credentials from environment variables only — never hardcode
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    if (!supabaseUrl || !supabaseKey) {
+      console.error(
+        '[SupabaseRealtime] ⚠️ NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY must be set in environment variables!'
+      )
+      // Create a dummy client that won't crash but won't work
+      this.client = createClient('https://placeholder.supabase.co', 'placeholder-key', {
+        realtime: { params: { eventsPerSecond: 10 } },
+      })
+      return
+    }
 
     this.client = createClient(supabaseUrl, supabaseKey, {
       realtime: {

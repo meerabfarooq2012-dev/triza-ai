@@ -5,19 +5,31 @@ import { DIGITAL_CATEGORIES, PHYSICAL_CATEGORIES, GIG_CATEGORIES, GIG_SUBCATEGOR
 /**
  * Category Seed Endpoint
  *
- * GET /api/setup/categories?key=thiora-setup-2024
+ * GET /api/setup/categories?key=<ADMIN_SETUP_KEY>
  *
  * Seeds all digital, physical, and gig categories into the database.
  * Safe to run multiple times — uses upsert to avoid duplicates.
+ *
+ * ⚠️ Requires ADMIN_SETUP_KEY env var to be set. NEVER hardcode secrets.
  */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const key = searchParams.get('key');
 
-    if (key !== 'thiora-setup-2024') {
+    // SECURITY: Always use env var for setup key — never hardcode
+    const adminSetupKey = process.env.ADMIN_SETUP_KEY;
+    if (!adminSetupKey) {
+      console.error('[SECURITY] ADMIN_SETUP_KEY env var is not set. Category seeding is disabled.');
       return NextResponse.json(
-        { success: false, error: 'Invalid key. Use ?key=thiora-setup-2024' },
+        { success: false, error: 'Admin setup is not configured. Set ADMIN_SETUP_KEY environment variable.' },
+        { status: 503 }
+      );
+    }
+
+    if (key !== adminSetupKey) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid setup key' },
         { status: 403 }
       );
     }

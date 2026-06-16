@@ -13,9 +13,19 @@ function escapeHtml(str: string): string {
 // =============================================================================
 // GET /api/payments/sandbox
 // Sandbox payment simulation page - shown when PAYMENT_GATEWAY_MODE=sandbox
+//
+// ⚠️ SECURITY: This endpoint is DISABLED in production to prevent free payments.
+// Sandbox mode should only be used in development/testing.
 // =============================================================================
 
 export async function GET(request: NextRequest) {
+  // SECURITY: Block sandbox payments in production
+  if (process.env.NODE_ENV === 'production' && process.env.PAYMENT_GATEWAY_MODE !== 'sandbox') {
+    return NextResponse.json(
+      { success: false, error: 'Sandbox payments are not available in production mode.' },
+      { status: 403 }
+    );
+  }
   const rawToken = request.nextUrl.searchParams.get('token') || '';
   const rawGateway = request.nextUrl.searchParams.get('gateway') || 'easypaisa';
   const rawOrderId = request.nextUrl.searchParams.get('orderId') || '';
@@ -165,11 +175,9 @@ export async function GET(request: NextRequest) {
       window.location.href = '/';
     }
 
-    setTimeout(() => {
-      if (!document.getElementById('payBtn').disabled) {
-        confirmPayment();
-      }
-    }, 8000);
+    // SECURITY: Removed auto-confirm timer — sandbox payments now require
+    // manual user interaction (clicking "Confirm Payment" button).
+    // Auto-confirm was a security risk if sandbox mode was accidentally enabled in production.
   </script>
 </body>
 </html>`;

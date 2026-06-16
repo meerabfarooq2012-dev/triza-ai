@@ -5,7 +5,7 @@ import { randomBytes } from 'crypto'
 // Supabase Storage Client - Server-side only (used in API routes)
 // =============================================================================
 
-const SUPABASE_URL = 'https://veplxumszgotnkassotw.supabase.co'
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 export const STORAGE_BUCKET = 'marketplace'
 

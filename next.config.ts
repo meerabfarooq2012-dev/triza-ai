@@ -22,12 +22,8 @@ const nextConfig: NextConfig = {
 
   images: {
     remotePatterns: [
-      // Supabase Storage — primary image hosting for avatars, products, shops, reviews, etc.
-      {
-        protocol: 'https',
-        hostname: 'veplxumszgotnkassotw.supabase.co',
-      },
-      // Allow any Supabase project subdomain (in case project changes or multi-project setup)
+      // Supabase Storage — allow any Supabase project subdomain
+      // SECURITY: Don't hardcode specific project hostnames — use wildcard pattern
       {
         protocol: 'https',
         hostname: '*.supabase.co',

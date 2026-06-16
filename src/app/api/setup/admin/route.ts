@@ -73,10 +73,11 @@ export async function GET(request: NextRequest) {
       helpInfo.fix = 'Check your Supabase database password in Project Settings → Database and update the DATABASE_URL in Vercel.';
     }
 
+    // SECURITY: Don't expose raw error messages — could leak connection strings, file paths
     return NextResponse.json(
       {
         success: false,
-        error: 'Setup failed: ' + errMsg,
+        error: 'Setup failed. Check server logs for details.',
         help: Object.keys(helpInfo).length > 0 ? helpInfo : undefined,
       },
       { status: 500 }
@@ -118,8 +119,9 @@ export async function POST(request: NextRequest) {
     return await setupAdmin();
   } catch (error) {
     console.error('Admin setup error:', error);
+    // SECURITY: Don't expose raw error details in production
     return NextResponse.json(
-      { success: false, error: 'Setup failed: ' + (error instanceof Error ? error.message : String(error)) },
+      { success: false, error: 'Setup failed. Check server logs for details.' },
       { status: 500 }
     );
   }

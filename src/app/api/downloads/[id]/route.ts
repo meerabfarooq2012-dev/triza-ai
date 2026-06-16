@@ -3,7 +3,8 @@ import { validateDownloadToken, incrementDownloadCount } from '@/lib/digital-dow
 import { db } from '@/lib/db'
 import { createClient } from '@supabase/supabase-js'
 
-const SUPABASE_URL = 'https://veplxumszgotnkassotw.supabase.co'
+// SECURITY: All credentials from environment variables only — never hardcode
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 const STORAGE_BUCKET = 'marketplace'
 

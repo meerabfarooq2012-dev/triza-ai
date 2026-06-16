@@ -5,7 +5,12 @@ const PORT = 3003;
 
 // ─── JWT Configuration ────────────────────────────────────────────────────
 // Must match the JWT_SECRET used by the main Next.js app (auth-middleware.ts)
-const JWT_SECRET = process.env.JWT_SECRET || "thiora-dev-secret-change-in-production";
+// SECURITY: JWT_SECRET must be set — no fallback (prevents token forgery)
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('[SECURITY] JWT_SECRET environment variable is NOT set! Chat service cannot authenticate users. Refusing to start.');
+  process.exit(1);
+}
 
 // ─── Allowed CORS Origins ─────────────────────────────────────────────────
 const ALLOWED_ORIGINS = [

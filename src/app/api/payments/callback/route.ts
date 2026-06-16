@@ -62,7 +62,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log(`[Payment Callback] Received ${gateway} callback:`, JSON.stringify(callbackData));
+    // SECURITY: Redact sensitive fields before logging payment callback data
+    const SENSITIVE_FIELDS = ['token', 'authCode', 'password', 'secret', 'signature', 'hash', 'cardNumber', 'cvv', 'pp_SecureHash'];
+    const redactedData: Record<string, string> = {};
+    for (const [key, value] of Object.entries(callbackData)) {
+      if (SENSITIVE_FIELDS.some(sf => key.toLowerCase().includes(sf.toLowerCase()))) {
+        redactedData[key] = '***REDACTED***';
+      } else {
+        redactedData[key] = value;
+      }
+    }
+    console.log(`[Payment Callback] Received ${gateway} callback:`, JSON.stringify(redactedData));
 
     // ----- Verify callback integrity -----
     if (gateway === 'easypaisa') {
