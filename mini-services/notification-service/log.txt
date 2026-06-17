@@ -495,3 +495,7 @@
 [NotificationService] HTTP push endpoint running on port 3005
 [NotificationService] Socket.io notification service running on port 3004
 [NotificationService] HTTP push endpoint running on port 3005
+[SECURITY] JWT_SECRET environment variable is NOT set! Notification service cannot authenticate users. Refusing to start.
+[Instrumentation] Notification service exited with code 1, signal null
+[NotificationService] Socket.io notification service running on port 3004
+[NotificationService] HTTP push endpoint running on port 3005
