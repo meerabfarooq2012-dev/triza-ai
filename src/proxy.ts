@@ -147,16 +147,24 @@ function buildSecurityHeaders(isDev: boolean): Record<string, string> {
   // Note: Next.js RSC uses inline <script> tags for flight data, so 'unsafe-inline'
   // is required for script-src. This is a known tradeoff with Next.js App Router.
   // In production, consider using nonce-based CSP for stronger protection.
+  // Google Identity Services script + fonts are allowed in script-src
   const scriptSrc = isDev
-    ? "script-src 'self' 'unsafe-inline' 'unsafe-eval';" // Dev: needs both for HMR + RSC
-    : "script-src 'self' 'unsafe-inline';" // Prod: unsafe-inline needed for Next.js RSC inline scripts. TODO: Migrate to nonce-based CSP for stronger protection (see https://nextjs.org/docs/app/building-your-application/configuring/content-security-policy)
+    ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com;" // Dev: needs both for HMR + RSC
+    : "script-src 'self' 'unsafe-inline' https://accounts.google.com;" // Prod: unsafe-inline needed for Next.js RSC inline scripts. TODO: Migrate to nonce-based CSP for stronger protection (see https://nextjs.org/docs/app/building-your-application/configuring/content-security-policy)
 
-  const cspImageSources = ["'self'", 'data:', 'blob:', 'https://*.supabase.co']
+  const cspImageSources = ["'self'", 'data:', 'blob:', 'https://*.supabase.co', 'https://lh3.googleusercontent.com'] // Google profile avatars
   if (supabaseDomain) {
     cspImageSources.push(`https://${supabaseDomain}`)
   }
 
-  const cspConnectSources = ["'self'", 'https://*.supabase.co', 'wss:', (process.env.NEXT_PUBLIC_APP_URL || 'https://thiora.vercel.app').replace(/\/$/, '')]
+  const cspConnectSources = [
+    "'self'",
+    'https://*.supabase.co',
+    'wss:',
+    'https://accounts.google.com', // Google Identity Services OAuth token requests
+    'https://www.googleapis.com', // Google userinfo endpoint (if called from client)
+    (process.env.NEXT_PUBLIC_APP_URL || 'https://thiora.vercel.app').replace(/\/$/, ''),
+  ]
   if (supabaseDomain) {
     cspConnectSources.push(`https://${supabaseDomain}`)
   }
@@ -166,8 +174,9 @@ function buildSecurityHeaders(isDev: boolean): Record<string, string> {
     scriptSrc,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;", // unsafe-inline needed for Tailwind CSS
     "font-src 'self' https://fonts.gstatic.com data:;",
-    `img-src ${cspImageSources.join(' ')};`, // data: for inline images, blob: & https: for remote
-    `connect-src ${cspConnectSources.join(' ')};`, // ws:/wss: for Socket.io, https:/http: for API calls
+    `img-src ${cspImageSources.join(' ')};`, // data: for inline images, blob: & https: for remote + Google avatars
+    `connect-src ${cspConnectSources.join(' ')};`, // ws:/wss: for Socket.io, https:/http: for API calls + Google OAuth
+    "frame-src https://accounts.google.com;", // Google Identity Services popup/iframe for OAuth flow
     "worker-src 'self' blob:;", // blob: for worker scripts
     "frame-ancestors 'none';", // prevent clickjacking
     "base-uri 'self';",

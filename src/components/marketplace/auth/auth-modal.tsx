@@ -334,16 +334,57 @@ export function AuthModal() {
     setError('')
 
     try {
-      // Load Google Identity Services script
+      // Load Google Identity Services script with timeout + retry
       if (!window.google) {
-        await new Promise<void>((resolve, reject) => {
-          const script = document.createElement('script')
-          script.src = 'https://accounts.google.com/gsi/client'
-          script.async = true
-          script.onload = () => resolve()
-          script.onerror = () => reject(new Error('Failed to load Google SDK'))
-          document.head.appendChild(script)
-        })
+        let attempts = 0
+        const maxAttempts = 2
+        let lastError: Error | null = null
+
+        while (attempts < maxAttempts && !window.google) {
+          attempts++
+          try {
+            await new Promise<void>((resolve, reject) => {
+              const script = document.createElement('script')
+              script.src = 'https://accounts.google.com/gsi/client'
+              script.async = true
+              script.defer = true
+
+              // 10-second timeout — if the script doesn't load, fail fast so we can retry
+              const timeoutId = setTimeout(() => {
+                script.onload = null
+                script.onerror = null
+                reject(new Error('Google SDK load timed out. Check your network connection.'))
+              }, 10000)
+
+              script.onload = () => {
+                clearTimeout(timeoutId)
+                // Give the browser a tick to expose window.google
+                setTimeout(() => {
+                  if (window.google) {
+                    resolve()
+                  } else {
+                    reject(new Error('Google SDK loaded but window.google is not available'))
+                  }
+                }, 50)
+              }
+              script.onerror = () => {
+                clearTimeout(timeoutId)
+                reject(new Error('Failed to load Google SDK. This may be blocked by your browser or network (ad blockers can interfere).'))
+              }
+              document.head.appendChild(script)
+            })
+          } catch (err) {
+            lastError = err instanceof Error ? err : new Error('Failed to load Google SDK')
+            // If this wasn't the last attempt, wait briefly before retrying
+            if (attempts < maxAttempts) {
+              await new Promise((r) => setTimeout(r, 1000))
+            }
+          }
+        }
+
+        if (!window.google) {
+          throw lastError || new Error('Failed to load Google SDK')
+        }
       }
 
       // Determine role for Google auth
