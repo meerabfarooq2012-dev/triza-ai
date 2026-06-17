@@ -1353,3 +1353,34 @@ Stage Summary:
 - Platform is fully functional for the golden path: landing → browse → login → dashboard
 - Only gap: seed data missing for products/gigs/shops
 - All fixes committed and pushed to GitHub for Vercel auto-deploy
+
+---
+Task ID: Google-SignIn-Fix
+Agent: Main Agent
+Task: Fix 'Failed to load Google SDK' error when user tries Google sign-up
+
+Work Log:
+- User reported: When trying Google sign-up on the installed PWA, got 'failed to load google sdk' error
+- Investigated auth-modal.tsx handleGoogleLogin() — found the error comes from script.onerror handler on line 344
+- Checked proxy.ts Content-Security-Policy — FOUND ROOT CAUSE:
+  - script-src was 'self' 'unsafe-inline' only (no Google domains)
+  - Google Identity Services script at https://accounts.google.com/gsi/client was BLOCKED by CSP
+  - Browser refused to load it → script.onerror fired → 'Failed to load Google SDK' shown to user
+- Fixed CSP in src/proxy.ts:
+  - script-src: added https://accounts.google.com
+  - connect-src: added https://accounts.google.com + https://www.googleapis.com
+  - frame-src: added https://accounts.google.com (for OAuth popup/iframe)
+  - img-src: added https://lh3.googleusercontent.com (Google profile avatars)
+- Improved Google SDK loading in src/components/marketplace/auth/auth-modal.tsx:
+  - Added 10-second timeout (was hanging indefinitely before)
+  - Added retry mechanism (2 attempts) for transient network failures
+  - Added defer attribute for non-blocking load
+  - Better error messages mentioning ad blockers / network issues
+  - Verify window.google is actually available after onload
+- Verified with Agent Browser: Google script now loads HTTP 200 (was blocked before), no CSP violations
+
+Stage Summary:
+- Root cause: CSP script-src blocked Google's external script
+- Fix: Added Google domains to CSP directives + made SDK loading more robust
+- Committed (c6a935f) and pushed to GitHub — Vercel auto-deploy triggered
+- After Vercel redeploys (2-3 min), Google Sign-In will work at thiora.vercel.app
