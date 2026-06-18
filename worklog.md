@@ -1484,3 +1484,36 @@ Stage Summary:
 - vercel.json already configured with buildCommand (switch-db + prisma generate + db push + next build) and installCommand (bun install)
 - All other branding assets (logo.png, mascot images, icon PNGs) were already Thiora-branded — only logo.svg needed fixing
 - Dev server runs with --webpack flag (turbopack not supported by WASM bindings in this sandbox)
+
+---
+Task ID: OG-Image-Fix
+Agent: Main Agent
+Task: Fix z.ai logo showing in Google search results when searching "Thiora"
+
+Work Log:
+- User reported: "jab mai thiora search kar rahi hoon to z.ai ka logo show ho raha hai" (z.ai logo shows in Google search results for "Thiora", though other places show Thiora correctly)
+- Investigated the OG (Open Graph) image setup:
+  - layout.tsx references /og-image.png for openGraph images (line 88) and twitter images (line 102)
+  - json-ld.tsx references /og-image.png for structured data (line 53)
+  - dynamic-seo.tsx uses /og-image.png as default ogImage (line 15)
+  - BUT /og-image.png DID NOT EXIST in public/ folder → 404 for all OG image requests
+- Root cause: Google crawlers got 404 for og-image.png, so Google fell back to showing the old cached z.ai favicon/logo in search results
+- Also discovered .gitignore had `*.png` rule (line 60) with exceptions for brand assets, but og-image.png was NOT in the exception list → even if created, it wouldn't be committed
+- Fix step 1: Created a branded Thiora OG image programmatically using sharp + SVG (1344x768):
+  - Gold 'T' logo mark in rounded square (brand color #d97706)
+  - "Thiora" brand name in white serif font
+  - Tagline: "Freelance. Digital. Physical. One Platform." (gold)
+  - Subtext: "Create your shop. Sell worldwide. Keep 90% of earnings." (gray)
+  - URL: thiora.vercel.app (bottom-right, gold)
+  - Dark gradient background (#0a0a0a → #1a1410) with subtle gold radial glow
+  - Programmatic approach ensures 100% correct text spelling (AI image gen had typo "Freslance")
+- Fix step 2: Added `!public/og-image.png` to .gitignore exceptions (line 66) so the file gets committed
+- Verified with VLM: OG image has correct "Thiora" branding, all spelling correct, NO z.ai branding, NO letter "Z"
+- Committed (1f5734a) and pushed to GitHub → Vercel auto-deploy triggered
+
+Stage Summary:
+- og-image.png created (1344x768, 102.5 KB) with proper Thiora branding
+- .gitignore updated to track og-image.png
+- Google search results for "Thiora" will now show the Thiora branded OG image instead of falling back to cached z.ai logo
+- Note: Google caches favicons and OG images for days/weeks — it may take time for Google to recrawl and update the search results preview. User can request recrawl via Google Search Console.
+- All branding assets now confirmed Thiora-only: logo.svg (T mark), logo.png (T bag), og-image.png (Thiora banner), icon PNGs (T), mascot images (owl/fairy)
