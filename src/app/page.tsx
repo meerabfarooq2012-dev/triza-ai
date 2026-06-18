@@ -7,6 +7,7 @@ import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { useRealtimeNotifications } from '@/hooks/use-realtime-notifications'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { usePwa } from '@/components/providers/pwa-provider'
+import { useGoogleAuthCallback } from '@/hooks/use-google-auth-callback'
 
 // ── Global ChunkLoadError Recovery ──────────────────────────────────────────
 // When Next.js/Turbopack regenerates chunk hashes (dev server restart, deploy),
@@ -544,6 +545,10 @@ function MarketplaceApp() {
   // Initialize real-time notification system
   useRealtimeNotifications()
 
+  // Handle Google OAuth redirect-flow callback (#access_token in URL fragment)
+  // This fires when the GIS SDK was blocked and we fell back to the redirect flow.
+  const { isCompletingGoogleAuth } = useGoogleAuthCallback()
+
   const urlNavDone = useRef(false)
 
   // Handle URL-based navigation from shared links (only once on mount)
@@ -755,6 +760,18 @@ function MarketplaceApp() {
   return (
     <MobileAppShell>
       <div className="min-h-screen flex flex-col">
+        {/* Google OAuth redirect-flow completion overlay */}
+        {isCompletingGoogleAuth && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-background/80 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-4 p-6 rounded-2xl bg-card shadow-2xl border border-border">
+              <div className="h-12 w-12 animate-spin rounded-full border-4 border-amber-200 border-t-amber-600" />
+              <div className="text-center">
+                <p className="text-base font-semibold text-foreground">Completing Google sign-in…</p>
+                <p className="text-sm text-muted-foreground mt-1">Verifying your Google account</p>
+              </div>
+            </div>
+          </div>
+        )}
         {/* Desktop header — hidden on mobile/PWA, mobile uses MobileHeader instead */}
         <div className="hidden md:block">
           <Header />
