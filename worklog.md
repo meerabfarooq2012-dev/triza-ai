@@ -1443,3 +1443,44 @@ Stage Summary:
   - `.env` (restored required env vars that were lost during a previous git reset)
 - No backend changes needed — the existing `/api/auth/google` route handles both the SDK flow and the redirect flow identically (it just receives an access token and verifies it).
 - With a real `NEXT_PUBLIC_GOOGLE_CLIENT_ID` configured on Vercel, Google sign-in/sign-up will now work in ALL environments: browsers with ad blockers, installed PWAs, and restrictive corporate networks.
+
+---
+Task ID: Vercel-Deploy-Logo-Fix
+Agent: Main Agent
+Task: Deploy to Vercel + replace z.ai logos with Thiora branding across the platform
+
+Work Log:
+- User reported: "platform mai kafi jagha per thiora ke logo ke bajai z.ai ka logo arha hai" (z.ai logos appearing instead of Thiora logos in many places)
+- Investigated all branding assets in /public/ folder using VLM (vision model):
+  - logo.png → Gold shopping bag with black "T" on black background ✅ (already Thiora)
+  - mascot-3d.png → Explorer owl "Thori" mascot ✅ (already Thiora, no z.ai branding)
+  - mascot.png → Fairy character with shopping bags ✅ (no z.ai branding)
+  - icon-192x192.png → Letter "T" ✅ (already Thiora)
+  - icon-512x512.png → Letter "T" ✅ (already Thiora)
+  - apple-touch-icon.png → Gold shopping bag with "T" ✅ (already Thiora)
+  - logo.svg → **"Z" letterform (z.ai logo!)** ❌ THIS WAS THE PROBLEM
+- Root cause: logo.svg contained a "Z" mark (z.ai branding) with CSS class "z-breathe" — this is the z.ai logo, not Thiora
+- This SVG was used as:
+  - Browser favicon/shortcut icon (layout.tsx: `shortcut: "/logo.svg"`) → visible on EVERY browser tab
+  - Push notification icon + badge (web-push.ts, notifications/route.ts, push/test/route.ts)
+  - This is why z.ai appeared "in many places" — the favicon shows on every page
+- Fix: Rewrote logo.svg with a Thiora "T" mark:
+  - Dark (#1a1a1a) rounded-square background with subtle gold border
+  - Gold (#d97706 — Thiora brand color) "T" formed by two rounded rectangles
+  - Renamed CSS animation from "z-breathe" to "t-breathe"
+  - Kept same viewBox (30x30) and breathing animation for visual consistency
+- Committed (c5d2cc6) and pushed to GitHub → Vercel auto-deploy triggered
+- Verified locally:
+  - logo.svg on disk: 5 matches for Thiora "T" mark, 0 matches for z.ai "Z" mark
+  - Dev server serves the corrected SVG (HTTP 200, "st-t" class present)
+  - Browser favicon: `<link rel="shortcut icon" href="/logo.svg"/>` → now Thiora "T"
+  - All other icon links (icon-192, icon-512, apple-touch-icon) already had Thiora "T"
+  - Page title: "Thiora - Freelance. Digital. Physical. One Platform."
+
+Stage Summary:
+- z.ai "Z" logo completely removed from the platform — replaced with Thiora "T" brand mark
+- The fix affects: browser tab favicon (all pages), push notification icons, PWA shortcuts
+- Commit c5d2cc6 pushed to GitHub main branch → Vercel auto-deploy in progress
+- vercel.json already configured with buildCommand (switch-db + prisma generate + db push + next build) and installCommand (bun install)
+- All other branding assets (logo.png, mascot images, icon PNGs) were already Thiora-branded — only logo.svg needed fixing
+- Dev server runs with --webpack flag (turbopack not supported by WASM bindings in this sandbox)
