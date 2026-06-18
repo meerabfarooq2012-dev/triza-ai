@@ -63,4 +63,5 @@ src/lib/.vapid-keys.json
 !public/apple-touch-icon.png
 !public/mascot.png
 !public/mascot-3d.png
+!public/og-image.png
 tool-results/
