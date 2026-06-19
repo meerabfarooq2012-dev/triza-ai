@@ -1,9 +1,9 @@
 /// <reference lib="webworker" />
 
-const CACHE_NAME = 'thiora-v1';
-const STATIC_CACHE = 'thiora-static-v1';
-const DYNAMIC_CACHE = 'thiora-dynamic-v1';
-const API_CACHE = 'thiora-api-v1';
+const CACHE_NAME = 'thiora-v2';
+const STATIC_CACHE = 'thiora-static-v2';
+const DYNAMIC_CACHE = 'thiora-dynamic-v2';
+const API_CACHE = 'thiora-api-v2';
 
 const STATIC_ASSETS = [
   '/',
@@ -31,6 +31,18 @@ const CACHE_FIRST_EXTENSIONS = [
 
 // Network-first: API calls
 const API_PATHS = ['/api/'];
+
+// Branding assets that must ALWAYS be fresh (never stale cache)
+// These are fetched from network first so logo/icon updates reach users immediately
+const NETWORK_FIRST_PATHS = [
+  '/logo.svg',
+  '/logo.png',
+  '/icon-192x192.png',
+  '/icon-512x512.png',
+  '/apple-touch-icon.png',
+  '/og-image.png',
+  '/manifest.json',
+];
 
 // Install event — cache static assets
 self.addEventListener('install', (event) => {
@@ -64,6 +76,14 @@ self.addEventListener('activate', (event) => {
 // Helper: determine caching strategy
 function getStrategy(url) {
   const urlObj = new URL(url);
+
+  // Branding assets (logo, icons, og-image) → ALWAYS network-first
+  // This ensures logo/branding updates reach users immediately
+  for (const path of NETWORK_FIRST_PATHS) {
+    if (urlObj.pathname === path) {
+      return 'network-first';
+    }
+  }
 
   // API calls → network-first
   for (const path of API_PATHS) {

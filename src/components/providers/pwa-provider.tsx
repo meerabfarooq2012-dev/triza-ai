@@ -101,8 +101,17 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
       try {
         const reg = await navigator.serviceWorker.register('/sw.js', {
           scope: '/',
+          updateViaCache: 'none', // Always check server for SW updates (never use cached sw.js)
         });
         setRegistration(reg);
+
+        // When a new SW takes control, reload once so users get fresh assets
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (refreshing) return;
+          refreshing = true;
+          window.location.reload();
+        });
 
         // Check if already subscribed to push
         if ('PushManager' in window) {
