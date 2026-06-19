@@ -1,9 +1,9 @@
 /// <reference lib="webworker" />
 
-const CACHE_NAME = 'thiora-v2';
-const STATIC_CACHE = 'thiora-static-v2';
-const DYNAMIC_CACHE = 'thiora-dynamic-v2';
-const API_CACHE = 'thiora-api-v2';
+const CACHE_NAME = 'thiora-v3';
+const STATIC_CACHE = 'thiora-static-v3';
+const DYNAMIC_CACHE = 'thiora-dynamic-v3';
+const API_CACHE = 'thiora-api-v3';
 
 const STATIC_ASSETS = [
   '/',

@@ -3,28 +3,53 @@
 	 viewBox="0 0 30 30" style="enable-background:new 0 0 30 30;" xml:space="preserve">
 <defs>
   <style type="text/css">
-    .st-bg{fill:#1a1a1a;stroke:#d97706;stroke-width:0.5;stroke-miterlimit:10;}
-    .st-t{fill:#d97706;}
+    .st-bg{fill:#1a1a1a;}
+    .st-bag{fill:#d97706;}
+    .st-bag-light{fill:#f59e0b;}
+    .st-handle{fill:none;stroke:#d97706;stroke-width:1.4;stroke-linecap:round;}
+    .st-ring{fill:#d97706;}
+    .st-t{fill:#1a1a1a;}
 
     .t-breathe {
-      animation: breathe 2.5s ease-in-out infinite;
+      animation: breathe 3s ease-in-out infinite;
+      transform-origin: center;
     }
 
     @keyframes breathe {
-      0%, 100% { opacity: 0.75; }
+      0%, 100% { opacity: 0.85; }
       50% { opacity: 1; }
     }
   </style>
+
+  <!-- Gold gradient for shopping bag -->
+  <linearGradient id="bagGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" style="stop-color:#f59e0b"/>
+    <stop offset="50%" style="stop-color:#d97706"/>
+    <stop offset="100%" style="stop-color:#b45309"/>
+  </linearGradient>
 </defs>
 
-<g>
-  <path class="st-bg" d="M24.51,28.51H5.49c-2.21,0-4-1.79-4-4V5.49c0-2.21,1.79-4,4-4h19.03c2.21,0,4,1.79,4,4v19.03
-    C28.51,26.72,26.72,28.51,24.51,28.51z"/>
-  <g class="t-breathe">
-    <!-- Thiora "T" mark: top horizontal bar -->
-    <rect class="st-t" x="7" y="7.5" width="16" height="3" rx="0.6"/>
-    <!-- Thiora "T" mark: vertical stem -->
-    <rect class="st-t" x="13.5" y="7.5" width="3" height="15" rx="0.6"/>
-  </g>
+<!-- Dark rounded-square background -->
+<rect x="1.49" y="1.49" width="27.02" height="27.02" rx="5" ry="5" class="st-bg"/>
+
+<g class="t-breathe">
+  <!-- Handle rings (small circles at top of bag) -->
+  <circle cx="11.5" cy="9.5" r="0.9" class="st-ring"/>
+  <circle cx="18.5" cy="9.5" r="0.9" class="st-ring"/>
+
+  <!-- Handle (curved loop) -->
+  <path d="M 11.5 9.5 Q 11.5 5.5, 15 5.5 Q 18.5 5.5, 18.5 9.5" class="st-handle"/>
+
+  <!-- Shopping bag body (rounded rectangle) -->
+  <rect x="7" y="9.5" width="16" height="15" rx="1.8" ry="1.8" fill="url(#bagGrad)"/>
+
+  <!-- Subtle highlight on bag (top-left) -->
+  <rect x="8" y="10.3" width="6" height="1.2" rx="0.6" fill="#fbbf24" opacity="0.5"/>
+
+  <!-- Black "T" letter centered on bag -->
+  <!-- Top horizontal bar of T -->
+  <rect x="11" y="13.5" width="8" height="2.4" rx="0.5" class="st-t"/>
+  <!-- Vertical stem of T -->
+  <rect x="13.8" y="13.5" width="2.4" height="8" rx="0.5" class="st-t"/>
 </g>
 </svg>
