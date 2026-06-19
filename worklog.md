@@ -1580,3 +1580,35 @@ Stage Summary:
 - Visual consistency achieved across: browser favicon, header logo, footer logo, mobile shell, PWA prompts, push notifications
 - Live on production (verified)
 - User needs to hard-refresh / clear SW cache one more time to see the new shopping-bag favicon (the previous geometric-T may still be cached)
+
+---
+Task ID: Google-Search-Favicon-Fix
+Agent: Main Agent
+Task: Fix z.ai 'Z' logo still showing in Google search results (Microsoft + incognito now show correct Thiora logo)
+
+Work Log:
+- User reported: "jab mai microsoft mai search kar rahi hoon to logo dikh raha hai aur inctone mode mao bhi but jab mai goole mai search karti hoon to z ka logo dikhta hao" (Microsoft search shows logo, incognito also shows it, but Google search shows Z logo)
+- Verified live server is correct: logo.svg has Thiora shopping-bag "T", og-image.png has Thiora branding — confirmed via curl with cache-busting
+- Checked Google's favicon service (s2/favicons): returns HTTP 404 + default globe icon — meaning Google has NOT crawled our new favicon yet
+- Root cause analysis:
+  1. Google caches favicons for WEEKS in its search index
+  2. Google's favicon crawler historically struggles with SVG format
+  3. The old z.ai "Z" favicon was cached when the site first deployed (before our fixes)
+  4. Google only refreshes favicon cache when it recrawls the site
+  5. Google's ping sitemap API (google.com/ping) was deprecated in 2023 (returns 404)
+- Technical fix applied (commit 6625fdf):
+  - Changed shortcut icon in layout.tsx from /logo.svg to /icon-512x512.png
+  - PNG is crawled more reliably by Google's favicon service than SVG
+  - SVG logo still used internally (header/footer/PWA) where rendering is reliable
+  - Verified deploy: shortcut icon now = href="/icon-512x512.png" (confirmed live)
+- Attempted Google ping sitemap → 404 (deprecated, no longer works)
+- Google favicon service still returns globe (default) — will update when Google recrawls
+
+Stage Summary:
+- Technical fix complete: PNG favicon for Google compatibility (commit 6625fdf, deployed)
+- The remaining "Z" in Google search is Google's CACHED favicon from the old deployment
+- Google's favicon cache takes 1-2 weeks to update (sometimes longer)
+- ONLY way to speed up: Google Search Console → URL Inspection → Request Indexing
+- Microsoft search already shows correct logo (Microsoft's crawler is faster/less cached)
+- Incognito mode shows correct logo (browser fetches fresh, no SW cache in incognito for first visit)
+- No further code changes can fix Google's cache — it's purely on Google's side now
