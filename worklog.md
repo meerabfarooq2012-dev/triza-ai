@@ -1517,3 +1517,39 @@ Stage Summary:
 - Google search results for "Thiora" will now show the Thiora branded OG image instead of falling back to cached z.ai logo
 - Note: Google caches favicons and OG images for days/weeks — it may take time for Google to recrawl and update the search results preview. User can request recrawl via Google Search Console.
 - All branding assets now confirmed Thiora-only: logo.svg (T mark), logo.png (T bag), og-image.png (Thiora banner), icon PNGs (T), mascot images (owl/fairy)
+
+---
+Task ID: ServiceWorker-Logo-Cache-Fix
+Agent: Main Agent
+Task: Fix z.ai logo persisting in user's browser even after logo.svg was updated on server
+
+Work Log:
+- User reported: "jo mene abhi logo khola woh to hAMARA LOGO HI NAHI HAI AUR INCOTONE MODE mai bhi z hi dekh raha hai" (logo opened is not our logo, and even in incognito mode seeing 'Z')
+- Verified live server is serving correct Thiora 'T' logo.svg (3 "st-t" marks, 0 "z-breathe" marks) with cache-busting URL param
+- Investigated service worker (public/sw.js) — FOUND ROOT CAUSE:
+  - sw.js had CACHE_NAME = 'thiora-v1' (and thiora-static-v1, etc.)
+  - /logo.svg was in STATIC_ASSETS list (cached on SW install)
+  - .svg was in CACHE_FIRST_EXTENSIONS list
+  - cacheFirst() strategy serves from cache WITHOUT checking server
+  - Result: when user first visited site (with old z.ai 'Z' logo), SW cached that version. All subsequent visits returned the stale cached 'Z' logo, ignoring the server's updated 'T' logo. Even incognito mode was affected because the SW re-installs and re-caches in each new incognito session — but if the user had visited in incognito BEFORE the fix was deployed, the old 'Z' was cached in that session.
+- Fix applied (commit 9d6797b):
+  1. Bumped all cache versions: thiora-v1 → thiora-v2, thiora-static-v1 → v2, thiora-dynamic-v1 → v2, thiora-api-v1 → v2
+     → The activate handler deletes any cache not matching current names, so old v1 caches (containing z.ai logo) are purged when new SW activates
+  2. Added NETWORK_FIRST_PATHS array with branding assets:
+     /logo.svg, /logo.png, /icon-192x192.png, /icon-512x512.png, /apple-touch-icon.png, /og-image.png, /manifest.json
+     → These now use network-first strategy: always fetch from server first, only fall back to cache if offline
+  3. Updated getStrategy() to check NETWORK_FIRST_PATHS before CACHE_FIRST_EXTENSIONS
+  4. Updated PWA provider (src/components/providers/pwa-provider.tsx):
+     - Added updateViaCache: 'none' to SW registration → browser always checks server for sw.js updates (never uses HTTP cache)
+     - Added controllerchange listener → reloads page once when new SW activates, ensuring users immediately get fresh assets
+- Committed (9d6797b) and pushed to GitHub → Vercel auto-deploy triggered
+
+Stage Summary:
+- Root cause: Service Worker cache-first strategy for .svg files kept serving old z.ai 'Z' logo from browser cache
+- Fix: Cache version bump (v1→v2) purges old cache + branding assets now use network-first strategy
+- After Vercel deploys (2-4 min), users need to:
+  1. Visit thiora.vercel.app (new SW installs in background)
+  2. Close ALL tabs of the site
+  3. Reopen — new SW activates, old cache deleted, fresh 'T' logo fetched from server
+  4. Page auto-reloads once due to controllerchange listener
+- For immediate testing: open DevTools → Application → Service Workers → "Unregister" → then reload
