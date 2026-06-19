@@ -69,7 +69,10 @@ export const metadata: Metadata = {
     apple: [
       { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     ],
-    shortcut: "/logo.svg",
+    // Use PNG (not SVG) for shortcut icon — Google's favicon crawler
+    // handles PNG more reliably than SVG, ensuring the Thiora "T" logo
+    // appears correctly in Google search results.
+    shortcut: "/icon-512x512.png",
   },
   appleWebApp: {
     capable: true,
