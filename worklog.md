@@ -1553,3 +1553,30 @@ Stage Summary:
   3. Reopen — new SW activates, old cache deleted, fresh 'T' logo fetched from server
   4. Page auto-reloads once due to controllerchange listener
 - For immediate testing: open DevTools → Application → Service Workers → "Unregister" → then reload
+
+---
+Task ID: Logo-SVG-Redesign-Match-PNG
+Agent: Main Agent
+Task: Redesign logo.svg to match logo.png style (user reported logo looks "different" from before)
+
+Work Log:
+- User reported: "ab har jagha thiora ka logo to dekh raha hai liken woh change hai pehle jesa nai hai" (now seeing Thiora logo everywhere, but it's different from before)
+- Root cause: The logo.svg I created in the earlier fix was a simple geometric "T" (two gold rectangles on dark background). This looked different from logo.png (gold shopping bag with black "T"). The visual inconsistency was noticeable — favicon (SVG) vs header logo (PNG) didn't match.
+- Redesigned logo.svg to match logo.png:
+  - Gold shopping bag body with gradient (#f59e0b → #d97706 → #b45309)
+  - Curved handle (two parallel gold lines forming a loop)
+  - Two small gold rings attaching handle to bag
+  - Bold black "T" centered on the bag (horizontal bar + vertical stem)
+  - Dark rounded-square background (#1a1a1a)
+  - Subtle highlight strip on bag for depth
+  - Kept the breathing animation (renamed to 't-breathe')
+- Verified with VLM: new SVG renders as "shopping bag with black T on dark background" — matches logo.png description
+- Bumped SW cache version v2 → v3 to purge any cached geometric-T SVG
+- Committed (bf052b5) and pushed to GitHub
+- Verified live: after ~100s deploy, thiora.vercel.app/logo.svg now serves the new shopping-bag design (st-bag, st-handle, st-ring elements confirmed)
+
+Stage Summary:
+- logo.svg now matches logo.png: both are gold shopping bags with black "T" on dark rounded background
+- Visual consistency achieved across: browser favicon, header logo, footer logo, mobile shell, PWA prompts, push notifications
+- Live on production (verified)
+- User needs to hard-refresh / clear SW cache one more time to see the new shopping-bag favicon (the previous geometric-T may still be cached)
