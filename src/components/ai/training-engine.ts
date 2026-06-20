@@ -21,10 +21,13 @@ import { db } from '@/lib/db'
 import {
   wordToVector,
   bundle,
-  textToVector,
+  textToVectorNgram,
   hamming,
+  diffBits,
+  confidence,
   DIM,
   type Hypervector,
+  type DiffResult,
 } from '@/components/ai/ai-engine'
 
 // ─────────────────────────────────────────────
@@ -234,14 +237,25 @@ export interface AnalyzeResult {
     color: string
     description: string
     similarity: number
+    // Transparency fields ⭐
+    hammingDistance: number
+    diff: DiffResult | null
+    prototypeVector: number[] | null
   } | null
   confidence: number
+  // Transparency fields ⭐
+  inputVector: number[]
+  method: string // 'ngram' | 'unigram'
+  dim: number
   all: {
     categoryId: string
     categoryName: string
     emoji: string
     color: string
     similarity: number
+    // Transparency fields ⭐
+    hammingDistance: number
+    differentBits: number
   }[]
 }
 
@@ -254,22 +268,37 @@ export async function analyzeText(
     include: { categories: true },
   })
   if (!model) {
-    return { best: null, confidence: 0, all: [] }
+    return {
+      best: null,
+      confidence: 0,
+      inputVector: [],
+      method: 'ngram',
+      dim: DIM,
+      all: [],
+    }
   }
 
   // Only trained categories
   const trained = model.categories.filter((c) => c.prototypeVector)
   if (trained.length === 0) {
-    return { best: null, confidence: 0, all: [] }
+    return {
+      best: null,
+      confidence: 0,
+      inputVector: [],
+      method: 'ngram',
+      dim: model.dim,
+      all: [],
+    }
   }
 
-  // Convert input text → vector
-  const queryVec = textToVector(text, model.dim)
+  // Convert input text → vector using N-GRAM (unigrams + bigrams) for better accuracy
+  const queryVec = textToVectorNgram(text, model.dim, true)
 
   // Compare with each trained prototype
   const all: AnalyzeResult['all'] = []
   let best: AnalyzeResult['best'] = null
   let bestDist = model.dim + 1
+  let bestProtoVec: Hypervector | null = null
 
   for (const cat of trained) {
     const protoVec = new Uint8Array(cat.prototypeVector!) as Hypervector
@@ -281,9 +310,12 @@ export async function analyzeText(
       emoji: cat.emoji,
       color: cat.color,
       similarity: sim,
+      hammingDistance: d,
+      differentBits: d,
     })
     if (d < bestDist) {
       bestDist = d
+      bestProtoVec = protoVec
       best = {
         categoryId: cat.id,
         categoryName: cat.name,
@@ -291,14 +323,32 @@ export async function analyzeText(
         color: cat.color,
         description: cat.description,
         similarity: sim,
+        hammingDistance: d,
+        diff: null, // set below
+        prototypeVector: null, // set below
       }
     }
   }
 
   all.sort((x, y) => y.similarity - x.similarity)
+
+  // Add transparency data to best match (diff stats + prototype vector)
+  if (best && bestProtoVec) {
+    best.diff = diffBits(queryVec, bestProtoVec)
+    best.prototypeVector = Array.from(bestProtoVec)
+  }
+
+  // Calibrated confidence using sigmoid-like function (better than raw similarity)
+  const calibratedConfidence = best
+    ? confidence(best.hammingDistance, model.dim)
+    : 0
+
   return {
     best,
-    confidence: best ? best.similarity : 0,
+    confidence: calibratedConfidence,
+    inputVector: Array.from(queryVec),
+    method: 'ngram',
+    dim: model.dim,
     all,
   }
 }

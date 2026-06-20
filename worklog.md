@@ -1891,3 +1891,91 @@ Stage Summary:
 - AI files remain SEPARATE from Thiora (src/components/ai/, src/app/api/ai/)
 - Professional dark UI similar to ChatGPT/Claude
 - User can now chat with her own AI via Preview Panel
+
+---
+Task ID: 4
+Agent: full-stack-developer (AI Lab main page)
+Task: Completely rewrote /src/app/page.tsx as the "AI LAB" main entry point for Meri AI. Removed the previous ChatGPT-wrapper chat app entirely. New page is a professional AI lab where the 14-year-old poet builds, trains, and tests her own HDC (Hyperdimensional Computing) models — NOT a chat app, NOT a kid-style learning page.
+
+Work Log:
+- Read worklog.md to understand 4 prior iterations (HDC engine → full-stack DB → kid-learning → ChatGPT-wrapper chat). User frustrated with wrappers; wanted real AI lab.
+- Read existing infrastructure: src/components/ai/model-detail.tsx (ModelDetail component to import), src/components/ai/model-templates.ts (MODEL_TEMPLATES + CUSTOM_TEMPLATE + getTemplate), src/components/ai/training-engine.ts (ModelInfo interface + listModels/createModel), src/app/api/ai/models/route.ts (GET/POST), src/app/api/ai/seed/route.ts (POST with templateId), src/app/api/ai/models/[id]/route.ts (DELETE).
+- Wrote new /src/app/page.tsx (≈1370 lines, all inline styles matching existing AI component style) with 7 sections:
+  1. HERO — "Meri AI" gradient title (purple→pink→cyan animated), subtitle chips (Scratch se bani / HDC engine / CPU only / Transparent), tagline "Yeh ChatGPT nahi — yeh meri apni AI hai, jo main khud banaungi", animated bit-pattern background (80 deterministic 0s/1s pulsing via CSS keyframes), "HDC Engine v1 • Live" badge.
+  2. STATS BAR — 4 stat tiles aggregating from GET /api/ai/models: models built, trained categories, training words, vector dimensions (always 1024-bit). Shimmer skeleton while loading.
+  3. MY AI MODELS — responsive auto-fill grid (minmax 280px) of ModelCards. Each card: type-themed emoji+gradient, name, type chip, description (2-line clamp), training progress bar (trained/total categories), word count, dim, and status badge (Trained ✅ / In progress ⏳ / Untrained ⚪). Hover lift effect. × delete button (top-right) with confirm() and refresh. Click opens ModelDetail. Empty state with helpful message + error state. Skeleton grid while loading.
+  4. BUILD NEW AI — 4 template cards from MODEL_TEMPLATES + CUSTOM_TEMPLATE. Each: gradient overlay, emoji, name, type chip, description, category preview chips (first 4), "Create" button. Create → for templates: POST /api/ai/seed {templateId} then open returned modelId; for custom: POST /api/ai/models {name, type:'custom', description} then open. Spinner during creation.
+  5. WHY MY AI IS DIFFERENT — 5 value-prop cards with colored top borders: 🧠 Holographic Memory, ⚡ One-shot Learning, 🔍 Transparent, 💻 CPU Only, 🌸 Urdu-Native. Each with emoji, colored title, description in Roman Urdu. Hover lift.
+  6. HOW IT WORKS (collapsible) — toggle button reveals 3-step explainer grid: Step 1 (Word→1024-bit vector with BitVectorVisual showing "dard" hashed to bits), Step 2 (Bundle→prototype with BundleVisual showing 3 words + majority-vote prototype), Step 3 (Hamming→answer with HammingVisual showing query vs 3 prototypes with distance bars).
+  7. FOOTER (sticky via mt-auto on flex column root) — "Built from scratch • HDC Engine • Local Database • Sirf mera", her sher "Main khud apne yaqeen ka mayaar hoon", copyright line.
+- Strict adherence to tech requirements: 'use client', TypeScript throughout, dark theme #0a0a0f bg / #11111a cards / #1f2937 borders, accents #a78bfa (purple) + #ec4899 (pink) + #22d3ee (cyan), NO indigo/blue as primary, responsive mobile-first grid (auto-fill minmax), sticky footer (min-h-screen flex flex-col + mt-auto), inline styles matching existing AI components.
+- Imported ModelDetail from '@/components/ai/model-detail', MODEL_TEMPLATES + CUSTOM_TEMPLATE + ModelTemplate type from '@/components/ai/model-templates'.
+- Used useEffect with cancelled flag pattern (React 19 set-state-in-effect rule). Moved all useMemo calls (stats aggregation, ALL_TEMPLATES) BEFORE the conditional `if (selectedModelId) return <ModelDetail/>` to satisfy react-hooks/rules-of-hooks.
+- Fixed 3 lint errors:
+  * react-hooks/rules-of-hooks: useMemo called after conditional return → moved both useMemo (stats + templates) above the early return.
+  * react-hooks/immutability: `let seed` reassigned in closure inside Hero useMemo → replaced LCG closure with pure index-based hashing (Array.from + 3 multiplicative hash functions, no reassignment).
+  * Same immutability issue in BitVectorVisual (let h reassigned) → replaced with Array.from + reduce + pure per-index hash.
+- Lint now clean for page.tsx (only pre-existing error in src/hooks/use-google-auth-callback.ts remains, not in scope).
+- Verified via dev.log + curl:
+  * GET / → HTTP 200, compiles in 84ms, renders in 238ms, no errors.
+  * All 16 key sections present in HTML: Meri AI, My AI Models, Build New AI, Why My AI Is Different, HDC kaise kaam (collapsible trigger), Main khud apne yaqeen, Built from scratch, Poetry Mood Detector, Language Detector, Sentiment Analyzer, Custom AI, Holographic Memory, One-shot Learning, Transparent, CPU Only, Urdu-Native.
+  * GET /api/ai/models → 3 existing trained models (Sentiment Analyzer 3 cats/55 words, Language Detector 4 cats/72 words, Poetry Mood Detector 6 cats) all return correctly and will render as Trained model cards.
+
+Stage Summary:
+- Real AI LAB main page delivered — NOT a chat wrapper, NOT a kid page. Professional scientific lab feel with personal empowerment tone.
+- 7 complete sections: hero (animated bits + gradient title), stats bar (live aggregation), models grid (cards with progress/delete/open), build templates (4 cards 1-click create), why-different (5 value props), how-it-works (collapsible 3-step HDC explainer with bit/bundle/hamming visuals), sticky footer (sher).
+- All existing HDC infrastructure reused: ModelDetail, model-templates, /api/ai/models, /api/ai/seed, /api/ai/models/[id] DELETE. No new APIs needed.
+- Fully responsive (mobile-first auto-fill grids), dark theme with purple/pink/cyan accents (no indigo/blue primary), inline styles consistent with existing AI components.
+- React 19 compliant: cancelled-flag useEffect, hooks-before-conditional-return, no mutable state in render closures.
+- Page loads in 238ms with 3 existing trained models visible as cards. User can: view stats, open/train/test existing models, delete with confirm, create new from 4 templates (1-click seed), or build custom blank model.
+
+---
+Task ID: 5
+Agent: full-stack-developer (model-detail transparency)
+Task: Bit-level transparency panel for AI model detail view — show HOW the HDC AI made its decision (vector grids + diff stats + Roman Urdu explanation), key differentiator from black-box ChatGPT.
+
+Work Log:
+- Read worklog.md to understand previous agents' work — Meri AI is an HDC (Hyperdimensional Computing) AI built from scratch using binary vectors, XOR binding, Hamming distance (NOT neural nets, NOT external APIs). The ai-engine.ts already had diffBits(), confidence(), visualize(), textToVectorNgram() helper functions added by a previous agent but they were not yet wired into the analyze API or UI.
+- Read existing files: ai-engine.ts (HDC primitives), training-engine.ts (DB-backed training/analyze), model-detail.tsx (existing UI), analyze/route.ts (API endpoint).
+- Enhanced training-engine.ts analyzeText():
+  * Switched from textToVector() to textToVectorNgram(text, dim, true) for better accuracy (unigrams + bigrams).
+  * Switched from raw similarity to calibrated confidence() function (sigmoid-like: 50% distance = 0% confidence, 0% distance = 100% confidence).
+  * Added inputVector (Array.from(queryVec)) to top-level response.
+  * Added best.hammingDistance, best.diff (DiffResult), best.prototypeVector (Array.from) to best match.
+  * Added all[].hammingDistance + all[].differentBits to every match (so top-3 can show bit-diff counts).
+  * Added method ('ngram') and dim to top-level response.
+  * Kept ALL existing fields (best.categoryId, best.emoji, confidence, all, etc.) — backward compatible.
+- Updated /api/ai/analyze/route.ts with detailed docstring documenting all transparency fields for future agents/consumers.
+- Rewrote /home/z/my-project/src/components/ai/model-detail.tsx (440 → 1200+ lines) with:
+  * BitGrid component — Canvas-based 32x32 bit grid (8px per cell, 256x256 total). Bit 0 = dark (#16161f), bit 1 = accent color (purple for input, category color for prototype). Optional diffPositions Set<number> overlays red translucent + red border on differing bits. Subtle 8x8 grid lines for "AI lab" scientific feel. imageRendering: pixelated for crisp rendering.
+  * TransparencyPanel component — KEY DIFFERENTIATOR. Shows:
+    - Roman Urdu explanation: "AI ne yeh isliye decide kiya: Tumhare text ka vector aur 'Negative' ke prototype vector me 542 bits same hain aur 482 bits different hain (total 1024 bits). Yani 52.93% match. Koi black box nahi — har bit hissa la raha hai decision me."
+    - Two BitGrids side by side (INPUT TEXT VECTOR vs PROTOTYPE: <category>)
+    - Legend (bit=0, bit=1, differing bit overlay)
+    - DiffStatsBar (green/red gradient bar showing same vs different bit percentages, plus counts)
+    - Method info footer (method, hamming-distance, sampled diff-positions count)
+    - Show/Hide toggle button
+  * ConfidenceBadge component — big monospace number (36px), label (Very Strong/Strong/Moderate/Weak), progress bar with 50% random-threshold marker, explanation of calibration.
+  * TopMatches component — top 3 categories with: rank circle, emoji, name, "★ BEST MATCH" badge, similarity %, "X bits differ", mini progress bar.
+  * PRESERVED all existing functionality: AddCategoryForm, CategoryCard (training words, add word, train/re-train buttons, delete category, delete word), model header with stats, back button ("← Wapas Models par"), footer "💜 Built from scratch — HDC engine".
+  * Dark theme throughout: #0a0a0f bg, #11111a cards, #050508 deep wells.
+  * Accents: purple #a78bfa, pink #ec4899, cyan #22d3ee, red #ef4444 (diff), green #10b981 (match).
+  * Monospace font for all bit displays, stats, and "AI lab" feel text.
+  * Fully responsive — flex-wrap on grids (stacks vertically on mobile), max-width 100% on canvas, flex layouts everywhere.
+- Restarted dev server via spawn-server.js (Turbopack had cached old training-engine.ts; new server compiled cleanly with the updated code).
+- Verified end-to-end via curl:
+  * POST /api/ai/analyze with sad text → returns 5154-byte JSON (vs 590 bytes before).
+  * Response now contains: method='ngram', dim=1024, inputVector[1024 bits], best.hammingDistance=482, best.diff={totalBits:1024, differentBits:482, sameBits:542, diffPositions[50 sampled], similarity:52.93%}, best.prototypeVector[1024 bits], confidence=5.86% (calibrated, low because 482/1024 ≈ 47% distance is near-random), all[].differentBits for top-3 matches.
+- Lint check: model-detail.tsx, training-engine.ts, and analyze/route.ts all pass cleanly (the 4 pre-existing lint errors are in unrelated files: page.tsx and use-google-auth-callback.ts).
+- Type-check: npx tsc --noEmit shows no errors in my modified files.
+
+Stage Summary:
+- KEY DIFFERENTIATOR DELIVERED: AI now shows bit-level transparency — exactly what ChatGPT cannot do. Users can SEE which 1024 bits matched and which differed.
+- Enhanced analyze API: backward-compatible extension with inputVector, prototypeVector, diff stats, n-gram method, calibrated confidence, per-match bit-diff counts.
+- New BitGrid component: Canvas-rendered 32x32 bit visualization with red overlay on differing positions, scientific "AI lab" aesthetic.
+- New TransparencyPanel: Roman Urdu explanation of WHY AI decided, two side-by-side grids (input vs prototype), diff stats bar, method info.
+- New ConfidenceBadge: big calibrated number with label and explanation (50% = random threshold).
+- New TopMatches: top 3 categories with similarity AND bit-diff counts.
+- Existing functionality fully preserved: training UI, category cards, add category form, back button, footer.
+- Files modified: src/components/ai/training-engine.ts (analyzeText extended), src/app/api/ai/analyze/route.ts (docstring), src/components/ai/model-detail.tsx (full rewrite with transparency panel).
+- Visual design: dark theme, purple/pink/cyan accents, monospace bit displays, fully responsive.

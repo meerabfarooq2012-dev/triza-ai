@@ -1,144 +1,126 @@
 /**
  * API: /api/ai/seed
- * POST → default "Poetry Brain" model seed karta hai (6 moods, trained)
+ * POST → template-based default models seed karta hai
+ *
+ * Body:
+ *   { templateId?: string }  // specific template seed karne ke liye
+ *   // agar nahi diya toh sab templates seed karta hai
  *
  * Yeh ek baar chalana hota hai. Phir AI ready ho jati hai.
  */
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { wordToVector, bundle } from '@/components/ai/ai-engine'
-import { DIM } from '@/components/ai/ai-engine'
+import { wordToVector, bundle, DIM } from '@/components/ai/ai-engine'
+import { MODEL_TEMPLATES, getTemplate } from '@/components/ai/model-templates'
 
-const MOODS = [
-  {
-    name: 'Sad / Dard',
-    emoji: '😢',
-    color: '#3b82f6',
-    description: 'Dard, judaai, tanhai, gham',
-    words: [
-      'dard', 'gham', 'tanhai', 'judaai', 'aansoo', 'rota',
-      'dukhi', 'udaas', 'virani', 'sham', 'raat', 'yaad',
-      'bewafa', 'chale', 'gaye', 'bichhad', 'akela', 'toota',
-    ],
-  },
-  {
-    name: 'Romantic / Mohabbat',
-    emoji: '💝',
-    color: '#ec4899',
-    description: 'Mohabbat, ishq, dil, pyar',
-    words: [
-      'mohabbat', 'ishq', 'dil', 'pyar', 'jaan', 'sanam',
-      'mahboob', 'haseen', 'nazreen', 'lab', 'zulf', 'chehra',
-      'milan', 'deewana', 'ashiq', 'tamanna', 'khwahish',
-    ],
-  },
-  {
-    name: 'Motivational / Junoon',
-    emoji: '🔥',
-    color: '#f59e0b',
-    description: 'Himmat, junoon, buland, yaqeen',
-    words: [
-      'yaqeen', 'himmat', 'junoon', 'buland', 'manzil', 'raasta',
-      'uth', 'chal', 'lado', 'tod', 'ban', 'sajaa',
-      'taqat', 'jazba', 'behad', 'aasmaan', 'par', 'ud',
-    ],
-  },
-  {
-    name: 'Peaceful / Sukoon',
-    emoji: '🌙',
-    color: '#8b5cf6',
-    description: 'Sukoon, raat, chaand, khamoshi',
-    words: [
-      'sukoon', 'khamoshi', 'raat', 'chaand', 'tare', 'sannata',
-      'thandi', 'hawa', 'saaya', 'shab', 'sahar', 'khaamoshi',
-      'chain', 'itminan', 'nami', 'barish',
-    ],
-  },
-  {
-    name: 'Angry / Ghussa',
-    emoji: '⚡',
-    color: '#ef4444',
-    description: 'Ghussa, dushmani, tootna',
-    words: [
-      'ghussa', 'dushman', 'toot', 'tod', 'mar', 'larai',
-      'aag', 'barbaad', 'nafrat', 'saaza', 'badla', 'khatam',
-      'jala', 'raakh', 'tabah', 'ghamand', 'takabbur',
-    ],
-  },
-  {
-    name: 'Happy / Khushi',
-    emoji: '✨',
-    color: '#10b981',
-    description: 'Khushi, muskurahat, bahar, chah',
-    words: [
-      'khushi', 'muskurahat', 'bahar', 'gul', 'gulshan', 'chaman',
-      'khil', 'tar', 'rangeen', 'dhoop', 'subah', 'roshan',
-      'ujla', 'zinda', 'chah', 'umeed', 'khush',
-    ],
-  },
-]
-
-export async function POST() {
+export async function POST(req: NextRequest) {
   try {
-    // Check if already seeded
-    const existing = await db.aiModel.findFirst({
-      where: { type: 'poetry-mood' },
-    })
-    if (existing) {
-      return NextResponse.json({
-        ok: true,
-        message: 'Poetry Brain already exists',
-        modelId: existing.id,
-      })
+    const body = await req.json().catch(() => ({}))
+    const templateId = body?.templateId
+
+    // Determine which templates to seed
+    const templates = templateId
+      ? [getTemplate(templateId)].filter(Boolean)
+      : MODEL_TEMPLATES
+
+    if (templates.length === 0) {
+      return NextResponse.json(
+        { error: 'Template not found' },
+        { status: 404 }
+      )
     }
 
-    // Create model
-    const model = await db.aiModel.create({
-      data: {
-        name: 'Poetry Brain',
-        type: 'poetry-mood',
-        description: 'Poetry / sher ka mood detect karta hai. 6 moods seekha hai.',
-        dim: DIM,
-      },
-    })
+    const results: Array<{
+      templateId: string
+      modelName: string
+      status: 'created' | 'exists'
+      modelId?: string
+    }> = []
 
-    // Create categories with words + trained prototypes
-    let trainedCount = 0
-    for (const mood of MOODS) {
-      const wordVecs = mood.words.map((w) => wordToVector(w.trim(), DIM))
-      const prototype = bundle(wordVecs)
+    for (const template of templates) {
+      if (!template) continue
 
-      const category = await db.aiCategory.create({
+      // Check if already exists (by type)
+      const existing = await db.aiModel.findFirst({
+        where: { type: template.type },
+      })
+      if (existing) {
+        results.push({
+          templateId: template.id,
+          modelName: template.name,
+          status: 'exists',
+          modelId: existing.id,
+        })
+        continue
+      }
+
+      // Create model
+      const model = await db.aiModel.create({
         data: {
-          modelId: model.id,
-          name: mood.name,
-          emoji: mood.emoji,
-          color: mood.color,
-          description: mood.description,
-          prototypeVector: Buffer.from(prototype),
-          trainedAt: new Date(),
+          name: template.name,
+          type: template.type,
+          description: template.description,
+          dim: DIM,
         },
       })
 
-      // Add training words
-      for (const w of mood.words) {
-        await db.aiTrainingWord.create({
+      // Create categories with words + trained prototypes
+      for (const cat of template.categories) {
+        const cleanWords = cat.exampleWords.map((w) => w.trim()).filter(Boolean)
+        const wordVecs = cleanWords.map((w) => wordToVector(w, DIM))
+        const prototype =
+          wordVecs.length > 0 ? bundle(wordVecs) : new Uint8Array(DIM)
+
+        const category = await db.aiCategory.create({
           data: {
-            categoryId: category.id,
-            word: w.trim().toLowerCase(),
+            modelId: model.id,
+            name: cat.name,
+            emoji: cat.emoji,
+            color: cat.color,
+            description: cat.description,
+            prototypeVector: Buffer.from(prototype),
+            trainedAt: wordVecs.length > 0 ? new Date() : null,
           },
         })
+
+        // Add training words
+        for (const w of cleanWords) {
+          await db.aiTrainingWord.create({
+            data: {
+              categoryId: category.id,
+              word: w.toLowerCase(),
+            },
+          })
+        }
       }
-      trainedCount++
+
+      results.push({
+        templateId: template.id,
+        modelName: template.name,
+        status: 'created',
+        modelId: model.id,
+      })
     }
+
+    const created = results.filter((r) => r.status === 'created').length
+    const existed = results.filter((r) => r.status === 'exists').length
 
     return NextResponse.json({
       ok: true,
-      message: `Poetry Brain seeded — ${trainedCount} moods trained`,
-      modelId: model.id,
+      message:
+        created > 0
+          ? `${created} model(s) created${existed > 0 ? `, ${existed} already existed` : ''}`
+          : 'Sab models pehle se exist karte hain',
+      results,
     })
   } catch (err) {
     console.error('[AI] seed error:', err)
-    return NextResponse.json({ error: 'Seed nahi hua' }, { status: 500 })
+    return NextResponse.json(
+      {
+        error:
+          err instanceof Error ? err.message : 'Seed nahi hua',
+      },
+      { status: 500 }
+    )
   }
 }

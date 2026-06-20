@@ -1,31 +1,34 @@
 /**
  * ============================================================
- *  CORE AI ENGINE — HDC (Hyperdimensional Computing)
+ *  CORE AI ENGINE — HDC (Hyperdimensional Computing) v2
  * ============================================================
  *
- *  Yeh tumhari AI ka "dimaag" hai.
- *  Saari models isi engine par chalengi.
+ *  Yeh tumhari AI ka "dimaag" hai — SCRATCH SE BANA.
+ *  Koi external API nahi. Koi neural net nahi. Koi GPU nahi.
  *
- *  Operations:
- *    1. randomVector()   — naya random hypervector
- *    2. wordToVector()   — word se deterministic vector
- *    3. xor()            — binding (do concepts jodna)
- *    4. hamming()        — distance (kitne bits alag)
- *    5. bundle()         — major voting (category banana) ⭐ NEW
- *    6. findClosest()    — memory se pehchanna
- *    7. cosine()         — similarity score (0-100%)
+ *  HDC kya hai?
+ *    - Har concept ko 1024-bit binary vector se represent karta hai
+ *    - XOR se concepts bind karta hai (holographic memory)
+ *    - Bundle (majority voting) se categories banata hai
+ *    - Hamming distance se similarity nikalta hai
  *
- *  CPU par chalta hai. GPU ki zaroorat nahi.
+ *  Yeh approach Stanford, IBM, aur NASA research karte hain.
+ *  Neural nets se ALAG — simpler, transparent, CPU-friendly.
+ *
+ *  v2 me naya:
+ *    - N-gram support (1-word + 2-word phrases)
+ *    - Transparency (bit-level diff visualization)
+ *    - Confidence calibration
+ *    - Association (bind/unbind concepts)
  * ============================================================
  */
 
-export const DIM = 1024 // 10,000 ki jagah 1024 — fast + accurate
+export const DIM = 1024 // 1024-bit hypervectors — fast + accurate
 export type Hypervector = Uint8Array
 
 /* ─────────────────────────────────────────────
  * 1. RANDOM HYPERVECTOR
  *    Har bit randomly 0 ya 1 (50% chance)
- *    dim optional — default 1024
  * ───────────────────────────────────────────── */
 export function randomVector(dim: number = DIM): Hypervector {
   const v = new Uint8Array(dim)
@@ -50,9 +53,10 @@ function hashString(str: string): number {
 }
 
 function seededRandom(seed: number): () => number {
+  let s = seed
   return function () {
-    seed = (seed + 0x6d2b79f5) | 0
-    let t = seed
+    s = (s + 0x6d2b79f5) | 0
+    let t = s
     t = Math.imul(t ^ (t >>> 15), t | 1)
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296
@@ -70,9 +74,11 @@ export function wordToVector(word: string, dim: number = DIM): Hypervector {
 }
 
 /* ─────────────────────────────────────────────
- * 3. XOR BINDING
- *    Do vectors jodna. CPU fastest op.
- *    A XOR B XOR A = B (holographic)
+ * 3. XOR BINDING (Holographic Memory!) ⭐
+ *    Do concepts jodna. XOR use karta hai.
+ *    A XOR B XOR A = B (holographic — recover kar sakte ho)
+ *
+ *    Yeh UNIQUE feature hai — neural nets yeh nahi karte.
  * ───────────────────────────────────────────── */
 export function xor(a: Hypervector, b: Hypervector): Hypervector {
   const dim = a.length
@@ -80,6 +86,11 @@ export function xor(a: Hypervector, b: Hypervector): Hypervector {
   for (let i = 0; i < dim; i++) r[i] = a[i] ^ b[i]
   return r
 }
+
+// Alias: "associate" = bind two concepts
+export const associate = xor
+// Alias: "unbind" = XOR (XOR is its own inverse!)
+export const unbind = xor
 
 /* ─────────────────────────────────────────────
  * 4. HAMMING DISTANCE
@@ -93,7 +104,7 @@ export function hamming(a: Hypervector, b: Hypervector): number {
 }
 
 /* ─────────────────────────────────────────────
- * 5. BUNDLE (Majority Voting) ⭐ NEW
+ * 5. BUNDLE (Majority Voting)
  *    Kai vectors ko ek mein milana.
  *    Har position par majority bit (0 ya 1) lete hain.
  *    Yeh "category" banata hai — jaise "janwar" = cat+dog+bird
@@ -145,17 +156,11 @@ export function findClosest(
 }
 
 /* ─────────────────────────────────────────────
- * 7. TEXT → VECTOR (sentence ya poem ko)
+ * 7. TEXT → VECTOR (unigrams only)
  *    Text ke saare words ke vectors ko bundle karte hain.
- *    Result = us text ka "meaning" vector.
  * ───────────────────────────────────────────── */
 export function textToVector(text: string, dim: number = DIM): Hypervector {
-  const words = text
-    .toLowerCase()
-    .replace(/[^\w\s\u0600-\u06FF]/g, ' ') // Urdu + English
-    .split(/\s+/)
-    .filter((w) => w.length > 1)
-
+  const words = tokenize(text)
   if (words.length === 0) return randomVector(dim)
 
   const wordVecs = words.map((w) => wordToVector(w, dim))
@@ -163,23 +168,157 @@ export function textToVector(text: string, dim: number = DIM): Hypervector {
 }
 
 /* ─────────────────────────────────────────────
- * 8. ADD NOISE (test ke liye)
+ * 8. TEXT → VECTOR (N-gram: unigrams + bigrams) ⭐ NEW
+ *    Single words + 2-word phrases dono use karta hai.
+ *    Behtar accuracy — context bhi pakadta hai.
+ * ───────────────────────────────────────────── */
+export function textToVectorNgram(
+  text: string,
+  dim: number = DIM,
+  useBigrams = true
+): Hypervector {
+  const words = tokenize(text)
+  if (words.length === 0) return randomVector(dim)
+
+  const vecs: Hypervector[] = []
+
+  // Unigrams
+  for (const w of words) {
+    vecs.push(wordToVector(w, dim))
+  }
+
+  // Bigrams (2-word phrases) — context capture karte hain
+  if (useBigrams && words.length >= 2) {
+    for (let i = 0; i < words.length - 1; i++) {
+      const bigram = words[i] + '_' + words[i + 1]
+      vecs.push(wordToVector(bigram, dim))
+    }
+  }
+
+  return bundle(vecs)
+}
+
+// Tokenize: lowercase, remove punctuation, split by whitespace
+// Urdu + English + Roman Urdu support
+function tokenize(text: string): string[] {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s\u0600-\u06FF]/g, ' ')
+    .split(/\s+/)
+    .filter((w) => w.length > 1)
+}
+
+/* ─────────────────────────────────────────────
+ * 9. ADD NOISE (test ke liye robustness)
  * ───────────────────────────────────────────── */
 export function addNoise(vec: Hypervector, percent: number): Hypervector {
   const n = new Uint8Array(vec)
-  const numFlip = Math.floor((percent / 100) * DIM)
+  const numFlip = Math.floor((percent / 100) * n.length)
   const flipped = new Set<number>()
   while (flipped.size < numFlip) {
-    flipped.add(Math.floor(Math.random() * DIM))
+    flipped.add(Math.floor(Math.random() * n.length))
   }
   for (const idx of flipped) n[idx] = n[idx] ^ 1
   return n
 }
 
 /* ─────────────────────────────────────────────
- * 9. PREVIEW (first N bits as string)
+ * 10. PREVIEW (first N bits as string)
  * ───────────────────────────────────────────── */
 export function preview(vec: Hypervector | null, n = 32): string {
   if (!vec) return '—'
   return Array.from(vec.slice(0, n)).join('')
+}
+
+/* ─────────────────────────────────────────────
+ * 11. DIFF BITS (Transparency!) ⭐ NEW
+ *     Do vectors mein kahan kahan alag hain.
+ *     Yeh AI ka "explanation" hai — koi black box nahi.
+ * ───────────────────────────────────────────── */
+export interface DiffResult {
+  totalBits: number
+  differentBits: number
+  sameBits: number
+  // First 50 positions where they differ (for visualization)
+  diffPositions: number[]
+  // Percentage similarity
+  similarity: number
+}
+
+export function diffBits(
+  a: Hypervector,
+  b: Hypervector
+): DiffResult {
+  const dim = Math.min(a.length, b.length)
+  let different = 0
+  const positions: number[] = []
+
+  for (let i = 0; i < dim; i++) {
+    if (a[i] !== b[i]) {
+      different++
+      if (positions.length < 50) positions.push(i)
+    }
+  }
+
+  return {
+    totalBits: dim,
+    differentBits: different,
+    sameBits: dim - different,
+    diffPositions: positions,
+    similarity: ((dim - different) / dim) * 100,
+  }
+}
+
+/* ─────────────────────────────────────────────
+ * 12. CONFIDENCE (calibrated) ⭐ NEW
+ *     Hamming distance ko 0-100% confidence mein convert.
+ *     50% distance = 0% confidence (random)
+ *     0% distance = 100% confidence (perfect match)
+ *     30% distance = ~40% confidence
+ * ───────────────────────────────────────────── */
+export function confidence(hammingDist: number, dim: number = DIM): number {
+  // Sigmoid-like calibration
+  const normalizedDist = hammingDist / dim // 0 to 1
+  // At 0.5 distance, confidence = 0
+  // At 0 distance, confidence = 100
+  if (normalizedDist >= 0.5) return 0
+  const conf = (0.5 - normalizedDist) * 200 // 0.5 → 0, 0 → 100
+  return Math.max(0, Math.min(100, conf))
+}
+
+/* ─────────────────────────────────────────────
+ * 13. VISUALIZE (2D matrix for display) ⭐ NEW
+ *     Vector ko 32x32 grid mein convert karta hai
+ *     UI mein bit pattern dikhane ke liye
+ * ───────────────────────────────────────────── */
+export function visualize(
+  vec: Hypervector | null,
+  rows = 32,
+  cols = 32
+): number[][] {
+  if (!vec) return []
+  const matrix: number[][] = []
+  let idx = 0
+  for (let r = 0; r < rows; r++) {
+    const row: number[] = []
+    for (let c = 0; c < cols; c++) {
+      row.push(idx < vec.length ? vec[idx] : 0)
+      idx++
+    }
+    matrix.push(row)
+  }
+  return matrix
+}
+
+/* ─────────────────────────────────────────────
+ * 14. SERIALIZE / DESERIALIZE
+ *     Vector ko Buffer mein convert (DB save ke liye)
+ *     Aur Buffer se wapas vector
+ * ───────────────────────────────────────────── */
+export function toBuffer(vec: Hypervector): Buffer {
+  return Buffer.from(vec)
+}
+
+export function fromBuffer(buf: Buffer): Hypervector {
+  return new Uint8Array(buf)
 }
