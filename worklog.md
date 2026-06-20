@@ -1786,3 +1786,50 @@ Stage Summary:
 - Poetry Brain seeded as default working model (6 moods, 103 training words)
 - All data persistent in /home/z/my-project/db/custom.db
 - Files: prisma/schema.prisma (3 new models), src/components/ai/{ai-engine,trining-engine,model-detail}.ts/tsx, src/app/api/ai/* (7 routes), src/app/page.tsx
+
+---
+Task ID: AI-Basic-Learning-Page
+Agent: Main Agent (Meri AI — kid-friendly basic version)
+Task: User (14-year-old poet) requested to keep AI files separate from Thiora, NOT add any new model, just understand basics like teaching a 2-year-old, use local database only for AI, and not professional like ChatGPT.
+
+Work Log:
+- Verified AI files already separated from Thiora:
+  - src/components/ai/ (ai-engine.ts, poetry-brain.ts, training-engine.ts, model-detail.tsx, poetry-brain-ui.tsx)
+  - src/app/api/ai/ (models, train, analyze, seed, categories, words routes)
+- Verified local database already configured:
+  - DATABASE_URL=file:/home/z/my-project/db/custom.db (local SQLite, no internet)
+  - Prisma schema has AiModel, AiCategory, AiTrainingWord tables
+  - DB file exists (1.6MB, 1 row from previous Poetry Brain seed)
+- Replaced src/app/page.tsx with super simple "Meri AI" learning page:
+  - Removed complex model management UI
+  - Removed "Seed Poetry Brain" button (no model added)
+  - Removed Create Model form
+  - Added 4 friendly "sabaq" (lessons) cards with colorful design:
+    1. Yeh kya hai? (What is this AI?)
+    2. AI ka dimaag (How does it think? HDC basics)
+    3. Data kahan save? (Where is data stored? local DB)
+    4. Kese use karu? (How to access via Preview Panel)
+  - Added 3 info cards:
+    - Files alag hain (showing AI file structure)
+    - Local database (showing db/custom.db path)
+    - Not ChatGPT (simple explanation)
+  - Light friendly theme (cream/pink/yellow/mint gradient background)
+  - Big emoji, rounded cards, soft pastel colors
+  - Sticky footer with mt-auto
+- Lesson modals: full-screen friendly popups with step-by-step explanation in Roman Urdu
+- Lint check: page.tsx is clean (only pre-existing Thiora hook has lint error)
+- Agent browser verification:
+  - Page loads correctly with all 4 lesson cards + 3 info cards visible
+  - Lesson 1 modal opens correctly with content
+  - "Next" button navigates to Lesson 2 modal successfully
+  - No runtime errors in console
+  - Mobile viewport (375x812) renders correctly
+  - Footer sticky at bottom, pushed naturally when content overflows
+
+Stage Summary:
+- AI files remain SEPARATE from Thiora (already in src/components/ai/ and src/app/api/ai/)
+- Database is LOCAL SQLite at /home/z/my-project/db/custom.db (no internet needed)
+- NO new model added — just learning basics
+- Page is now kid-friendly "learn basics" with 4 lessons + 3 info cards
+- User can access AI via Preview Panel (right side) or "Open in New Tab" button
+- All existing AI infrastructure (engine, training, API routes, DB tables) preserved but hidden from simple UI — ready for when user wants to add first model
