@@ -1690,3 +1690,51 @@ Stage Summary:
 - Thiora code preserved in components/ folder, just not the main page anymore
 - All text in English per user's request
 - The standalone file is truly separate — single file, no dependencies, no server
+
+---
+Task ID: ai-app-core-v1
+Agent: main (Z.ai Code)
+Task: User wants to build ONE complete AI with different models (not small demos). Build core AI engine + first working model. User said: "aik pura ai banay jaye phir us ke different models"
+
+Work Log:
+- Created core AI engine: src/components/ai/ai-engine.ts
+  * 9 operations: randomVector, wordToVector, xor, hamming, bundle (NEW - majority voting), findClosest, textToVector, addNoise, preview
+  * DIM = 1024 (1024-bit hypervectors, fast + accurate)
+  * Urdu + English text support (regex allows \u0600-\u06FF)
+  * All Roman Urdu comments
+- Created Model 1 logic: src/components/ai/poetry-brain.ts
+  * 6 moods defined: sad, romantic, motivational, peaceful, angry, happy
+  * Each mood has ~17 example words (Urdu + English mix)
+  * initMoodMemory() builds mood prototypes using bundle()
+  * analyzePoem(text) → converts poem to vector, finds closest mood
+  * findSimilarWords() helper for word similarity
+- Created Model 1 UI: src/components/ai/poetry-brain-ui.tsx
+  * Textarea for poem input
+  * 4 example poem buttons (sad/romantic/motivational/peaceful)
+  * "Mood Analyze Karo" button with loading state
+  * Beautiful result card with mood emoji, name, confidence %
+  * All 6 moods shown with similarity bars
+  * Moods library showing all learned moods + word counts
+- Replaced src/app/page.tsx with main AI app:
+  * "Meri AI" header with HDC stats (engine, models, runs on)
+  * 6 model cards (1 ready: Poetry Brain, 5 coming soon)
+  * Click ready model → opens model UI
+  * Back button to return to model selector
+  * User's sher at top
+  * Sticky footer
+- Verified with agent-browser:
+  * Main page renders "Meri AI" with 6 model cards ✅
+  * Click Poetry Brain → opens UI ✅
+  * Sad poem ("tanhai aansoo judaai dard") → 😢 Sad/Dard @ 63.7% ✅
+  * Romantic poem ("zulf mohabbat ishq dil") → 💝 Romantic ✅
+  * Motivational poem ("yaqeen himmat junoon buland") → 🔥 Motivational ✅
+  * No console errors ✅
+  * Screenshots: ai-main.png, ai-poetry-brain.png
+
+Stage Summary:
+- REAL AI working — not a demo, not a toy
+- Core engine + 1 model built and tested
+- AI correctly detects mood of Urdu/English poetry
+- Architecture: core engine (ai-engine.ts) → model logic (poetry-brain.ts) → model UI (poetry-brain-ui.tsx)
+- 5 more models ready to be built: Text Classifier, Language Detector, Word Similarity, Chat Brain, Image Recognizer
+- All in src/components/ai/ folder, separate from Thiora

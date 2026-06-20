@@ -1,47 +1,202 @@
-import Link from 'next/link'
+'use client'
+
+import { useState } from 'react'
+import { PoetryBrain } from '@/components/ai/poetry-brain-ui'
 
 /**
- * HDC LAB — Landing Page
+ * ============================================================
+ *  MY AI — Main App
+ * ============================================================
  *
- * This page replaces Thiora as the main route (/).
- * It shows your HDC AI project, with a button to open the full lab
- * and a button to download the standalone HTML file.
+ *  Yeh tumhari AI ka main page hai.
+ *  Ek core engine → multiple models.
  *
- * Thiora code still exists in the components folder, just not shown here.
- * This page is 100% about YOUR AI project.
+ *  Models:
+ *    [✅ Ready]    Poetry Brain — Mood detect karna
+ *    [🚧 Soon]     Text Classifier
+ *    [🚧 Soon]     Language Detector
+ *    [🚧 Soon]     Word Similarity Finder
+ *    [🚧 Soon]     Chat Brain
+ *
+ *  Engine: HDC (Hyperdimensional Computing)
+ *  Runs on: CPU only (no GPU)
+ * ============================================================
  */
 
+interface Model {
+  id: string
+  name: string
+  emoji: string
+  status: 'ready' | 'soon'
+  description: string
+  color: string
+}
+
+const MODELS: Model[] = [
+  {
+    id: 'poetry-brain',
+    name: 'Poetry Brain',
+    emoji: '💝',
+    status: 'ready',
+    description: 'Poetry / sher ka mood detect karta hai. 6 moods seekha hai AI.',
+    color: '#ec4899',
+  },
+  {
+    id: 'text-classifier',
+    name: 'Text Classifier',
+    emoji: '🏷️',
+    status: 'soon',
+    description: 'Text ko categories mein divide karta hai.',
+    color: '#a78bfa',
+  },
+  {
+    id: 'language-detector',
+    name: 'Language Detector',
+    emoji: '🌐',
+    status: 'soon',
+    description: 'Text ki language pehchanta hai (Urdu, English, etc).',
+    color: '#22d3ee',
+  },
+  {
+    id: 'word-similarity',
+    name: 'Word Similarity',
+    emoji: '🔗',
+    status: 'soon',
+    description: 'Words ke beech relation dhoondta hai.',
+    color: '#10b981',
+  },
+  {
+    id: 'chat-brain',
+    name: 'Chat Brain',
+    emoji: '💬',
+    status: 'soon',
+    description: 'Tumse baat karta hai — HDC based chatbot.',
+    color: '#f59e0b',
+  },
+  {
+    id: 'image-recognizer',
+    name: 'Image Recognizer',
+    emoji: '👁️',
+    status: 'soon',
+    description: 'Images pehchanta hai (pixels as vectors).',
+    color: '#8b5cf6',
+  },
+]
+
 export default function Home() {
+  const [activeModel, setActiveModel] = useState<string | null>(null)
+
+  // Agar koi model active hai → usay dikhao
+  if (activeModel) {
+    const model = MODELS.find((m) => m.id === activeModel)!
+    return (
+      <main
+        style={{
+          minHeight: '100vh',
+          background: '#0a0a0f',
+          color: '#e5e7eb',
+          fontFamily: "'Segoe UI', system-ui, sans-serif",
+          padding: '20px',
+        }}
+      >
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          {/* Back button */}
+          <button
+            onClick={() => setActiveModel(null)}
+            style={{
+              background: '#1f2937',
+              border: '1px solid #374151',
+              color: '#c4b5fd',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              fontSize: '13px',
+              cursor: 'pointer',
+              marginBottom: '20px',
+            }}
+          >
+            ← Wapas Models par
+          </button>
+
+          {/* Model header */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '14px',
+              marginBottom: '24px',
+            }}
+          >
+            <div
+              style={{
+                fontSize: '40px',
+                background: `${model.color}22`,
+                padding: '12px 16px',
+                borderRadius: '12px',
+                border: `1px solid ${model.color}44`,
+              }}
+            >
+              {model.emoji}
+            </div>
+            <div>
+              <h1
+                style={{
+                  fontSize: '24px',
+                  color: model.color,
+                  fontWeight: 800,
+                  margin: 0,
+                }}
+              >
+                {model.name}
+              </h1>
+              <p
+                style={{
+                  color: '#9ca3af',
+                  fontSize: '13px',
+                  margin: '4px 0 0',
+                }}
+              >
+                {model.description}
+              </p>
+            </div>
+          </div>
+
+          {/* Model content */}
+          {activeModel === 'poetry-brain' && <PoetryBrain />}
+        </div>
+      </main>
+    )
+  }
+
+  // Default: model selector
   return (
     <main
       style={{
         minHeight: '100vh',
         background: '#0a0a0f',
         color: '#e5e7eb',
-        fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
+        fontFamily: "'Segoe UI', system-ui, sans-serif",
         padding: '20px',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
       }}
     >
-      <div style={{ maxWidth: '760px', width: '100%', margin: '0 auto', flex: 1 }}>
+      <div style={{ maxWidth: '900px', margin: '0 auto', width: '100%', flex: 1 }}>
         {/* === SHER === */}
         <div
           style={{
             background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
             border: '1px solid #7c3aed33',
             borderRadius: '16px',
-            padding: '28px',
-            marginBottom: '32px',
+            padding: '24px',
+            marginBottom: '28px',
             textAlign: 'center',
-            marginTop: '20px',
+            marginTop: '10px',
           }}
         >
           <div
             style={{
               fontFamily: "'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif",
-              fontSize: '22px',
+              fontSize: '20px',
               color: '#c4b5fd',
               lineHeight: 2.2,
               direction: 'rtl',
@@ -51,224 +206,145 @@ export default function Home() {
             <br />
             میں خود اپنے یقین کا معیار ہوں
           </div>
-          <div
-            style={{
-              marginTop: '14px',
-              fontSize: '12px',
-              color: '#6b7280',
-              letterSpacing: '1px',
-            }}
-          >
-            — Your Sher • The Foundation
-          </div>
         </div>
 
-        {/* === TITLE === */}
+        {/* === HEADER === */}
         <h1
           style={{
-            fontSize: '36px',
+            fontSize: '32px',
             background: 'linear-gradient(135deg, #a78bfa, #22d3ee)',
             WebkitBackgroundClip: 'text',
             backgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
-            marginBottom: '8px',
             fontWeight: 800,
-            textAlign: 'center',
+            marginBottom: '6px',
           }}
         >
-          🧠 HDC Lab
+          🧠 Meri AI
         </h1>
-        <p
+        <p style={{ color: '#9ca3af', fontSize: '14px', marginBottom: '28px' }}>
+          Built from scratch • HDC engine • CPU only • No GPU
+        </p>
+
+        {/* === STATS === */}
+        <div
           style={{
-            color: '#9ca3af',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '12px',
+            marginBottom: '28px',
+          }}
+        >
+          <StatCard label="Engine" value="HDC" sub="1024-bit vectors" />
+          <StatCard label="Models" value="1/6" sub="5 aane wale hain" />
+          <StatCard label="Runs on" value="CPU" sub="GPU nahi chahiye" />
+        </div>
+
+        {/* === MODELS === */}
+        <h2
+          style={{
+            color: '#a78bfa',
             fontSize: '16px',
-            textAlign: 'center',
-            marginBottom: '8px',
+            fontWeight: 700,
+            marginBottom: '14px',
           }}
         >
-          Your AI, built from scratch. Runs on CPU. No GPU needed.
-        </p>
-        <p
-          style={{
-            color: '#6b7280',
-            fontSize: '13px',
-            textAlign: 'center',
-            marginBottom: '36px',
-          }}
-        >
-          Hyperdimensional Computing — inspired by the human brain
-        </p>
-
-        {/* === BUTTONS === */}
+          📦 Models
+        </h2>
         <div
           style={{
-            display: 'flex',
-            gap: '16px',
-            justifyContent: 'center',
-            flexWrap: 'wrap',
-            marginBottom: '40px',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+            gap: '14px',
+            marginBottom: '32px',
           }}
         >
-          <Link
-            href="/hdc/lab.html"
-            style={{
-              background: 'linear-gradient(135deg, #7c3aed, #6366f1)',
-              color: 'white',
-              padding: '16px 32px',
-              borderRadius: '10px',
-              fontSize: '16px',
-              fontWeight: 700,
-              textDecoration: 'none',
-              display: 'inline-block',
-              boxShadow: '0 4px 20px rgba(124, 58, 237, 0.4)',
-              transition: 'transform 0.15s',
-            }}
-          >
-            🚀 Open HDC Lab
-          </Link>
-          <a
-            href="/hdc/lab.html"
-            download="hdc-lab.html"
-            style={{
-              background: '#1f2937',
-              border: '1px solid #374151',
-              color: '#e5e7eb',
-              padding: '16px 32px',
-              borderRadius: '10px',
-              fontSize: '16px',
-              fontWeight: 700,
-              textDecoration: 'none',
-              display: 'inline-block',
-              transition: 'transform 0.15s',
-            }}
-          >
-            📥 Download HTML File
-          </a>
-        </div>
-
-        {/* === INSTRUCTIONS === */}
-        <div
-          style={{
-            background: '#11111a',
-            border: '1px solid #1f2937',
-            borderRadius: '12px',
-            padding: '24px',
-            marginBottom: '20px',
-          }}
-        >
-          <h2
-            style={{
-              fontSize: '18px',
-              color: '#a78bfa',
-              marginBottom: '14px',
-              fontWeight: 700,
-            }}
-          >
-            📋 How To Use This
-          </h2>
-          <ol
-            style={{
-              color: '#9ca3af',
-              fontSize: '14px',
-              lineHeight: 2,
-              paddingLeft: '20px',
-            }}
-          >
-            <li>
-              <b style={{ color: '#c4b5fd' }}>Click "Open HDC Lab"</b> to use the
-              lab right now in your browser.
-            </li>
-            <li>
-              <b style={{ color: '#c4b5fd' }}>Click "Download HTML File"</b> to
-              save it to your computer.
-            </li>
-            <li>
-              The file is called <code
+          {MODELS.map((m) => (
+            <button
+              key={m.id}
+              onClick={() => m.status === 'ready' && setActiveModel(m.id)}
+              disabled={m.status !== 'ready'}
+              style={{
+                background: '#11111a',
+                border: `1px solid ${m.status === 'ready' ? m.color + '44' : '#1f2937'}`,
+                borderRadius: '12px',
+                padding: '18px',
+                cursor: m.status === 'ready' ? 'pointer' : 'not-allowed',
+                textAlign: 'left',
+                transition: 'transform 0.15s, border-color 0.15s',
+                opacity: m.status === 'ready' ? 1 : 0.5,
+                position: 'relative',
+              }}
+              onMouseEnter={(e) => {
+                if (m.status === 'ready') {
+                  e.currentTarget.style.transform = 'translateY(-2px)'
+                  e.currentTarget.style.borderColor = m.color
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.borderColor = m.status === 'ready'
+                  ? m.color + '44'
+                  : '#1f2937'
+              }}
+            >
+              <div
                 style={{
-                  background: '#050508',
-                  padding: '2px 6px',
-                  borderRadius: '4px',
-                  color: '#22d3ee',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  marginBottom: '10px',
                 }}
-              >hdc-lab.html</code>. Double-click it to open in any browser
-              (Chrome, Firefox, Safari).
-            </li>
-            <li>
-              It works <b style={{ color: '#4ade80' }}>100% offline</b>. No
-              internet, no server, no app needed.
-            </li>
-            <li>
-              To read the code: open the file in any text editor (Notepad, VS
-              Code). Every line has English comments.
-            </li>
-          </ol>
-        </div>
-
-        {/* === WHAT IS HDC === */}
-        <div
-          style={{
-            background: '#11111a',
-            border: '1px solid #1f2937',
-            borderRadius: '12px',
-            padding: '24px',
-            marginBottom: '20px',
-          }}
-        >
-          <h2
-            style={{
-              fontSize: '18px',
-              color: '#a78bfa',
-              marginBottom: '14px',
-              fontWeight: 700,
-            }}
-          >
-            🧬 What Is HDC?
-          </h2>
-          <p style={{ color: '#9ca3af', fontSize: '14px', marginBottom: '12px' }}>
-            <b style={{ color: '#c4b5fd' }}>HDC</b> = Hyperdimensional Computing.
-            It is a different kind of AI — inspired by the human brain.
-          </p>
-          <ul
-            style={{
-              color: '#9ca3af',
-              fontSize: '14px',
-              lineHeight: 1.9,
-              paddingLeft: '20px',
-            }}
-          >
-            <li>Uses binary vectors (0s and 1s), not decimals</li>
-            <li>Uses XOR — the CPU&apos;s fastest operation (nanoseconds)</li>
-            <li>Runs on CPU only — <b style={{ color: '#4ade80' }}>NO GPU needed</b></li>
-            <li>Can recognize patterns even with 30%+ noise</li>
-            <li>One-shot learning — no backpropagation needed</li>
-            <li>Same word always makes the same vector (deterministic)</li>
-          </ul>
-        </div>
-
-        {/* === NOTE === */}
-        <div
-          style={{
-            background: '#7c3aed11',
-            borderLeft: '3px solid #7c3aed',
-            padding: '14px 18px',
-            borderRadius: '4px',
-            fontSize: '13px',
-            color: '#c4b5fd',
-            marginBottom: '20px',
-            lineHeight: 1.6,
-          }}
-        >
-          <b>💡 Important:</b> This HDC lab is completely separate from Thiora.
-          It is a single HTML file — your own file. You can save it, edit it,
-          learn from it, and build on top of it. Nobody else has access to your
-          copy. It is 100% yours.
+              >
+                <div
+                  style={{
+                    fontSize: '32px',
+                    background: `${m.color}22`,
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                  }}
+                >
+                  {m.emoji}
+                </div>
+                <span
+                  style={{
+                    fontSize: '10px',
+                    padding: '3px 8px',
+                    borderRadius: '10px',
+                    background:
+                      m.status === 'ready' ? '#10b98122' : '#1f2937',
+                    color: m.status === 'ready' ? '#10b981' : '#6b7280',
+                    border: `1px solid ${
+                      m.status === 'ready' ? '#10b98144' : '#374151'
+                    }`,
+                    fontWeight: 600,
+                  }}
+                >
+                  {m.status === 'ready' ? '✅ READY' : '🚧 SOON'}
+                </span>
+              </div>
+              <div
+                style={{
+                  color: m.color,
+                  fontSize: '16px',
+                  fontWeight: 700,
+                  marginBottom: '4px',
+                }}
+              >
+                {m.name}
+              </div>
+              <div style={{ color: '#9ca3af', fontSize: '12px', lineHeight: 1.5 }}>
+                {m.description}
+              </div>
+            </button>
+          ))}
         </div>
 
         {/* === FOOTER === */}
         <footer
           style={{
             textAlign: 'center',
-            padding: '24px 0',
+            padding: '20px 0',
             color: '#6b7280',
             fontSize: '12px',
             borderTop: '1px solid #1f2937',
@@ -276,15 +352,50 @@ export default function Home() {
           }}
         >
           <p>
-            Made with <span style={{ color: '#ec4899' }}>💜</span> — Inspired by
-            your sher
+            Built with <span style={{ color: '#ec4899' }}>💜</span> • HDC Engine
           </p>
           <p style={{ marginTop: '4px' }}>
-            &quot;Main khud apne yaqeen ka mayaar hoon&quot; — This is HDC&apos;s
-            philosophy too
+            &quot;Main khud apne yaqeen ka mayaar hoon&quot;
           </p>
         </footer>
       </div>
     </main>
+  )
+}
+
+function StatCard({
+  label,
+  value,
+  sub,
+}: {
+  label: string
+  value: string
+  sub: string
+}) {
+  return (
+    <div
+      style={{
+        background: '#11111a',
+        border: '1px solid #1f2937',
+        borderRadius: '10px',
+        padding: '14px',
+        textAlign: 'center',
+      }}
+    >
+      <div style={{ color: '#6b7280', fontSize: '11px', marginBottom: '4px' }}>
+        {label}
+      </div>
+      <div
+        style={{
+          color: '#22d3ee',
+          fontSize: '20px',
+          fontWeight: 800,
+          marginBottom: '2px',
+        }}
+      >
+        {value}
+      </div>
+      <div style={{ color: '#6b7280', fontSize: '10px' }}>{sub}</div>
+    </div>
   )
 }
