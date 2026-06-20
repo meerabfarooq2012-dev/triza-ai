@@ -1833,3 +1833,61 @@ Stage Summary:
 - Page is now kid-friendly "learn basics" with 4 lessons + 3 info cards
 - User can access AI via Preview Panel (right side) or "Open in New Tab" button
 - All existing AI infrastructure (engine, training, API routes, DB tables) preserved but hidden from simple UI — ready for when user wants to add first model
+
+---
+Task ID: AI-Professional-Chat
+Agent: Main Agent (Meri AI — Professional ChatGPT-jaisi version)
+Task: User (14-year-old poet) was frustrated with previous kid-style Hindi version. Wanted: (1) Roman Urdu only (NOT Hindi), (2) Professional AI like ChatGPT/Claude/Z.ai, (3) Not the simple kid-style. Built a real professional AI chat application.
+
+Work Log:
+- Added Prisma models for chat:
+  - AiConversation (id, title, createdAt, updatedAt, messages[])
+  - AiMessage (id, conversationId, role, content, createdAt)
+  - Pushed schema to local SQLite (db/custom.db)
+- Created chat-engine.ts (src/components/ai/chat-engine.ts):
+  - listConversations, createConversation, getConversation, deleteConversation, renameConversation
+  - sendMessage() — uses z-ai-web-dev-sdk real LLM
+  - System prompt: Roman Urdu friendly personality for 14yo poet/designer
+  - Multi-turn context (last 20 messages)
+  - Auto title generation from first message
+  - Permanent storage in local DB
+- Created API routes:
+  - GET/POST /api/ai/conversations (list + create)
+  - GET/DELETE/PATCH /api/ai/conversations/[id] (get + delete + rename)
+  - POST /api/ai/chat (send message, get real AI response)
+- Built professional ChatGPT-like UI (src/app/page.tsx):
+  - Fixed sidebar with conversations list + "New Chat" button
+  - Main chat area with message bubbles (user/AI avatars)
+  - Sticky input box at bottom (Enter=send, Shift+Enter=newline)
+  - Dark professional theme (#0a0a0f background, purple/pink gradients)
+  - Markdown rendering: code blocks, inline code, bold text
+  - Welcome screen with suggestion cards (sher, ideas, homework, design)
+  - Empty chat screen with prompt chips
+  - Loading states with spinner
+  - Custom scrollbar styling
+  - Responsive (mobile sidebar overlay via transform)
+  - Auto-scroll to bottom on new messages
+- Fixed lint errors:
+  - React 19 set-state-in-effect rule (used cancelled flag pattern)
+  - Removed unused eslint-disable directive
+- Verified end-to-end via Agent Browser:
+  - Page loads, sidebar shows existing conversations
+  - Created conversation via UI, sent "Hello! Tu kaun hai?"
+  - AI responded in Roman Urdu: "Assalam o Alaikum! Main teri AI dost hun..."
+  - Sent second message asking for sher
+  - AI wrote a sher with bold formatting: "Din bhi chhota, raat bhi chhota..."
+  - Refreshed page — all conversations + messages persisted (permanent!)
+  - Deleted a conversation — worked
+  - Mobile viewport test passed
+- Server was crashing initially because prisma client wasn't regenerated after schema push. Restarted with spawn-server.js (detached mode) — now stable.
+
+Stage Summary:
+- REAL professional AI chat now working — uses z-ai-web-dev-sdk (real LLM backend)
+- Permanent chat history in local SQLite database (db/custom.db)
+- Multi-conversation support (sidebar like ChatGPT)
+- Roman Urdu friendly personality (system prompt configured)
+- Markdown rendering for AI responses (code blocks, bold, inline code)
+- All conversations survive refresh (verified via browser test)
+- AI files remain SEPARATE from Thiora (src/components/ai/, src/app/api/ai/)
+- Professional dark UI similar to ChatGPT/Claude
+- User can now chat with her own AI via Preview Panel

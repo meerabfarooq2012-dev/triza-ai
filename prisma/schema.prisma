@@ -1646,3 +1646,32 @@ model AiTrainingWord {
   @@index([categoryId])
   @@index([word])
 }
+
+// ============================================================
+// AI CHAT — Professional ChatGPT-jaisi chat system
+// Local database mein permanent save hoti hai har conversation
+// ============================================================
+
+model AiConversation {
+  id        String     @id @default(cuid())
+  title     String     @default("New Chat")
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  messages  AiMessage[]
+
+  @@index([updatedAt])
+}
+
+model AiMessage {
+  id              String          @id @default(cuid())
+  conversationId  String
+  role            String          // "user" | "assistant" | "system"
+  content         String
+  createdAt       DateTime        @default(now())
+
+  conversation    AiConversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([createdAt])
+}
