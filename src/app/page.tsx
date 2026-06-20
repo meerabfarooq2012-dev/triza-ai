@@ -8,6 +8,7 @@ import { useRealtimeNotifications } from '@/hooks/use-realtime-notifications'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { usePwa } from '@/components/providers/pwa-provider'
 import { useGoogleAuthCallback } from '@/hooks/use-google-auth-callback'
+import { HdcLabButton } from '@/components/hdc-lab-button'
 
 // ── Global ChunkLoadError Recovery ──────────────────────────────────────────
 // When Next.js/Turbopack regenerates chunk hashes (dev server restart, deploy),
@@ -476,6 +477,8 @@ export default function Home() {
       <Suspense fallback={<PageLoader />}>
         <MarketplaceApp />
       </Suspense>
+      {/* HDC Labs floating button — Thiora se alag, sirf ek button */}
+      <HdcLabButton />
     </ErrorBoundary>
   )
 }
