@@ -244,3 +244,5 @@
 [ChatService] Socket.io chat service running on port 3003
 [SECURITY] JWT_SECRET environment variable is NOT set! Chat service cannot authenticate users. Refusing to start.
 [Instrumentation] Chat service exited with code 1, signal null
+[SECURITY] JWT_SECRET environment variable is NOT set! Chat service cannot authenticate users. Refusing to start.
+[Instrumentation] Chat service exited with code 1, signal null
