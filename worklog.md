@@ -1738,3 +1738,51 @@ Stage Summary:
 - Architecture: core engine (ai-engine.ts) → model logic (poetry-brain.ts) → model UI (poetry-brain-ui.tsx)
 - 5 more models ready to be built: Text Classifier, Language Detector, Word Similarity, Chat Brain, Image Recognizer
 - All in src/components/ai/ folder, separate from Thiora
+
+---
+Task ID: ai-fullstack-permanent
+Agent: main (Z.ai Code)
+Task: Build FULL-STACK AI with permanent training (database-backed, not temporary). User wants: "full stack ai banai phir us ko models banai jo khas tor per apne model ke liya train kiya hoon ge aur permanent cahiya"
+
+Work Log:
+- Added Prisma schema models: AiModel, AiCategory, AiTrainingWord (with prototypeVector as Bytes for permanent trained vectors)
+- Ran `bun run db:push` — schema synced to SQLite database
+- Built core HDC engine updates (ai-engine.ts): all functions now accept `dim` parameter (randomVector, wordToVector, textToVector, bundle, xor, hamming, findClosest) — works for any dimension
+- Created training-engine.ts (database-backed): createModel, listModels, getModel, deleteModel, addCategory, deleteCategory, addTrainingWord, deleteTrainingWord, trainCategory (bundles words → saves prototype as Buffer), trainAllCategories, analyzeText (loads prototypes from DB, compares)
+- Created 7 API routes:
+  * GET/POST /api/ai/models (list/create)
+  * GET/DELETE /api/ai/models/[id] (get/delete)
+  * GET/POST /api/ai/models/[id]/categories (list/add)
+  * DELETE /api/ai/models/[id]/categories/[categoryId]
+  * GET/POST /api/ai/models/[id]/categories/[categoryId]/words (list/add single or array)
+  * DELETE /api/ai/models/[id]/categories/[categoryId]/words/[wordId]
+  * POST /api/ai/models/[id]/train (train one or all categories)
+  * POST /api/ai/analyze (analyze text against trained model)
+  * POST /api/ai/seed (seed default Poetry Brain model with 6 trained moods)
+- Built full-stack frontend:
+  * src/app/page.tsx — main page: models list, create form, seed button, model cards with training progress
+  * src/components/ai/model-detail.tsx — model detail view: analyzer, categories management, training words, train/retrain buttons, add category form
+- Fixed lint errors: set-state-in-effect rule — used cleanup pattern with `cancelled` flag in useEffect
+- Encountered issue: `db.aiModel undefined` — Prisma client needed regeneration. Ran `bun run db:generate` + server restart. Fixed.
+- Verified with agent-browser:
+  * Main page renders "Meri AI" with model cards ✅
+  * Seed button works → creates Poetry Brain (6 moods, 103 words, all trained) ✅
+  * Click model card → detail page opens ✅
+  * Analyze: "tanhai aansoo judaai dard" → 😢 Sad/Dard 63.6% ✅
+  * All 6 categories visible (Sad, Romantic, Motivational, Peaceful, Angry, Happy) ✅
+  * No console errors ✅
+  * Screenshot: ai-fullstack.png
+- Also tested APIs via curl:
+  * POST /api/ai/seed → ok, modelId returned
+  * POST /api/ai/analyze (sad poem) → 😢 Sad/Dard 63.6%
+  * POST /api/ai/analyze (romantic poem) → 💝 Romantic 62.6%
+  * POST /api/ai/analyze (motivational poem) → 🔥 Motivational 74.3%
+
+Stage Summary:
+- REAL FULL-STACK AI built — backend (Prisma + SQLite) + API (7 routes) + frontend
+- PERMANENT training: trained prototypes stored as binary in database, survive refresh/restart
+- Custom training: user can create models, add categories, add words, train, re-train, analyze
+- Architecture: ai-engine.ts (pure HDC math) → training-engine.ts (DB operations) → API routes → React UI
+- Poetry Brain seeded as default working model (6 moods, 103 training words)
+- All data persistent in /home/z/my-project/db/custom.db
+- Files: prisma/schema.prisma (3 new models), src/components/ai/{ai-engine,trining-engine,model-detail}.ts/tsx, src/app/api/ai/* (7 routes), src/app/page.tsx

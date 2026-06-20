@@ -25,10 +25,11 @@ export type Hypervector = Uint8Array
 /* ─────────────────────────────────────────────
  * 1. RANDOM HYPERVECTOR
  *    Har bit randomly 0 ya 1 (50% chance)
+ *    dim optional — default 1024
  * ───────────────────────────────────────────── */
-export function randomVector(): Hypervector {
-  const v = new Uint8Array(DIM)
-  for (let i = 0; i < DIM; i++) {
+export function randomVector(dim: number = DIM): Hypervector {
+  const v = new Uint8Array(dim)
+  for (let i = 0; i < dim; i++) {
     v[i] = Math.random() < 0.5 ? 0 : 1
   }
   return v
@@ -58,11 +59,11 @@ function seededRandom(seed: number): () => number {
   }
 }
 
-export function wordToVector(word: string): Hypervector {
+export function wordToVector(word: string, dim: number = DIM): Hypervector {
   const seed = hashString(word.toLowerCase().trim())
   const rand = seededRandom(seed)
-  const v = new Uint8Array(DIM)
-  for (let i = 0; i < DIM; i++) {
+  const v = new Uint8Array(dim)
+  for (let i = 0; i < dim; i++) {
     v[i] = rand() < 0.5 ? 0 : 1
   }
   return v
@@ -74,8 +75,9 @@ export function wordToVector(word: string): Hypervector {
  *    A XOR B XOR A = B (holographic)
  * ───────────────────────────────────────────── */
 export function xor(a: Hypervector, b: Hypervector): Hypervector {
-  const r = new Uint8Array(DIM)
-  for (let i = 0; i < DIM; i++) r[i] = a[i] ^ b[i]
+  const dim = a.length
+  const r = new Uint8Array(dim)
+  for (let i = 0; i < dim; i++) r[i] = a[i] ^ b[i]
   return r
 }
 
@@ -85,7 +87,8 @@ export function xor(a: Hypervector, b: Hypervector): Hypervector {
  * ───────────────────────────────────────────── */
 export function hamming(a: Hypervector, b: Hypervector): number {
   let d = 0
-  for (let i = 0; i < DIM; i++) if (a[i] !== b[i]) d++
+  const dim = Math.min(a.length, b.length)
+  for (let i = 0; i < dim; i++) if (a[i] !== b[i]) d++
   return d
 }
 
@@ -96,9 +99,11 @@ export function hamming(a: Hypervector, b: Hypervector): number {
  *    Yeh "category" banata hai — jaise "janwar" = cat+dog+bird
  * ───────────────────────────────────────────── */
 export function bundle(vectors: Hypervector[]): Hypervector {
-  const r = new Uint8Array(DIM)
+  if (vectors.length === 0) return new Uint8Array(DIM)
+  const dim = vectors[0].length
+  const r = new Uint8Array(dim)
   const half = vectors.length / 2
-  for (let i = 0; i < DIM; i++) {
+  for (let i = 0; i < dim; i++) {
     let sum = 0
     for (let j = 0; j < vectors.length; j++) {
       sum += vectors[j][i]
@@ -124,10 +129,11 @@ export function findClosest(
 ): { best: Match | null; all: Match[] } {
   let best: Match | null = null
   const all: Match[] = []
+  const dim = query.length
 
   for (const [name, vec] of Object.entries(memory)) {
     const d = hamming(query, vec)
-    const sim = (1 - d / DIM) * 100
+    const sim = (1 - d / dim) * 100
     all.push({ name, dist: d, similarity: sim })
     if (!best || d < best.dist) {
       best = { name, dist: d, similarity: sim }
@@ -143,16 +149,16 @@ export function findClosest(
  *    Text ke saare words ke vectors ko bundle karte hain.
  *    Result = us text ka "meaning" vector.
  * ───────────────────────────────────────────── */
-export function textToVector(text: string): Hypervector {
+export function textToVector(text: string, dim: number = DIM): Hypervector {
   const words = text
     .toLowerCase()
     .replace(/[^\w\s\u0600-\u06FF]/g, ' ') // Urdu + English
     .split(/\s+/)
     .filter((w) => w.length > 1)
 
-  if (words.length === 0) return randomVector()
+  if (words.length === 0) return randomVector(dim)
 
-  const wordVecs = words.map((w) => wordToVector(w))
+  const wordVecs = words.map((w) => wordToVector(w, dim))
   return bundle(wordVecs)
 }
 
