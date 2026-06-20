@@ -1649,3 +1649,44 @@ Stage Summary:
 - Thiora code se bilkul alag — sirf ek floating 🧠 button Thiora page par add hai, baaki sab HDC folder mein
 - HDC ki 5 core operations sab test ho gayi: randomVector, wordToVector, xor, hamming, findClosest (with noise tolerance)
 - Files: src/components/hdc/hdc-engine.ts, vector-canvas.tsx, hdc-lab.tsx + updated hdc-lab-button.tsx
+
+---
+Task ID: hdc-standalone-file
+Agent: main (Z.ai Code)
+Task: Create standalone HDC lab HTML file (separate from app) + make / page show HDC instead of Thiora. User wants English (not Hindi/Urdu) and wants to build it herself with code + instructions.
+
+Work Log:
+- Created standalone HTML file: public/hdc/lab.html (complete, self-contained, all CSS+JS inline, English comments)
+  * 6 sections: Hypervector Generator, XOR Binding, Hamming Distance, Memory, Recognition Test, Code Explanation
+  * Download button built into the page (downloads itself as hdc-lab.html)
+  * All comments in English (user requested: "hindi na likho")
+  * Works 100% offline — no server, no internet, no app needed
+  * User can open in any text editor to read/learn the code
+- Replaced src/app/page.tsx with clean HDC landing page (no more Thiora as main page)
+  * Shows user's sher at top
+  * "Open HDC Lab" button → links to /hdc/lab.html
+  * "Download HTML File" button → downloads the standalone file
+  * "How To Use This" instructions section (English)
+  * "What Is HDC?" explanation section
+  * Note: "This HDC lab is completely separate from Thiora"
+  * Thiora code still exists in components/ folder, just not rendered on /
+- Verified with agent-browser:
+  * / page shows HDC landing (no Thiora) ✅
+  * "Open HDC Lab" button works → navigates to /hdc/lab.html ✅
+  * Lab loads with all 6 sections ✅
+  * Generate Vector A & B ✅
+  * XOR enabled after vectors made ✅
+  * Hamming distance calculated ✅
+  * Saved "cat" and "dog" to memory ✅
+  * Recognition: "cat" = 100% match (Distance 0/256) ✅
+  * No console errors ✅
+  * No "content blocked" error ✅
+  * Screenshot: hdc-lab-standalone.png
+
+Stage Summary:
+- User now has a COMPLETE standalone HTML file at /hdc/lab.html
+- She can: (1) use it in preview, (2) download it to her computer, (3) open offline in any browser, (4) read code in text editor
+- The / page now shows HDC content (not Thiora) — so preview shows her AI project
+- Thiora code preserved in components/ folder, just not the main page anymore
+- All text in English per user's request
+- The standalone file is truly separate — single file, no dependencies, no server
