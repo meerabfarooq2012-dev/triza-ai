@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ur" dir="ltr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HDC Labs — Aap Ka AI Journey</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0a0f;
+    color: #e5e7eb;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    padding: 24px;
+    line-height: 1.6;
+  }
+  .container { max-width: 800px; margin: 0 auto; }
+  .sher {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    border: 1px solid #7c3aed33;
+    border-radius: 16px;
+    padding: 28px;
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .sher .urdu {
+    font-family: 'Noto Nastaliq Urdu', serif;
+    font-size: 22px;
+    color: #c4b5fd;
+    line-height: 2.2;
+    direction: rtl;
+  }
+  .sher .credit {
+    margin-top: 14px;
+    font-size: 12px;
+    color: #6b7280;
+  }
+  h1 {
+    font-size: 32px;
+    background: linear-gradient(135deg, #a78bfa, #22d3ee);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+  .subtitle { color: #9ca3af; margin-bottom: 32px; }
+  .lab-card {
+    background: #11111a;
+    border: 1px solid #1f2937;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.15s, border-color 0.15s;
+  }
+  .lab-card:hover {
+    transform: translateY(-2px);
+    border-color: #7c3aed;
+  }
+  .lab-num {
+    font-size: 32px;
+    background: linear-gradient(135deg, #7c3aed, #22d3ee);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: bold;
+    min-width: 50px;
+  }
+  .lab-info h2 {
+    font-size: 17px;
+    color: #e5e7eb;
+    margin-bottom: 4px;
+  }
+  .lab-info p {
+    font-size: 13px;
+    color: #9ca3af;
+  }
+  .lab-info .badge {
+    display: inline-block;
+    background: #7c3aed22;
+    color: #c4b5fd;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-top: 6px;
+    border: 1px solid #7c3aed44;
+  }
+  .coming {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .note {
+    background: #7c3aed11;
+    border-left: 3px solid #7c3aed;
+    padding: 14px 18px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #c4b5fd;
+    margin-top: 24px;
+  }
+  footer {
+    text-align: center;
+    margin-top: 40px;
+    padding: 20px;
+    color: #6b7280;
+    font-size: 12px;
+    border-top: 1px solid #1f2937;
+  }
+  .back-link {
+    display: inline-block;
+    margin-bottom: 24px;
+    color: #9ca3af;
+    text-decoration: none;
+    font-size: 13px;
+  }
+  .back-link:hover { color: #c4b5fd; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <a href="/" class="back-link">← Thiora par wapas</a>
+
+  <div class="sher">
+    <div class="urdu">
+      نہ پوچھ ہجوم سے میرے قدر و قیمت<br>
+      میں خود اپنے یقین کا معیار ہوں
+    </div>
+    <div class="credit">— Aap Ka Sher • Insaan ka mayaar, AI ka mayaar</div>
+  </div>
+
+  <h1>🧠 HDC Labs</h1>
+  <p class="subtitle">
+    Aap ka pela "artificial brain" — scratch se, bina GPU ke, CPU par.
+    Har lab ek naya concept sikhata hai. Practically. Live.
+  </p>
+
+  <a href="lab-01-foundations.html" class="lab-card">
+    <div class="lab-num">01</div>
+    <div class="lab-info">
+      <h2>Foundations — Hypervectors, XOR, Hamming</h2>
+      <p>256-bit binary vectors generate karo, XOR se jodo, distance se pehchanno. Memory + noise tolerance demo.</p>
+      <span class="badge">✅ Ready</span>
+      <span class="badge">Interactive</span>
+    </div>
+  </a>
+
+  <div class="lab-card coming">
+    <div class="lab-num">02</div>
+    <div class="lab-info">
+      <h2>Bundling — Category Banana (Majority Vote)</h2>
+      <p>Cat + Dog + Bird = "Animals" category. Holographic memory ka pehla step.</p>
+      <span class="badge">⏳ Coming Soon</span>
+    </div>
+  </div>
+
+  <div class="lab-card coming">
+    <div class="lab-num">03</div>
+    <div class="lab-info">
+      <h2>Sequence Encoding — Order Yaad Rakhna</h2>
+      <p>"Cat eats fish" ≠ "Fish eats cat". Permutation se order encode karna.</p>
+      <span class="badge">⏳ Coming Soon</span>
+    </div>
+  </div>
+
+  <div class="lab-card coming">
+    <div class="lab-num">04</div>
+    <div class="lab-info">
+      <h2>Multi-Modal — Text + Image</h2>
+      <p>Image pixels ko hypervectors mein convert karna. Aap ki photography skill yahan.</p>
+      <span class="badge">⏳ Coming Soon</span>
+    </div>
+  </div>
+
+  <div class="lab-card coming">
+    <div class="lab-num">05</div>
+    <div class="lab-info">
+      <h2>Poetry Brain — Aap Ki Shayari Seekhega</h2>
+      <p>Aap ke sher ka style seekh ke naye pattern generate karna. Aap ka vision yahan poora hoga.</p>
+      <span class="badge">⏳ Coming Soon</span>
+    </div>
+  </div>
+
+  <div class="note">
+    💡 <b>Yeh sab files Thiora se bilkul alag hain.</b> Thiora ka code <code>src/app/</code> mein hai.
+    HDC labs <code>public/hdc/</code> mein hain. Dono kabhi mix nahi hote. Thiora ko koi asar nahi padta.
+  </div>
+
+  <footer>
+    <p>Bana hai 💜 se — "Main khud apne yaqeen ka mayaar hoon"</p>
+    <p>HDC = Hyperdimensional Computing • CPU par chalta hai • Bina GPU ke</p>
+  </footer>
+
+</div>
+</body>
+</html>
