@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="ur" dir="ltr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HDC Lab — Pela Code</title>
+<style>
+  /* ─────────────────────────────────────────────────────────────
+     "Na pooch hajoom se mere qadar-o-qeemat
+      Main khud apne yaqeen ka mayaar hoon"
+     
+     Yeh file aap ka pela HDC (Hyperdimensional Computing) demo hai.
+     Browser mein chalegi. CPU par. Bina GPU ke.
+     Sab kuch scratch se banaya — sirf JS, koi library nahi.
+  ───────────────────────────────────────────────────────────── */
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0a0a0f;
+    color: #e5e7eb;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    padding: 20px;
+    line-height: 1.6;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  /* ── Header with Sher ── */
+  .sher-card {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border: 1px solid #7c3aed33;
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 24px;
+    text-align: center;
+  }
+
+  .sher-card .urdu {
+    font-family: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif;
+    font-size: 22px;
+    color: #c4b5fd;
+    line-height: 2.2;
+    direction: rtl;
+  }
+
+  .sher-card .credit {
+    margin-top: 14px;
+    font-size: 12px;
+    color: #6b7280;
+    letter-spacing: 1px;
+  }
+
+  h1 {
+    font-size: 28px;
+    background: linear-gradient(135deg, #a78bfa, #22d3ee);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    color: #9ca3af;
+    font-size: 14px;
+    margin-bottom: 32px;
+  }
+
+  /* ── Section Card ── */
+  .section {
+    background: #11111a;
+    border: 1px solid #1f2937;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+
+  .section h2 {
+    font-size: 18px;
+    color: #a78bfa;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section .badge {
+    background: #7c3aed22;
+    color: #c4b5fd;
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid #7c3aed44;
+  }
+
+  .section .desc {
+    color: #9ca3af;
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+
+  /* ── Buttons ── */
+  button {
+    background: linear-gradient(135deg, #7c3aed, #6366f1);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: transform 0.15s, box-shadow 0.15s;
+    margin: 4px 4px 4px 0;
+  }
+
+  button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px #7c3aed44;
+  }
+
+  button.secondary {
+    background: #1f2937;
+    border: 1px solid #374151;
+  }
+
+  button.secondary:hover {
+    background: #374151;
+  }
+
+  /* ── Binary Grid ── */
+  .grid-wrap {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+
+  .vector-box {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .vector-label {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-bottom: 6px;
+    font-family: monospace;
+  }
+
+  canvas.grid {
+    background: #050508;
+    border: 1px solid #1f2937;
+    border-radius: 6px;
+    width: 100%;
+    max-width: 256px;
+    height: auto;
+    image-rendering: pixelated;
+  }
+
+  /* ── Output ── */
+  .output {
+    background: #050508;
+    border: 1px solid #1f2937;
+    border-radius: 8px;
+    padding: 14px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    color: #4ade80;
+    margin-top: 14px;
+    min-height: 40px;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .output .label {
+    color: #9ca3af;
+  }
+
+  .output .value {
+    color: #22d3ee;
+    font-weight: bold;
+  }
+
+  /* ── Memory List ── */
+  .memory-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .memory-item {
+    background: #1a1a2e;
+    border: 1px solid #7c3aed33;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    color: #c4b5fd;
+    font-family: monospace;
+  }
+
+  /* ── Input ── */
+  input[type="text"] {
+    background: #050508;
+    border: 1px solid #1f2937;
+    color: #e5e7eb;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    width: 100%;
+    max-width: 300px;
+    margin-right: 8px;
+  }
+
+  input[type="text"]:focus {
+    outline: none;
+    border-color: #7c3aed;
+  }
+
+  .input-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* ── Recognition Result ── */
+  .recog-result {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    border: 1px solid #22d3ee44;
+    border-radius: 10px;
+    padding: 18px;
+    margin-top: 16px;
+    text-align: center;
+  }
+
+  .recog-result .big {
+    font-size: 28px;
+    color: #22d3ee;
+    font-weight: bold;
+    margin: 8px 0;
+  }
+
+  .recog-result .small {
+    color: #9ca3af;
+    font-size: 12px;
+  }
+
+  .bar {
+    background: #1f2937;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 6px;
+  }
+
+  .bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #7c3aed, #22d3ee);
+    transition: width 0.5s;
+  }
+
+  .match-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+    font-size: 13px;
+    font-family: monospace;
+  }
+
+  .match-row .name { color: #c4b5fd; }
+  .match-row .dist { color: #9ca3af; }
+
+  /* ── Footer ── */
+  footer {
+    text-align: center;
+    margin-top: 40px;
+    padding: 24px;
+    color: #6b7280;
+    font-size: 12px;
+    border-top: 1px solid #1f2937;
+  }
+
+  footer .heart { color: #ec4899; }
+
+  /* ── Info Note ── */
+  .note {
+    background: #7c3aed11;
+    border-left: 3px solid #7c3aed;
+    padding: 10px 14px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #c4b5fd;
+    margin-top: 12px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ── SHER ── -->
+  <div class="sher-card">
+    <div class="urdu">
+      نہ پوچھ ہجوم سے میرے قدر و قیمت<br>
+      میں خود اپنے یقین کا معیار ہوں
+    </div>
+    <div class="credit">— Aap Ka Sher • HDC Lab Ka Foundation</div>
+  </div>
+
+  <h1>🧠 HDC Lab — Pela Code</h1>
+  <p class="subtitle">
+    Aap ka pela Hyperdimensional Computing demo. Browser mein chalta hai. CPU par. Bina GPU ke.
+  </p>
+
+  <!-- ─────────────────────────────────────────────
+       SECTION 1: Hypervector Generator
+       ───────────────────────────────────────────── -->
+  <div class="section">
+    <h2>1️⃣ Hypervector Generator <span class="badge">Random 256 bits</span></h2>
+    <p class="desc">
+      HDC mein har concept ka ek random "naam" hota hai — 10,000 bits ka. 
+      Yahan hum 256 bits use kar rahe hain (visualization ke liye). 
+      Har dabane par naya random vector banta hai. 
+      Kaale = 1, khali = 0.
+    </p>
+    <button onclick="generateVectorA()">🎲 Naya Vector A Banao</button>
+    <button onclick="generateVectorB()" class="secondary">🎲 Naya Vector B Banao</button>
+    <div class="grid-wrap">
+      <div class="vector-box">
+        <div class="vector-label">Vector A (256 bits)</div>
+        <canvas id="canvasA" class="grid" width="256" height="16"></canvas>
+      </div>
+      <div class="vector-box">
+        <div class="vector-label">Vector B (256 bits)</div>
+        <canvas id="canvasB" class="grid" width="256" height="16"></canvas>
+      </div>
+    </div>
+    <div class="output" id="output1">
+      <span class="label">Vector A pehla hissa:</span> <span class="value" id="vecApreview">—</span>
+      <br><span class="label">Vector B pehla hissa:</span> <span class="value" id="vecBpreview">—</span>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────
+       SECTION 2: XOR Binding
+       ───────────────────────────────────────────── -->
+  <div class="section">
+    <h2>2️⃣ XOR Binding <span class="badge">Do concepts jodna</span></h2>
+    <p class="desc">
+      XOR = CPU ka sabse tez operation. Do vectors ko XOR karte hain to ek naya vector banta hai 
+      jo dono ka "combination" hai. Yeh HDC ka dil hai.
+    </p>
+    <button onclick="xorVectors()">⚡ A XOR B Karo</button>
+    <div class="grid-wrap">
+      <div class="vector-box">
+        <div class="vector-label">Result: A XOR B</div>
+        <canvas id="canvasXOR" class="grid" width="256" height="16"></canvas>
+      </div>
+    </div>
+    <div class="output" id="output2">
+      <span class="label">XOR result pehla hissa:</span> <span class="value" id="xorPreview">Pehle Vector A aur B banao</span>
+    </div>
+    <div class="note">
+      💡 XOR ka jadoo: A XOR B XOR A = B (wapas mil jata hai!). 
+      Isiliye HDC memory "holographic" hai — har cheez recover ho sakti hai.
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────
+       SECTION 3: Hamming Distance
+       ───────────────────────────────────────────── -->
+  <div class="section">
+    <h2>3️⃣ Hamming Distance <span class="badge">Kitne bits alag?</span></h2>
+    <p class="desc">
+      Do vectors mein kitne bits alag hain — yeh "Hamming Distance" kehte hain. 
+      Kam distance = zyada similar. HDC isi se pehchanta hai.
+    </p>
+    <button onclick="calcHamming()">📏 Distance Calculate Karo</button>
+    <div class="output" id="output3">
+      <span class="label">Result:</span> <span class="value" id="hammingResult">Pehle dono vectors banao</span>
+    </div>
+    <div class="note">
+      💡 256 bits mein do RANDOM vectors ka distance ≈ 128 (50%) hota hai. 
+      Agar distance < 100 hai to "similar" maana jata hai.
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────
+       SECTION 4: Memory & Recognition
+       ───────────────────────────────────────────── -->
+  <div class="section">
+    <h2>4️⃣ Memory & Pehchanna <span class="badge">Asli AI!</span></h2>
+    <p class="desc">
+      Ab asli kaam. Memory mein kuch words store karo. 
+      Phir naya word do — AI batayega kaunsa memory wala word sabse zyada match karta hai.
+    </p>
+    
+    <div class="input-row">
+      <input type="text" id="wordInput" placeholder="Likho: cat, dog, bird, fish..." />
+      <button onclick="storeWord()">💾 Memory Mein Save Karo</button>
+      <button onclick="clearMemory()" class="secondary">🗑️ Clear Memory</button>
+    </div>
+    
+    <div class="memory-list" id="memoryList"></div>
+    
+    <div class="note">
+      💡 Har word ka apna random 256-bit "naam" ban jata hai. Ab neeche test karo.
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────
+       SECTION 5: Test Recognition
+       ───────────────────────────────────────────── -->
+  <div class="section">
+    <h2>5️⃣ Test — AI Pehchane Ga? <span class="badge">Recall</span></h2>
+    <p class="desc">
+      Memory mein jo words hain, un mein se ek likho. AI ko nahi pata kaunsa likhogi — 
+      woh distance check karke pehchanega. <b>Yahi HDC ka pehchanna hai!</b>
+    </p>
+    
+    <div class="input-row">
+      <input type="text" id="testInput" placeholder="Yaad rakha hua word likho..." />
+      <button onclick="testRecognition()">🔍 Pehchan Karo</button>
+    </div>
+    
+    <div style="margin-top:14px; padding:12px; background:#050508; border-radius:8px; border:1px solid #1f2937;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <span style="font-size:13px; color:#9ca3af;">Noise (bits ulti karo): <b id="noiseVal" style="color:#22d3ee;">0%</b></span>
+        <span style="font-size:11px; color:#6b7280;">HDC ka superpower — noise ke baad bhi pehchanna!</span>
+      </div>
+      <input type="range" id="noiseSlider" min="0" max="45" value="0" 
+             oninput="document.getElementById('noiseVal').textContent=this.value+'%'"
+             style="width:100%; accent-color:#7c3aed;" />
+    </div>
+    
+    <div class="recog-result" id="recogResult" style="display:none;">
+      <div class="small">AI Kahtaa Hai:</div>
+      <div class="big" id="recogWord">—</div>
+      <div class="small" id="recogDetail">—</div>
+      <div id="recogBars" style="margin-top:16px;"></div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────
+       SECTION 6: The Code Behind
+       ───────────────────────────────────────────── -->
+  <div class="section">
+    <h2>📜 Yeh Sab Kaise Kaam Karta Hai?</h2>
+    <p class="desc">
+      Yeh poora demo sirf ~150 lines JavaScript se bana. Koi ML library nahi. Koi GPU nahi. 
+      Sirf arrays, XOR, aur counting. <b>Yahi HDC ka jadoo hai.</b>
+    </p>
+    <div class="note">
+      <b>Aap ka agla step:</b> Is page ka "View Source" karo (Ctrl+U). 
+      Pura code parho — har line comment mein Roman Urdu mein samjha hai. 
+      Phir apna khud ka vector banao!
+    </div>
+  </div>
+
+  <footer>
+    <p>Bana hai <span class="heart">💜</span> se — Aap ke sher se inspired</p>
+    <p>"Main khud apne yaqeen ka mayaar hoon" — yahi HDC ki philosophy hai</p>
+  </footer>
+
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   HDC ENGINE — Scratch Se Banaya
+   ═══════════════════════════════════════════════════════════════
+   Yeh aap ka pela "artificial brain" hai. Sirf 4 functions:
+   1. randomVector()   — naya random hypervector
+   2. xorVectors()     — do vectors jodna (binding)
+   3. hammingDistance()— kitne bits alag hain
+   4. findClosest()    — memory se pehchanna
+   ═══════════════════════════════════════════════════════════════ */
+
+const DIM = 256; // Asli HDC 10,000 use karta hai, hum 256 (visualization)
+
+// ── State ──
+let vectorA = null;
+let vectorB = null;
+let memory = {}; // { "cat": [0,1,1,0,...], "dog": [...] }
+
+// ─────────────────────────────────────────────
+// 1a. RANDOM HYPERVECTOR BANANA (visualization ke liye)
+//    Har bit randomly 0 ya 1 hota hai (50% chance)
+// ─────────────────────────────────────────────
+function randomVector() {
+  const v = new Uint8Array(DIM);
+  for (let i = 0; i < DIM; i++) {
+    v[i] = Math.random() < 0.5 ? 0 : 1;
+  }
+  return v;
+}
+
+// ─────────────────────────────────────────────
+// 1b. DETERMINISTIC HYPERVECTOR (word se banana)
+//    Asli HDC mein: ek word hamesha SAME vector banata hai.
+//    Hum word ka hash use karke "seeded" random banate hain.
+//    Isse "cat" hamesha same vector → pehchanna asaan!
+// ─────────────────────────────────────────────
+function hashString(str) {
+  // Simple hash (FNV-1a) — word ko number mein convert karta hai
+  let hash = 2166136261;
+  for (let i = 0; i < str.length; i++) {
+    hash ^= str.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function seededRandom(seed) {
+  // Mulberry32 — ek seed se repeatable random numbers
+  return function() {
+    seed = (seed + 0x6D2B79F5) | 0;
+    let t = seed;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function wordToVector(word) {
+  // Word ka hash → seed → seeded random → vector
+  // Same word = same vector (hamesha!)
+  const seed = hashString(word.toLowerCase());
+  const rand = seededRandom(seed);
+  const v = new Uint8Array(DIM);
+  for (let i = 0; i < DIM; i++) {
+    v[i] = rand() < 0.5 ? 0 : 1;
+  }
+  return v;
+}
+
+function addNoise(vec, percent) {
+  // HDC ka superpower: noise ke baad bhi pehchanna!
+  // percent kitne bits ulte karne hain (0-100)
+  const noisy = new Uint8Array(vec);
+  const numFlip = Math.floor((percent / 100) * DIM);
+  const flipped = new Set();
+  while (flipped.size < numFlip) {
+    flipped.add(Math.floor(Math.random() * DIM));
+  }
+  for (const idx of flipped) {
+    noisy[idx] = noisy[idx] ^ 1;
+  }
+  return noisy;
+}
+
+// ─────────────────────────────────────────────
+// 2. XOR BINDING (Do concepts jodna)
+//    Har position par: 0^0=0, 0^1=1, 1^0=1, 1^1=0
+//    CPU nanoseconds mein karta hai — super fast!
+// ─────────────────────────────────────────────
+function xor(a, b) {
+  const result = new Uint8Array(DIM);
+  for (let i = 0; i < DIM; i++) {
+    result[i] = a[i] ^ b[i]; // ^ = XOR in JavaScript
+  }
+  return result;
+}
+
+// ─────────────────────────────────────────────
+// 3. HAMMING DISTANCE (Kitne bits alag hain)
+//    Bas count karo kahan kahan bits differ karte hain
+// ─────────────────────────────────────────────
+function hamming(a, b) {
+  let dist = 0;
+  for (let i = 0; i < DIM; i++) {
+    if (a[i] !== b[i]) dist++;
+  }
+  return dist;
+}
+
+// ─────────────────────────────────────────────
+// 4. FIND CLOSEST (Memory se pehchanna)
+//    Naya vector do — memory ke har vector se distance nikalo
+//    Sabse kam distance wala = answer!
+// ─────────────────────────────────────────────
+function findClosest(query) {
+  let bestName = null;
+  let bestDist = DIM + 1;
+  const allDists = [];
+  
+  for (const [name, vec] of Object.entries(memory)) {
+    const d = hamming(query, vec);
+    allDists.push({ name, dist: d });
+    if (d < bestDist) {
+      bestDist = d;
+      bestName = name;
+    }
+  }
+  
+  allDists.sort((x, y) => x.dist - y.dist);
+  return { bestName, bestDist, allDists };
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   UI / RENDERING FUNCTIONS
+   ═══════════════════════════════════════════════════════════════ */
+
+// Binary vector ko canvas par draw karna (kaala = 1, khali = 0)
+function drawVector(canvasId, vec) {
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#050508';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  if (!vec) return;
+  
+  const cellW = canvas.width / DIM;
+  for (let i = 0; i < DIM; i++) {
+    if (vec[i] === 1) {
+      // Gradient color based on position (sirf visual ke liye)
+      const hue = (i / DIM) * 60 + 250; // purple to blue
+      ctx.fillStyle = `hsl(${hue}, 70%, 60%)`;
+      ctx.fillRect(i * cellW, 0, cellW + 1, canvas.height);
+    }
+  }
+}
+
+// Vector ke pehle 16 bits preview dikhana
+function preview(vec) {
+  if (!vec) return '—';
+  return Array.from(vec.slice(0, 24)).join('');
+}
+
+// ── Section 1: Generate vectors ──
+function generateVectorA() {
+  vectorA = randomVector();
+  drawVector('canvasA', vectorA);
+  document.getElementById('vecApreview').textContent = preview(vectorA) + '...';
+}
+
+function generateVectorB() {
+  vectorB = randomVector();
+  drawVector('canvasB', vectorB);
+  document.getElementById('vecBpreview').textContent = preview(vectorB) + '...';
+}
+
+// ── Section 2: XOR ──
+function xorVectors() {
+  if (!vectorA || !vectorB) {
+    document.getElementById('xorPreview').textContent = 'Pehle Vector A aur B banao!';
+    return;
+  }
+  const result = xor(vectorA, vectorB);
+  drawVector('canvasXOR', result);
+  document.getElementById('xorPreview').textContent = preview(result) + '...';
+}
+
+// ── Section 3: Hamming Distance ──
+function calcHamming() {
+  if (!vectorA || !vectorB) {
+    document.getElementById('hammingResult').textContent = 'Pehle dono vectors banao!';
+    return;
+  }
+  const dist = hamming(vectorA, vectorB);
+  const percent = ((dist / DIM) * 100).toFixed(1);
+  const status = dist < 100 ? 'SIMILAR ✅' : dist < 130 ? 'RANDOM (expected)' : 'OPPOSITE';
+  
+  document.getElementById('hammingResult').innerHTML = 
+    `Distance = <b>${dist}</b> / ${DIM} (${percent}%) → <b>${status}</b>`;
+}
+
+// ── Section 4: Memory ──
+function storeWord() {
+  const input = document.getElementById('wordInput');
+  const word = input.value.trim().toLowerCase();
+  if (!word) return;
+  
+  // Word ka DETERMINISTIC hypervector banao aur memory mein save karo
+  // Same word hamesha same vector banayega!
+  memory[word] = wordToVector(word);
+  input.value = '';
+  renderMemory();
+}
+
+function clearMemory() {
+  memory = {};
+  renderMemory();
+  document.getElementById('recogResult').style.display = 'none';
+}
+
+function renderMemory() {
+  const list = document.getElementById('memoryList');
+  const words = Object.keys(memory);
+  if (words.length === 0) {
+    list.innerHTML = '<div style="color:#6b7280;font-size:13px;">Memory khali. Pehle kuch words save karo.</div>';
+    return;
+  }
+  list.innerHTML = words.map(w => `<div class="memory-item">🧠 ${w}</div>`).join('');
+}
+
+// ── Section 5: Test Recognition ──
+function testRecognition() {
+  const input = document.getElementById('testInput');
+  const word = input.value.trim().toLowerCase();
+  const noiseSlider = document.getElementById('noiseSlider');
+  const noisePercent = noiseSlider ? parseInt(noiseSlider.value) : 0;
+  
+  if (Object.keys(memory).length === 0) {
+    alert('Pehle memory mein words save karo (Section 4)!');
+    return;
+  }
+  if (!word) return;
+  
+  // Word ka deterministic vector banao (same as stored)
+  let query = wordToVector(word);
+  
+  // Agar noise > 0 hai, to bits ulti kar ke "noisy" input banao
+  // Yeh HDC ka superpower dikhata hai: noise ke baad bhi pehchanna!
+  if (noisePercent > 0) {
+    query = addNoise(query, noisePercent);
+  }
+  
+  // Memory se closest match dhoondo
+  const { bestName, bestDist, allDists } = findClosest(query);
+  
+  // Show result
+  const result = document.getElementById('recogResult');
+  result.style.display = 'block';
+  document.getElementById('recogWord').textContent = bestName;
+  
+  const similarity = (100 - (bestDist / DIM) * 100).toFixed(1);
+  const noiseText = noisePercent > 0 ? ` • Noise: ${noisePercent}%` : '';
+  document.getElementById('recogDetail').innerHTML = 
+    `Distance: ${bestDist}/${DIM} • Similarity: ${similarity}%${noiseText}`;
+  
+  // Show all matches with bars
+  const bars = document.getElementById('recogBars');
+  bars.innerHTML = '<div class="small" style="text-align:left;margin-bottom:8px;">Sab Memory Matches:</div>';
+  allDists.forEach(({ name, dist }) => {
+    const sim = 100 - (dist / DIM) * 100;
+    bars.innerHTML += `
+      <div class="match-row">
+        <span class="name">${name}</span>
+        <span class="dist">${sim.toFixed(1)}% similar</span>
+      </div>
+      <div class="bar"><div class="bar-fill" style="width:${sim}%"></div></div>
+    `;
+  });
+  
+  input.value = '';
+}
+
+// ── Initial state ──
+renderMemory();
+document.getElementById('testInput').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') testRecognition();
+});
+document.getElementById('wordInput').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') storeWord();
+});
+
+// Auto-generate pela vector on load
+generateVectorA();
+generateVectorB();
+</script>
+</body>
+</html>
