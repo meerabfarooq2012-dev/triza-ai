@@ -1612,3 +1612,40 @@ Stage Summary:
 - Microsoft search already shows correct logo (Microsoft's crawler is faster/less cached)
 - Incognito mode shows correct logo (browser fetches fresh, no SW cache in incognito for first visit)
 - No further code changes can fix Google's cache — it's purely on Google's side now
+
+---
+Task ID: hdc-lab-react-fix
+Agent: main (Z.ai Code)
+Task: HDC Lab preview panel mein "content blocked" error fix karna — React component banake iframe hatana
+
+Work Log:
+- Read existing static HTML HDC lab (public/hdc/lab-01-foundations.html) — iframe se load hota tha
+- Read HdcLabButton component — iframe src="/hdc/index.html" use karta tha (yeh preview panel mein block ho raha tha)
+- Dev log check kiya → root cause mila: "Blocked cross-origin request from preview-chat-*.space-z.ai to /_next/* resource"
+- Fix 1: next.config.ts mein allowedDevOrigins mein '*.space-z.ai' add kiya (preview domain allow karne ke liye)
+- Fix 2: HDC engine pure TypeScript mein banaya → src/components/hdc/hdc-engine.ts (randomVector, wordToVector, xor, hamming, findClosest, addNoise — sab Roman Urdu comments)
+- Fix 3: VectorCanvas component banaya → src/components/hdc/vector-canvas.tsx (binary vector ko canvas par draw karta hai)
+- Fix 4: HdcLab full React UI component banaya → src/components/hdc/hdc-lab.tsx (6 sections: Hypervector, XOR, Hamming, Memory, Recognition, Code Explanation)
+- Fix 5: HdcLabButton.tsx update kiya — iframe hata ke direct <HdcLab /> React component render karta hai
+- Lint errors fix kiye: set-state-in-effect rule → useSyncExternalStore se hydration-safe isClient hook banaya
+- Server restart kiya (next.config.ts change ke baad zaroori) — spawn-server.js use kiya
+- Agent-browser se verify kiya:
+  * Page khula ✅
+  * 🧠 floating button dikha ✅
+  * Click karne par HDC lab khula ✅ (NO "content blocked"!)
+  * Vector A & B generate kiye ✅
+  * XOR kiya ✅
+  * Hamming distance calculate ki ✅
+  * Memory mein "cat", "dog", "bird" save kiye ✅
+  * Recognition test: "cat" = 100% match (Distance 0/256) ✅
+  * Noise tolerance test: 23% noise ke baad bhi "cat" pehchana (77.3% similarity) ✅
+  * Koi console error nahi ✅
+  * Screenshot liya: hdc-lab-verified.png
+
+Stage Summary:
+- HDC Lab ab fully functional hai aur preview panel mein dikhta hai
+- Do root causes fix hue: (1) cross-origin domain block — allowedDevOrigins mein *.space-z.ai add kiya, (2) iframe sandbox block — pure React component banaya
+- AI logic (hdc-engine.ts) aur UI (hdc-lab.tsx) alag files mein hain — clean separation
+- Thiora code se bilkul alag — sirf ek floating 🧠 button Thiora page par add hai, baaki sab HDC folder mein
+- HDC ki 5 core operations sab test ho gayi: randomVector, wordToVector, xor, hamming, findClosest (with noise tolerance)
+- Files: src/components/hdc/hdc-engine.ts, vector-canvas.tsx, hdc-lab.tsx + updated hdc-lab-button.tsx

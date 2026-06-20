@@ -14,6 +14,8 @@ const nextConfig: NextConfig = {
     '0.0.0.0',
     '21.0.15.82',
     '21.0.13.77',
+    // Preview panel domains (space-z.ai) — bina iske /_next/* chunks block ho jate hain
+    '*.space-z.ai',
   ],
 
   // Required for Prisma + PostgreSQL on Vercel serverless
