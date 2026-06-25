@@ -5,6 +5,7 @@ import { Sidebar } from '@/components/ai/workspace/sidebar'
 import { ChatView } from '@/components/ai/workspace/chat-view'
 import { PlaygroundView } from '@/components/ai/workspace/playground-view'
 import { ModelsView } from '@/components/ai/workspace/models-view'
+import { BrainView } from '@/components/ai/workspace/brain-view'
 import type {
   WorkspaceMode,
   ConversationSummary,
@@ -17,15 +18,17 @@ import type {
  *  NOOR — Professional AI Workspace
  * ============================================================
  *
- *  A single-page workspace with 3 modes:
+ *  A single-page workspace with 4 modes:
  *    1. Chat       — ChatGPT-style chat with a real LLM
  *                    (understands English + Roman Urdu)
  *    2. Playground — test your HDC models with a bit-level
  *                    inspector (developer aesthetic)
  *    3. Models     — build, train, and manage HDC models
+ *    4. My Brain   — browser-native TRINITY (runs on user's CPU,
+ *                    IndexedDB memory, exportable as standalone HTML)
  *
  *  Dark professional theme. English UI labels.
- *  All data stays in local SQLite. CPU-only HDC engine.
+ *  Modes 1-3 use local SQLite + server. Mode 4 is 100% client-side.
  * ============================================================
  */
 export default function HomePage() {
@@ -41,6 +44,14 @@ export default function HomePage() {
   // Models state
   const [models, setModels] = useState<ModelSummary[]>([])
   const [activeModelId, setActiveModelId] = useState<string | null>(null)
+
+  // Brain state (browser-native TRINITY stats)
+  const [brainStats, setBrainStats] = useState<{
+    count: number
+    dim: number
+    categories: number
+    sizeBytes: number
+  } | null>(null)
 
   // ---- Data loaders ----
   const loadConversations = useCallback(async () => {
@@ -243,6 +254,7 @@ export default function HomePage() {
         activeModelId={activeModelId}
         onSelectModel={setActiveModelId}
         stats={stats}
+        brainStats={brainStats}
         onDeleteConversation={handleDeleteConversation}
       />
 
@@ -270,6 +282,9 @@ export default function HomePage() {
             onSelectModel={setActiveModelId}
             onModelsChanged={loadModels}
           />
+        )}
+        {mode === 'brain' && (
+          <BrainView onStatsChange={setBrainStats} />
         )}
       </main>
     </div>

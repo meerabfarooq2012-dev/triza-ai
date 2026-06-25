@@ -3,7 +3,7 @@
  * English UI labels only — but the AI itself understands Roman Urdu input.
  */
 
-export type WorkspaceMode = 'chat' | 'playground' | 'models'
+export type WorkspaceMode = 'chat' | 'playground' | 'models' | 'brain'
 
 export interface ConversationSummary {
   id: string

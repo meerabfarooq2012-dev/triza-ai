@@ -1,6 +1,6 @@
 'use client'
 
-import { Plus, MessageSquare, FlaskConical, Boxes, Trash2, Cpu } from 'lucide-react'
+import { Plus, MessageSquare, FlaskConical, Boxes, Trash2, Cpu, Brain } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { WorkspaceMode, ConversationSummary, ModelSummary } from './types'
 
@@ -15,6 +15,7 @@ interface SidebarProps {
   activeModelId: string | null
   onSelectModel: (id: string) => void
   stats: { models: number; vectors: number; dim: number }
+  brainStats?: { count: number; dim: number; categories: number; sizeBytes: number } | null
   onDeleteConversation?: (id: string) => void
 }
 
@@ -22,6 +23,7 @@ const MODE_TABS: { id: WorkspaceMode; label: string; icon: typeof MessageSquare 
   { id: 'chat', label: 'Chat', icon: MessageSquare },
   { id: 'playground', label: 'Playground', icon: FlaskConical },
   { id: 'models', label: 'Models', icon: Boxes },
+  { id: 'brain', label: 'My Brain', icon: Brain },
 ]
 
 export function Sidebar({
@@ -35,6 +37,7 @@ export function Sidebar({
   activeModelId,
   onSelectModel,
   stats,
+  brainStats,
   onDeleteConversation,
 }: SidebarProps) {
   return (
@@ -87,6 +90,8 @@ export function Sidebar({
             onNew={onNewChat}
             onDelete={onDeleteConversation}
           />
+        ) : mode === 'brain' ? (
+          <BrainInfo brainStats={brainStats} />
         ) : (
           <ModelList
             models={models}
@@ -98,14 +103,28 @@ export function Sidebar({
 
       {/* Footer stats */}
       <div className="border-t border-zinc-800 px-4 py-3">
-        <div className="grid grid-cols-3 gap-2 text-center">
-          <Stat label="Models" value={stats.models} />
-          <Stat label="Vectors" value={stats.vectors} />
-          <Stat label="Dim" value={stats.dim} />
-        </div>
-        <p className="mt-2 text-center text-[10px] text-zinc-600">
-          HDC engine · CPU-only · local SQLite
-        </p>
+        {mode === 'brain' ? (
+          <>
+            <div className="grid grid-cols-2 gap-2 text-center">
+              <Stat label="Memories" value={brainStats?.count ?? 0} />
+              <Stat label="Dim" value={brainStats?.dim ?? 1024} />
+            </div>
+            <p className="mt-2 text-center text-[10px] text-zinc-600">
+              Browser CPU · IndexedDB · 100% local
+            </p>
+          </>
+        ) : (
+          <>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <Stat label="Models" value={stats.models} />
+              <Stat label="Vectors" value={stats.vectors} />
+              <Stat label="Dim" value={stats.dim} />
+            </div>
+            <p className="mt-2 text-center text-[10px] text-zinc-600">
+              HDC engine · CPU-only · local SQLite
+            </p>
+          </>
+        )}
       </div>
     </aside>
   )
@@ -263,6 +282,95 @@ function ModelList({
             })}
           </ul>
         )}
+      </div>
+    </div>
+  )
+}
+
+function BrainInfo({
+  brainStats,
+}: {
+  brainStats?: { count: number; dim: number; categories: number; sizeBytes: number } | null
+}) {
+  const sizeKb = brainStats ? (brainStats.sizeBytes / 1024).toFixed(1) : '0.0'
+  return (
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3 py-3">
+      <div className="mb-3">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+          Your Private Brain
+        </span>
+      </div>
+      <div className="space-y-2.5">
+        <div className="rounded-md border border-zinc-800 bg-zinc-900 p-3">
+          <div className="flex items-center gap-2">
+            <Brain className="h-4 w-4 text-purple-400" />
+            <span className="text-xs font-medium text-zinc-200">
+              Browser-Native TRINITY
+            </span>
+          </div>
+          <p className="mt-1.5 text-[11px] leading-relaxed text-zinc-500">
+            Runs on <span className="text-zinc-300">your CPU</span>. Memory stored
+            in <span className="text-zinc-300">your browser</span>. No server calls.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <div className="rounded-md bg-zinc-900 px-2.5 py-2">
+            <div className="font-mono text-base font-semibold text-purple-300">
+              {brainStats?.count ?? 0}
+            </div>
+            <div className="text-[9px] uppercase tracking-wider text-zinc-500">
+              Memories
+            </div>
+          </div>
+          <div className="rounded-md bg-zinc-900 px-2.5 py-2">
+            <div className="font-mono text-base font-semibold text-cyan-300">
+              {brainStats?.categories ?? 0}
+            </div>
+            <div className="text-[9px] uppercase tracking-wider text-zinc-500">
+              Categories
+            </div>
+          </div>
+          <div className="rounded-md bg-zinc-900 px-2.5 py-2">
+            <div className="font-mono text-base font-semibold text-zinc-200">
+              {brainStats?.dim ?? 1024}
+            </div>
+            <div className="text-[9px] uppercase tracking-wider text-zinc-500">
+              Bit Dim
+            </div>
+          </div>
+          <div className="rounded-md bg-zinc-900 px-2.5 py-2">
+            <div className="font-mono text-base font-semibold text-zinc-200">
+              {sizeKb}KB
+            </div>
+            <div className="text-[9px] uppercase tracking-wider text-zinc-500">
+              Memory Size
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-md border border-zinc-800 bg-gradient-to-br from-purple-950/30 to-zinc-900 p-3">
+          <div className="flex items-center gap-2">
+            <Cpu className="h-4 w-4 text-emerald-400" />
+            <span className="text-xs font-medium text-zinc-200">
+              3-Layer Architecture
+            </span>
+          </div>
+          <ul className="mt-2 space-y-1 text-[11px] text-zinc-400">
+            <li className="flex items-center gap-1.5">
+              <span className="h-1 w-1 rounded-full bg-purple-400" />
+              Knowledge Graph
+            </li>
+            <li className="flex items-center gap-1.5">
+              <span className="h-1 w-1 rounded-full bg-pink-400" />
+              HDC Analogy Engine
+            </li>
+            <li className="flex items-center gap-1.5">
+              <span className="h-1 w-1 rounded-full bg-cyan-400" />
+              Bayesian Logic
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   )
