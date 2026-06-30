@@ -1,7 +1,7 @@
 {
-  "name": "NOOR — AI Workspace with TRINITY",
-  "short_name": "NOOR AI",
-  "description": "A professional AI workspace with ChatGPT-style chat, HDC playground, model training, and a browser-native TRINITY engine that runs on your CPU. Install for offline use and native app experience.",
+  "name": "TRIZA — Self-Built AI Workspace",
+  "short_name": "TRIZA AI",
+  "description": "TRIZA is a 100% self-built AI with zero external API dependencies. A pure TypeScript reasoning pipeline — mood, intent, knowledge, and self-expression — in a professional workspace with chat, HDC playground, model training, and a browser-native TRINITY engine that runs on your CPU. Install for offline use and native app experience.",
   "start_url": "/",
   "display": "standalone",
   "display_override": ["standalone", "window-controls-overlay", "minimal-ui"],

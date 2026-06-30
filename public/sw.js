@@ -1,9 +1,9 @@
 /// <reference lib="webworker" />
 
-const CACHE_NAME = 'thiora-v3';
-const STATIC_CACHE = 'thiora-static-v3';
-const DYNAMIC_CACHE = 'thiora-dynamic-v3';
-const API_CACHE = 'thiora-api-v3';
+const CACHE_NAME = 'triza-v4';
+const STATIC_CACHE = 'triza-static-v4';
+const DYNAMIC_CACHE = 'triza-dynamic-v4';
+const API_CACHE = 'triza-api-v4';
 
 const STATIC_ASSETS = [
   '/',
@@ -232,7 +232,7 @@ async function staleWhileRevalidate(request) {
 // Push event — show notification when a push message is received
 self.addEventListener('push', (event) => {
   let data = {
-    title: 'Thiora',
+    title: 'TRIZA',
     body: 'You have a new notification',
     icon: '/logo.svg',
     badge: '/logo.svg',

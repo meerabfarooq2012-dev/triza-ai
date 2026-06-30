@@ -49,10 +49,10 @@ export function Sidebar({
         </div>
         <div className="flex flex-col leading-none">
           <span className="text-sm font-semibold tracking-tight text-zinc-100">
-            NOOR
+            TRIZA
           </span>
           <span className="text-[10px] font-medium uppercase tracking-wider text-zinc-500">
-            AI Workspace
+            Self-Built AI
           </span>
         </div>
       </div>

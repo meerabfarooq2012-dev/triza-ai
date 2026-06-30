@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const viewport: Viewport = {
-  themeColor: "#d97706",
+  themeColor: "#10b981",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -27,29 +27,27 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    template: "%s | Thiora Marketplace",
-    default: "Thiora - Freelance. Digital. Physical. One Platform.",
+    template: "%s | TRIZA AI",
+    default: "TRIZA — Self-Built AI · Pure Reasoning Engine",
   },
   description:
-    "Create your own customizable shop, sell digital & physical products, or offer freelance services — all in one place.",
+    "TRIZA is a 100% self-built AI with zero external API dependencies. A pure TypeScript reasoning pipeline — mood, intent, knowledge, and self-expression — wrapped in a professional AI workspace.",
   keywords: [
-    "marketplace",
-    "freelance",
-    "digital products",
-    "sell online",
-    "Thiora",
-    "Pakistan",
-    "online shop",
-    "e-commerce",
-    "freelance services",
-    "digital downloads",
-    "physical products",
-    "seller",
+    "TRIZA",
+    "TRIZA AI",
+    "self-built AI",
+    "AI workspace",
+    "reasoning engine",
+    "no external APIs",
+    "HDC",
+    "cognitive engine",
+    "chat AI",
+    "local AI",
   ],
-  authors: [{ name: "Thiora", url: "https://thiora.vercel.app" }],
-  creator: "Thiora",
-  publisher: "Thiora",
-  metadataBase: new URL("https://thiora.vercel.app"),
+  authors: [{ name: "TRIZA", url: "https://triza-ai.vercel.app" }],
+  creator: "TRIZA",
+  publisher: "TRIZA",
+  metadataBase: new URL("https://triza-ai.vercel.app"),
   alternates: {
     canonical: "/",
     languages: {
@@ -70,20 +68,20 @@ export const metadata: Metadata = {
       { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     ],
     // Use PNG (not SVG) for shortcut icon — Google's favicon crawler
-    // handles PNG more reliably than SVG, ensuring the Thiora "T" logo
-    // appears correctly in Google search results.
+    // handles PNG more reliably than SVG, ensuring the TRIZA neural
+    // logo appears correctly in Google search results.
     shortcut: "/icon-512x512.png",
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Thiora",
+    title: "TRIZA",
   },
   openGraph: {
-    title: "Thiora - Freelance. Digital. Physical. One Platform.",
+    title: "TRIZA — Self-Built AI · Pure Reasoning Engine",
     description:
-      "Create your own customizable shop, sell digital & physical products, or offer freelance services — all in one place.",
-    siteName: "Thiora",
+      "TRIZA is a 100% self-built AI with zero external API dependencies. A pure TypeScript reasoning pipeline — mood, intent, knowledge, and self-expression.",
+    siteName: "TRIZA",
     type: "website",
     url: "/",
     images: [
@@ -91,7 +89,7 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1344,
         height: 768,
-        alt: "Thiora Marketplace — Freelance. Digital. Physical.",
+        alt: "TRIZA — Self-Built AI · Pure Reasoning Engine",
       },
     ],
     locale: "en_US",
@@ -99,12 +97,12 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Thiora - Freelance. Digital. Physical. One Platform.",
+    title: "TRIZA — Self-Built AI · Pure Reasoning Engine",
     description:
-      "Create your own customizable shop, sell digital & physical products, or offer freelance services — all in one place.",
+      "TRIZA is a 100% self-built AI with zero external API dependencies. A pure TypeScript reasoning pipeline — mood, intent, knowledge, and self-expression.",
     images: ["/og-image.png"],
-    creator: "@thiora",
-    site: "@thiora",
+    creator: "@triza_ai",
+    site: "@triza_ai",
   },
   robots: {
     index: true,
@@ -117,8 +115,8 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
-  category: "marketplace",
-  classification: "Marketplace Platform",
+  category: "technology",
+  classification: "AI Application",
 };
 
 export default function RootLayout({
@@ -150,14 +148,14 @@ export default function RootLayout({
           }}
         />
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#d97706" />
+        <meta name="theme-color" content="#10b981" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="Thiora" />
+        <meta name="apple-mobile-web-app-title" content="TRIZA" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="application-name" content="Thiora" />
-        <meta name="msapplication-TileColor" content="#d97706" />
-        <meta name="msapplication-navbutton-color" content="#d97706" />
+        <meta name="application-name" content="TRIZA" />
+        <meta name="msapplication-TileColor" content="#10b981" />
+        <meta name="msapplication-navbutton-color" content="#10b981" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="icon" type="image/png" sizes="192x192" href="/icon-192x192.png" />

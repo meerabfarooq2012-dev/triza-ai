@@ -109,7 +109,7 @@ export function ChatView({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Message NOOR..."
+              placeholder="Message TRIZA..."
               rows={3}
               className="w-full resize-none bg-transparent px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none"
             />
@@ -181,7 +181,7 @@ export function ChatView({
             {sending && (
               <div className="flex items-center gap-2 text-xs text-zinc-500">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                NOOR is thinking...
+                TRIZA is thinking...
               </div>
             )}
           </div>
@@ -197,7 +197,7 @@ export function ChatView({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Message NOOR..."
+              placeholder="Message TRIZA..."
               rows={1}
               className="max-h-[200px] w-full resize-none bg-transparent px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none"
             />

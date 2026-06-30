@@ -1,23 +1,21 @@
 // =============================================================================
-// JSON-LD Structured Data for Thiora Marketplace
+// JSON-LD Structured Data for TRIZA AI
 // Provides rich results for Google and other search engines
 // =============================================================================
 
-const BASE_URL = process.env.NEXT_PUBLIC_PLATFORM_URL || 'https://thiora.vercel.app';
+const BASE_URL = process.env.NEXT_PUBLIC_PLATFORM_URL || 'https://triza-ai.vercel.app';
 
 // ── Organization Schema ──────────────────────────────────────────────────────
 const organizationSchema = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
-  name: 'Thiora',
+  name: 'TRIZA',
   url: BASE_URL,
   logo: `${BASE_URL}/logo.png`,
   description:
-    'Create your own customizable shop, sell digital & physical products, or offer freelance services — all in one place.',
+    'TRIZA is a 100% self-built AI with zero external API dependencies — a pure TypeScript reasoning engine with mood, intent, knowledge, and self-expression layers.',
   sameAs: [
-    'https://twitter.com/thiora',
-    'https://facebook.com/thiora',
-    'https://instagram.com/thiora',
+    'https://twitter.com/triza_ai',
   ],
   contactPoint: {
     '@type': 'ContactPoint',
@@ -30,27 +28,34 @@ const organizationSchema = {
 const webSiteSchema = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
-  name: 'Thiora Marketplace',
+  name: 'TRIZA AI',
   url: BASE_URL,
   potentialAction: {
     '@type': 'SearchAction',
     target: {
       '@type': 'EntryPoint',
-      urlTemplate: `${BASE_URL}/?view=search&q={search_term_string}`,
+      urlTemplate: `${BASE_URL}/?q={search_term_string}`,
     },
     'query-input': 'required name=search_term_string',
   },
 };
 
-// ── Marketplace / Store Schema ──────────────────────────────────────────────
-const marketplaceSchema = {
+// ── SoftwareApplication Schema ──────────────────────────────────────────────
+const applicationSchema = {
   '@context': 'https://schema.org',
-  '@type': 'Marketplace',
-  name: 'Thiora',
+  '@type': 'SoftwareApplication',
+  name: 'TRIZA',
   url: BASE_URL,
+  applicationCategory: 'AIApplication',
+  operatingSystem: 'Web',
   description:
-    'A multi-vendor marketplace for freelance services, digital products, and physical goods.',
+    'A self-built AI workspace with a pure TypeScript reasoning pipeline, HDC model training, and a browser-native TRINITY engine that runs on your CPU.',
   image: `${BASE_URL}/og-image.png`,
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'USD',
+  },
 };
 
 // ── BreadcrumbList for Homepage ─────────────────────────────────────────────
@@ -84,7 +89,7 @@ export function RootJsonLd() {
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(marketplaceSchema) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(applicationSchema) }}
       />
       <script
         type="application/ld+json"

@@ -15,12 +15,13 @@ import type {
 
 /**
  * ============================================================
- *  NOOR — Professional AI Workspace
+ *  TRIZA — Professional AI Workspace
  * ============================================================
  *
  *  A single-page workspace with 4 modes:
- *    1. Chat       — ChatGPT-style chat with a real LLM
- *                    (understands English + Roman Urdu)
+ *    1. Chat       — chat with TRIZA, a 100% self-built AI
+ *                    (understands English + Roman Urdu, no external
+ *                    API calls — pure TypeScript reasoning pipeline)
  *    2. Playground — test your HDC models with a bit-level
  *                    inspector (developer aesthetic)
  *    3. Models     — build, train, and manage HDC models
