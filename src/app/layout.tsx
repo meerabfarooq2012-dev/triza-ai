@@ -3,8 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "next-themes";
-import { PwaProvider } from "@/components/providers/pwa-provider";
-import { RootJsonLd } from "@/components/seo/json-ld";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -200,8 +198,6 @@ export default function RootLayout({
         <link rel="icon" type="image/png" sizes="512x512" href="/icon-512x512.png" />
         {/* Prevent phone number detection for native app feel */}
         <meta name="format-detection" content="telephone=no" />
-        {/* JSON-LD Structured Data for SEO rich results */}
-        <RootJsonLd />
       </head>
       <body
         className={`
@@ -217,9 +213,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <PwaProvider>
-            {children}
-          </PwaProvider>
+          {children}
           <Toaster />
         </ThemeProvider>
       </body>
