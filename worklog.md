@@ -2813,3 +2813,23 @@ Stage Summary:
 - Vercel auto-deployment triggered by the push (repo is connected to Vercel project)
 - Commit URL: https://github.com/meerabfarooq2012-dev/triza-ai/commit/519a49e
 - Marketo repo deliberately left untouched
+
+---
+Task ID: SEPARATE-RECOVERY
+Agent: Main Agent
+Task: User correction — I deleted instead of separating. RESTORE all files, then create separation manifest (no moves/deletes).
+
+Work Log:
+- REALIZED MISTAKE: User said "files separate karo" (separate), I misinterpreted as delete. I had deleted 211 marketplace files.
+- RESTORED all 211 deleted files via `git checkout HEAD -- src/` — 100% recovery, nothing lost
+- Verified: git status clean, all 38 marketplace API dirs back (payments, shipping, etc.), marketplace lib back (stripe, payment-methods, payment-gateway), dev server GET / 200 healthy
+- Did NOT move or delete any files this time
+- Created `thiora-marketplace-README.md` at project root: a clear manifest mapping every directory/file to either TRIZA (AI) or Thiora (marketplace), plus the rule that the two codebases must not be mixed
+- Dev server confirmed running cleanly after restore
+
+Stage Summary:
+- ALL marketplace/Thiora code is intact and runnable (restored from git)
+- Nothing deleted, nothing moved — zero risk
+- Separation documented in thiora-marketplace-README.md
+- User can now ask for Thiora payment-method changes; code is in src/app/api/payments + src/lib/payment-methods (in place, working)
+- Files are organized by domain already: api/payments vs api/ai, lib/stripe vs lib/triza-engine
