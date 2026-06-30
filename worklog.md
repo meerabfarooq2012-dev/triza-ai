@@ -2746,3 +2746,45 @@ Stage Summary:
 - Chat now retries 3x on failure before showing error, and self-expression engine has null guard
 - Pushed to github.com/meerabfarooq2012-dev/triza-ai (commit cae0381); Vercel auto-deploy triggered
 - User action needed: just refresh the page — the migration script will auto-clear old cache and reload once
+
+---
+Task ID: LANDING-REBUILD
+Agent: Main Agent
+Task: Rebuild TRIZA marketing landing page with user's exact English content (hero, TRINITY architecture, pipeline, transparency, why different, roadmap, CTA, footer) + real interactive live demo + English SEO metadata + JSON-LD
+
+Work Log:
+- Rewrote `src/components/ai/landing/triza-landing.tsx` from scratch (was dark Roman-Urdu landing; now clean light "transparent lab" English landing)
+- Implemented all requested sections with user's exact copy:
+  * Hero: "Phase 1 live — transparent conversational AI" / "An AI that shows its work." + badges (CPU-first, No external APIs, 100% transparent, Religion-neutral) + "Built on" row (Neon Postgres, Vercel Edge, Knowledge Graph, HDC Vectors, Bayesian Logic)
+  * TRINITY Architecture: "Three minds. One brain." — 3 cards (01 Structure/Knowledge Graph 25 nodes·24 edges, 02 Memory/HDC Analogy 1024-bit, 03 Honesty/Bayesian Logic prior·evidence·posterior)
+  * Pipeline: "Every reply flows through this pipeline" → Detect mood → Detect intent → Walk the graph → Compose draft → Quality check → Secularize → Confidence score
+  * Transparency: "No black box. Ever." — 3 real annotated exchanges (exam happy 95%/3, poem curious 70%/1, thanks grateful 90%/2)
+  * Why different: "Built on principles, not borrowed weights." — 6 feature cards (Radically transparent, CPU-first, Honest confidence, Religion-neutral, Learns from feedback, No black box)
+  * Roadmap: "Three phases. One brain." — Chatbot AI (Live), Cyber AI (Soon), Coding AI (Soon)
+  * CTA: "Talk to an AI that shows its work." + View on GitHub
+  * Footer: TRIZA AI / "Three minds. One answer." / © 2026 / TRINITY engine v1.0 · CPU-first
+- Built REAL interactive LiveDemo component embedded in hero:
+  * Pre-filled seed exchange ("I'm feeling a bit down today." → response with mood/intent/confidence/steps)
+  * Input "Message TRIZA…" → lazily creates conversation via POST /api/ai/conversations, then POST /api/ai/chat
+  * Renders live mood / intent / confidence% / steps badges on each assistant reply
+  * 👍 / 👎 feedback buttons (cosmetic, toast confirmation)
+  * Loading "thinking…" state with spinner
+- "See it think" / "Try TRIZA now" buttons open full TrizaChatApp workspace (view-based, same / route); "Back to landing" returns
+- Updated `src/app/layout.tsx` SEO metadata (English, transparent-AI messaging): title, description, keywords, OG, Twitter
+- Added JSON-LD structured data (SoftwareApplication + Organization + WebSite) to <head> for rich search results
+- Lint: clean for landing files (only pre-existing unrelated error in use-google-auth-callback.ts)
+- Agent Browser verified end-to-end:
+  * Page title = "TRIZA — A transparent AI that shows its work"
+  * All sections + headings render (snapshot confirmed)
+  * Live demo: typed "Tell me about Mount Everest" → AI returned full answer with mood=neutral, intent=factual_question, 100% confident, 4 steps badges
+  * "See it think" → opened "Hi, I'm TRIZA." workspace; Back to landing → returned to hero
+  * Responsive: mobile (390px) stacks, desktop (1440px) 2-column grid (512px/512px side-by-side)
+  * Sticky footer (mt-auto on flex min-h-screen), pushed down naturally on long content
+  * No console/runtime errors; all API calls 200
+
+Stage Summary:
+- TRIZA landing is a polished, English, "transparent AI" marketing page (different from previous dark Roman-Urdu version)
+- Live demo is genuinely interactive (real /api/ai/chat calls, real mood/intent/confidence/steps)
+- English SEO metadata + JSON-LD in place
+- Chat accessible from landing via "See it think" button (no separate route — view toggle on /)
+- All Agent Browser checks passed; production-ready

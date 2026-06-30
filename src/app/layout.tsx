@@ -26,21 +26,27 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: {
     template: "%s | TRIZA AI",
-    default: "TRIZA — Self-Built AI · Pure Reasoning Engine",
+    default: "TRIZA — A transparent AI that shows its work",
   },
   description:
-    "TRIZA is a 100% self-built AI with zero external API dependencies. A pure TypeScript reasoning pipeline — mood, intent, knowledge, and self-expression — wrapped in a professional AI workspace.",
+    "TRIZA is a transparent, CPU-first AI built from scratch — no black box, no borrowed models. Every reply shows its mood, intent, confidence, and reasoning steps. Powered by the TRINITY engine: knowledge graph, HDC analogy, and Bayesian logic.",
   keywords: [
     "TRIZA",
     "TRIZA AI",
+    "transparent AI",
+    "explainable AI",
+    "CPU-first AI",
     "self-built AI",
-    "AI workspace",
     "reasoning engine",
+    "TRINITY engine",
+    "knowledge graph AI",
+    "hyperdimensional computing",
+    "HDC vectors",
+    "Bayesian AI",
+    "religion-neutral AI",
     "no external APIs",
-    "HDC",
-    "cognitive engine",
-    "chat AI",
-    "local AI",
+    "open AI architecture",
+    "AI that shows its work",
   ],
   authors: [{ name: "TRIZA", url: "https://triza-ai.vercel.app" }],
   creator: "TRIZA",
@@ -76,9 +82,9 @@ export const metadata: Metadata = {
     title: "TRIZA",
   },
   openGraph: {
-    title: "TRIZA — Self-Built AI · Pure Reasoning Engine",
+    title: "TRIZA — A transparent AI that shows its work",
     description:
-      "TRIZA is a 100% self-built AI with zero external API dependencies. A pure TypeScript reasoning pipeline — mood, intent, knowledge, and self-expression.",
+      "TRIZA is a transparent, CPU-first AI built from scratch. No black box, no borrowed models — every reply shows its mood, intent, confidence, and reasoning steps.",
     siteName: "TRIZA",
     type: "website",
     url: "/",
@@ -95,9 +101,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "TRIZA — Self-Built AI · Pure Reasoning Engine",
+    title: "TRIZA — A transparent AI that shows its work",
     description:
-      "TRIZA is a 100% self-built AI with zero external API dependencies. A pure TypeScript reasoning pipeline — mood, intent, knowledge, and self-expression.",
+      "TRIZA is a transparent, CPU-first AI built from scratch. Every reply shows its mood, intent, confidence, and reasoning steps.",
     images: ["/og-image.png"],
     creator: "@triza_ai",
     site: "@triza_ai",
@@ -198,6 +204,62 @@ export default function RootLayout({
         <link rel="icon" type="image/png" sizes="512x512" href="/icon-512x512.png" />
         {/* Prevent phone number detection for native app feel */}
         <meta name="format-detection" content="telephone=no" />
+        {/* Structured data (JSON-LD) for rich search results.
+             English copy — describes TRIZA as a transparent AI application. */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@graph": [
+                {
+                  "@type": "SoftwareApplication",
+                  name: "TRIZA AI",
+                  applicationCategory: "AIApplication",
+                  operatingSystem: "Web",
+                  description:
+                    "TRIZA is a transparent, CPU-first AI built from scratch. No black box, no borrowed models — every reply shows its mood, intent, confidence, and reasoning steps. Powered by the TRINITY engine: knowledge graph, HDC analogy, and Bayesian logic.",
+                  url: "https://triza-ai.vercel.app",
+                  offers: {
+                    "@type": "Offer",
+                    price: "0",
+                    priceCurrency: "USD",
+                  },
+                  featureList: [
+                    "Transparent reasoning — mood, intent, confidence, steps",
+                    "CPU-first — no GPU required",
+                    "No external API calls",
+                    "Religion-neutral responses",
+                    "Learns from thumbs up / down feedback",
+                    "TRINITY engine: knowledge graph + HDC + Bayesian logic",
+                  ],
+                  softwareVersion: "1.0",
+                  keywords:
+                    "transparent AI, explainable AI, CPU-first AI, self-built AI, TRINITY engine, knowledge graph, HDC, Bayesian",
+                },
+                {
+                  "@type": "Organization",
+                  name: "TRIZA AI",
+                  url: "https://triza-ai.vercel.app",
+                  logo: "https://triza-ai.vercel.app/icon-512x512.png",
+                  sameAs: ["https://github.com/meerabfarooq2012-dev/triza-ai"],
+                },
+                {
+                  "@type": "WebSite",
+                  name: "TRIZA AI",
+                  url: "https://triza-ai.vercel.app",
+                  inLanguage: "en",
+                  potentialAction: {
+                    "@type": "CommunicateAction",
+                    target:
+                      "https://triza-ai.vercel.app/#demo",
+                    name: "Try TRIZA live demo",
+                  },
+                },
+              ],
+            }),
+          }}
+        />
       </head>
       <body
         className={`
