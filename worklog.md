@@ -2517,3 +2517,33 @@ Stage Summary:
 - TRIZA runs fully in-memory at runtime (chat-engine fallback store) — no DB needed for AI to work
 - Fix pushed to github.com/meerabfarooq2012-dev/triza-ai — Vercel auto-deploy triggered
 - If user later wants persistent chat history on Vercel, they can add a PostgreSQL DATABASE_URL env var and the existing switch-db logic will automatically use the PostgreSQL schema + push to it
+
+---
+Task ID: 12
+Agent: Main Agent
+Task: Fix recurring P1013 Vercel deployment error after user connected Neon PostgreSQL DB
+
+Work Log:
+- User reported same P1013 error AFTER connecting Neon PostgreSQL DATABASE_URL
+- Diagnosed: error command string still showed OLD vercel-build (with explicit `prisma db push`), meaning either stale deployment or Vercel Build Command override
+- Found ROOT CAUSE in prisma/schema.postgresql.prisma line 8: `directUrl = env("DIRECT_URL")` — DIRECT_URL was never set on Vercel (only DATABASE_URL), so Prisma tried to parse empty string → P1013
+- Confirmed via local dev.log: "❌ Missing required environment variables: - DIRECT_URL"
+- Fixed schema.postgresql.prisma: changed `directUrl = env("DIRECT_URL")` → `directUrl = env("DATABASE_URL")` so only one env var required (Neon pooler handles both query + schema-engine traffic)
+- Hardened scripts/switch-db.mjs:
+  * getDatabaseUrl() now strips surrounding quotes (single/double/backtick) from DATABASE_URL — common mistake when pasting URLs into Vercel env-var dashboard
+  * runPrismaDbPush() now auto-sets process.env.DIRECT_URL = dbUrl as fallback before execSync (inherited by child prisma process)
+- Made DIRECT_URL optional in src/lib/env-validation.ts (was marked required, caused noisy startup warnings)
+- Verified locally with REAL Neon URL: `VERCEL=1 ... DATABASE_URL="postgresql://neondb_owner:...@ep-muddy-night-ao66sxph-pooler...neon.tech/neondb?sslmode=require&channel_binding=require" node scripts/switch-db.mjs`
+  → P1013 GONE, Prisma connects to Neon successfully
+  → prisma db push hits schema-mismatch (Neon has 6 Conversation + 12 Message test rows with old schema, new schema adds required cols participant1Id/participant2Id/senderId/receiverId without defaults)
+  → BUT script catches error and exits 0, so build still passes
+- Restored local prisma/schema.prisma to SQLite (test had switched it to postgresql)
+- Committed (8962d02) and pushed to triza-ai remote (main branch)
+
+Stage Summary:
+- P1013 root cause (DIRECT_URL env dependency) is FIXED
+- Fix pushed to github.com/meerabfarooq2012-dev/triza-ai (commit 8962d02)
+- Build will now pass on Vercel as long as it uses package.json's vercel-build script (`node scripts/switch-db.mjs && next build`)
+- REMAINING ISSUES to communicate to user:
+  1. If Vercel has a custom Build Command override (Settings → Build & Development Settings), it must be cleared/removed so package.json's vercel-build is used. The error message showing the OLD command strongly suggests an override exists.
+  2. Neon DB has old test data (6 conversations, 12 messages) with a different schema. prisma db push can't add required NOT NULL columns to non-empty tables. User should reset the Neon database (drop all tables) OR run `prisma db push --force-reset` locally once. TRIZA AI itself runs in-memory so chat works regardless.
