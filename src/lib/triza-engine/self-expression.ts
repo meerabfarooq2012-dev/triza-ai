@@ -231,7 +231,8 @@ function pickPersona(
 // Helpers
 // ============================================================
 
-function pick<T>(arr: T[], seed: number): T {
+function pick<T>(arr: T[] | undefined | null, seed: number): T | undefined {
+  if (!arr || !Array.isArray(arr) || arr.length === 0) return undefined;
   return arr[seed % arr.length];
 }
 
@@ -297,23 +298,27 @@ export function expressInOwnVoice(
   const parts: string[] = [];
 
   // 1. Personal intro (TRIZA "acknowledging" the question)
-  parts.push(intro);
+  if (typeof intro === 'string' && intro.length > 0) {
+    parts.push(intro);
+  }
 
   // 2. The raw knowledge (what TRIZA "learned")
   parts.push(rawKnowledge);
 
   // 3. A mid-transition before deeper detail (optional, only if
   //    the knowledge is long enough to warrant it)
-  if (rawKnowledge.length > 400) {
+  if (rawKnowledge.length > 400 && typeof transition === 'string' && transition.length > 0) {
     parts.push(transition);
   }
 
   // 4. Personal reflection (TRIZA showing "understanding")
-  parts.push(reflection);
+  if (typeof reflection === 'string' && reflection.length > 0) {
+    parts.push(reflection);
+  }
 
   // 5. Curious follow-up (TRIZA engaging like a child who wants
   //    to talk more about what it just learned)
-  if (followUp) {
+  if (typeof followUp === 'string' && followUp.length > 0) {
     if (urdu) {
       parts.push(followUp);
     } else {

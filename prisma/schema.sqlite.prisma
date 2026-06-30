@@ -1591,3 +1591,74 @@ model PushSubscription {
   @@index([userId])
   @@index([endpoint])
 }
+
+// =============================================================================
+// TRIZA AI MODELS — Self-built AI conversation history + training data
+// (no external LLM APIs; pure TypeScript reasoning engine)
+// =============================================================================
+
+model AiConversation {
+  id        String      @id @default(cuid())
+  title     String      @default("New Chat")
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  messages  AiMessage[]
+
+  @@index([updatedAt])
+}
+
+model AiMessage {
+  id             String         @id @default(cuid())
+  conversationId String
+  role           String // "user" | "assistant"
+  content        String
+  createdAt      DateTime       @default(now())
+
+  conversation   AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([createdAt])
+}
+
+model AiModel {
+  id          String       @id @default(cuid())
+  name        String
+  type        String       @unique
+  description String       @default("")
+  dim         Int          @default(256)
+  createdAt   DateTime     @default(now())
+
+  categories  AiCategory[]
+
+  @@index([type])
+}
+
+model AiCategory {
+  id              String           @id @default(cuid())
+  modelId         String
+  name            String
+  emoji           String           @default("📦")
+  color           String           @default("#6b7280")
+  description     String           @default("")
+  prototypeVector Bytes?
+  trainedAt       DateTime?
+  createdAt       DateTime         @default(now())
+
+  model           AiModel          @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  trainingWords   AiTrainingWord[]
+
+  @@index([modelId])
+}
+
+model AiTrainingWord {
+  id         String     @id @default(cuid())
+  categoryId String
+  word       String
+  createdAt  DateTime   @default(now())
+
+  category   AiCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId])
+  @@index([word])
+}

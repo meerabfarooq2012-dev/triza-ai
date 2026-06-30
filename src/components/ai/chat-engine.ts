@@ -352,7 +352,30 @@ export async function sendMessage(
     conversationId,
   }
 
-  const trizaResponse = await generateResponse(userMessage, genOpts)
+  // BULLETPROOF: if the TRIZA engine crashes for ANY reason
+  // (edge case in self-expression, knowledge base, etc.),
+  // fall back to a graceful message so the API NEVER returns 500
+  // and the user NEVER sees "Could not reach the AI backend".
+  let trizaResponse
+  try {
+    trizaResponse = await generateResponse(userMessage, genOpts)
+  } catch (genErr) {
+    console.error(
+      '[TRIZA] generateResponse crashed, using fallback:',
+      genErr instanceof Error ? genErr.message : genErr
+    )
+    trizaResponse = {
+      text: `Mujhe maaf karein — abhi thodi technical dikkat aa gayi. Maine aapka sawaal suna hai ("${userMessage.slice(0, 80)}"). Kripya thodi der baad dobara poochein, main zaroor jawab doonga.`,
+      rawKnowledge: 'Fallback response (engine error).',
+      confidence: 0.2,
+      mood: 'neutral',
+      intent: 'unknown',
+      topicDomain: 'fallback',
+      processingTimeMs: 0,
+      selfExpressed: false,
+      topicWords: [],
+    }
+  }
 
   // ---------------------------------------------------------
   // 3. Save assistant message (DB or in-memory)

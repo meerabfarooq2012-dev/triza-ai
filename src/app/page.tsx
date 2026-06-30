@@ -232,6 +232,21 @@ export default function HomePage() {
         // Reload full conversation + list to sync state with backend
         await loadConversationDetail(convoId!)
         await loadConversations()
+
+        // Re-attach meta to the last assistant message — the DB doesn't
+        // store mood/intent/confidence, so loadConversationDetail returns
+        // messages WITHOUT meta. We re-apply it so ReplyMeta badges show.
+        setActiveConversation((prev) => {
+          if (!prev) return prev
+          const msgs = [...prev.messages]
+          for (let i = msgs.length - 1; i >= 0; i--) {
+            if (msgs[i].role === 'assistant') {
+              msgs[i] = { ...msgs[i], meta }
+              break
+            }
+          }
+          return { ...prev, messages: msgs }
+        })
       } catch (err) {
         console.error('[workspace] send:', err)
         setActiveConversation((prev) => {

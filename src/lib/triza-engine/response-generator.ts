@@ -247,14 +247,26 @@ export async function generateResponse(
   // 5. Apply self-expression layer (TRIZA's "own voice")
   //    — wraps raw knowledge with intro, reflection, follow-up
   //    — like a child explaining in their own words
+  //    BULLETPROOF: if self-expression crashes for ANY reason,
+  //    fall back to raw knowledge so chat NEVER returns 500.
   const isMultiTurn = (opts.conversationHistory?.length || 0) > 0
-  const expressed = expressInOwnVoice(rawKnowledge, {
-    topic: match.entry.topic,
-    intent: match.entry.intent,
-    userMessage,
-    isMultiTurn,
-  })
-  steps.push(`Self-expression applied (persona: ${expressed.persona})`)
+  let expressed: { text: string; persona: string; applied: boolean }
+  try {
+    expressed = expressInOwnVoice(rawKnowledge, {
+      topic: match.entry.topic,
+      intent: match.entry.intent,
+      userMessage,
+      isMultiTurn,
+    })
+    steps.push(`Self-expression applied (persona: ${expressed.persona})`)
+  } catch (exprErr) {
+    console.warn(
+      '[TRIZA] self-expression crashed, using raw knowledge:',
+      exprErr instanceof Error ? exprErr.message : exprErr
+    )
+    expressed = { text: rawKnowledge, persona: 'fallback', applied: false }
+    steps.push('Self-expression failed — raw knowledge used')
+  }
 
   // 6. Extract topic words (for Hebbian follow-up signal)
   const topicWords = extractTopicWords(userMessage, 8)
