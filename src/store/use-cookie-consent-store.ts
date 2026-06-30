@@ -4,7 +4,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 // =============================================================================
-// Thiora Marketplace - Cookie Consent Store
+// TRIZA Marketplace - Cookie Consent Store
 // =============================================================================
 
 type ConsentLevel = 'none' | 'essential' | 'all'

@@ -62,7 +62,7 @@ const steps = [
     label: 'Step 3',
     title: 'Tap "Add"',
     description:
-      'Confirm by tapping "Add" — Thiora will appear on your home screen like a real app!',
+      'Confirm by tapping "Add" — TRIZA will appear on your home screen like a real app!',
     color: 'from-amber-500 to-orange-600',
   },
 ];
@@ -109,13 +109,13 @@ export function IosInstallInstructions() {
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/20 shadow-lg ring-1 ring-white/10 backdrop-blur-sm">
               <img
                 src="/logo.png"
-                alt="Thiora"
+                alt="TRIZA"
                 className="h-10 w-10 rounded-xl"
               />
             </div>
             <div>
               <DialogTitle className="text-lg font-bold text-white">
-                Install Thiora
+                Install TRIZA
               </DialogTitle>
               <DialogDescription className="text-sm text-white/80 mt-0.5">
                 Get the app experience on your iPhone

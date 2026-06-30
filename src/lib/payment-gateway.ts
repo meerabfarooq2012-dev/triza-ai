@@ -1,5 +1,5 @@
 // =============================================================================
-// Thiora - Payment Gateway Service
+// TRIZA - Payment Gateway Service
 // Easypaisa, JazzCash, PayFast & Crypto (Direct Wallet Escrow) Integration
 // =============================================================================
 
@@ -1244,8 +1244,8 @@ export async function initiatePayFastPayment(
       // Transaction details
       m_payment_id: paymentToken,
       amount: params.amount.toFixed(2),
-      item_name: `Thiora Order #${params.orderId.slice(-8)}`,
-      item_description: params.description || `Payment for Thiora marketplace order`,
+      item_name: `TRIZA Order #${params.orderId.slice(-8)}`,
+      item_description: params.description || `Payment for TRIZA marketplace order`,
       // Custom fields
       custom_str1: params.orderId,
       custom_str2: params.buyerId,

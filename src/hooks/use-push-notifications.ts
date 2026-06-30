@@ -1,5 +1,5 @@
 // =============================================================================
-// Thiora - usePushNotifications Hook
+// TRIZA - usePushNotifications Hook
 // Manages browser push notification subscription lifecycle
 // =============================================================================
 

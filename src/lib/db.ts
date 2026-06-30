@@ -1,5 +1,5 @@
 // =============================================================================
-// Thiora Database Client — Prisma Singleton
+// TRIZA Database Client — Prisma Singleton
 // Safely initializes PrismaClient with error handling for Vercel serverless
 // =============================================================================
 

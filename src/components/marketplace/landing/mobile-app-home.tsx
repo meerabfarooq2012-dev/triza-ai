@@ -120,7 +120,7 @@ export function MobileAppHome() {
           {getGreeting()} 👋
         </p>
         <h1 className="text-2xl font-bold text-foreground tracking-tight mt-0.5">
-          {isAuthenticated ? userName : 'Welcome to Thiora'}
+          {isAuthenticated ? userName : 'Welcome to TRIZA'}
         </h1>
       </motion.div>
 
@@ -338,7 +338,7 @@ export function MobileAppHome() {
         </div>
       </motion.div>
 
-      {/* ── Why Thiora (compact, not marketing) ── */}
+      {/* ── Why TRIZA (compact, not marketing) ── */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -346,7 +346,7 @@ export function MobileAppHome() {
         className="px-4 pb-6"
       >
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-bold text-foreground">Why Thiora</h2>
+          <h2 className="text-base font-bold text-foreground">Why TRIZA</h2>
         </div>
         <div className="grid grid-cols-3 gap-2">
           {[

@@ -1,5 +1,5 @@
 // =============================================================================
-// Thiora JWT Auth Middleware — Token signing, verification, and extraction
+// TRIZA JWT Auth Middleware — Token signing, verification, and extraction
 // Uses jsonwebtoken for JWT operations
 // =============================================================================
 

@@ -1,5 +1,5 @@
 // =============================================================================
-// Thiora Marketplace - Complete World Currency Configuration
+// TRIZA Marketplace - Complete World Currency Configuration
 // =============================================================================
 
 // Supported currencies with their configuration

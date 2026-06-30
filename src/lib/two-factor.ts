@@ -2,7 +2,7 @@ import * as OTPAuth from 'otpauth';
 import QRCode from 'qrcode';
 import { randomBytes, createHmac } from 'crypto';
 
-const ISSUER = 'Thiora';
+const ISSUER = 'TRIZA';
 
 /**
  * Generate a new TOTP secret for a user

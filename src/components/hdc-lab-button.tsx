@@ -9,11 +9,11 @@ import { HdcLab } from './hdc/hdc-lab'
  * "Na pooch hajoom se mere qadar-o-qeemat
  *  Main khud apne yaqeen ka mayaar hoon"
  *
- * Yeh ek floating button hai jo Thiora ke main page par dikhega.
+ * Yeh ek floating button hai jo TRIZA ke main page par dikhega.
  * Click karte hi HDC Lab khul jayega — direct React component,
  * koi iframe nahi (taaki preview panel mein block na ho).
  *
- * Yeh component Thiora ko kabhi affect nahi karega. Sirf ek button add karta hai.
+ * Yeh component TRIZA ko kabhi affect nahi karega. Sirf ek button add karta hai.
  */
 
 // useSyncExternalStore se hydration-safe "is client" check

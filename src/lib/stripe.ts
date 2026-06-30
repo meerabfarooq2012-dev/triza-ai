@@ -1,5 +1,5 @@
 // =============================================================================
-// Thiora - Stripe Payment Integration
+// TRIZA - Stripe Payment Integration
 // Server-side Stripe helper functions for Checkout, verification, and webhooks
 // =============================================================================
 
@@ -119,8 +119,8 @@ export async function createCheckoutSession(
         price_data: {
           currency,
           product_data: {
-            name: description || `Thiora Order #${orderId.slice(-8)}`,
-            description: `Order on Thiora Marketplace — Seller receives $${sellerPayout.toFixed(2)}`,
+            name: description || `TRIZA Order #${orderId.slice(-8)}`,
+            description: `Order on TRIZA Marketplace — Seller receives $${sellerPayout.toFixed(2)}`,
           },
           unit_amount: amountInCents,
         },
@@ -257,7 +257,7 @@ export async function createPaymentIntent(
       sellerPayout: sellerPayout.toFixed(2),
       gatewayMode: isSandboxMode() ? 'sandbox' : 'live',
     },
-    description: description || `Thiora Order #${orderId.slice(-8)}`,
+    description: description || `TRIZA Order #${orderId.slice(-8)}`,
     automatic_payment_methods: {
       enabled: true,
     },

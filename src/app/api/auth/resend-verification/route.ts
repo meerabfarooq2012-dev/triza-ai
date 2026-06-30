@@ -70,7 +70,7 @@ export const POST = async (request: NextRequest) => {
     const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://thiora.vercel.app'}?verify=${verifyToken}`;
     sendEmailAsync({
       to: user.email,
-      subject: 'Verify Your Email — Thiora',
+      subject: 'Verify Your Email — TRIZA',
       html: emailVerificationEmail(user.name, verifyUrl),
     });
 

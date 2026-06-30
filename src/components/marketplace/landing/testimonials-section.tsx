@@ -22,7 +22,7 @@ export function TestimonialsSection() {
             Join the Marketplace
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Be among the first to sell on Thiora. Create your shop, list your products and services, and start earning today.
+            Be among the first to sell on TRIZA. Create your shop, list your products and services, and start earning today.
           </p>
         </motion.div>
 
@@ -39,7 +39,7 @@ export function TestimonialsSection() {
             </div>
             <h3 className="text-xl font-semibold">Start Selling Today</h3>
             <p className="text-muted-foreground">
-              Whether you&apos;re selling digital products, offering freelance services, or shipping physical goods — Thiora gives you everything you need to succeed. Secure escrow payments, powerful analytics, and zero withdrawal fees.
+              Whether you&apos;re selling digital products, offering freelance services, or shipping physical goods — TRIZA gives you everything you need to succeed. Secure escrow payments, powerful analytics, and zero withdrawal fees.
             </p>
             <Button
               size="lg"

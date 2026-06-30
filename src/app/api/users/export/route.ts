@@ -234,7 +234,7 @@ export async function GET(request: NextRequest) {
     const exportData = {
       exportInfo: {
         exportedAt: new Date().toISOString(),
-        platform: 'Thiora Marketplace',
+        platform: 'TRIZA Marketplace',
         format: 'GDPR Data Portability Export v1.0',
         userId: user.id,
       },

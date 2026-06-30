@@ -1,5 +1,5 @@
 // =============================================================================
-// Thiora - VAPID Keys Manager
+// TRIZA - VAPID Keys Manager
 // Auto-generates and persists VAPID keys for push notifications
 //
 // Priority on Vercel (serverless):

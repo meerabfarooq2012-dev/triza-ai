@@ -1,5 +1,5 @@
 // =============================================================================
-// Thiora - Web Push Notification Helper
+// TRIZA - Web Push Notification Helper
 // Configures web-push with VAPID keys and provides send/broadcast utilities
 // Uses vapid-keys.ts for key management (env vars > auto-generated)
 // =============================================================================

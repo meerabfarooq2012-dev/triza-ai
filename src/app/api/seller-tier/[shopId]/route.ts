@@ -14,7 +14,7 @@ const TIER_DETAILS: Record<string, {
     label: 'Bronze Seller',
     color: '#cd7f32',
     icon: 'Medal',
-    requirements: ['0-10 sales', 'Getting started on Thiora'],
+    requirements: ['0-10 sales', 'Getting started on TRIZA'],
   },
   silver: {
     label: 'Silver Seller',

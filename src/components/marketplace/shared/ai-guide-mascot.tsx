@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { X, Send, Sparkles, Minimize2, ChevronRight, SkipForward, RotateCcw, Map, MessageCircle } from 'lucide-react'
 
 // ─────────────────────────────────────────────────────────────
-// Thori — Thiora's AI Guide Mascot (3D Owl)
+// Thori — TRIZA's AI Guide Mascot (3D Owl)
 // - LEFT side: 3D owl tour guide (flies to sections, tours)
 // - RIGHT side: Chat assistant panel
 // - 3D CSS transforms for depth & perspective
@@ -26,7 +26,7 @@ interface ChatMessage {
 const LANDING_TOUR_STEPS = [
   {
     targetId: 'hero-section',
-    title: 'Welcome to Thiora! 🎉',
+    title: 'Welcome to TRIZA! 🎉',
     description: 'Create your shop, sell freelance services, digital downloads, or physical products — all in one international marketplace!',
   },
   {
@@ -70,7 +70,7 @@ const LANDING_TOUR_STEPS = [
 const LOGIN_TOUR_STEPS = [
   {
     title: 'Welcome Back! 🎉',
-    description: 'Let me show you around your Thiora dashboard! Here\'s everything you can do.',
+    description: 'Let me show you around your TRIZA dashboard! Here\'s everything you can do.',
   },
   {
     title: 'Your Dashboard 📊',
@@ -102,7 +102,7 @@ const LOGIN_TOUR_STEPS = [
   },
   {
     title: 'Need Help? I\'m Here! ✨',
-    description: 'Just tap me anytime! I can answer questions about any feature. Enjoy Thiora! 🌟',
+    description: 'Just tap me anytime! I can answer questions about any feature. Enjoy TRIZA! 🌟',
   },
 ]
 
@@ -110,9 +110,9 @@ const LOGIN_TOUR_STEPS = [
 function getWelcomeMessage(isAuthenticated: boolean, userName?: string, currentView?: string): string {
   if (!isAuthenticated) {
     const greetings = [
-      "Hey there! 👋 I'm Thori, your Thiora guide! I can help you explore our international marketplace — freelance services, digital downloads, and physical products, all in one place!",
-      "Welcome to Thiora! ✨ I'm Thori, your personal guide! Here you can sell anything — freelance services, digital products, or physical items. Work from anywhere, get paid globally!",
-      "Hi! 🌟 I'm Thori! Thiora is an international marketplace where sellers and freelancers keep 90% of earnings! Let me help you get started — just ask me anything!",
+      "Hey there! 👋 I'm Thori, your TRIZA guide! I can help you explore our international marketplace — freelance services, digital downloads, and physical products, all in one place!",
+      "Welcome to TRIZA! ✨ I'm Thori, your personal guide! Here you can sell anything — freelance services, digital products, or physical items. Work from anywhere, get paid globally!",
+      "Hi! 🌟 I'm Thori! TRIZA is an international marketplace where sellers and freelancers keep 90% of earnings! Let me help you get started — just ask me anything!",
     ]
     return greetings[Math.floor(Math.random() * greetings.length)]
   }
@@ -124,25 +124,25 @@ function getWelcomeMessage(isAuthenticated: boolean, userName?: string, currentV
   }
 
   if (currentView === 'buyer-dashboard') {
-    return `Hey${name}! 👋 Looking for something special? I can help you find the perfect product, gig, or deal on Thiora!`
+    return `Hey${name}! 👋 Looking for something special? I can help you find the perfect product, gig, or deal on TRIZA!`
   }
 
-  return `Hey${name}! 😊 I'm Thori, your Thiora guide! Whether you're buying, selling, or freelancing — I've got you covered. What can I help you with?`
+  return `Hey${name}! 😊 I'm Thori, your TRIZA guide! Whether you're buying, selling, or freelancing — I've got you covered. What can I help you with?`
 }
 
 // Suggested quick actions
 function getSuggestedActions(isAuthenticated: boolean, currentView?: string): Array<{ label: string; message: string }> {
   if (!isAuthenticated) {
     return [
-      { label: 'How does Thiora work?', message: 'How does Thiora work?' },
-      { label: 'How to start selling?', message: 'How can I start selling on Thiora?' },
-      { label: 'Payment methods', message: 'What payment methods does Thiora support?' },
+      { label: 'How does TRIZA work?', message: 'How does TRIZA work?' },
+      { label: 'How to start selling?', message: 'How can I start selling on TRIZA?' },
+      { label: 'Payment methods', message: 'What payment methods does TRIZA support?' },
     ]
   }
 
   if (currentView === 'seller-dashboard') {
     return [
-      { label: 'Boost my sales', message: 'How can I boost my sales on Thiora?' },
+      { label: 'Boost my sales', message: 'How can I boost my sales on TRIZA?' },
       { label: 'Create a product', message: 'How do I create a new product listing?' },
       { label: 'Withdraw earnings', message: 'How do I withdraw my earnings?' },
     ]
@@ -157,8 +157,8 @@ function getSuggestedActions(isAuthenticated: boolean, currentView?: string): Ar
   }
 
   return [
-    { label: 'Explore features', message: 'What features does Thiora offer?' },
-    { label: 'Become a freelancer', message: 'How can I start freelancing on Thiora?' },
+    { label: 'Explore features', message: 'What features does TRIZA offer?' },
+    { label: 'Become a freelancer', message: 'How can I start freelancing on TRIZA?' },
     { label: 'Find freelancers', message: 'How do I find and hire freelancers?' },
   ]
 }
@@ -694,7 +694,7 @@ export function AIGuideMascot() {
                 ✕
               </button>
               <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed pr-3">
-                👋 Hey! I&apos;m <strong className="text-amber-600">Thori</strong>, your Thiora guide! Buy, sell, or freelance — I can help!
+                👋 Hey! I&apos;m <strong className="text-amber-600">Thori</strong>, your TRIZA guide! Buy, sell, or freelance — I can help!
               </p>
               {/* Take tour buttons */}
               {!isAuthenticated && currentView === 'landing' && (
@@ -841,7 +841,7 @@ export function AIGuideMascot() {
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-sm">Thori</h3>
-                <p className="text-[11px] text-amber-100">Your Thiora Guide ✨</p>
+                <p className="text-[11px] text-amber-100">Your TRIZA Guide ✨</p>
               </div>
               {/* Restart Tour Button */}
               <button

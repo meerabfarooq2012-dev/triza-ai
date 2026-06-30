@@ -1,5 +1,5 @@
 // =============================================================================
-// Thiora Marketplace - Supported Payment Methods Configuration
+// TRIZA Marketplace - Supported Payment Methods Configuration
 // =============================================================================
 // Active: Methods that are fully integrated and ready to use
 // Coming Soon: Methods that will be available in future updates

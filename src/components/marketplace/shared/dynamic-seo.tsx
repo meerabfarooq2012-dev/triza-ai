@@ -4,14 +4,14 @@ import { useEffect, useRef, useCallback } from 'react'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 
 // ---------------------------------------------------------------------------
-// Default SEO values for the Thiora marketplace
+// Default SEO values for the TRIZA marketplace
 // ---------------------------------------------------------------------------
 const DEFAULT_SEO = {
-  title: 'Thiora - Freelance. Digital. Physical. One Platform.',
+  title: 'TRIZA - Freelance. Digital. Physical. One Platform.',
   description:
     'Freelance services, digital downloads, and physical products — three worlds, one marketplace.',
   keywords:
-    'Thiora, marketplace, e-commerce, digital products, freelance, online shop, seller',
+    'TRIZA, marketplace, e-commerce, digital products, freelance, online shop, seller',
   ogImage: '/og-image.png',
 }
 
@@ -129,7 +129,7 @@ function applySEO(seo: SEOData) {
     property: 'og:url',
     content: seo.canonicalUrl || window.location.href,
   })
-  setMetaTag({ property: 'og:site_name', content: 'Thiora' })
+  setMetaTag({ property: 'og:site_name', content: 'TRIZA' })
 
   // Twitter Card
   setMetaTag({ name: 'twitter:card', content: 'summary_large_image' })
@@ -195,7 +195,7 @@ async function fetchProductSEO(
     const url = `${window.location.origin}?product=${productId}`
 
     return {
-      title: `${product.name} — Thiora`,
+      title: `${product.name} — TRIZA`,
       description: description || DEFAULT_SEO.description,
       keywords: Array.isArray(product.tags)
         ? product.tags.join(', ')
@@ -227,7 +227,7 @@ async function fetchShopSEO(
     const url = `${window.location.origin}?shop=${slug}`
 
     return {
-      title: `${shop.name} — Thiora`,
+      title: `${shop.name} — TRIZA`,
       description: description || DEFAULT_SEO.description,
       keywords: `${shop.name}, shop, marketplace`,
       ogImage: image,
@@ -254,7 +254,7 @@ async function fetchGigSEO(
     const url = `${window.location.origin}?gig=${gigId}`
 
     return {
-      title: `${gig.title} — Thiora`,
+      title: `${gig.title} — TRIZA`,
       description: description || DEFAULT_SEO.description,
       keywords: Array.isArray(gig.tags)
         ? gig.tags.join(', ')
@@ -281,7 +281,7 @@ const VIEW_SEO_MAP: Partial<Record<string, SEOData>> = {
     ogType: 'website',
   },
   'gigs-browse': {
-    title: 'Browse Services — Thiora',
+    title: 'Browse Services — TRIZA',
     description:
       'Find freelance services from talented sellers. Browse gigs for design, development, writing, and more.',
     keywords: 'freelance, services, gigs, hire, marketplace',
@@ -289,39 +289,39 @@ const VIEW_SEO_MAP: Partial<Record<string, SEOData>> = {
     ogType: 'website',
   },
   search: {
-    title: 'Search — Thiora',
+    title: 'Search — TRIZA',
     description:
-      'Search products, shops, and services on Thiora.',
+      'Search products, shops, and services on TRIZA.',
     keywords: 'search, products, shops, marketplace',
     ogImage: DEFAULT_SEO.ogImage,
     ogType: 'website',
   },
   privacy: {
-    title: 'Privacy Policy — Thiora',
-    description: 'Read the Thiora privacy policy.',
+    title: 'Privacy Policy — TRIZA',
+    description: 'Read the TRIZA privacy policy.',
     ogImage: DEFAULT_SEO.ogImage,
     ogType: 'website',
   },
   terms: {
-    title: 'Terms of Service — Thiora',
-    description: 'Read the Thiora terms of service.',
+    title: 'Terms of Service — TRIZA',
+    description: 'Read the TRIZA terms of service.',
     ogImage: DEFAULT_SEO.ogImage,
     ogType: 'website',
   },
   'buyer-dashboard': {
-    title: 'My Dashboard — Thiora',
+    title: 'My Dashboard — TRIZA',
     description: 'Manage your orders, favorites, and account settings.',
     ogImage: DEFAULT_SEO.ogImage,
     ogType: 'website',
   },
   'seller-dashboard': {
-    title: 'Seller Dashboard — Thiora',
+    title: 'Seller Dashboard — TRIZA',
     description: 'Manage your shop, products, orders, and analytics.',
     ogImage: DEFAULT_SEO.ogImage,
     ogType: 'website',
   },
   admin: {
-    title: 'Admin Panel — Thiora',
+    title: 'Admin Panel — TRIZA',
     description: 'Marketplace administration panel.',
     ogImage: DEFAULT_SEO.ogImage,
     ogType: 'website',
@@ -334,14 +334,14 @@ const VIEW_SEO_MAP: Partial<Record<string, SEOData>> = {
 
 /**
  * Client-side SEO component that dynamically updates `document.title` and
- * meta tags when the current view changes. Because Thiora is an SPA with
+ * meta tags when the current view changes. Because TRIZA is an SPA with
  * Zustand-based navigation, we cannot use Next.js `generateMetadata` in the
  * traditional file-based routing way. Instead, this component manipulates the
  * DOM `<head>` directly.
  *
  * Features:
  *  - Debounces rapid view changes (150 ms) to avoid unnecessary fetches
- *  - Falls back to default Thiora SEO while data is loading or on error
+ *  - Falls back to default TRIZA SEO while data is loading or on error
  *  - Cleans up all injected tags on unmount
  *  - Sets canonical URL, Open Graph, and Twitter Card tags
  */
@@ -367,7 +367,7 @@ export function DynamicSEO() {
       if (view === 'product-detail' && params.productId) {
         // Show a generic title immediately while data loads
         applySEO({
-          title: 'Loading Product… — Thiora',
+          title: 'Loading Product… — TRIZA',
           description: DEFAULT_SEO.description,
           ogImage: DEFAULT_SEO.ogImage,
           ogType: 'product',
@@ -381,7 +381,7 @@ export function DynamicSEO() {
           applySEO(seo)
         } else {
           applySEO({
-            title: 'Product — Thiora',
+            title: 'Product — TRIZA',
             description: DEFAULT_SEO.description,
             ogImage: DEFAULT_SEO.ogImage,
             ogType: 'product',
@@ -393,7 +393,7 @@ export function DynamicSEO() {
 
       if (view === 'shop-view' && params.shopSlug) {
         applySEO({
-          title: 'Loading Shop… — Thiora',
+          title: 'Loading Shop… — TRIZA',
           description: DEFAULT_SEO.description,
           ogImage: DEFAULT_SEO.ogImage,
           ogType: 'website',
@@ -406,7 +406,7 @@ export function DynamicSEO() {
           applySEO(seo)
         } else {
           applySEO({
-            title: 'Shop — Thiora',
+            title: 'Shop — TRIZA',
             description: DEFAULT_SEO.description,
             ogImage: DEFAULT_SEO.ogImage,
             ogType: 'website',
@@ -418,7 +418,7 @@ export function DynamicSEO() {
 
       if (view === 'gig-detail' && params.gigId) {
         applySEO({
-          title: 'Loading Service… — Thiora',
+          title: 'Loading Service… — TRIZA',
           description: DEFAULT_SEO.description,
           ogImage: DEFAULT_SEO.ogImage,
           ogType: 'website',
@@ -431,7 +431,7 @@ export function DynamicSEO() {
           applySEO(seo)
         } else {
           applySEO({
-            title: 'Service — Thiora',
+            title: 'Service — TRIZA',
             description: DEFAULT_SEO.description,
             ogImage: DEFAULT_SEO.ogImage,
             ogType: 'website',

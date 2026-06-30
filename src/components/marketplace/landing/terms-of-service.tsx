@@ -11,7 +11,7 @@ const sections = [
     number: '1',
     title: 'Use of Platform',
     content:
-      'Thiora is a marketplace where users can join as buyers, sellers, freelancers, or both. You agree to use the platform only for legal and appropriate purposes.',
+      'TRIZA is a marketplace where users can join as buyers, sellers, freelancers, or both. You agree to use the platform only for legal and appropriate purposes.',
     gradient: 'from-amber-500 to-amber-600',
   },
   {
@@ -27,7 +27,7 @@ const sections = [
     number: '3',
     title: 'Buying and Selling',
     content:
-      'Sellers are responsible for the accuracy of their listings, products, and services. Buyers agree to pay for orders they place. Thiora is not responsible for disputes between users but may help in resolving them.',
+      'Sellers are responsible for the accuracy of their listings, products, and services. Buyers agree to pay for orders they place. TRIZA is not responsible for disputes between users but may help in resolving them.',
     gradient: 'from-amber-500 to-yellow-600',
   },
   {
@@ -64,7 +64,7 @@ const sections = [
     number: '7',
     title: 'Termination',
     content:
-      'Thiora reserves the right to suspend or terminate accounts that violate these terms without prior notice.',
+      'TRIZA reserves the right to suspend or terminate accounts that violate these terms without prior notice.',
     gradient: 'from-amber-500 to-amber-600',
   },
   {
@@ -116,7 +116,7 @@ export function TermsOfService() {
               </span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Welcome to Thiora. By using our platform, you agree to follow these Terms of Service. Please read them carefully before using the website.
+              Welcome to TRIZA. By using our platform, you agree to follow these Terms of Service. Please read them carefully before using the website.
             </p>
           </motion.div>
         </div>
@@ -176,7 +176,7 @@ export function TermsOfService() {
             className="mt-12 rounded-2xl gold-gradient p-8 sm:p-10 text-center"
           >
             <p className="text-lg text-white/90 font-medium">
-              By using Thiora, you agree to these Terms of Service.
+              By using TRIZA, you agree to these Terms of Service.
             </p>
             <p className="text-sm text-white/70 mt-2">
               Last updated: {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}

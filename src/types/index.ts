@@ -1,5 +1,5 @@
 // =============================================================================
-// Thiora Marketplace - TypeScript Types
+// TRIZA Marketplace - TypeScript Types
 // =============================================================================
 
 // ----- Enums / Union Types -----
@@ -1381,7 +1381,7 @@ export const TIER_CONFIG: Record<SellerTierLevel, {
     borderColor: 'border-amber-200',
     icon: 'Medal',
     description: 'New seller building their reputation',
-    requirements: ['0-10 sales', 'Getting started on Thiora'],
+    requirements: ['0-10 sales', 'Getting started on TRIZA'],
   },
   silver: {
     label: 'Silver Seller',

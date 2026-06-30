@@ -364,7 +364,7 @@ export function SellerShopSettings() {
               url={shopUrl}
               title={name || shop.name}
               description={`Anyone with this link can visit your shop directly. Share it on WhatsApp, Facebook, Twitter, and more!`}
-              shareText={`Check out ${name || shop.name} on Thiora! 🛍️`}
+              shareText={`Check out ${name || shop.name} on TRIZA! 🛍️`}
             />
           </CardContent>
         </Card>

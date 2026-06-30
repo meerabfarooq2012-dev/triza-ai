@@ -705,7 +705,7 @@ export default function ShopView() {
                 <ShareShopUrl
                   url={`${window.location.origin}/?shop=${shopSlug}`}
                   title={shop.name}
-                  shareText={`Check out ${shop.name} on Thiora! 🛍️ ${shop.description ? shop.description.slice(0, 100) : ''}`}
+                  shareText={`Check out ${shop.name} on TRIZA! 🛍️ ${shop.description ? shop.description.slice(0, 100) : ''}`}
                 />
               </DialogContent>
             </Dialog>

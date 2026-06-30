@@ -200,7 +200,7 @@ function generateState(): string {
  * After consent, Google redirects back to the current page with
  * #access_token=...&state=... in the URL fragment.
  *
- * @param role  The Thiora role to assign ('buyer' | 'seller' | 'both')
+ * @param role  The TRIZA role to assign ('buyer' | 'seller' | 'both')
  * @param tab   Which auth tab was active ('login' | 'register')
  */
 export function redirectToGoogleOAuth(

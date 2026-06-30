@@ -270,7 +270,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
     if (withdrawal.user?.email) {
       sendEmailAsync({
         to: withdrawal.user.email,
-        subject: `⏳ Withdrawal Request — PKR ${amount.toFixed(0)} — Thiora`,
+        subject: `⏳ Withdrawal Request — PKR ${amount.toFixed(0)} — TRIZA`,
         html: withdrawalNotificationEmail({
           userName: withdrawal.user.name,
           amount,

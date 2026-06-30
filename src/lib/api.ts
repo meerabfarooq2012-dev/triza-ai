@@ -41,7 +41,7 @@ import type {
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 
 // =============================================================================
-// Thiora Marketplace - API Client
+// TRIZA Marketplace - API Client
 // =============================================================================
 
 class ApiError extends Error {

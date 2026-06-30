@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { toast } from 'sonner'
 
 // =============================================================================
-// Thiora Marketplace - Comparison Store (temporary, no persist)
+// TRIZA Marketplace - Comparison Store (temporary, no persist)
 // =============================================================================
 
 const MAX_COMPARE = 4

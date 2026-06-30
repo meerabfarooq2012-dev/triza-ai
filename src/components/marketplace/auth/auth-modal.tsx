@@ -134,10 +134,10 @@ export function AuthModal() {
   const motivationalQuotes = [
     { text: 'The secret of getting ahead is getting started.', author: 'Mark Twain' },
     { text: 'Every expert was once a beginner. Start your journey today.', author: 'Unknown' },
-    { text: 'Your marketplace. Your rules. Your success story starts here.', author: 'Thiora' },
+    { text: 'Your marketplace. Your rules. Your success story starts here.', author: 'TRIZA' },
     { text: 'Don\'t wait for opportunity. Create it.', author: 'Unknown' },
     { text: 'The best time to start was yesterday. The next best time is now.', author: 'Unknown' },
-    { text: 'Turn your passion into profit. Your shop is just one click away.', author: 'Thiora' },
+    { text: 'Turn your passion into profit. Your shop is just one click away.', author: 'TRIZA' },
     { text: 'Success is not final, failure is not fatal: it is the courage to continue that counts.', author: 'Winston Churchill' },
     { text: 'Dream big. Start small. Act now.', author: 'Unknown' },
   ]
@@ -1188,7 +1188,7 @@ export function AuthModal() {
             {showPolicy === 'privacy' ? (
               <>
                 <p className="text-muted-foreground leading-relaxed">
-                  At Thiora, we respect your privacy and are committed to protecting your personal information. This Privacy Policy explains how we collect, use, and safeguard your data when you use our platform.
+                  At TRIZA, we respect your privacy and are committed to protecting your personal information. This Privacy Policy explains how we collect, use, and safeguard your data when you use our platform.
                 </p>
                 <div className="space-y-4">
                   <div>
@@ -1213,19 +1213,19 @@ export function AuthModal() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-sm mb-1">Changes to Policy</h3>
-                    <p className="text-sm text-muted-foreground">Thiora may update this Privacy Policy from time to time. Any changes will be posted on this page.</p>
+                    <p className="text-sm text-muted-foreground">TRIZA may update this Privacy Policy from time to time. Any changes will be posted on this page.</p>
                   </div>
                 </div>
               </>
             ) : (
               <>
                 <p className="text-muted-foreground leading-relaxed">
-                  Welcome to Thiora. By using our platform, you agree to follow these Terms of Service. Please read them carefully before using the website.
+                  Welcome to TRIZA. By using our platform, you agree to follow these Terms of Service. Please read them carefully before using the website.
                 </p>
                 <div className="space-y-4">
                   <div>
                     <h3 className="font-semibold text-sm mb-1">1. Use of Platform</h3>
-                    <p className="text-sm text-muted-foreground">Thiora is a marketplace where users can join as buyers, sellers, freelancers, or both. You agree to use the platform only for legal and appropriate purposes.</p>
+                    <p className="text-sm text-muted-foreground">TRIZA is a marketplace where users can join as buyers, sellers, freelancers, or both. You agree to use the platform only for legal and appropriate purposes.</p>
                   </div>
                   <div>
                     <h3 className="font-semibold text-sm mb-1">2. Accounts</h3>
@@ -1233,7 +1233,7 @@ export function AuthModal() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-sm mb-1">3. Buying and Selling</h3>
-                    <p className="text-sm text-muted-foreground">Sellers are responsible for the accuracy of their listings, products, and services. Buyers agree to pay for orders they place. Thiora is not responsible for disputes between users but may help in resolving them.</p>
+                    <p className="text-sm text-muted-foreground">Sellers are responsible for the accuracy of their listings, products, and services. Buyers agree to pay for orders they place. TRIZA is not responsible for disputes between users but may help in resolving them.</p>
                   </div>
                   <div>
                     <h3 className="font-semibold text-sm mb-1">4. Payments</h3>
@@ -1250,7 +1250,7 @@ export function AuthModal() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-sm mb-1">6. Termination</h3>
-                    <p className="text-sm text-muted-foreground">Thiora reserves the right to suspend or terminate accounts that violate these terms without prior notice.</p>
+                    <p className="text-sm text-muted-foreground">TRIZA reserves the right to suspend or terminate accounts that violate these terms without prior notice.</p>
                   </div>
                   <div>
                     <h3 className="font-semibold text-sm mb-1">7. Changes to Terms</h3>

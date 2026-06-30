@@ -1,5 +1,5 @@
 // =============================================================================
-// Thiora CSRF Token Utility — Generate and validate signed CSRF tokens
+// TRIZA CSRF Token Utility — Generate and validate signed CSRF tokens
 // Uses HMAC signing with a server-side secret (double-submit cookie pattern)
 // =============================================================================
 

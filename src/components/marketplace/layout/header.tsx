@@ -181,7 +181,7 @@ export function Header() {
               className="flex items-center gap-2 flex-shrink-0"
               aria-label="Go to homepage"
             >
-              <img src="/logo.png" alt="Thiora" className="h-8 w-8 rounded-lg" />
+              <img src="/logo.png" alt="TRIZA" className="h-8 w-8 rounded-lg" />
               <span className="text-xl font-extrabold gold-gradient-text bg-clip-text text-transparent">
                 {PLATFORM_NAME}
               </span>
@@ -449,7 +449,7 @@ export function Header() {
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={openInstallDialog} className="text-amber-600 dark:text-amber-400 focus:text-amber-600">
                         <Download className="mr-2 h-4 w-4" />
-                        Install Thiora App
+                        Install TRIZA App
                       </DropdownMenuItem>
                     </>
                   )}
@@ -564,7 +564,7 @@ export function Header() {
           <SheetHeader className="p-4 pb-2 border-b">
             <SheetTitle>
               <div className="flex items-center gap-2">
-                <img src="/logo.png" alt="Thiora" className="h-7 w-7 rounded-lg" />
+                <img src="/logo.png" alt="TRIZA" className="h-7 w-7 rounded-lg" />
                 <span className="text-lg font-extrabold gold-gradient-text bg-clip-text text-transparent">
                   {PLATFORM_NAME}
                 </span>
@@ -789,7 +789,7 @@ export function Header() {
                       onClick={() => { openInstallDialog(); setMobileMenuOpen(false) }}
                     >
                       <Download className="h-4.5 w-4.5" />
-                      Install Thiora App
+                      Install TRIZA App
                     </Button>
                   )}
 

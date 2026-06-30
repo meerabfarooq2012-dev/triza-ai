@@ -191,7 +191,7 @@ export const POST = async (request: NextRequest) => {
     // Send welcome email (non-blocking)
     sendEmailAsync({
       to: googleUser.email,
-      subject: 'Welcome to Thiora! 🎉',
+      subject: 'Welcome to TRIZA! 🎉',
       html: welcomeEmail({ name: googleUser.name || googleUser.email.split('@')[0], role }),
     });
 
