@@ -57,6 +57,10 @@ const PUBLIC_API_PREFIXES = [
   '/api/search',
   '/api/currency/rates',
   '/api/csrf-token',
+  // TRIZA chatbot — public, no auth required (own in-memory fallback store)
+  '/api/ai/chat',
+  '/api/ai/conversations',
+  '/api/ai/seed',
 ]
 
 /** Public API routes for GET requests only. Non-GET methods require auth. */
@@ -270,7 +274,7 @@ async function _proxyInner(request: NextRequest) {
   // -----------------------------------------------------------------------
   if (isApiRoute) {
     const requestOrigin = request.headers.get('origin')
-    const corsHeaders = getCorsHeaders(requestOrigin)
+    const corsHeaders = getCorsHeaders(requestOrigin, request.nextUrl.host)
 
     // Handle OPTIONS preflight requests
     if (request.method === 'OPTIONS') {
@@ -321,7 +325,7 @@ async function _proxyInner(request: NextRequest) {
       }
       // Add CORS headers
       const requestOrigin = request.headers.get('origin')
-      const corsHeaders = getCorsHeaders(requestOrigin)
+      const corsHeaders = getCorsHeaders(requestOrigin, request.nextUrl.host)
       for (const [key, value] of Object.entries(corsHeaders)) {
         response.headers.set(key, value)
       }
@@ -333,23 +337,49 @@ async function _proxyInner(request: NextRequest) {
       try {
         const origin = request.headers.get('origin')
         const referer = request.headers.get('referer')
-        const adminAllowedOrigins = [
-          process.env.NEXT_PUBLIC_APP_URL || '',
-          'https://thiora.vercel.app',
-        ].filter(Boolean)
+        const requestHost = request.nextUrl.host
 
+        // Same-origin check (works on any deployment URL)
         let adminOriginValid = false
         if (origin) {
-          adminOriginValid = adminAllowedOrigins.some(allowed => origin === allowed)
-        } else if (referer) {
           try {
-            const refererOrigin = new URL(referer).origin
-            adminOriginValid = adminAllowedOrigins.some(allowed => refererOrigin === allowed)
+            adminOriginValid = new URL(origin).host === requestHost
           } catch {
             adminOriginValid = false
           }
-        } else {
-          // No origin — check if JWT token is valid (API clients)
+        }
+        if (!adminOriginValid && referer) {
+          try {
+            adminOriginValid = new URL(referer).host === requestHost
+          } catch {
+            adminOriginValid = false
+          }
+        }
+
+        // Explicitly allowed origins
+        if (!adminOriginValid) {
+          const adminAllowedOrigins = [
+            process.env.NEXT_PUBLIC_APP_URL || '',
+            process.env.FRONTEND_URL || '',
+            ...(process.env.ADDITIONAL_CORS_ORIGINS
+              ? process.env.ADDITIONAL_CORS_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
+              : []),
+          ].filter(Boolean) as string[]
+
+          const compareOrigin = origin || (referer ? (() => { try { return new URL(referer).origin } catch { return '' } })() : '')
+          if (compareOrigin) {
+            adminOriginValid = adminAllowedOrigins.some(allowed => {
+              try {
+                return new URL(allowed).host === new URL(compareOrigin).host
+              } catch {
+                return false
+              }
+            })
+          }
+        }
+
+        // No Origin/Referer — allow if valid JWT (API clients)
+        if (!adminOriginValid && !origin && !referer) {
           const token = extractBearerToken(request)
           if (token) {
             const payload = await verifyJwt(token)
@@ -418,7 +448,7 @@ async function _proxyInner(request: NextRequest) {
 
     // Add CORS headers
     const requestOrigin = request.headers.get('origin')
-    const corsHeaders = getCorsHeaders(requestOrigin)
+    const corsHeaders = getCorsHeaders(requestOrigin, request.nextUrl.host)
     for (const [key, value] of Object.entries(corsHeaders)) {
       response.headers.set(key, value)
     }
@@ -475,30 +505,64 @@ async function _proxyInner(request: NextRequest) {
   // -----------------------------------------------------------------------
   // 6. CSRF Protection — Origin-based validation for mutating API requests
   //    (Complements the passthrough withCsrf wrapper in route handlers)
+  //
+  //    Same-origin requests are ALWAYS allowed (Origin matches the request's
+  //    own host). This is the correct CSRF model: a browser-originated request
+  //    from your own site is safe; cross-site forged requests carry a foreign
+  //    Origin. This works on ANY deployment URL (Vercel preview URLs, custom
+  //    domains, localhost) without requiring NEXT_PUBLIC_APP_URL to be set.
   // -----------------------------------------------------------------------
   if (!isDev && isApiRoute && MUTATING_METHODS.has(request.method)) {
     try {
       const origin = request.headers.get('origin')
       const referer = request.headers.get('referer')
+      const requestHost = request.nextUrl.host // e.g. triza-ai.vercel.app or localhost:3000
 
-      const allowedOrigins = [
-        process.env.NEXT_PUBLIC_APP_URL || '',
-        'https://thiora.vercel.app',
-      ].filter(Boolean)
-
+      // Case 1: Same-origin — Origin header matches the request's own host
       let originValid = false
-
       if (origin) {
-        originValid = allowedOrigins.some(allowed => origin === allowed)
-      } else if (referer) {
         try {
-          const refererOrigin = new URL(referer).origin
-          originValid = allowedOrigins.some(allowed => refererOrigin === allowed)
+          const originHost = new URL(origin).host
+          originValid = originHost === requestHost
         } catch {
           originValid = false
         }
-      } else {
-        // No Origin or Referer in production — allow if valid auth token (API clients)
+      }
+
+      // Case 2: Same-origin via Referer (fallback when Origin is absent)
+      if (!originValid && referer) {
+        try {
+          const refererHost = new URL(referer).host
+          originValid = refererHost === requestHost
+        } catch {
+          originValid = false
+        }
+      }
+
+      // Case 3: Explicitly allowed origins (configured via env / hardcoded)
+      if (!originValid) {
+        const allowedOrigins = [
+          process.env.NEXT_PUBLIC_APP_URL || '',
+          process.env.FRONTEND_URL || '',
+          ...(process.env.ADDITIONAL_CORS_ORIGINS
+            ? process.env.ADDITIONAL_CORS_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
+            : []),
+        ].filter(Boolean) as string[]
+
+        const compareOrigin = origin || (referer ? (() => { try { return new URL(referer).origin } catch { return '' } })() : '')
+        if (compareOrigin) {
+          originValid = allowedOrigins.some(allowed => {
+            try {
+              return new URL(allowed).host === new URL(compareOrigin).host
+            } catch {
+              return false
+            }
+          })
+        }
+      }
+
+      // Case 4: No Origin or Referer at all — allow if valid auth token (API clients)
+      if (!originValid && !origin && !referer) {
         const token = extractBearerToken(request)
         if (token) {
           const payload = await verifyJwt(token)
@@ -532,7 +596,7 @@ async function _proxyInner(request: NextRequest) {
   // Add CORS headers to API routes
   if (isApiRoute) {
     const requestOrigin = request.headers.get('origin')
-    const corsHeaders = getCorsHeaders(requestOrigin)
+    const corsHeaders = getCorsHeaders(requestOrigin, request.nextUrl.host)
     for (const [key, value] of Object.entries(corsHeaders)) {
       response.headers.set(key, value)
     }

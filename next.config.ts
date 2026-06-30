@@ -6,11 +6,6 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // ESLint errors should NOT block production builds on Vercel.
-  // (The only existing lint warning is in an unrelated Google OAuth hook.)
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   reactStrictMode: true,
 
   allowedDevOrigins: [
