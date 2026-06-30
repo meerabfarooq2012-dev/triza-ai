@@ -36,6 +36,14 @@ function getDatabaseUrl() {
   // Always check process.env first
   let dbUrl = process.env.DATABASE_URL || ''
 
+  // Strip surrounding quotes that are sometimes accidentally included when
+  // pasting a URL into the Vercel env-var dashboard. A value like
+  //   "postgresql://user:pass@host/db"
+  // (with the literal double-quotes) would otherwise break Prisma parsing.
+  if (dbUrl) {
+    dbUrl = dbUrl.trim().replace(/^["'`]+|["'`]+$/g, '')
+  }
+
   // On Vercel, ONLY use process.env (never fall back to .env file)
   // This prevents the SQLite .env from overriding Vercel's PostgreSQL env var
   if (dbUrl) {
@@ -160,12 +168,22 @@ function runPrismaDbPush(dbUrl) {
     return
   }
 
+  // Safety net: if DIRECT_URL is not set, fall back to DATABASE_URL.
+  // The schema now uses directUrl = env("DATABASE_URL") so this is rarely
+  // needed, but we set it here too in case an older schema.prisma is cached
+  // or Vercel runs `prisma db push` as a separate explicit command.
+  if (!process.env.DIRECT_URL && !process.env.npm_config_DIRECT_URL) {
+    process.env.DIRECT_URL = dbUrl
+    console.log('🔗 DIRECT_URL not set — using DATABASE_URL as fallback for directUrl')
+  }
+
   try {
     console.log('📤 Pushing schema to database (Vercel build)...')
     execSync('npx prisma db push --accept-data-loss', {
       cwd: ROOT_DIR,
       stdio: 'inherit',
-      timeout: 120000
+      timeout: 120000,
+      env: { ...process.env }
     })
     console.log('✅ Database schema pushed successfully')
   } catch (error) {

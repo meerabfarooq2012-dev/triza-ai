@@ -4,9 +4,12 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
-  // pgbouncer mode is handled via ?pgbouncer=true in DATABASE_URL
+  url       = env("DATABASE_URL")
+  // Use the same connection for directUrl so only DATABASE_URL is required.
+  // Neon's pooler handles both query + schema-engine traffic fine.
+  // (Previously this referenced a separate DIRECT_URL env var, which caused
+  //  P1013 "scheme not recognized" when DIRECT_URL was not set on Vercel.)
+  directUrl = env("DATABASE_URL")
 }
 
 model User {
