@@ -627,3 +627,5 @@
 [Instrumentation] Notification service exited with code 1, signal null
 [SECURITY] JWT_SECRET environment variable is NOT set! Notification service cannot authenticate users. Refusing to start.
 [Instrumentation] Notification service exited with code 1, signal null
+[SECURITY] JWT_SECRET environment variable is NOT set! Notification service cannot authenticate users. Refusing to start.
+[Instrumentation] Notification service exited with code 1, signal null
