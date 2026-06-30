@@ -2494,3 +2494,26 @@ Stage Summary:
   wrap raw knowledge with personal intro, reflection, and follow-up
 - Implements user's principle: "baccha ki tarah seekhe — pehle bataye, phir apne andaaz mein"
 - Code pushed to: github.com/meerabfarooq2012-dev/Marketo AND github.com/meerabfarooq2012-dev/triza-ai
+
+---
+Task ID: 11
+Agent: Main Agent
+Task: Fix Vercel deployment error P1013 ("database string is invalid / scheme not recognized in database URL")
+
+Work Log:
+- Read package.json, prisma/schema.prisma, scripts/switch-db.mjs, src/lib/db.ts, src/components/ai/chat-engine.ts
+- Diagnosed root cause: on Vercel with no DATABASE_URL set, switch-db.mjs defaulted to PostgreSQL schema, then the build command ran `prisma db push --accept-data-loss` which fails with P1013 because the URL is empty
+- Confirmed TRIZA does NOT need a database: chat-engine.ts already has an in-memory fallback store (globalThis.__trizaMemStore), and all knowledge is hardcoded in TypeScript batch files
+- Rewrote scripts/switch-db.mjs:
+  * Added hasRealDatabaseUrl() helper (treats empty/"file:"/"file://" as missing)
+  * detectDatabaseType() now falls back to SQLite (not PostgreSQL) when no usable URL — safe for `prisma generate` which doesn't connect to DB
+  * runPrismaDbPush() now takes dbUrl arg and SKIPS prisma db push entirely when there's no real DATABASE_URL (prevents P1013)
+- Simplified package.json vercel-build from `node scripts/switch-db.mjs && prisma generate && next build` to `node scripts/switch-db.mjs && next build` (switch-db already runs prisma generate internally and conditionally runs db push)
+- Simulated Vercel environment locally: `VERCEL=1 VERCEL_ENV=production DATABASE_URL="" node scripts/switch-db.mjs` → exit code 0, prisma generate succeeds, db push correctly skipped
+- Committed (289e30b) and pushed to triza-ai remote (main branch)
+
+Stage Summary:
+- Vercel build will now succeed even with NO DATABASE_URL configured
+- TRIZA runs fully in-memory at runtime (chat-engine fallback store) — no DB needed for AI to work
+- Fix pushed to github.com/meerabfarooq2012-dev/triza-ai — Vercel auto-deploy triggered
+- If user later wants persistent chat history on Vercel, they can add a PostgreSQL DATABASE_URL env var and the existing switch-db logic will automatically use the PostgreSQL schema + push to it
