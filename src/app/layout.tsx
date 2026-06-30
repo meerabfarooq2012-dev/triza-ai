@@ -147,6 +147,44 @@ export default function RootLayout({
             `,
           }}
         />
+        {/* Force-clear stale service worker caches from older versions (thiora-v*, triza-v1..v4).
+             This runs BEFORE React hydrates so the user always gets fresh JS bundles.
+             Uses localStorage so the migration happens exactly ONCE per browser —
+             after that the new triza-v5 SW registers and works normally. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function(){
+                if(!('serviceWorker' in navigator)) return;
+                var REQUIRED = 'triza-v5';
+                var KEY = 'triza_sw_version';
+                try {
+                  var current = localStorage.getItem(KEY) || '';
+                  if(current === REQUIRED) return; // already migrated, skip
+
+                  // Migrate: unregister all SWs + clear all caches + reload once
+                  navigator.serviceWorker.getRegistrations().then(function(regs){
+                    return Promise.all(regs.map(function(r){ return r.unregister(); }));
+                  }).then(function(){
+                    if('caches' in window){
+                      return caches.keys().then(function(keys){
+                        return Promise.all(keys.map(function(k){ return caches.delete(k); }));
+                      });
+                    }
+                  }).then(function(){
+                    localStorage.setItem(KEY, REQUIRED);
+                    var u = new URL(location.href);
+                    u.searchParams.set('_sw', Date.now());
+                    location.replace(u.toString());
+                  }).catch(function(e){
+                    // Even on error, mark as migrated so we don't loop
+                    try { localStorage.setItem(KEY, REQUIRED); } catch(_){}
+                  });
+                } catch(e) {}
+              })();
+            `,
+          }}
+        />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#10b981" />
         <meta name="apple-mobile-web-app-capable" content="yes" />

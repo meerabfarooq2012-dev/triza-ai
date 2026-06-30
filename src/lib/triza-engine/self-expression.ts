@@ -313,16 +313,18 @@ export function expressInOwnVoice(
 
   // 5. Curious follow-up (TRIZA engaging like a child who wants
   //    to talk more about what it just learned)
-  if (urdu) {
-    parts.push(followUp);
-  } else {
-    // English-leaning follow-up
-    parts.push(
-      followUp.replace(
-        /batao|suno|karo/i,
-        'let me know'
-      )
-    );
+  if (followUp) {
+    if (urdu) {
+      parts.push(followUp);
+    } else {
+      // English-leaning follow-up
+      parts.push(
+        followUp.replace(
+          /batao|suno|karo/i,
+          'let me know'
+        )
+      );
+    }
   }
 
   return {

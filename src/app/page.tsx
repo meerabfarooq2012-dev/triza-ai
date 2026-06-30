@@ -168,12 +168,40 @@ export default function HomePage() {
         return { ...prev, messages: [...prev.messages, userMsg] }
       })
 
+      // Retry helper — tries the fetch up to 3 times with exponential backoff
+      const fetchWithRetry = async (
+        url: string,
+        body: string,
+        retries = 3
+      ): Promise<Response> => {
+        let lastErr: unknown
+        for (let attempt = 0; attempt < retries; attempt++) {
+          try {
+            const res = await fetch(url, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body,
+            })
+            // Don't retry on 4xx (client errors) — only retry on 5xx/network
+            if (res.status >= 400 && res.status < 500) return res
+            if (res.ok) return res
+            // 5xx → retry
+            throw new Error(`Server error: ${res.status}`)
+          } catch (err) {
+            lastErr = err
+            if (attempt < retries - 1) {
+              await new Promise((r) => setTimeout(r, 500 * (attempt + 1)))
+            }
+          }
+        }
+        throw lastErr
+      }
+
       try {
-        const res = await fetch('/api/ai/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ conversationId: convoId, message }),
-        })
+        const res = await fetchWithRetry(
+          '/api/ai/chat',
+          JSON.stringify({ conversationId: convoId, message })
+        )
         const data = await res.json()
         if (!res.ok) throw new Error(data.error || 'Failed to send')
 
@@ -216,7 +244,7 @@ export default function HomePage() {
                 id: `err-${Date.now()}`,
                 role: 'assistant',
                 content:
-                  '⚠️ Could not reach the AI backend. Please try again in a moment.',
+                  '⚠️ TRIZA se connect nahi ho paya. Backend check ho raha hai — kripya thodi der baad try karein, ya "New conversation" button se fresh start karein.',
                 createdAt: new Date().toISOString(),
               },
             ],
