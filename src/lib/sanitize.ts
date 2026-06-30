@@ -1,5 +1,5 @@
 // =============================================================================
-// TRIZA Input Sanitization Utilities
+// Thiora Input Sanitization Utilities
 // Provides sanitization and validation helpers for user input
 //
 // IMPORTANT: This module must NOT have any module-level code that can crash.

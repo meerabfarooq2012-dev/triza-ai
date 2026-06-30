@@ -1043,7 +1043,7 @@ export async function POST(request: NextRequest) {
     await createTableIfMissing('PlatformSettings',
       `CREATE TABLE IF NOT EXISTS "PlatformSettings" (
         "id" TEXT NOT NULL PRIMARY KEY DEFAULT 'default',
-        "platformName" TEXT NOT NULL DEFAULT 'TRIZA',
+        "platformName" TEXT NOT NULL DEFAULT 'Thiora',
         "tagline" TEXT,
         "description" TEXT,
         "logoUrl" TEXT,
@@ -1066,7 +1066,7 @@ export async function POST(request: NextRequest) {
       )`,
       `CREATE TABLE IF NOT EXISTS "PlatformSettings" (
         "id" TEXT NOT NULL PRIMARY KEY DEFAULT 'default',
-        "platformName" TEXT NOT NULL DEFAULT 'TRIZA',
+        "platformName" TEXT NOT NULL DEFAULT 'Thiora',
         "tagline" TEXT,
         "description" TEXT,
         "logoUrl" TEXT,

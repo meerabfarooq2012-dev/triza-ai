@@ -59,13 +59,13 @@ export function ShareProduct({
   }
 
   const handleWhatsApp = () => {
-    const text = `Check out "${productName}" on TRIZA! ${productUrl}`
+    const text = `Check out "${productName}" on Thiora! ${productUrl}`
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
     trackShare('whatsapp')
   }
 
   const handleTwitter = () => {
-    const text = `Check out "${productName}" on TRIZA!`
+    const text = `Check out "${productName}" on Thiora!`
     window.open(
       `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(productUrl)}`,
       '_blank'

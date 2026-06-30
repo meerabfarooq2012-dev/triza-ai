@@ -13,7 +13,7 @@ export default function Error({
   reset: () => void
 }) {
   useEffect(() => {
-    console.error('[TRIZA] App error:', error)
+    console.error('[Thiora] App error:', error)
     // Capture the error in Sentry (graceful no-op if Sentry is not configured)
     try {
       Sentry.captureException(error)

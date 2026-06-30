@@ -1,5 +1,5 @@
 // =============================================================================
-// TRIZA Next.js Proxy — Security Headers, Route Protection, Size Limiting
+// Thiora Next.js Proxy — Security Headers, Route Protection, Size Limiting
 // Next.js 16 uses the "proxy" convention instead of "middleware"
 // Runs on the Edge Runtime; uses `jose` for JWT verification (Edge-compatible)
 // =============================================================================

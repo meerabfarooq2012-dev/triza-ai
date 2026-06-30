@@ -1,5 +1,5 @@
 // =============================================================================
-// TRIZA With-Session Middleware — Validates that a session is still active
+// Thiora With-Session Middleware — Validates that a session is still active
 // Wraps API route handlers to enforce session-based token validation
 // Supports both Authorization header and httpOnly cookie token extraction
 // =============================================================================

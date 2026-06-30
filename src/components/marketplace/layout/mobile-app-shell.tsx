@@ -197,7 +197,7 @@ function SplashScreen({ onFinished }: { onFinished: () => void }) {
           <div className="flex h-20 w-20 items-center justify-center rounded-[22px] bg-gradient-to-br from-amber-500 to-orange-600 shadow-xl shadow-amber-500/30 ring-1 ring-white/10">
             <img
               src="/logo.png"
-              alt="TRIZA"
+              alt="Thiora"
               className="h-14 w-14 rounded-xl"
             />
           </div>
@@ -212,7 +212,7 @@ function SplashScreen({ onFinished }: { onFinished: () => void }) {
           transition={{ duration: 0.4, delay: 0.2, ease: [0.32, 0.72, 0, 1] }}
           className="text-2xl font-bold tracking-tight text-foreground"
         >
-          TRIZA
+          Thiora
         </motion.span>
 
         {/* Loading dots */}

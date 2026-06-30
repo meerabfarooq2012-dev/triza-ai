@@ -128,7 +128,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
         buyerPhone,
         buyerName,
         paymentMethod: 'easypaisa',
-        description: `TRIZA Order #${orderId.slice(-8)}`,
+        description: `Thiora Order #${orderId.slice(-8)}`,
       });
     } else if (paymentMethod === 'jazzcash') {
       gatewayResult = await initiateJazzCashPayment({
@@ -139,7 +139,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
         buyerPhone,
         buyerName,
         paymentMethod: 'jazzcash',
-        description: `TRIZA Order #${orderId.slice(-8)}`,
+        description: `Thiora Order #${orderId.slice(-8)}`,
       });
     } else if (paymentMethod === 'payfast') {
       gatewayResult = await initiatePayFastPayment({
@@ -150,7 +150,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
         buyerPhone,
         buyerName,
         paymentMethod: 'payfast',
-        description: `TRIZA Order #${orderId.slice(-8)}`,
+        description: `Thiora Order #${orderId.slice(-8)}`,
         sellerId: payment.sellerId,
         platformFee: payment.platformFee,
         sellerPayout: payment.sellerPayout,
@@ -164,7 +164,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
         buyerPhone,
         buyerName,
         paymentMethod: 'crypto',
-        description: `TRIZA Order #${orderId.slice(-8)}`,
+        description: `Thiora Order #${orderId.slice(-8)}`,
         payCurrency: payCurrency || 'btc',
         successUrl: `${process.env.PAYMENT_CALLBACK_BASE_URL || ''}?crypto_success=1&order=${orderId}`,
         cancelUrl: `${process.env.PAYMENT_CALLBACK_BASE_URL || ''}?crypto_cancel=1`,

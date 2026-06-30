@@ -1,5 +1,5 @@
 // =============================================================================
-// TRIZA CSRF Validation Middleware — Passthrough Mode
+// Thiora CSRF Validation Middleware — Passthrough Mode
 //
 // CSRF protection is now handled by Origin-based validation in the proxy
 // (src/proxy.ts), which checks Origin/Referer headers on mutating requests.

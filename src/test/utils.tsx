@@ -1,5 +1,5 @@
 // =============================================================================
-// Test Utility Helpers — TRIZA Marketplace
+// Test Utility Helpers — Thiora Marketplace
 // =============================================================================
 // This file provides:
 //   • renderWithProviders() — wraps a React node with the Zustand store

@@ -166,7 +166,7 @@ export const POST = async (request: NextRequest) => {
     // Send welcome email (non-blocking)
     sendEmailAsync({
       to: email,
-      subject: 'Welcome to TRIZA! 🎉',
+      subject: 'Welcome to Thiora! 🎉',
       html: welcomeEmail({ name, role }),
     });
 
@@ -175,7 +175,7 @@ export const POST = async (request: NextRequest) => {
     const verifyUrl = `${process.env.NEXT_PUBLIC_PLATFORM_URL || 'https://thiora.vercel.app'}?verify=${verifyToken}`;
     sendEmailAsync({
       to: email,
-      subject: 'Verify your email — TRIZA',
+      subject: 'Verify your email — Thiora',
       html: emailVerificationEmail(name, verifyUrl),
     });
 

@@ -57,7 +57,7 @@ export async function sendEmail(options: SendEmailOptions): Promise<void> {
 
   try {
     const { error } = await resend.emails.send({
-      from: from || getFromAddress('TRIZA'),
+      from: from || getFromAddress('Thiora'),
       to,
       subject,
       html,

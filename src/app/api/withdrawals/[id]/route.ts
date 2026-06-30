@@ -267,7 +267,7 @@ export const PUT = withCsrf(async (
       if (updated.user?.email) {
         sendEmailAsync({
           to: updated.user.email,
-          subject: `✅ Withdrawal Approved — PKR ${withdrawal.amount.toFixed(0)} — TRIZA`,
+          subject: `✅ Withdrawal Approved — PKR ${withdrawal.amount.toFixed(0)} — Thiora`,
           html: withdrawalNotificationEmail({
             userName: updated.user.name,
             amount: withdrawal.amount,
@@ -369,7 +369,7 @@ export const PUT = withCsrf(async (
       if (updated.user?.email) {
         sendEmailAsync({
           to: updated.user.email,
-          subject: `❌ Withdrawal Rejected — PKR ${withdrawal.amount.toFixed(0)} — TRIZA`,
+          subject: `❌ Withdrawal Rejected — PKR ${withdrawal.amount.toFixed(0)} — Thiora`,
           html: withdrawalNotificationEmail({
             userName: updated.user.name,
             amount: withdrawal.amount,
@@ -429,7 +429,7 @@ export const PUT = withCsrf(async (
       if (updated.user?.email) {
         sendEmailAsync({
           to: updated.user.email,
-          subject: `🎉 Withdrawal Complete — PKR ${withdrawal.amount.toFixed(0)} — TRIZA`,
+          subject: `🎉 Withdrawal Complete — PKR ${withdrawal.amount.toFixed(0)} — Thiora`,
           html: withdrawalNotificationEmail({
             userName: updated.user.name,
             amount: withdrawal.amount,

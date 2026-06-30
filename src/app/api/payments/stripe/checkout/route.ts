@@ -110,7 +110,7 @@ export const POST = withCsrf(async (request: NextRequest) => {
       buyerEmail: payment.buyer?.email || undefined,
       buyerId,
       sellerId: payment.sellerId,
-      description: `TRIZA Order #${orderId.slice(-8)}`,
+      description: `Thiora Order #${orderId.slice(-8)}`,
       platformFee,
       sellerPayout,
       successUrl,

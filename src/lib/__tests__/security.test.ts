@@ -255,7 +255,7 @@ describe('redactSensitiveFields', () => {
   it('redacts obvious password / token / secret fields', () => {
     const input = {
       id: 1,
-      name: 'TRIZA',
+      name: 'Thiora',
       password: 'hunter2',
       apiToken: 'tok_abc',
       apiKey: 'key_xyz',
@@ -263,7 +263,7 @@ describe('redactSensitiveFields', () => {
     }
     const out = redactSensitiveFields(input)
     expect(out.id).toBe(1)
-    expect(out.name).toBe('TRIZA')
+    expect(out.name).toBe('Thiora')
     expect(out.password).toBe('***REDACTED***')
     expect(out.apiToken).toBe('***REDACTED***')
     expect(out.apiKey).toBe('***REDACTED***')

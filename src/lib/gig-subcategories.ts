@@ -1,5 +1,5 @@
 // =============================================================================
-// TRIZA - Gig Subcategories
+// Thiora - Gig Subcategories
 // Maps each parent category slug to its list of subcategories (with name + slug)
 // =============================================================================
 

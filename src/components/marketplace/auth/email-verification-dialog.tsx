@@ -152,7 +152,7 @@ export function EmailVerificationDialog({
                 Email Verified!
               </h3>
               <p className="text-sm text-muted-foreground max-w-sm">
-                Your email address has been verified successfully. You now have full access to all TRIZA features.
+                Your email address has been verified successfully. You now have full access to all Thiora features.
               </p>
               <Button
                 onClick={() => onOpenChange(false)}
@@ -189,7 +189,7 @@ export function EmailVerificationDialog({
                 <p className="text-xs text-amber-700 dark:text-amber-400 flex items-start gap-2">
                   <Mail className="h-4 w-4 shrink-0 mt-0.5" />
                   <span>
-                    Verifying your email unlocks full access to all TRIZA features including buying, selling, and secure transactions.
+                    Verifying your email unlocks full access to all Thiora features including buying, selling, and secure transactions.
                   </span>
                 </p>
               </div>

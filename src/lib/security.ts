@@ -1,5 +1,5 @@
 // =============================================================================
-// TRIZA Security Utilities — Input validation, sanitization, and protection
+// Thiora Security Utilities — Input validation, sanitization, and protection
 // Provides reusable security functions for all API routes
 // =============================================================================
 

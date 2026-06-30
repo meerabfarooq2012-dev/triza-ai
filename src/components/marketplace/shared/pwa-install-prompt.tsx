@@ -149,14 +149,14 @@ export function PwaInstallPrompt() {
             <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/20 shadow-lg ring-1 ring-white/10 backdrop-blur-sm">
               <img
                 src="/logo.png"
-                alt="TRIZA"
+                alt="Thiora"
                 className="h-12 w-12 rounded-xl"
               />
             </div>
 
             <div className="flex-1 min-w-0">
               <h3 className="text-xl font-bold text-white leading-tight">
-                TRIZA
+                Thiora
               </h3>
               <p className="text-sm text-white/80 mt-0.5">
                 Freelance. Digital. Physical.
@@ -207,7 +207,7 @@ export function PwaInstallPrompt() {
                 />
               </div>
               <p className="text-center text-xs text-muted-foreground font-medium">
-                {installProgress >= 100 ? 'Installed! Opening...' : 'Installing TRIZA...'}
+                {installProgress >= 100 ? 'Installed! Opening...' : 'Installing Thiora...'}
               </p>
             </div>
           ) : (

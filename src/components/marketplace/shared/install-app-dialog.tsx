@@ -62,7 +62,7 @@ const IOS_STEPS = [
   {
     icon: Check,
     title: 'Tap "Add"',
-    description: 'Confirm by tapping "Add" — TRIZA will appear on your home screen!',
+    description: 'Confirm by tapping "Add" — Thiora will appear on your home screen!',
     color: 'from-amber-500 to-orange-600',
   },
 ]
@@ -86,7 +86,7 @@ const ANDROID_STEPS = [
   {
     icon: Check,
     title: 'Confirm Install',
-    description: 'Tap "Install" — TRIZA will be added to your home screen and app drawer!',
+    description: 'Tap "Install" — Thiora will be added to your home screen and app drawer!',
     color: 'from-amber-500 to-orange-600',
   },
 ]
@@ -185,13 +185,13 @@ export function InstallAppDialog({
             <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/20 shadow-lg ring-1 ring-white/10 backdrop-blur-sm">
               <img
                 src="/logo.png"
-                alt="TRIZA"
+                alt="Thiora"
                 className="h-12 w-12 rounded-xl"
               />
             </div>
             <div>
               <DialogTitle className="text-xl font-bold text-white">
-                Install TRIZA
+                Install Thiora
               </DialogTitle>
               <DialogDescription className="text-sm text-white/80 mt-0.5">
                 Get the best experience on your device
@@ -353,7 +353,7 @@ export function InstallAppDialog({
               </div>
 
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Install TRIZA as a web app on your device. It works like a native app — no app store needed!
+                Install Thiora as a web app on your device. It works like a native app — no app store needed!
               </p>
 
               {/* Features */}
@@ -386,7 +386,7 @@ export function InstallAppDialog({
                         />
                       </div>
                       <p className="text-center text-xs text-muted-foreground font-medium">
-                        {installProgress >= 100 ? '✅ Installed! Opening...' : 'Installing TRIZA...'}
+                        {installProgress >= 100 ? '✅ Installed! Opening...' : 'Installing Thiora...'}
                       </p>
                     </div>
                   ) : installComplete ? (
@@ -394,7 +394,7 @@ export function InstallAppDialog({
                       <Check className="h-8 w-8 text-green-500 mx-auto mb-2" />
                       <p className="text-sm font-semibold text-foreground">App Installed!</p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Look for TRIZA on your home screen or app drawer.
+                        Look for Thiora on your home screen or app drawer.
                       </p>
                     </div>
                   ) : (

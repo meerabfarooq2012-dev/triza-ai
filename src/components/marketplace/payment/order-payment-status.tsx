@@ -295,7 +295,7 @@ export function OrderPaymentStatus({
                 </AlertDialogTitle>
                 <AlertDialogDescription className="space-y-3 text-left">
                   <p>
-                    By confirming delivery, you authorize TRIZA to release the payment of{' '}
+                    By confirming delivery, you authorize Thiora to release the payment of{' '}
                     <span className="font-semibold text-foreground"><Price amount={totalAmount ?? 0} size="sm" /></span>{' '}
                     to the seller. This action <span className="font-semibold text-foreground">cannot be undone</span>.
                   </p>

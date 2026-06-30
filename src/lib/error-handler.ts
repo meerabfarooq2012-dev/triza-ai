@@ -1,5 +1,5 @@
 // =============================================================================
-// TRIZA Error Handler — Safe error message utility for API routes
+// Thiora Error Handler — Safe error message utility for API routes
 // Prevents information leakage in production by returning generic messages
 // while preserving useful error details during development.
 // Also captures errors in Sentry (if configured) for monitoring.

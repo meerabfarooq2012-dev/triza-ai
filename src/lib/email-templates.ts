@@ -1,5 +1,5 @@
 // =============================================================================
-// TRIZA Email Templates — Professional, mobile-responsive HTML emails
+// Thiora Email Templates — Professional, mobile-responsive HTML emails
 // Primary color: #059669 (emerald green), inline CSS only
 // =============================================================================
 
@@ -21,7 +21,7 @@ function wrapEmail(content: string): string {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TRIZA</title>
+  <title>Thiora</title>
 </head>
 <body style="margin:0;padding:0;background-color:${BG};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:${TEXT};line-height:1.6;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${BG};padding:0;">
@@ -35,7 +35,7 @@ function wrapEmail(content: string): string {
               <table role="presentation" cellpadding="0" cellspacing="0">
                 <tr>
                   <td style="background-color:${PRIMARY};color:#ffffff;font-size:24px;font-weight:700;padding:10px 20px;border-radius:8px;letter-spacing:-0.5px;">
-                    🛒 TRIZA
+                    🛒 Thiora
                   </td>
                 </tr>
               </table>
@@ -56,13 +56,13 @@ function wrapEmail(content: string): string {
                 <tr>
                   <td align="center" style="padding:20px 16px 0 16px;">
                     <p style="margin:0 0 8px 0;font-size:14px;font-weight:600;color:${PRIMARY};">
-                      🛒 TRIZA
+                      🛒 Thiora
                     </p>
                     <p style="margin:0 0 4px 0;font-size:13px;color:${TEXT_MUTED};">
                       Pakistan's Digital Marketplace
                     </p>
                     <p style="margin:0;font-size:12px;color:${TEXT_MUTED};">
-                      © ${new Date().getFullYear()} TRIZA. All rights reserved.
+                      © ${new Date().getFullYear()} Thiora. All rights reserved.
                     </p>
                   </td>
                 </tr>
@@ -123,7 +123,7 @@ export function welcomeEmail(data: WelcomeEmailData): string {
       <tr>
         <td style="background:linear-gradient(135deg,${PRIMARY} 0%,${PRIMARY_DARK} 100%);padding:40px 32px;text-align:center;">
           <h1 style="margin:0 0 8px 0;font-size:28px;font-weight:700;color:#ffffff;">
-            Welcome to TRIZA, ${data.name}! 👋
+            Welcome to Thiora, ${data.name}! 👋
           </h1>
           <p style="margin:0;font-size:16px;color:rgba(255,255,255,0.9);">
             Your account has been created successfully
@@ -135,7 +135,7 @@ export function welcomeEmail(data: WelcomeEmailData): string {
       <tr>
         <td style="padding:32px;">
           <p style="margin:0 0 20px 0;font-size:16px;color:${TEXT};line-height:1.7;">
-            Hey <strong>${data.name}</strong>, we're thrilled to have you on TRIZA — Pakistan's premier digital marketplace! Whether you're looking to buy amazing products or sell your own, you're in the right place.
+            Hey <strong>${data.name}</strong>, we're thrilled to have you on Thiora — Pakistan's premier digital marketplace! Whether you're looking to buy amazing products or sell your own, you're in the right place.
           </p>
 
           <!-- Getting Started Steps -->
@@ -832,7 +832,7 @@ export function passwordResetEmail(name: string, resetUrl: string): string {
           </p>
 
           <p style="margin:0 0 20px 0;font-size:15px;color:${TEXT};line-height:1.7;">
-            We received a request to reset the password for your TRIZA account. Click the button below to choose a new password:
+            We received a request to reset the password for your Thiora account. Click the button below to choose a new password:
           </p>
 
           ${ctaButton('Reset Password', resetUrl)}
@@ -889,7 +889,7 @@ export function emailVerificationEmail(name: string, verifyUrl: string): string 
           </p>
 
           <p style="margin:0 0 20px 0;font-size:15px;color:${TEXT};line-height:1.7;">
-            Welcome to TRIZA! Please verify your email address by clicking the button below. This helps us confirm your identity and keep your account secure.
+            Welcome to Thiora! Please verify your email address by clicking the button below. This helps us confirm your identity and keep your account secure.
           </p>
 
           ${ctaButton('Verify Email', verifyUrl)}
@@ -898,7 +898,7 @@ export function emailVerificationEmail(name: string, verifyUrl: string): string 
             <tr>
               <td style="padding:16px;text-align:center;">
                 <p style="margin:0;font-size:14px;color:${PRIMARY_DARK};">
-                  🛡️ Verifying your email unlocks full access to all TRIZA features including buying, selling, and secure transactions.
+                  🛡️ Verifying your email unlocks full access to all Thiora features including buying, selling, and secure transactions.
                 </p>
               </td>
             </tr>
@@ -910,7 +910,7 @@ export function emailVerificationEmail(name: string, verifyUrl: string): string 
           </p>
 
           <p style="margin:16px 0 0 0;font-size:13px;color:${TEXT_MUTED};text-align:center;line-height:1.5;">
-            If you didn't create an account on TRIZA, you can safely ignore this email.
+            If you didn't create an account on Thiora, you can safely ignore this email.
           </p>
         </td>
       </tr>

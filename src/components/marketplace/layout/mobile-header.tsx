@@ -182,10 +182,10 @@ export function MobileHeader() {
           'hover:bg-muted/70 active:bg-muted/80',
           'focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1',
         )}
-        aria-label="Search TRIZA"
+        aria-label="Search Thiora"
       >
         <Search className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/70" />
-        <span className="truncate">Search TRIZA...</span>
+        <span className="truncate">Search Thiora...</span>
       </button>
 
       {/* Right icons */}
@@ -246,7 +246,7 @@ export function MobileHeader() {
           <button
             type="button"
             onClick={openInstallDialog}
-            aria-label="Install TRIZA App"
+            aria-label="Install Thiora App"
             className="rounded-full p-1.5 text-amber-500 transition-colors hover:bg-amber-500/10 hover:text-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1"
           >
             <Download className="h-5 w-5" />

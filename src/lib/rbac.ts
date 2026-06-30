@@ -1,5 +1,5 @@
 // =============================================================================
-// TRIZA RBAC Middleware — Role-Based Access Control for API routes
+// Thiora RBAC Middleware — Role-Based Access Control for API routes
 // Provides a simple requireRole() function that checks authenticated user roles
 // =============================================================================
 

@@ -192,7 +192,7 @@ async function setupAdmin() {
       isAdmin: true,
       isVerified: true,
       isActive: true,
-      bio: 'Platform administrator for TRIZA marketplace.',
+      bio: 'Platform administrator for Thiora marketplace.',
     },
   });
 

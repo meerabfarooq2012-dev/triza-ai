@@ -1,5 +1,5 @@
 // =============================================================================
-// TRIZA Rate Limiting Utility — In-memory rate limiter
+// Thiora Rate Limiting Utility — In-memory rate limiter
 // Tracks requests by IP or userId with configurable window and max requests
 // Includes progressive delay for repeated failed attempts and IP+UA fingerprinting
 // =============================================================================

@@ -53,7 +53,7 @@ export function ProductJsonLd(props: ProductJsonLdProps) {
       sku: id,
       brand: {
         '@type': 'Brand',
-        name: shopName || 'TRIZA',
+        name: shopName || 'Thiora',
       },
       offers: {
         '@type': 'Offer',
@@ -63,7 +63,7 @@ export function ProductJsonLd(props: ProductJsonLdProps) {
         url,
         seller: {
           '@type': 'Organization',
-          name: shopName || 'TRIZA Seller',
+          name: shopName || 'Thiora Seller',
         },
       },
       ...(rating && reviewCount

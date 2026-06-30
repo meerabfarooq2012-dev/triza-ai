@@ -1,5 +1,5 @@
 // =============================================================================
-// TRIZA - Digital Product Subcategories
+// Thiora - Digital Product Subcategories
 // Maps each digital category slug to its list of subcategories (with name + slug)
 // =============================================================================
 

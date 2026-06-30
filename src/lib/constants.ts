@@ -11,12 +11,12 @@ import type {
 } from '@/types'
 
 // =============================================================================
-// TRIZA Marketplace - Constants
+// Thiora Marketplace - Constants
 // =============================================================================
 
 // ----- Platform -----
 
-export const PLATFORM_NAME = 'TRIZA'
+export const PLATFORM_NAME = 'Thiora'
 export const PLATFORM_TAGLINE = 'Freelance. Digital. Physical. One Platform.'
 export const PLATFORM_DESCRIPTION =
   'Freelance services, digital downloads, and physical products — three worlds, one marketplace.'

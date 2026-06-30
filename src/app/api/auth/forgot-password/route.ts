@@ -72,7 +72,7 @@ export const POST = async (request: NextRequest) => {
     const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://thiora.vercel.app'}/reset-password?token=${resetToken}`;
     sendEmailAsync({
       to: email,
-      subject: 'Reset Your TRIZA Password',
+      subject: 'Reset Your Thiora Password',
       html: passwordResetEmail(user.name, resetUrl),
     });
 

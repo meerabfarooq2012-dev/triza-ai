@@ -53,7 +53,7 @@ const WELCOME_MESSAGE: FeedbackMessage = {
   id: 'welcome',
   threadId: '',
   senderType: 'ai',
-  content: "Hi! \u{1F44B} I'm TRIZA's support assistant. Ask me anything about the platform, or share your feedback!",
+  content: "Hi! \u{1F44B} I'm Thiora's support assistant. Ask me anything about the platform, or share your feedback!",
   messageType: 'text',
   category: null,
   isRead: true,
@@ -303,36 +303,36 @@ export function FeedbackWidget() {
 
       const categoryResponses: Record<FeedbackCategory, string[]> = {
         question: [
-          "Great question! Let me help you with that. TRIZA is a marketplace platform where you can buy and sell digital products, freelance services (gigs), and more. What specifically would you like to know?",
+          "Great question! Let me help you with that. Thiora is a marketplace platform where you can buy and sell digital products, freelance services (gigs), and more. What specifically would you like to know?",
           "I'd be happy to answer that! Our platform supports buyers, sellers, and admins. Could you tell me more about what you're trying to accomplish?",
           "Thanks for asking! You can browse products, contact sellers, place orders, and manage everything from your dashboard. Need help with any specific feature?",
         ],
         feedback: [
-          "Thank you for sharing your feedback! We truly value input from our community. Your thoughts will be shared with our team to help improve TRIZA.",
+          "Thank you for sharing your feedback! We truly value input from our community. Your thoughts will be shared with our team to help improve Thiora.",
           "We appreciate you taking the time to share this! Feedback like yours helps us build a better platform for everyone. Is there anything else you'd like to add?",
-          "That's really valuable feedback \u{2014} thank you! We're constantly working to improve TRIZA, and insights from users like you are essential to that process.",
+          "That's really valuable feedback \u{2014} thank you! We're constantly working to improve Thiora, and insights from users like you are essential to that process.",
         ],
         bug: [
           "I'm sorry you're experiencing this issue! Could you provide more details about what happened? For example: what page were you on, what action did you take, and what error (if any) did you see?",
           "Thanks for reporting this bug! Our team takes issues seriously. To help us investigate faster, could you share your browser and device info along with steps to reproduce the problem?",
-          "We'll look into this right away! Bug reports help us keep TRIZA running smoothly. If you can share any screenshots or specific error messages, that would be very helpful.",
+          "We'll look into this right away! Bug reports help us keep Thiora running smoothly. If you can share any screenshots or specific error messages, that would be very helpful.",
         ],
         feature_request: [
           "Interesting feature idea! We love hearing suggestions from our community. I'll make sure this gets passed along to our product team for consideration.",
-          "That's a great suggestion! We're always looking for ways to make TRIZA better. Could you describe how you'd envision this feature working in more detail?",
+          "That's a great suggestion! We're always looking for ways to make Thiora better. Could you describe how you'd envision this feature working in more detail?",
           "Thanks for the feature request! We track all suggestions and prioritize them based on community demand. This will definitely be added to our roadmap discussion.",
         ],
       }
 
       // General keyword-based responses
       if (lowerMsg.includes('hello') || lowerMsg.includes('hi') || lowerMsg.includes('hey')) {
-        return "Hello! \u{1F44B} Welcome to TRIZA support! How can I help you today? Feel free to ask a question, report a bug, or share feedback."
+        return "Hello! \u{1F44B} Welcome to Thiora support! How can I help you today? Feel free to ask a question, report a bug, or share feedback."
       }
       if (lowerMsg.includes('sell') || lowerMsg.includes('listing') || lowerMsg.includes('create shop')) {
-        return "To start selling on TRIZA, you can set up your shop from the Seller Dashboard. Go to your profile, switch to seller mode, and follow the shop setup steps. You can list digital products, physical goods, or freelance service gigs. Need step-by-step help?"
+        return "To start selling on Thiora, you can set up your shop from the Seller Dashboard. Go to your profile, switch to seller mode, and follow the shop setup steps. You can list digital products, physical goods, or freelance service gigs. Need step-by-step help?"
       }
       if (lowerMsg.includes('pay') || lowerMsg.includes('payment') || lowerMsg.includes('checkout')) {
-        return "TRIZA supports multiple payment methods including Easypaisa, JazzCash, PayFast, and crypto (Bitcoin, Ethereum, Solana). All payments go through our secure escrow system to protect both buyers and sellers. Would you like to know more about a specific payment method?"
+        return "Thiora supports multiple payment methods including Easypaisa, JazzCash, PayFast, and crypto (Bitcoin, Ethereum, Solana). All payments go through our secure escrow system to protect both buyers and sellers. Would you like to know more about a specific payment method?"
       }
       if (lowerMsg.includes('refund') || lowerMsg.includes('cancel')) {
         return "For refunds and cancellations, you can request them through your order details page. Our support team reviews each request, and if approved, the refund is processed back to your original payment method. Need help with a specific order?"
@@ -348,7 +348,7 @@ export function FeedbackWidget() {
       }
 
       // Default response
-      return "Thanks for reaching out! I'm here to help with anything related to TRIZA. You can ask questions about how the platform works, report any issues you've encountered, share feedback, or request new features. What would you like to do?"
+      return "Thanks for reaching out! I'm here to help with anything related to Thiora. You can ask questions about how the platform works, report any issues you've encountered, share feedback, or request new features. What would you like to do?"
     },
     []
   )
@@ -546,7 +546,7 @@ export function FeedbackWidget() {
                   <Bot className="size-5 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-semibold text-white">TRIZA Support</h3>
+                  <h3 className="text-sm font-semibold text-white">Thiora Support</h3>
                   <div className="flex items-center gap-1.5">
                     <span className="relative flex size-2">
                       <span className="absolute inline-flex size-full animate-ping rounded-full bg-amber-300 opacity-75" />

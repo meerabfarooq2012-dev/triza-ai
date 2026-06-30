@@ -52,7 +52,7 @@ const sections = [
     icon: <FileText className="h-5 w-5" />,
     title: 'Changes to Policy',
     content:
-      'TRIZA may update this Privacy Policy from time to time. Any changes will be posted on this page.',
+      'Thiora may update this Privacy Policy from time to time. Any changes will be posted on this page.',
     gradient: 'from-amber-500 to-amber-600',
   },
 ]
@@ -96,7 +96,7 @@ export function PrivacyPolicy() {
               </span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              At TRIZA, we respect your privacy and are committed to protecting your personal information. This Privacy Policy explains how we collect, use, and safeguard your data when you use our platform.
+              At Thiora, we respect your privacy and are committed to protecting your personal information. This Privacy Policy explains how we collect, use, and safeguard your data when you use our platform.
             </p>
           </motion.div>
         </div>
@@ -226,7 +226,7 @@ export function PrivacyPolicy() {
             className="mt-12 rounded-2xl gold-gradient p-8 sm:p-10 text-center"
           >
             <p className="text-lg text-white/90 font-medium">
-              By using TRIZA, you agree to this Privacy Policy.
+              By using Thiora, you agree to this Privacy Policy.
             </p>
             <p className="text-sm text-white/70 mt-2">
               Last updated: {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}

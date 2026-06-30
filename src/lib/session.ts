@@ -1,5 +1,5 @@
 // =============================================================================
-// TRIZA Session Management — Token blacklist / session revocation
+// Thiora Session Management — Token blacklist / session revocation
 // Stores SHA-256 hashes of JWT tokens so sessions can be invalidated server-side
 // =============================================================================
 

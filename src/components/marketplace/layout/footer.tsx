@@ -70,7 +70,7 @@ export function Footer() {
               className="inline-flex items-center gap-2 mb-3"
               aria-label="Go to homepage"
             >
-              <img src="/logo.png" alt="TRIZA" className="h-7 w-7 rounded-lg" />
+              <img src="/logo.png" alt="Thiora" className="h-7 w-7 rounded-lg" />
               <span className="text-xl font-extrabold gold-gradient-text">
                 {PLATFORM_NAME}
               </span>

@@ -41,7 +41,7 @@ export function CommissionSection() {
             </h2>
 
             <p className="text-lg text-muted-foreground mb-8 leading-relaxed max-w-lg mx-auto lg:mx-0">
-              Unlike other platforms that take 20-30% of your hard-earned money, TRIZA believes 
+              Unlike other platforms that take 20-30% of your hard-earned money, Thiora believes 
               in fair treatment for sellers. Keep the lion&apos;s share of every sale you make.
             </p>
 
@@ -66,15 +66,15 @@ export function CommissionSection() {
               {/* Commission breakdown header */}
               <div className="text-center mb-8">
                 <h3 className="text-xl font-bold mb-2">Commission Comparison</h3>
-                <p className="text-sm text-muted-foreground">See how much more you earn with TRIZA</p>
+                <p className="text-sm text-muted-foreground">See how much more you earn with Thiora</p>
               </div>
 
-              {/* TRIZA bar - 10% */}
+              {/* Thiora bar - 10% */}
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <div className="h-3 w-3 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500" />
-                    <span className="font-semibold text-sm">TRIZA</span>
+                    <span className="font-semibold text-sm">Thiora</span>
                   </div>
                   <span className="text-sm font-bold text-amber-600 dark:text-amber-400">You keep 90%</span>
                 </div>

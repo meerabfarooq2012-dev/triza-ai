@@ -16,7 +16,7 @@ if (typeof window !== 'undefined') {
 }
 
 // =============================================================================
-// TRIZA Marketplace - Zustand Store
+// Thiora Marketplace - Zustand Store
 // =============================================================================
 
 // Module-level debounce timer for cart sync
@@ -394,7 +394,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
             body: JSON.stringify({ items }),
           }).catch((err) => {
             // Non-blocking — just warn
-            console.warn('[TRIZA] Cart sync failed:', err)
+            console.warn('[Thiora] Cart sync failed:', err)
           })
         }, 300)
       },
@@ -443,7 +443,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
           })
         } catch (err) {
           // Non-blocking — just warn
-          console.warn('[TRIZA] Failed to load cart from server:', err)
+          console.warn('[Thiora] Failed to load cart from server:', err)
         }
       },
 
@@ -651,7 +651,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
             )
             if (corruptedKey) {
               console.warn(
-                `[TRIZA] Store corrupted — action "${corruptedKey}" is not a function after rehydration. Clearing storage and reloading.`
+                `[Thiora] Store corrupted — action "${corruptedKey}" is not a function after rehydration. Clearing storage and reloading.`
               )
               try { localStorage.removeItem('thiora-storage') } catch {}
               // Force reload to get a clean state

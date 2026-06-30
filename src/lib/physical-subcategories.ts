@@ -1,5 +1,5 @@
 // =============================================================================
-// TRIZA - Physical Product Subcategories
+// Thiora - Physical Product Subcategories
 // Maps each physical category slug to its list of subcategories (with name + slug)
 // =============================================================================
 
