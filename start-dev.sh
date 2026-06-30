@@ -1,12 +1,9 @@
 #!/bin/bash
+export NODE_OPTIONS="--max-old-space-size=3072"
 cd /home/z/my-project
 while true; do
-  # Kill any existing next processes
-  pkill -f "next dev" 2>/dev/null
-  sleep 2
-  
-  # Start the dev server
-  npx next dev -p 3000 -H 0.0.0.0 --turbopack > /home/z/my-project/dev.log 2>&1
-  echo "Server died, restarting..." >> /home/z/my-project/dev.log
-  sleep 5
+  echo "[$(date)] Starting dev server..."
+  bun run dev >> /home/z/my-project/dev.log 2>&1
+  echo "[$(date)] Server exited (code $?), restarting in 3s..."
+  sleep 3
 done
