@@ -2788,3 +2788,28 @@ Stage Summary:
 - English SEO metadata + JSON-LD in place
 - Chat accessible from landing via "See it think" button (no separate route — view toggle on /)
 - All Agent Browser checks passed; production-ready
+
+---
+Task ID: VERCEL-PUSH
+Agent: Main Agent
+Task: Push TRIZA project to Vercel (via triza-ai GitHub repo) — sahi se push karna
+
+Work Log:
+- Inspected git remotes: found TWO remotes
+  * `origin` → Marketo.git  (WRONG repo — do NOT push here, this is a different project)
+  * `triza-ai` → triza-ai.git  (CORRECT — TRIZA's own repo, connected to Vercel)
+- Local main was 1 commit ahead of triza-ai/main (commit 33b3e1e had a UUID placeholder message "50bc0528-63c8-4555-80cf-fa6e83131db0")
+- Amended the commit with a clean, descriptive message:
+  "feat: rebuild TRIZA landing as transparent-AI marketing page + English SEO + JSON-LD"
+  (new hash: 519a49e)
+- Pushed ONLY to triza-ai remote with --force-with-lease (safe: checks remote hasn't moved):
+  `git push triza-ai main --force-with-lease` → 2473b9c..519a49e main -> main ✅
+- Verified push: `git ls-remote triza-ai main` = 519a49e = local HEAD ✅ (identical)
+- Did NOT touch origin (Marketo) — kept it untouched to avoid cross-project contamination
+- vercel.json present (buildCommand: switch-db + prisma generate + prisma db push + next build) — Vercel auto-deploys on push to main since repo is connected
+
+Stage Summary:
+- TRIZA landing + SEO changes are now on GitHub at triza-ai/main (commit 519a49e)
+- Vercel auto-deployment triggered by the push (repo is connected to Vercel project)
+- Commit URL: https://github.com/meerabfarooq2012-dev/triza-ai/commit/519a49e
+- Marketo repo deliberately left untouched
