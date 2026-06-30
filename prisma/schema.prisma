@@ -1589,31 +1589,3 @@ model PushSubscription {
   @@index([userId])
   @@index([endpoint])
 }
-
-// =============================================================================
-// TRIZA AI — Conversation & Message models
-// =============================================================================
-
-model AiConversation {
-  id        String       @id @default(cuid())
-  title     String       @default("New Chat")
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
-
-  messages  AiMessage[]
-
-  @@index([updatedAt])
-}
-
-model AiMessage {
-  id             String         @id @default(cuid())
-  conversationId String
-  role           String         // "user" | "assistant"
-  content        String
-  createdAt      DateTime       @default(now())
-
-  conversation   AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-
-  @@index([conversationId])
-  @@index([createdAt])
-}
