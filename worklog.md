@@ -2612,3 +2612,50 @@ Stage Summary:
 - Verified via curl: 42 TRIZA mentions, 0 Thiora, 0 NOOR in rendered HTML
 - Fix pushed to github.com/meerabfarooq2012-dev/triza-ai (commit 2030af0); Vercel auto-deploy triggered
 - SIDE NOTE (pre-existing, not caused by this change): src/components/ai/training-engine.ts calls db.aiModel / db.aiCategory / db.aiTrainingWord, and chat-engine.ts calls db.aiConversation / db.aiMessage — NONE of these models exist in prisma/schema.sqlite.prisma. The chat works because chat-engine.ts has an in-memory fallback store (globalThis.__trizaMemStore). The /api/ai/models endpoint returns 500 with "Cannot read properties of undefined (reading 'findMany')". This is a separate pre-existing issue — if the user wants the Models/Playground tabs + persistent chat history to work, these Prisma models need to be added to both schema files. Not addressed here because it was out of scope for the logo fix.
+
+---
+Task ID: 15
+Agent: Main Agent
+Task: Rebuild TRIZA chat interface to match the polished product design (Screenshot 2) — user reported "app ne chat interface hi badal diya hai sara purana wala ai" and clarified via 2 screenshots that the OLD dev-version (Chat/Playground/Models/Brain tabs + HDC footer = Screenshot 1) should be REMOVED and the CORRECT product version (Screenshot 2: top-nav Chatbot/Cyber/Coding + TRINITY engine + "Hi, I'm TRIZA." welcome + mood/intent/confidence per reply) should be the only UI shown.
+
+Work Log:
+- Analyzed both user-uploaded screenshots via VLM skill:
+  • Screenshot 1 (pasted_image_1782818206687.png) = OLD dev version: sidebar tabs (Chat/Playground/Models/My Brain), HDC engine footer, generic "How can I help you today?" welcome
+  • Screenshot 2 (Screenshot 2026-06-28 161223.png) = CORRECT product version: top nav (Chatbot active, Cyber Soon, Coding Soon) + TRINITY engine badge, "Hi, I'm TRIZA." personality welcome, RECENT conversations sidebar, Engine online v1.0 footer, mood/intent/confidence on every reply
+- Read current page.tsx, sidebar.tsx, chat-view.tsx, types.ts — confirmed they were rendering Screenshot 1's dev version
+- Read chat-engine.ts + chat/route.ts + triza-engine/types.ts — confirmed API already returns mood/intent/confidence/topicDomain/selfExpressed/processingTimeMs per reply (just not displayed in old UI)
+- Rewrote src/components/ai/workspace/types.ts:
+  • Removed WorkspaceMode multi-mode type
+  • Added MessageMeta interface (mood/intent/confidence/topicDomain/selfExpressed/processingTimeMs)
+  • Added optional `meta?: MessageMeta` field to ChatMessage
+- Rewrote src/components/ai/workspace/sidebar.tsx (377 → 116 lines):
+  • Removed MODE_TABS, ModelList, BrainInfo, Stat helper components
+  • New layout: tagline "Ask anything, get one answer." → New conversation button → RECENT label → conversation list (status dot + title) → footer (green pulsing dot + "Engine online" + v1.0)
+- Rewrote src/components/ai/workspace/chat-view.tsx (363 → 488 lines):
+  • New TopNav component: Chatbot (active emerald) | Cyber (Soon) | Coding (Soon) on left, TRINITY engine badge (Zap icon + label) on right
+  • New WelcomeView: "Hi, I'm TRIZA." (emerald accent) + personality subtext + 4 feature badges (3-layer architecture/CPU-first/Religion-neutral/Transparent) + 4 emoji prompt cards (👋/❤️/🎉/🔥) + composer + "TRIZA shows detected mood, intent & confidence on every reply." footer
+  • New ReplyMeta component: per-TRIZA-reply badges for mood/intent/confidence%/topic
+  • ConversationView: header + message bubbles + composer (icon-only send button, no "Send" label)
+  • MessageBubble: TRIZA replies show ReplyMeta below content
+- Rewrote src/app/page.tsx (293 → 218 lines):
+  • Removed Playground/Models/Brain imports and all their state/handlers
+  • Removed loadModels, activeModelId, brainStats, stats computation
+  • Added lastAssistantMeta state — captures mood/intent/confidence from /api/ai/chat response and attaches to optimistic assistant bubble
+  • Simplified Sidebar props (no more mode/onModeChange/models/activeModelId/stats/brainStats)
+- Lint: only pre-existing error in use-google-auth-callback.ts (unrelated, setState-in-effect); new files pass clean
+- End-to-end verification via curl (dev server can't stay alive across bash calls in this sandbox, so verified in single bash invocation):
+  • HTML contains all new markers: Hi I'm, Ask anything, Engine online, Chatbot, Cyber, Coding, TRINITY, TRIZA, 3-layer architecture, CPU-first, Religion-neutral, Transparent
+  • HTML contains ZERO old markers: no "How can I help", no Playground, no My Brain, no HDC engine
+  • POST /api/ai/conversations → conv_ep908j6tmr0klti3
+  • POST /api/ai/chat with "Hello! Who are you?" → TRIZA replies in own voice: "Acha poocha! Yeh cheez mujhe kaafi pasand hai. Dekho kaise kaam karti hai. ## Main TRIZA Hoon. Mera naam **TRIZA** hai (The Resonant Intelligent Z-System Architecture)..."
+  • API returns: mood=neutral, intent=greeting, confidence=1, topicDomain=identity, selfExpressed=true, processingTimeMs=23
+  • GET /api/ai/conversations → conversation saved with auto-title "Hello! Who are you?"
+  • GET /api/ai/conversations/:id → both user + assistant messages persisted
+- Committed (0d70144) and pushed to triza-ai remote (main branch) → Vercel auto-deploy triggered
+
+Stage Summary:
+- Chat interface is now the Screenshot 2 product version — Screenshot 1's dev version (Playground/Models/Brain/HDC) is FULLY REMOVED from page.tsx
+- Single-purpose chatbot UI: sidebar (tagline + New conversation + RECENT + Engine online v1.0) + top nav (Chatbot/Cyber Soon/Coding Soon + TRINITY engine) + welcome or conversation view
+- Every TRIZA reply now displays mood/intent/confidence%/topic badges inline below the message bubble (data was already in API, just wasn't being shown)
+- Pushed to github.com/meerabfarooq2012-dev/triza-ai (commit 0d70144); Vercel auto-deploy triggered
+- Old Playground/Models/Brain component files (playground-view.tsx, models-view.tsx, brain-view.tsx) still exist on disk but are no longer imported by page.tsx — they're dead code, can be deleted in a future cleanup if desired
