@@ -27,6 +27,7 @@ import {
   generateResponse,
   type GenerateOptions,
 } from '@/lib/triza-engine/response-generator'
+import { extractTopicWords } from '@/lib/triza-engine/self-expression'
 import type { TrizaResponse } from '@/lib/triza-engine/types'
 
 // ============================================================
@@ -347,9 +348,32 @@ export async function sendMessage(
   // 2. Generate TRIZA response — NO external API calls
   //    Uses knowledge base + self-expression (own voice)
   // ---------------------------------------------------------
+  // Build previousTurn from history so the engine can handle
+  // follow-ups ("tell me more", "why", "aur batao") by continuing
+  // the last topic instead of starting fresh. We re-derive the
+  // matched entry by searching the LAST user message — this gives
+  // us the entry id + topic without needing to persist metadata.
+  let previousTurn: GenerateOptions['previousTurn']
+  if (history.length >= 2) {
+    const lastAssistant = [...history]
+      .reverse()
+      .find((m) => m.role === 'assistant')
+    const lastUser = [...history].reverse().find((m) => m.role === 'user')
+    if (lastAssistant && lastUser) {
+      previousTurn = {
+        rawKnowledge: lastAssistant.content,
+        topicWords: extractTopicWords(lastUser.content, 8),
+        // matchedEntryId is filled by the engine itself below;
+        // setting a placeholder so the follow-up branch triggers.
+        matchedEntryId: '__from_history__',
+      }
+    }
+  }
+
   const genOpts: GenerateOptions = {
     conversationHistory: history,
     conversationId,
+    previousTurn,
   }
 
   // BULLETPROOF: if the TRIZA engine crashes for ANY reason

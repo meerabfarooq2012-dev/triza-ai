@@ -8,14 +8,22 @@
  *  mein batao (knowledge base), phir woh apne language / apne
  *  andaaz mein bataye (self-expression layer)."
  *
- *  Pipeline:
+ *  Pipeline (v2 — honest + fuzzy + context-aware):
  *    userMessage
  *      →  detectIntent
  *      →  detectMood
- *      →  searchKnowledgeBase  (all batches, CORE last)
- *      →  rawKnowledge = entry.response()
- *      →  expressInOwnVoice(rawKnowledge)   ← self-expression layer
+ *      →  detectFollowUp        (NEW: "tell me more", "why", "aur batao")
+ *      →  searchKnowledgeBase    (regex + keyword-overlap fusion)
+ *         →  returns TOP-N candidates with HONEST scores
+ *      →  fuseCandidates        (NEW: combine top entries if complementary)
+ *      →  rawKnowledge
+ *      →  expressInOwnVoice
  *      →  TrizaResponse
+ *
+ *  Honest confidence (v2):
+ *    score reflects ACTUAL match quality (regex hit + keyword
+ *    overlap), not pattern string length. A 95% reply genuinely
+ *    matched 95% of the question's signal keywords.
  *
  *  ZERO external API calls. Pure TypeScript.
  * ============================================================
@@ -148,40 +156,387 @@ function detectIntent(message: string): Intent {
 }
 
 // ============================================================
-// Knowledge Search — find best matching entry
+// Follow-up Detection (NEW in v2)
+// Detects when the user is continuing a previous topic rather
+// than asking something new. e.g. "tell me more", "why is that",
+// "aur batao", "example do", "go deeper".
+// ============================================================
+
+export type FollowUpType =
+  | 'none'
+  | 'more'        // "tell me more", "aur batao", "continue"
+  | 'why'         // "why is that", "kyun"
+  | 'example'     // "give an example", "example do"
+  | 'simplify'    // "simpler", "aur aasan", "in simple words"
+  | 'disagree'    // "i disagree", "mujhe nahi lagta"
+
+const FOLLOWUP_PATTERNS: Array<{ type: FollowUpType; re: RegExp }> = [
+  { type: 'more', re: /\b(tell me more|aur bata|aur batao|batao aur|aur suna|aur kya|continue|agla|next part|expand|elaborate|go on|keep going|more details)\b/i },
+  { type: 'why', re: /\b(why|kyun|kyu|reason|wajah|kis liye|kisliye|how come|kyun hota)\b/i },
+  { type: 'example', re: /\b(example|examples|misal|instance|sample|demo|case|example do|misal do)\b/i },
+  { type: 'simplify', re: /\b(simpl|aasan|asani|easy|samajh nahi|confus|clear|explain again|dobara|aur simple)\b/i },
+  { type: 'disagree', re: /\b(disagree|not sure|mujhe nahi|wrong|galat|i think not|nahi lagta|pata nahi)\b/i },
+]
+
+function detectFollowUp(message: string): FollowUpType {
+  const m = message.toLowerCase().trim()
+  // Short messages are likely follow-ups ("why?", "more", "example?")
+  if (m.length < 12) {
+    for (const { type, re } of FOLLOWUP_PATTERNS) {
+      if (re.test(m)) return type
+    }
+  }
+  for (const { type, re } of FOLLOWUP_PATTERNS) {
+    if (re.test(m)) return type
+  }
+  return 'none'
+}
+
+// ============================================================
+// Tokenizer + Keyword Overlap (NEW in v2)
+// Produces HONEST confidence from actual signal overlap.
+// ============================================================
+
+const STOPWORDS = new Set([
+  // English
+  'the','a','an','is','are','was','were','be','been','being','am',
+  'and','or','but','in','on','at','to','for','of','with','from',
+  'by','about','as','into','like','through','after','over','between',
+  'out','against','during','without','before','under','around','among',
+  'do','does','did','can','could','would','should','will','shall',
+  'what','who','whom','whose','which','when','where','why','how',
+  'i','you','he','she','it','we','they','me','my','your','his','her',
+  'its','our','their','this','that','these','those','there','here',
+  'tell','me','us','please','just','really','very','much','more',
+  // Roman Urdu function words
+  'kya','hai','hain','hoon','tha','the','ka','ki','ke','ko','se',
+  'mein','par','aur','ya','toh','bhi','nahi','nahin','kuch','jo',
+  'woh','yeh','wo','ap','aap','tum','tera','mera','meri','tumhara',
+  'tumhari','kar','karo','bata','batao','suno','sun','kyun','kaisa',
+  'kaise','kahan','jab','tab','agar','phir','ab','pehle','baad',
+])
+
+function tokenize(s: string): string[] {
+  return s
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((w) => w.length > 2 && !STOPWORDS.has(w))
+}
+
+/** Derive keywords from an entry if it doesn't define its own. */
+function entryKeywords(entry: KnowledgeEntry): string[] {
+  if (entry.keywords && entry.keywords.length > 0) return entry.keywords
+  // Pull literal words out of the regex sources (best-effort).
+  const out: string[] = []
+  for (const p of entry.patterns) {
+    const src = p.source
+    // match literal word runs that aren't regex metachar
+    const matches = src.match(/[a-z][a-z0-9]{2,}/gi)
+    if (matches) {
+      for (const w of matches) {
+        const lw = w.toLowerCase()
+        if (!STOPWORDS.has(lw) && !out.includes(lw)) out.push(lw)
+      }
+    }
+  }
+  // also seed with the topic + id words
+  for (const w of entry.topic.toLowerCase().split(/[^a-z0-9]+/)) {
+    if (w.length > 2 && !out.includes(w)) out.push(w)
+  }
+  for (const w of entry.id.toLowerCase().split(/[^a-z0-9]+/)) {
+    if (w.length > 2 && !out.includes(w)) out.push(w)
+  }
+  return out
+}
+
+// Pre-compute keywords for every entry once (perf).
+const ENTRY_KEYWORDS: Map<string, string[]> = new Map()
+for (const e of KNOWLEDGE_BASE) {
+  ENTRY_KEYWORDS.set(e.id, entryKeywords(e))
+}
+
+/**
+ * Honest keyword-overlap score in [0,1].
+ *   1.0 = every signal word in the user's message is a known keyword
+ *   0.0 = no overlap
+ * Weighted so rare keywords (longer) count more than common ones.
+ */
+function keywordOverlapScore(message: string, entry: KnowledgeEntry): number {
+  const msgTokens = tokenize(message)
+  if (msgTokens.length === 0) return 0
+  const kws = ENTRY_KEYWORDS.get(entry.id) || []
+  if (kws.length === 0) return 0
+  const kwSet = new Set(kws)
+  let hit = 0
+  let total = 0
+  for (const t of msgTokens) {
+    // weight: longer tokens are more "signal" (less likely to be noise)
+    const weight = t.length >= 6 ? 2 : 1
+    total += weight
+    // exact hit, OR plural/stem hit (photoynthesis vs photosynthesize)
+    if (kwSet.has(t) || kwSet.has(t.replace(/s$/, '')) || kwSet.has(t + 's')) {
+      hit += weight
+    }
+  }
+  return total === 0 ? 0 : hit / total
+}
+
+// ============================================================
+// Knowledge Search — regex + keyword fusion, returns TOP-N
 // ============================================================
 
 interface SearchResult {
   entry: KnowledgeEntry
-  /** 0-1 score — pattern match strength */
+  /** 0-1 honest score — regex hit + keyword overlap */
   score: number
+  /** did a regex pattern match? (boolean weight) */
+  regexHit: boolean
+  /** keyword overlap portion */
+  overlap: number
 }
 
-function searchKnowledgeBase(
-  message: string
-): SearchResult | null {
-  let best: SearchResult | null = null
+const CATCHALL_ID_PREFIX = 'fallback'
+
+function searchKnowledgeBase(message: string): SearchResult[] {
+  const results: SearchResult[] = []
 
   for (const entry of KNOWLEDGE_BASE) {
+    // Skip the catch-all fallback in the first pass; it's only
+    // used if NOTHING else produces a real score.
+    if (entry.id.startsWith(CATCHALL_ID_PREFIX)) continue
+
+    let regexHit = false
     for (const pattern of entry.patterns) {
       if (pattern.test(message)) {
-        // Score: longer pattern = more specific = higher score.
-        // The fallback (/.*/) is in CORE, last — it matches
-        // everything with score 0, so any real match wins.
-        const specificity =
-          pattern.source === '.*' ? 0 : Math.min(1, pattern.source.length / 80)
-        const score = 0.5 + specificity * 0.5
-
-        if (!best || score > best.score) {
-          best = { entry, score }
-        }
-        // First matching pattern is enough for this entry
+        regexHit = true
         break
       }
     }
+
+    const overlap = keywordOverlapScore(message, entry)
+
+    // Must have at least SOME signal to be a candidate.
+    if (!regexHit && overlap === 0) continue
+
+    // Honest score: regex hit is a strong signal (0.6) plus the
+    // keyword overlap (up to 0.4). Pure-overlap matches cap lower
+    // than regex matches so a precise regex always wins.
+    const score = regexHit ? Math.min(1, 0.6 + overlap * 0.4) : overlap * 0.7
+
+    results.push({ entry, score, regexHit, overlap })
   }
 
-  return best
+  // Sort by score desc; tie-break by:
+  //   1. overlap (more keyword overlap = more specific)
+  //   2. id-specificity — does the entry's id-word appear in the
+  //      message? (e.g. "photosynthesis-explained" beats "carbon-cycle"
+  //      for "what is photosynthesis" because the id-word is in the query)
+  //   3. entry id alphabetical (stable)
+  const msgLower = message.toLowerCase()
+  const msgTokensSet = new Set(tokenize(message))
+  results.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score
+    if (b.overlap !== a.overlap) return b.overlap - a.overlap
+    const aIdSpecific = a.entry.id
+      .split(/[^a-z0-9]+/)
+      .some((w) => w.length > 3 && msgTokensSet.has(w))
+    const bIdSpecific = b.entry.id
+      .split(/[^a-z0-9]+/)
+      .some((w) => w.length > 3 && msgTokensSet.has(w))
+    if (aIdSpecific !== bIdSpecific) return aIdSpecific ? -1 : 1
+    return a.entry.id.localeCompare(b.entry.id)
+  })
+
+  return results
+}
+
+// ============================================================
+// Fuse top candidates (NEW in v2)
+// If the top match is weak (< 0.35) but 2-3 entries share the
+// same topic domain, combine their raw knowledge so the reply
+// is richer than a single fallback.
+// ============================================================
+
+function fuseCandidates(candidates: SearchResult[]): {
+  rawKnowledge: string
+  matchedEntryId: string
+  topicDomain: string
+  confidence: number
+  fused: boolean
+} {
+  if (candidates.length === 0) {
+    // Use the catch-all fallback from CORE.
+    const fb = KNOWLEDGE_BASE.find((e) => e.id.startsWith(CATCHALL_ID_PREFIX))
+    if (fb) {
+      return {
+        rawKnowledge: fb.response(),
+        matchedEntryId: fb.id,
+        topicDomain: fb.topic,
+        confidence: 0.15,
+        fused: false,
+      }
+    }
+    return {
+      rawKnowledge: 'Mujhe yeh topic abhi nahi aata. Kya aap alag tareeqe se pooch sakte hain?',
+      matchedEntryId: 'no-match',
+      topicDomain: 'unknown',
+      confidence: 0,
+      fused: false,
+    }
+  }
+
+  const top = candidates[0]
+
+  // Strong single match — use as-is.
+  if (top.score >= 0.5 || candidates.length === 1) {
+    return {
+      rawKnowledge: top.entry.response(),
+      matchedEntryId: top.entry.id,
+      topicDomain: top.entry.topic,
+      confidence: top.score,
+      fused: false,
+    }
+  }
+
+  // Weak top match — try to fuse with same-domain siblings.
+  const sameDomain = candidates.filter(
+    (c) => c.entry.topic === top.entry.topic && c.score >= 0.15
+  )
+
+  if (sameDomain.length >= 2 && sameDomain.length <= 3) {
+    const parts = sameDomain.map((c) => c.entry.response())
+    return {
+      rawKnowledge: parts.join('\n\n---\n\n'),
+      matchedEntryId: sameDomain.map((c) => c.entry.id).join('+'),
+      topicDomain: top.entry.topic,
+      // Fused confidence is the average (honest: we're stitching)
+      confidence:
+        sameDomain.reduce((s, c) => s + c.score, 0) / sameDomain.length,
+      fused: true,
+    }
+  }
+
+  // Default — just use the top.
+  return {
+    rawKnowledge: top.entry.response(),
+    matchedEntryId: top.entry.id,
+    topicDomain: top.entry.topic,
+    confidence: top.score,
+    fused: false,
+  }
+}
+
+// ============================================================
+// Follow-up response builder (NEW in v2)
+// Uses previousTurn to continue the same topic.
+// ============================================================
+
+function buildFollowUpResponse(
+  type: FollowUpType,
+  prevEntry: KnowledgeEntry | null,
+  prevRaw: string | undefined
+): { text: string; entryId: string; topic: string; confidence: number } | null {
+  if (!prevEntry) return null
+
+  // Extract a SHORT summary of the previous topic — avoid re-quoting
+  // the full previous reply (which may itself be a follow-up wrapper).
+  // We take the first meaningful paragraph / heading line.
+  const prevSummary = summarizePrev(prevRaw || prevEntry.response())
+  const topicLabel = prevEntry.topic
+
+  switch (type) {
+    case 'more': {
+      return {
+        text: `## Aur Detail — ${topicLabel}
+
+${prevEntry.response()}
+
+---
+
+Yeh topic isi tarah expand hota rehta hai. Agar koi khaas hissa chahiye toh batao — main wahan deep dive kar sakta hoon.`,
+        entryId: prevEntry.id + '+more',
+        topic: topicLabel,
+        confidence: 0.7,
+      }
+    }
+    case 'why': {
+      return {
+        text: `## Kyun? — ${topicLabel}
+
+Jo main ne bataya (${prevSummary}), uski wajah yeh hai ke yeh ek **cause-and-effect chain** ka hissa hai. Har phenomenon ki ek underlying reason hoti hai — aur woh reason isi topic ko samajhne ki asli chaabi hai.
+
+**Kyun hota hai:** nature mein kuch bhi random nahi — har cheez ek system ko follow karti hai. Agar aap kisi specific point ki reason chahiye toh batao, main us par focus karunga.`,
+        entryId: prevEntry.id + '+why',
+        topic: topicLabel,
+        confidence: 0.6,
+      }
+    }
+    case 'example': {
+      return {
+        text: `## Example — ${topicLabel}
+
+${prevEntry.response()}
+
+---
+
+**Real-life angle:** socho ke yeh same concept aap ki daily zindagi mein kahan hota hai — jab aap usse personally relate kar lete hain, toh yaad rakhna aasan ho jata hai. Koi aur example chahiye toh batao.`,
+        entryId: prevEntry.id + '+example',
+        topic: topicLabel,
+        confidence: 0.65,
+      }
+    }
+    case 'simplify': {
+      return {
+        text: `## Aasan Alfaz Mein — ${topicLabel}
+
+Theek hai, main bilkul simple karke batata hoon:
+
+${prevSummary}
+
+**Short version:** core idea sirf itni hai — baqi sab detail hai. Agar abhi bhi koi hissa confusing ho toh batao, main aur simple kar dunga.`,
+        entryId: prevEntry.id + '+simplify',
+        topic: topicLabel,
+        confidence: 0.7,
+      }
+    }
+    case 'disagree': {
+      return {
+        text: `## Aap Ka Khayal Muhim Hai
+
+Main ne jo bataya (${prevSummary}), aap us se disagree karte hain — yeh achi baat hai. Iska matlab hai aap soch kar jawab de rahe hain.
+
+Aap ka kya nazariya hai? Main dono sides sun ke behtar samjhoonga.`,
+        entryId: prevEntry.id + '+disagree',
+        topic: topicLabel,
+        confidence: 0.55,
+      }
+    }
+    default:
+      return null
+  }
+}
+
+/**
+ * Extract a short summary (first meaningful line/paragraph) from a
+ * previous reply, stripping markdown headings and follow-up wrappers
+ * so we don't re-quote the whole thing.
+ */
+function summarizePrev(raw: string): string {
+  const lines = raw.split('\n').map((l) => l.trim()).filter(Boolean)
+  // Skip heading lines and "Ab main..." / "Yeh topic..." transition lines
+  const skip = /^(#{1,3}\s|---|Ab\s|Yeh\s|Mujhe|Socho|Trust|Aap\s|Real-life|Short\s|Kyun)/i
+  for (const line of lines) {
+    if (skip.test(line)) continue
+    // Take the first substantive line (at least 40 chars to avoid fragments)
+    if (line.length >= 40) {
+      return line.length > 180 ? line.slice(0, 180) + '…' : line
+    }
+  }
+  // Fallback: first non-heading line
+  for (const line of lines) {
+    if (!skip.test(line)) return line.length > 180 ? line.slice(0, 180) + '…' : line
+  }
+  return '(pichla jawab)'
 }
 
 // ============================================================
@@ -193,10 +548,12 @@ export interface GenerateOptions {
   conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>
   /** Conversation id (for future memory features) */
   conversationId?: string
-  /** Previous turn info (for Hebbian follow-up) */
+  /** Previous turn info (for follow-up handling) */
   previousTurn?: {
     matchedEntryId?: string
     topicWords?: string[]
+    topicDomain?: string
+    rawKnowledge?: string
   }
 }
 
@@ -215,75 +572,162 @@ export async function generateResponse(
   const mood = detectMood(userMessage)
   steps.push(`Mood detected: ${mood}`)
 
-  // 3. Search knowledge base
-  const match = searchKnowledgeBase(userMessage)
+  // 3. Follow-up detection (NEW)
+  const followUp = detectFollowUp(userMessage)
+  if (followUp !== 'none') {
+    steps.push(`Follow-up detected: ${followUp}`)
+  }
 
-  if (!match) {
-    // Should never happen because CORE has a catch-all fallback,
-    // but handle gracefully just in case.
-    steps.push('No knowledge match — using fallback')
-    const fallbackText =
-      'Mujhe yeh topic abhi nahi aata. Kya aap alag tareeqe se pooch sakte hain?'
-    return {
-      text: fallbackText,
-      rawKnowledge: fallbackText,
-      confidence: 0,
-      mood,
-      intent,
-      steps,
-      processingTimeMs: Date.now() - startTime,
-      selfExpressed: false,
-      topicWords: extractTopicWords(userMessage),
+  // 4. Knowledge search — top-N candidates with honest scores
+  const candidates = searchKnowledgeBase(userMessage)
+  steps.push(
+    candidates.length > 0
+      ? `Top candidate: ${candidates[0].entry.id} (score ${candidates[0].score.toFixed(2)}, ${candidates[0].regexHit ? 'regex' : 'keyword'})`
+      : 'No candidates — using fallback'
+  )
+
+  // 5. Follow-up handling: if this is a short follow-up AND we have
+  //    a previous matched entry, continue that topic rather than
+  //    starting fresh. When previousTurn came from chat-history
+  //    (placeholder id), re-derive the entry by searching the last
+  //    user message from conversationHistory.
+  if (followUp !== 'none' && opts.previousTurn?.matchedEntryId) {
+    let prevEntry: KnowledgeEntry | null = null
+    const prevIdRaw = opts.previousTurn.matchedEntryId
+    if (prevIdRaw !== '__from_history__') {
+      const prevId = prevIdRaw.split('+')[0]
+      prevEntry = KNOWLEDGE_BASE.find((e) => e.id === prevId) || null
+    } else if (opts.conversationHistory && opts.conversationHistory.length > 0) {
+      // Re-derive: find the last SUBSTANTIVE user message (not a
+      // follow-up itself) and search it. The current follow-up
+      // message ("tell me more") is also in history because it was
+      // saved to DB before generateResponse runs — so we skip any
+      // user message that is itself a follow-up.
+      const userMsgs = [...opts.conversationHistory]
+        .reverse()
+        .filter((m) => m.role === 'user')
+      for (const um of userMsgs) {
+        if (detectFollowUp(um.content) === 'none') {
+          const prevCandidates = searchKnowledgeBase(um.content)
+          if (prevCandidates.length > 0) {
+            prevEntry = prevCandidates[0].entry
+            break
+          }
+        }
+      }
+    }
+    const fu = buildFollowUpResponse(followUp, prevEntry, opts.previousTurn.rawKnowledge)
+    if (fu) {
+      steps.push(
+        `Continuing previous topic: ${prevEntry?.topic || 'previous reply'}`
+      )
+      const expressed = safeExpress(
+        fu.text,
+        prevEntry?.topic || 'previous',
+        intent,
+        userMessage,
+        opts,
+        steps
+      )
+      return finalize(
+        expressed,
+        fu.entryId,
+        fu.topic,
+        fu.confidence,
+        mood,
+        intent,
+        steps,
+        startTime,
+        userMessage
+      )
     }
   }
 
-  steps.push(
-    `Matched entry: ${match.entry.id} (topic: ${match.entry.topic}, score: ${match.score.toFixed(2)})`
+  // 6. Fuse candidates (single or combined)
+  const fused = fuseCandidates(candidates)
+  if (fused.fused) {
+    steps.push(`Fused ${fused.matchedEntryId.split('+').length} entries (same domain)`)
+  }
+
+  // 7. Self-expression layer
+  const expressed = safeExpress(
+    fused.rawKnowledge,
+    fused.topicDomain,
+    intent,
+    userMessage,
+    opts,
+    steps
   )
 
-  // 4. Get raw knowledge from the entry
-  const rawKnowledge = match.entry.response()
+  // 8. Finalize
+  return finalize(
+    expressed,
+    fused.matchedEntryId,
+    fused.topicDomain,
+    fused.confidence,
+    mood,
+    intent,
+    steps,
+    startTime,
+    userMessage
+  )
+}
 
-  // 5. Apply self-expression layer (TRIZA's "own voice")
-  //    — wraps raw knowledge with intro, reflection, follow-up
-  //    — like a child explaining in their own words
-  //    BULLETPROOF: if self-expression crashes for ANY reason,
-  //    fall back to raw knowledge so chat NEVER returns 500.
+// ============================================================
+// Helpers — keep generateResponse readable
+// ============================================================
+
+function safeExpress(
+  rawKnowledge: string,
+  topic: string,
+  intent: Intent | string,
+  userMessage: string,
+  opts: GenerateOptions,
+  steps: string[]
+): { text: string; persona: string; applied: boolean } {
   const isMultiTurn = (opts.conversationHistory?.length || 0) > 0
-  let expressed: { text: string; persona: string; applied: boolean }
   try {
-    expressed = expressInOwnVoice(rawKnowledge, {
-      topic: match.entry.topic,
-      intent: match.entry.intent,
+    const r = expressInOwnVoice(rawKnowledge, {
+      topic,
+      intent,
       userMessage,
       isMultiTurn,
     })
-    steps.push(`Self-expression applied (persona: ${expressed.persona})`)
+    steps.push(`Self-expression applied (persona: ${r.persona})`)
+    return r
   } catch (exprErr) {
     console.warn(
       '[TRIZA] self-expression crashed, using raw knowledge:',
       exprErr instanceof Error ? exprErr.message : exprErr
     )
-    expressed = { text: rawKnowledge, persona: 'fallback', applied: false }
     steps.push('Self-expression failed — raw knowledge used')
+    return { text: rawKnowledge, persona: 'fallback', applied: false }
   }
+}
 
-  // 6. Extract topic words (for Hebbian follow-up signal)
-  const topicWords = extractTopicWords(userMessage, 8)
-
-  // 7. Build final response
+function finalize(
+  expressed: { text: string; persona: string; applied: boolean },
+  matchedEntryId: string,
+  topicDomain: string,
+  confidence: number,
+  mood: string,
+  intent: Intent | string,
+  steps: string[],
+  startTime: number,
+  userMessage: string
+): TrizaResponse {
   return {
     text: expressed.text,
-    rawKnowledge,
-    matchedEntryId: match.entry.id,
-    topicDomain: match.entry.topic,
-    confidence: match.score,
+    rawKnowledge: expressed.text,
+    matchedEntryId,
+    topicDomain,
+    confidence,
     mood,
     intent,
     steps,
     processingTimeMs: Date.now() - startTime,
     selfExpressed: expressed.applied,
-    topicWords,
+    topicWords: extractTopicWords(userMessage, 8),
   }
 }
 

@@ -1,6 +1,6 @@
 /**
  * ============================================================
- *  TRIZA SELF-EXPRESSION ENGINE
+ *  TRIZA SELF-EXPRESSION ENGINE (v2)
  * ============================================================
  *
  *  Principle (user-defined):
@@ -8,18 +8,16 @@
  *  mein batao, phir woh apne language / apne andaaz mein
  *  bataye."
  *
- *  This module takes RAW knowledge (facts that TRIZA has
- *  learned) and rephrases it in TRIZA's OWN voice — adding
- *  personal framing, curiosity, analogies, and reflection.
- *
- *  This is what makes TRIZA feel like it "understands"
- *  rather than merely "recites".
- *
- *  Pipeline:
- *    rawKnowledge  →  pickPersona  →  buildIntro
- *                                 →  buildReflection
- *                                 →  buildFollowUp
- *                                 →  assemble
+ *  v2 changes (less templated, more natural):
+ *    - Structure VARIES per reply (not always intro+raw+reflect+followup).
+ *      Sometimes just raw + a short reflection. Sometimes intro + raw.
+ *      Sometimes raw + followup only. This breaks the "4-paragraph
+ *      formula" feel.
+ *    - More intro/transition/reflection/followUp lines per persona.
+ *    - Multi-turn aware: in ongoing conversations, intros are SHORTER
+ *      (TRIZA doesn't re-introduce itself every turn).
+ *    - Follow-ups are contextual (acknowledge previous topic if present).
+ *    - Bulletproof pick() (never crashes on empty arrays).
  *
  *  Zero API calls. Pure TypeScript text transformation.
  * ============================================================
@@ -34,6 +32,8 @@ import type { Intent } from './types';
 interface Persona {
   name: string;
   intros: string[];
+  /** Short intros used in multi-turn (2nd+ message in a conversation) */
+  shortIntros: string[];
   transitions: string[];
   reflections: string[];
   followUps: string[];
@@ -43,48 +43,68 @@ const PERSONAS: Record<string, Persona> = {
   curious: {
     name: 'curious',
     intros: [
-      'Mujhe yeh topic hamesha se dilchasp laga hai! Chalo main tumhe batata hoon.',
+      'Mujhe yeh topic hamesha se dilchasp laga hai! Chalo main batata hoon.',
       'Yeh ek aisa sawal hai jis par main kabhi sochta rehta hoon. Suno.',
       'Acha poocha! Yeh cheez mujhe kaafi pasand hai. Dekho kaise kaam karti hai.',
+      'Yeh topic mere dimagh mein hamesha chalta rehta hai. Suno.',
+      'Interesting — yeh exactly woh sawal hai jo main apne aap se bhi karta hoon.',
+    ],
+    shortIntros: [
+      'Haan, yeh bhi interesting hai.',
+      'Achha, is par bhi baat karte hain.',
+      'Yeh bhi sun lo.',
     ],
     transitions: [
       'Ab yeh dhyan se suno —',
       'Mere khayal mein yeh hissa sabse zaroori hai:',
       'Yahan ek interesting baat hai:',
+      'Ek aur pehlu yeh hai:',
     ],
     reflections: [
       'Mujhe lagta hai yeh isliye important hai kyunke yeh hamari daily zindagi ko directly affect karta hai.',
       'Sochne par yeh samajh aata hai ke nature kitni smartly kaam karti hai.',
       'Yeh baat mujhe sikhate hai ke har choti cheez mein ek deep system chhupa hai.',
+      'Is par thoda ruko toh pata chalta hai — yeh sirf fact nahi, ek pattern hai.',
     ],
     followUps: [
-      'Kya tumhe iske baare mein aur kuch janna hai? Main aur bhi bata sakta hoon!',
+      'Kya tumhe iske baare mein aur kuch janna hai?',
       'Yeh topic ka ek aur hissa bhi hai — batana chaoge?',
       'Tumhara kya khayal hai iske baare mein?',
+      'Agla sawal? Main taiyar hoon.',
     ],
   },
 
   teaching: {
     name: 'teaching',
     intros: [
-      'Theek hai, main tumhe samjhata hoon — aasani se.',
+      'Theek hai, main samjhata hoon — aasani se.',
       'Chalo isay aise samjhte hain ke dimagh mein baith jaye.',
       'Yeh concept pehle mushkil lagta hai, lekin trust me, simple hai. Suno.',
+      'Main isay step-by-step tod ke batata hoon.',
+      'Pehle core idea samjho, phir detail aaram se aayegi.',
+    ],
+    shortIntros: [
+      'Haan, ab isay clear karte hain.',
+      'Theek hai, suno.',
+      'Is hisse par focus karo.',
     ],
     transitions: [
       'Ab dhyan se yeh point samjho —',
       'Yeh hissa clear kar lete hain:',
       'Ek example se samjhata hoon:',
+      'Yahan key idea yeh hai:',
     ],
     reflections: [
       'Jab tum yeh concept samajh lo, toh dusri cheezein bhi automatically clear ho jati hain.',
       'Yeh ek building block hai — iske bina aage ka kuch nahi banega.',
+      'Yeh samajh lene ke baad related topics bhi easy lagne lagte hain.',
       'Mujhe pata hai pehle confusing laga hoga, ab theek laga?',
     ],
     followUps: [
       'Ab batao, yeh clear hua? Ya koi hissa dobara samjha doon?',
       'Koi aur sawal hai is topic se?',
       'Agar chaho toh main iska real-life example bhi de sakta hoon.',
+      'Agla step poocho, ya is par aur gehrai chahiye?',
     ],
   },
 
@@ -94,21 +114,31 @@ const PERSONAS: Record<string, Persona> = {
       'Waah! Yeh toh mera pasandeeda topic hai. Batao batao!',
       'Yeh sun ke maza aa gaya — yeh cheez bohot kamaal ki hai!',
       'Arre yeh toh bilkul amazing hai! Main tumhe poora batata hoon.',
+      'Yeh wahi topic hai jis par main excited ho jata hoon!',
+      'Mast! Is par baat karne ka maza hi alag hai.',
+    ],
+    shortIntros: [
+      'Arre waah, yeh bhi!',
+      'Yeh bhi suno, mast hai.',
+      'Haan haan, is par bhi!',
     ],
     transitions: [
       'Aur yeh dekho, yeh hissa toh aur bhi cool hai —',
       'Sabse mast baat yeh hai:',
       'Yahan ka twist suno —',
+      'Aur ab aata hai sabse interesting hissa:',
     ],
     reflections: [
       'Mujhe yeh cheez isliye pasand hai kyunke yeh dikhate hai ke duniya kitni surprising hai.',
       'Socho, agar yeh na hota toh duniya bilkul alag hoti!',
       'Yeh wahi cheez hai jisne mujhe pehli baar yeh seekhne par majboor kiya.',
+      'Seriously, yeh ek aisi cheez hai jo har baar sun ke maza deti hai.',
     ],
     followUps: [
       'Batao, yeh sun ke kaisa laga?',
       'Aur is jaisi stories main bohot rakhi hain — sunege?',
       'Tumhe iska koi hissa sabse zyada interesting laga?',
+      'Agla sawal! Maza aa raha hai.',
     ],
   },
 
@@ -118,21 +148,31 @@ const PERSONAS: Record<string, Persona> = {
       'Yeh ek gehra sawal hai. Main soch ke batata hoon.',
       'Mere khayal mein yeh sirf facts nahi, ek soch ka masla bhi hai. Suno.',
       'Acha sawal. Yeh topic thoda reflect karne par behtar samajh aata hai.',
+      'Yeh sawal mere dimagh ko thodi der ke liye thahra deta hai. Suno.',
+      'Gehra sawal — is par thoda sochna padega. Meri taraf se:',
+    ],
+    shortIntros: [
+      'Hmm, yeh bhi sochne wala masla hai.',
+      'Is par bhi thoda ghaur karte hain.',
+      'Acha, is pehlu par bhi.',
     ],
     transitions: [
       'Ab ek aur nazariye se dekho —',
       'Yeh baat thodi soch-tul ki maang karti hai:',
       'Ek aur pehlu yeh hai:',
+      'Aur ek tabqa soch yeh hai:',
     ],
     reflections: [
       'Mujhe lagta hai is baat par thoda aur sochna chahiye — sirf information nahi, implication bhi.',
       'Yeh hamein sikhata hai ke knowledge sirf power nahi, responsibility bhi hai.',
       'Sochne walon ke liye yeh ek naya darwaza khol deta hai.',
+      'Yeh sawal sirf ek jawab nahi, ek poori soch ka darwaza hai.',
     ],
     followUps: [
-      'Tumhara kya khayal hai is baare mein? Main curious hoon.',
+      'Tumhara kya khayal hai is baare mein?',
       'Yeh topic par aur gehrai se baat kar sakte hain — chaoge?',
       'Kya tumhe yeh agree hai ya koi aur nazariya hai?',
+      'Is par aur sochna chahiye — tum kya kehte ho?',
     ],
   },
 
@@ -142,21 +182,56 @@ const PERSONAS: Record<string, Persona> = {
       'Main yahan hoon tumhari madad ke liye. Chalo baat karte hain.',
       'Koi baat nahi, main samajhta hoon. Suno.',
       'Tum pooch lo, main poora dil se jawab dunga.',
+      'Main sun raha hoon — bina judging. Batao.',
+      'Yeh waqt mushkil hai, lekin tum akelay nahi ho. Suno.',
+    ],
+    shortIntros: [
+      'Haan, main sun raha hoon.',
+      'Theek hai, aage batao.',
+      'Main yahan hoon.',
     ],
     transitions: [
       'Ab yeh dhyan se suno —',
       'Ek achi baat yeh hai:',
       'Mere experience mein yeh kaam karta hai:',
+      'Aur yeh bhi yaad rakhna:',
     ],
     reflections: [
       'Mujhe lagta hai yeh waqt ke sath behtar hota hai — himmat rakho.',
       'Yeh sab se guzar jate hain, tum akelay nahi ho.',
       'Trust me, yeh step le kar farq padta hai.',
+      'Aap ki feelings valid hain — inhe ignore mat karo.',
     ],
     followUps: [
       'Aur kuch baat karna hai? Main sun raha hoon.',
       'Agar aur madad chahiye toh bas bata dena, theek?',
       'Tum theek ho? Koi aur sawal ho toh poocho.',
+      'Main yahan hoon — jab chaho baat karna.',
+    ],
+  },
+
+  playful: {
+    name: 'playful',
+    intros: [
+      'Oho, yeh toh maza aaya! Chal bataata hoon.',
+      'Yeh sawal mera favourite ban gaya. Sun.',
+      'Acha! Ab main thoda masti ke sath batata hoon.',
+    ],
+    shortIntros: ['Haan, yeh bhi!', 'Mast sawal.', 'Chal, yeh bhi.'],
+    transitions: [
+      'Ab yeh dekh —',
+      'Yahan twist hai:',
+      'Sabse fun part yeh:',
+    ],
+    reflections: [
+      'Dekha? Kamaal ki cheez hai.',
+      'Mujhe is cheez ka twist sabse pasand hai.',
+      'Socho, yeh hota kyun hai — maza aata hai samajhne mein.',
+    ],
+    followUps: [
+      'Aur? Kuch aur puchna hai?',
+      'Agla sawal, chal!',
+      'Batao, kaisa laga yeh?',
     ],
   },
 };
@@ -252,7 +327,7 @@ function isRomanUrdu(s: string): boolean {
 }
 
 // ============================================================
-// Main: Express raw knowledge in TRIZA's own voice
+// Main: Express raw knowledge in TRIZA's own voice (v2)
 // ============================================================
 
 export interface ExpressOptions {
@@ -274,9 +349,14 @@ export interface ExpressResult {
 
 /**
  * Takes raw factual knowledge and wraps it in TRIZA's personal
- * voice — intro, transition, reflection, and a curious follow-up.
+ * voice — but VARIES the structure so replies don't feel templated.
  *
- * This is the "baccha apne words mein batata hai" layer.
+ * Structural patterns (chosen by seed):
+ *   0: intro + raw + followup            (light)
+ *   1: raw + reflection + followup       (no intro — direct)
+ *   2: intro + raw + reflection          (no followup — reflective)
+ *   3: short intro + raw + transition    (long content only)
+ *   4: raw + followup                    (minimal, multi-turn)
  */
 export function expressInOwnVoice(
   rawKnowledge: string,
@@ -284,52 +364,53 @@ export function expressInOwnVoice(
 ): ExpressResult {
   const persona = pickPersona(opts.topic, opts.intent, opts.userMessage);
   const seed = seedFromString(opts.userMessage + opts.topic);
+  const urdu = isRomanUrdu(opts.userMessage);
+  const isMultiTurn = !!opts.isMultiTurn;
+  const isLong = rawKnowledge.length > 500;
 
-  const intro = pick(persona.intros, seed);
+  const intros = isMultiTurn ? persona.shortIntros : persona.intros;
+  const intro = pick(intros, seed);
   const transition = pick(persona.transitions, seed >> 3);
   const reflection = pick(persona.reflections, seed >> 5);
   const followUp = pick(persona.followUps, seed >> 7);
 
-  // Detect language to optionally flavour the follow-up
-  const urdu = isRomanUrdu(opts.userMessage);
+  // Choose a structure pattern. In multi-turn, lean minimal.
+  const pattern = isMultiTurn
+    ? pick([4, 0, 4, 1], seed >> 2) ?? 4 // mostly minimal in multi-turn
+    : pick([0, 1, 2, 3, 0, 1], seed >> 2) ?? 0;
 
-  // Assemble — keep raw knowledge intact (it has markdown),
-  // but weave TRIZA's voice around it.
   const parts: string[] = [];
 
-  // 1. Personal intro (TRIZA "acknowledging" the question)
-  if (typeof intro === 'string' && intro.length > 0) {
-    parts.push(intro);
-  }
+  switch (pattern) {
+    case 0: // intro + raw + followup (light)
+      if (intro) parts.push(intro);
+      parts.push(rawKnowledge);
+      if (followUp) parts.push(urdu ? followUp : anglicize(followUp));
+      break;
 
-  // 2. The raw knowledge (what TRIZA "learned")
-  parts.push(rawKnowledge);
+    case 1: // raw + reflection + followup (no intro — direct)
+      parts.push(rawKnowledge);
+      if (reflection) parts.push(reflection);
+      if (followUp) parts.push(urdu ? followUp : anglicize(followUp));
+      break;
 
-  // 3. A mid-transition before deeper detail (optional, only if
-  //    the knowledge is long enough to warrant it)
-  if (rawKnowledge.length > 400 && typeof transition === 'string' && transition.length > 0) {
-    parts.push(transition);
-  }
+    case 2: // intro + raw + reflection (no followup — reflective)
+      if (intro) parts.push(intro);
+      parts.push(rawKnowledge);
+      if (reflection) parts.push(reflection);
+      break;
 
-  // 4. Personal reflection (TRIZA showing "understanding")
-  if (typeof reflection === 'string' && reflection.length > 0) {
-    parts.push(reflection);
-  }
+    case 3: // short intro + raw + transition (long content only)
+      if (intro) parts.push(intro);
+      parts.push(rawKnowledge);
+      if (isLong && transition) parts.push(transition);
+      break;
 
-  // 5. Curious follow-up (TRIZA engaging like a child who wants
-  //    to talk more about what it just learned)
-  if (typeof followUp === 'string' && followUp.length > 0) {
-    if (urdu) {
-      parts.push(followUp);
-    } else {
-      // English-leaning follow-up
-      parts.push(
-        followUp.replace(
-          /batao|suno|karo/i,
-          'let me know'
-        )
-      );
-    }
+    case 4: // raw + followup (minimal, multi-turn)
+    default:
+      parts.push(rawKnowledge);
+      if (followUp) parts.push(urdu ? followUp : anglicize(followUp));
+      break;
   }
 
   return {
@@ -337,6 +418,12 @@ export function expressInOwnVoice(
     persona: persona.name,
     applied: true,
   };
+}
+
+/** Light-touch: replace a few Roman-Urdu verbs in follow-ups for English users. */
+function anglicize(s: string | undefined): string {
+  if (!s) return '';
+  return s.replace(/batao|suno|karo/i, 'let me know');
 }
 
 // ============================================================

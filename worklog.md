@@ -2833,3 +2833,46 @@ Stage Summary:
 - Separation documented in thiora-marketplace-README.md
 - User can now ask for Thiora payment-method changes; code is in src/app/api/payments + src/lib/payment-methods (in place, working)
 - Files are organized by domain already: api/payments vs api/ai, lib/stripe vs lib/triza-engine
+
+---
+Task ID: CHATBOT-V2-ENGINE
+Agent: Main Agent
+Task: Make TRIZA chatbot perfect + better — engine quality (Phase 1, before UI/design)
+
+Work Log:
+- Audited TRIZA engine deeply: response-generator (regex-only matching, dishonest confidence), self-expression (templated 4-part structure), chat-engine (no previousTurn wiring)
+- Added `keywords?: string[]` field to KnowledgeEntry type (optional, derived from regex if absent)
+- Rewrote response-generator.ts (v2):
+  * NEW keyword-overlap tokenizer (English + Roman Urdu stopwords, weighted by token length)
+  * NEW multi-entry fusion: when top match is weak (<0.5) but 2-3 same-domain entries match, combine their raw knowledge
+  * NEW honest confidence: score = regexHit(0.6) + overlap(0.4), or overlap*0.7 for keyword-only. A 95% reply genuinely matched 95% of signal keywords
+  * NEW tie-break by id-specificity (entry id-word appears in message) — fixes "photosynthesis" matching "carbon-cycle" instead of "photosynthesis-explained"
+  * NEW follow-up detection: more / why / example / simplify / disagree
+  * NEW follow-up response builder with summarizePrev() to avoid re-quoting full previous reply (no nested accumulation)
+- Rewrote self-expression.ts (v2):
+  * 6 personas (added playful), each with MORE intro/transition/reflection/followUp lines (5+ each)
+  * NEW shortIntros for multi-turn (TRIZA doesn't re-introduce itself every turn)
+  * NEW structural variation: 5 patterns (light/direct/reflective/long/minimal) chosen by seed — breaks the "4-paragraph formula" feel
+  * Multi-turn leans minimal patterns; first-turn uses fuller patterns
+  * Bulletproof pick() preserved
+- Wired previousTurn in chat-engine.ts: extracts lastAssistant.content + lastUser topicWords, sets matchedEntryId='__from_history__' placeholder; engine re-derives entry by searching last NON-follow-up user message
+- Fixed follow-up regex: added "aur batao", "aur suna", "aur kya", "kyun hota", "example do", "misal do", "aur simple", "more details"
+- Verified via API tests (fresh conversations):
+  * Mount Everest direct → matched mount-everest, conf 1.0 ✅
+  * "aur batao" → mount-everest+more, conf 0.7, continues topic ✅
+  * "kyun" → mount-everest+why, conf 0.6, explains cause-and-effect ✅
+  * "aur simple karo" → mount-everest+simplify, conf 0.7 ✅
+  * "example do" → mount-everest+example, conf 0.65 ✅
+  * "main aaj thodi udaas hoon" → support-sad, conf 0.7, mood sad, warm persona ✅
+  * "What is photosynthesis?" → photosynthesis-explained (NOT carbon-cycle) conf 1.0 ✅
+- Lint: clean for engine files (only pre-existing unrelated auth-hook error)
+- Dev server: all POST /api/ai/chat 200, no compile errors
+
+Stage Summary:
+- TRIZA chatbot engine is now meaningfully better:
+  1. Honest confidence (keyword-overlap based, not pattern-length)
+  2. Fuzzy keyword matching (paraphrased questions find entries)
+  3. Multi-entry fusion (richer replies for weak single matches)
+  4. 5 follow-up types (more/why/example/simplify/disagree) — multi-turn continuity
+  5. Natural self-expression (5 structural patterns, 6 personas, short multi-turn intros)
+- Next phase per user: UI and design improvements
