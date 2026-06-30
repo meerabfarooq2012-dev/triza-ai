@@ -2576,3 +2576,39 @@ Stage Summary:
 - Even if Vercel Build Command override runs the OLD command directly, prisma db push will now succeed because the schema no longer tries to add NOT NULL columns to non-empty tables
 - TRIZA unaffected: it uses aiConversation/aiMessage models, not the marketplace Conversation/Message tables that were changed
 - This should be the FINAL fix needed for Vercel deployment
+
+---
+Task ID: 14
+Agent: Main Agent
+Task: Replace Thiora/NOOR branding with TRIZA across user-visible UI (user reported "Thiora ka logo TRIZA AI mein gaya hai")
+
+Work Log:
+- Diagnosed: project was originally a "Thiora Marketplace" template; TRIZA AI was built on top but kept Thiora branding in metadata/favicon/PWA + "NOOR" labels in the AI workspace sidebar/chat
+- Found 98 files reference "Thiora"; user only sees `/` route, so focused on user-visible layer
+- Generated new TRIZA app icon via z-ai image-generation CLI (emerald neural-network brain on near-black, 1024x1024)
+- Generated new OG banner (1344x768, TRIZA wordmark + neural brain)
+- Wrote scripts/resize-triza-icons.ts using sharp to produce icon-512x512.png, icon-192x192.png, apple-touch-icon.png (180), logo.png from the 1024 source; installed as og-image.png
+- Hand-coded new public/logo.svg: TRIZA neural motif (emerald synapse nodes + glowing core, breathing/pulse animations) replacing the gold Thiora shopping-bag "T"
+- Updated src/app/layout.tsx metadata: title template "%s | TRIZA AI", default "TRIZA — Self-Built AI · Pure Reasoning Engine"; og/twitter/keywords/authors/creator/publisher/metadataBase all -> TRIZA; themeColor #d97706 (amber) -> #10b981 (emerald); apple-mobile-web-app-title/application-name/msapplication colors -> TRIZA/emerald
+- Updated src/components/ai/workspace/sidebar.tsx: brand "NOOR / AI Workspace" -> "TRIZA / Self-Built AI"
+- Updated src/components/ai/workspace/chat-view.tsx: placeholder "Message NOOR..." -> "Message TRIZA..." (x2), thinking indicator "NOOR is thinking..." -> "TRIZA is thinking..."
+- Updated src/app/page.tsx component header comment NOOR -> TRIZA
+- Updated public/manifest.json: name/short_name/description NOOR -> TRIZA
+- Updated public/sw.js: cache names thiora-v3 -> triza-v4 (forces cleanup of old Thiora caches on next SW activation), push title Thiora -> TRIZA
+- Updated public/offline.html: title, logo alt, copy ("browse products") -> TRIZA chat copy, accent colors amber -> emerald
+- Rewrote src/components/seo/json-ld.tsx: dropped Marketplace schema, replaced Organization/WebSite/Marketplace with TRIZA Organization/WebSite/SoftwareApplication schemas (better matches an AI app)
+- Verified in rendered HTML via curl http://localhost:3000/ (server alive, HTTP 200):
+    <title>TRIZA — Self-Built AI · Pure Reasoning Engine</title>
+    og:title = TRIZA — Self-Built AI · Pure Reasoning Engine
+    twitter:title = TRIZA — Self-Built AI · Pure Reasoning Engine
+    theme-color = #10b981 (emerald)
+    apple-mobile-web-app-title = TRIZA
+    Body mentions: 42 TRIZA, 0 Thiora, 0 NOOR
+- Committed (2030af0) and pushed to triza-ai remote (main branch)
+
+Stage Summary:
+- Thiora + NOOR branding is FULLY GONE from the user-visible `/` route; replaced with TRIZA identity (emerald neural-brain theme)
+- All user-visible surfaces updated: browser tab, favicon, OG/social preview, PWA manifest, install prompt, service worker push title, offline page, sidebar brand, chat placeholder, JSON-LD structured data
+- Verified via curl: 42 TRIZA mentions, 0 Thiora, 0 NOOR in rendered HTML
+- Fix pushed to github.com/meerabfarooq2012-dev/triza-ai (commit 2030af0); Vercel auto-deploy triggered
+- SIDE NOTE (pre-existing, not caused by this change): src/components/ai/training-engine.ts calls db.aiModel / db.aiCategory / db.aiTrainingWord, and chat-engine.ts calls db.aiConversation / db.aiMessage — NONE of these models exist in prisma/schema.sqlite.prisma. The chat works because chat-engine.ts has an in-memory fallback store (globalThis.__trizaMemStore). The /api/ai/models endpoint returns 500 with "Cannot read properties of undefined (reading 'findMany')". This is a separate pre-existing issue — if the user wants the Models/Playground tabs + persistent chat history to work, these Prisma models need to be added to both schema files. Not addressed here because it was out of scope for the logo fix.
