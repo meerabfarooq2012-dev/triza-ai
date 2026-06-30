@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { ArrowRight, ShoppingBag, Briefcase } from 'lucide-react'
+import { ArrowRight, ShoppingBag, Briefcase, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useMarketplaceStore } from '@/store/use-marketplace-store'
 import { PLATFORM_NAME, PLATFORM_DESCRIPTION } from '@/lib/constants'
@@ -86,6 +86,28 @@ export function HeroSection() {
               {t('landing.browseGigs')}
             </Button>
           </div>
+
+          {/* TRIZA AI — self-built AI, no external APIs */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.9, duration: 0.6 }}
+            className="mt-2"
+          >
+            <button
+              onClick={() => setCurrentView('triza-chat')}
+              className="group inline-flex items-center gap-3 rounded-2xl border border-emerald-200/60 dark:border-emerald-800/40 bg-emerald-50/50 dark:bg-emerald-950/20 px-6 py-3 text-sm font-medium text-emerald-700 dark:text-emerald-300 transition-all hover:shadow-lg hover:shadow-emerald-500/10 hover:-translate-y-0.5"
+            >
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/10">
+                <Sparkles className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              </span>
+              <span className="text-left">
+                <span className="block font-semibold">Chat with TRIZA AI</span>
+                <span className="block text-xs text-emerald-600/70 dark:text-emerald-400/70">100% self-built · No external APIs</span>
+              </span>
+              <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </button>
+          </motion.div>
         </motion.div>
       </div>
     </section>
