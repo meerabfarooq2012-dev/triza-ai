@@ -449,8 +449,9 @@ model NotificationPreference {
 
 model Conversation {
   id             String    @id @default(cuid())
-  participant1Id String
-  participant2Id String
+  // Optional so prisma db push can add the column to tables with existing rows
+  participant1Id String?
+  participant2Id String?
   productId      String?
   gigId          String?
   orderId        String?
@@ -459,8 +460,8 @@ model Conversation {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
-  participant1   User      @relation("ConvParticipant1", fields: [participant1Id], references: [id])
-  participant2   User      @relation("ConvParticipant2", fields: [participant2Id], references: [id])
+  participant1   User?     @relation("ConvParticipant1", fields: [participant1Id], references: [id])
+  participant2   User?     @relation("ConvParticipant2", fields: [participant2Id], references: [id])
   product        Product?  @relation(fields: [productId], references: [id])
   gig            Gig?      @relation(fields: [gigId], references: [id])
   messages       Message[]
@@ -476,15 +477,16 @@ model Conversation {
 model Message {
   id             String   @id @default(cuid())
   conversationId String?
-  senderId       String
-  receiverId     String
+  // Optional so prisma db push can add the column to tables with existing rows
+  senderId       String?
+  receiverId     String?
   content        String
   messageType    String   @default("text") // text, image, system, order_reference
   isRead         Boolean  @default(false)
   createdAt      DateTime @default(now())
 
-  sender         User          @relation("SentMessages", fields: [senderId], references: [id])
-  receiver       User          @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  sender         User?         @relation("SentMessages", fields: [senderId], references: [id])
+  receiver       User?         @relation("ReceivedMessages", fields: [receiverId], references: [id])
   conversation   Conversation? @relation(fields: [conversationId], references: [id])
 
   @@index([senderId])
