@@ -30,6 +30,10 @@ export function TrizaChatApp() {
   const [lastAssistantMeta, setLastAssistantMeta] = useState<MessageMeta | null>(
     null
   )
+  // Last failed user message — used by the retry button in error bubbles
+  const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null)
+  // Last actual error detail (shown in the error bubble for clarity)
+  const [lastErrorDetail, setLastErrorDetail] = useState<string | null>(null)
 
   // ---- Data loaders ----
   const loadConversations = useCallback(async () => {
@@ -63,29 +67,16 @@ export function TrizaChatApp() {
 
   // ---- Chat handlers ----
   const handleNewChat = useCallback(async () => {
-    try {
-      const res = await fetch('/api/ai/conversations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      })
-      const data = await res.json()
-      if (data.id) {
-        await loadConversations()
-        setActiveConversationId(data.id)
-        setActiveConversation({
-          id: data.id,
-          title: 'New Chat',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          messages: [],
-        })
-        setLastAssistantMeta(null)
-      }
-    } catch (err) {
-      console.error('[workspace] new chat:', err)
-    }
-  }, [loadConversations])
+    // Don't create a conversation yet — just clear the active one so
+    // the WelcomeView (with starter prompts) shows again. The actual
+    // conversation is created lazily when the user sends a message
+    // (see handleSend's auto-create logic).
+    setActiveConversationId(null)
+    setActiveConversation(null)
+    setLastAssistantMeta(null)
+    setLastFailedMessage(null)
+    setLastErrorDetail(null)
+  }, [])
 
   const handleSelectConversation = useCallback(
     (id: string) => {
@@ -134,6 +125,8 @@ export function TrizaChatApp() {
       }
 
       setSending(true)
+      // Clear any previous error state for this new attempt
+      setLastErrorDetail(null)
 
       // Optimistic: append user message immediately
       const userMsg: ChatMessage = {
@@ -190,7 +183,9 @@ export function TrizaChatApp() {
           JSON.stringify({ conversationId: convoId, message })
         )
         const data = await res.json()
-        if (!res.ok) throw new Error(data.error || 'Failed to send')
+        if (!res.ok) {
+          throw new Error(data.error || `Server returned ${res.status}`)
+        }
 
         // Capture TRIZA transparency metadata for the optimistic assistant bubble
         const meta: MessageMeta = {
@@ -202,6 +197,9 @@ export function TrizaChatApp() {
           processingTimeMs: data.processingTimeMs,
         }
         setLastAssistantMeta(meta)
+        // Success — clear retry/error state
+        setLastFailedMessage(null)
+        setLastErrorDetail(null)
 
         // Optimistically append the assistant reply with metadata
         const assistantMsg: ChatMessage = {
@@ -220,7 +218,12 @@ export function TrizaChatApp() {
         await loadConversationDetail(convoId!)
         await loadConversations()
       } catch (err) {
-        console.error('[workspace] send:', err)
+        const errDetail =
+          err instanceof Error ? err.message : 'Unknown network error'
+        console.error('[workspace] send:', errDetail)
+        setLastFailedMessage(message)
+        setLastErrorDetail(errDetail)
+
         setActiveConversation((prev) => {
           if (!prev) return prev
           return {
@@ -230,9 +233,10 @@ export function TrizaChatApp() {
               {
                 id: `err-${Date.now()}`,
                 role: 'assistant',
-                content:
-                  '⚠️ TRIZA se connect nahi ho paya. Backend check ho raha hai — kripya thodi der baad try karein, ya "New conversation" button se fresh start karein.',
+                content: `⚠️ TRIZA se connect nahi ho paya (${errDetail}). "Retry" button daba kar dobara koshish karein, ya "New conversation" se fresh start karein.`,
                 createdAt: new Date().toISOString(),
+                isError: true,
+                retryText: message,
               },
             ],
           }
@@ -243,6 +247,20 @@ export function TrizaChatApp() {
     },
     [activeConversationId, loadConversationDetail, loadConversations]
   )
+
+  // Retry the last failed message
+  const handleRetry = useCallback(async () => {
+    if (!lastFailedMessage) return
+    // Remove the error bubble before retrying
+    setActiveConversation((prev) => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        messages: prev.messages.filter((m) => !m.isError),
+      }
+    })
+    await handleSend(lastFailedMessage)
+  }, [lastFailedMessage, handleSend])
 
   // ---- Render ----
   return (
@@ -262,6 +280,7 @@ export function TrizaChatApp() {
         loading={loadingConvo && !!activeConversationId}
         sending={sending}
         lastAssistantMeta={lastAssistantMeta}
+        onRetry={handleRetry}
       />
     </div>
   )

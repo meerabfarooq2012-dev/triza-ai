@@ -13,6 +13,8 @@ import {
   Cpu,
   Globe,
   Eye,
+  AlertTriangle,
+  RotateCw,
 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { cn } from '@/lib/utils'
@@ -26,6 +28,8 @@ interface ChatViewProps {
   sending: boolean
   /** Latest assistant metadata — used to attach to the optimistic bubble */
   lastAssistantMeta?: MessageMeta | null
+  /** Optional retry callback — when set, error bubbles show a Retry button */
+  onRetry?: () => void
 }
 
 // ============================================================
@@ -119,6 +123,7 @@ function WelcomeView({
   handleSend,
   handleKeyDown,
   sending,
+  onSend,
 }: {
   input: string
   setInput: (v: string) => void
@@ -126,7 +131,15 @@ function WelcomeView({
   handleSend: () => void
   handleKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
   sending: boolean
+  onSend: (message: string) => Promise<void>
 }) {
+  // Clicking a suggestion immediately sends it — much better UX than
+  // just filling the input and making the user press Enter.
+  const handleSuggestion = (prompt: string) => {
+    if (sending) return
+    void onSend(prompt)
+  }
+
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
       <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-4 py-10">
@@ -168,11 +181,9 @@ function WelcomeView({
           {SUGGESTIONS.map((s) => (
             <button
               key={s.title}
-              onClick={() => {
-                setInput(s.prompt)
-                textareaRef.current?.focus()
-              }}
-              className="group flex items-start gap-3 rounded-xl border border-zinc-800 bg-zinc-900/40 p-3.5 text-left transition-colors hover:border-emerald-500/30 hover:bg-zinc-900"
+              onClick={() => handleSuggestion(s.prompt)}
+              disabled={sending}
+              className="group flex items-start gap-3 rounded-xl border border-zinc-800 bg-zinc-900/40 p-3.5 text-left transition-colors hover:border-emerald-500/30 hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <span className="text-xl leading-none">{s.emoji}</span>
               <div className="min-w-0 flex-1">
@@ -273,6 +284,7 @@ function ConversationView({
   textareaRef,
   handleSend,
   handleKeyDown,
+  onRetry,
 }: {
   conversation: ConversationDetail
   messages: ChatMessage[]
@@ -282,6 +294,7 @@ function ConversationView({
   textareaRef: React.RefObject<HTMLTextAreaElement | null>
   handleSend: () => void
   handleKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
+  onRetry?: () => void
 }) {
   const scrollRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -304,7 +317,11 @@ function ConversationView({
         <div className="mx-auto max-w-3xl px-4 py-6">
           <div className="space-y-6">
             {messages.map((m) => (
-              <MessageBubble key={m.id} message={m} />
+              <MessageBubble
+                key={m.id}
+                message={m}
+                onRetry={m.isError ? onRetry : undefined}
+              />
             ))}
             {sending && (
               <div className="flex items-center gap-2 text-xs text-zinc-500">
@@ -353,28 +370,61 @@ function ConversationView({
   )
 }
 
-function MessageBubble({ message }: { message: ChatMessage }) {
+function MessageBubble({
+  message,
+  onRetry,
+}: {
+  message: ChatMessage
+  onRetry?: () => void
+}) {
   const isUser = message.role === 'user'
+  const isError = message.isError === true
+
   return (
     <div className={cn('flex gap-3', isUser && 'flex-row-reverse')}>
       <div
         className={cn(
           'flex h-7 w-7 shrink-0 items-center justify-center rounded-md',
-          isUser ? 'bg-zinc-800 text-zinc-300' : 'bg-emerald-500 text-zinc-950'
+          isError
+            ? 'bg-amber-500 text-zinc-950'
+            : isUser
+              ? 'bg-zinc-800 text-zinc-300'
+              : 'bg-emerald-500 text-zinc-950'
         )}
       >
-        {isUser ? <User className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+        {isError ? (
+          <AlertTriangle className="h-4 w-4" />
+        ) : isUser ? (
+          <User className="h-4 w-4" />
+        ) : (
+          <Sparkles className="h-4 w-4" />
+        )}
       </div>
       <div className={cn('min-w-0 flex-1', isUser ? 'flex justify-end' : '')}>
         <div
           className={cn(
             'inline-block max-w-full',
-            isUser
-              ? 'rounded-lg bg-zinc-800 px-3.5 py-2 text-[14px] text-zinc-100'
-              : 'text-[14px] leading-relaxed text-zinc-200'
+            isError
+              ? 'rounded-lg border border-amber-500/30 bg-amber-500/10 px-3.5 py-2.5 text-[14px] text-amber-100'
+              : isUser
+                ? 'rounded-lg bg-zinc-800 px-3.5 py-2 text-[14px] text-zinc-100'
+                : 'text-[14px] leading-relaxed text-zinc-200'
           )}
         >
-          {isUser ? (
+          {isError ? (
+            <div>
+              <p className="whitespace-pre-wrap break-words">{message.content}</p>
+              {onRetry && (
+                <button
+                  onClick={onRetry}
+                  className="mt-2.5 inline-flex items-center gap-1.5 rounded-md bg-amber-500 px-3 py-1.5 text-[12px] font-semibold text-zinc-950 transition-colors hover:bg-amber-400"
+                >
+                  <RotateCw className="h-3.5 w-3.5" />
+                  Retry
+                </button>
+              )}
+            </div>
+          ) : isUser ? (
             <p className="whitespace-pre-wrap break-words">{message.content}</p>
           ) : (
             <div className="text-[14px] leading-relaxed text-zinc-200">
@@ -471,7 +521,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
             </div>
           )}
         </div>
-        {!isUser && message.meta && <ReplyMeta meta={message.meta} />}
+        {!isUser && !isError && message.meta && <ReplyMeta meta={message.meta} />}
       </div>
     </div>
   )
@@ -486,6 +536,7 @@ export function ChatView({
   loading,
   sending,
   lastAssistantMeta,
+  onRetry,
 }: ChatViewProps) {
   const [input, setInput] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -538,6 +589,7 @@ export function ChatView({
           handleSend={handleSend}
           handleKeyDown={handleKeyDown}
           sending={sending}
+          onSend={onSend}
         />
       </main>
     )
@@ -556,6 +608,7 @@ export function ChatView({
         textareaRef={textareaRef}
         handleSend={handleSend}
         handleKeyDown={handleKeyDown}
+        onRetry={onRetry}
       />
       {/* keep lastAssistantMeta referenced to satisfy linter */}
       <span className="hidden">{lastAssistantMeta ? 'meta' : ''}</span>

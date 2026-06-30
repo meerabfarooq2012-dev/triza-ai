@@ -187,8 +187,8 @@ const PERSONAS: Record<string, Persona> = {
     ],
     shortIntros: [
       'Haan, main sun raha hoon.',
-      'Theek hai, aage batao.',
-      'Main yahan hoon.',
+      'Main yahan hoon, batao.',
+      'Aur batao, main saath hoon.',
     ],
     transitions: [
       'Ab yeh dhyan se suno —',
@@ -368,16 +368,34 @@ export function expressInOwnVoice(
   const isMultiTurn = !!opts.isMultiTurn;
   const isLong = rawKnowledge.length > 500;
 
+  // Conversational intents (greeting, identity, meta, smalltalk,
+  // support, celebrate) already have a complete, personal response in
+  // rawKnowledge — adding a persona intro like "Acha poocha!" before
+  // "Assalam-o-Alaikum!" or "Waah! Pasandeeda topic!" before "Mubarak
+  // Ho!" sounds awkward and redundant. For these, skip the intro.
+  const conversationalIntents = new Set([
+    'greeting',
+    'identity',
+    'meta',
+    'smalltalk',
+    'support',
+    'celebrate',
+  ]);
+  const isConversational = conversationalIntents.has(String(opts.intent));
+
   const intros = isMultiTurn ? persona.shortIntros : persona.intros;
-  const intro = pick(intros, seed);
+  const intro = isConversational ? undefined : pick(intros, seed);
   const transition = pick(persona.transitions, seed >> 3);
-  const reflection = pick(persona.reflections, seed >> 5);
+  const reflection = isConversational ? undefined : pick(persona.reflections, seed >> 5);
   const followUp = pick(persona.followUps, seed >> 7);
 
   // Choose a structure pattern. In multi-turn, lean minimal.
-  const pattern = isMultiTurn
-    ? pick([4, 0, 4, 1], seed >> 2) ?? 4 // mostly minimal in multi-turn
-    : pick([0, 1, 2, 3, 0, 1], seed >> 2) ?? 0;
+  // For conversational intents, always use pattern 4 (raw + followup).
+  const pattern = isConversational
+    ? 4
+    : isMultiTurn
+      ? pick([4, 0, 4, 1], seed >> 2) ?? 4 // mostly minimal in multi-turn
+      : pick([0, 1, 2, 3, 0, 1], seed >> 2) ?? 0;
 
   const parts: string[] = [];
 
@@ -432,10 +450,10 @@ function anglicize(s: string | undefined): string {
 
 export function detectMood(message: string): string {
   const m = message.toLowerCase();
-  if (/\b(udaas|sad|akela|dukhi|rona|ro|cry|depress)\b/i.test(m)) return 'sad';
-  if (/\b(khush|happy|khushi|mubarak|yay|excited|maza)\b/i.test(m)) return 'happy';
+  if (/\b(udaas|sad|akela|dukhi|rona|ro|cry|depress|down|low|blue|numb|empty|worthless|hopeless|broken|hurt)\b/i.test(m)) return 'sad';
+  if (/\b(khush|happy|khushi|mubarak|yay|excited|maza|passed|won|celebrate|congrat|success|achiev)\b/i.test(m)) return 'happy';
   if (/\b(ghussa|angry|naraz|frustrat|irritat)\b/i.test(m)) return 'angry';
-  if (/\b(dar|darr|scared|afraid|ghabra)\b/i.test(m)) return 'afraid';
+  if (/\b(dar|darr|scared|afraid|ghabra|anxious|panic|nervous|worry|fikar)\b/i.test(m)) return 'afraid';
   if (/\b(confus|samajh nahi|pata nahi|nahi samajh)\b/i.test(m)) return 'confused';
   if (/\b(thanks|shukria|thank you|grateful)\b/i.test(m)) return 'grateful';
   if (/\b(curious|know|pata|bata|sikh)\b/i.test(m)) return 'curious';

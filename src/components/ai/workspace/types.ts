@@ -21,6 +21,10 @@ export interface ChatMessage {
   createdAt: string
   /** TRIZA transparency metadata — only present on assistant replies */
   meta?: MessageMeta
+  /** True for error bubbles — rendered with a retry button */
+  isError?: boolean
+  /** The user message that triggered an error — used for retry */
+  retryText?: string
 }
 
 export interface MessageMeta {

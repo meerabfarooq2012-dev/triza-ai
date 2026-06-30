@@ -122,7 +122,7 @@ function detectIntent(message: string): Intent {
   }
 
   // Support / emotional
-  if (/\b(sad|udaas|depress|lonely|akela|anxious|ghabra|darr|panic|stress|tension|thak|dukhi|rona|pareshan)\b/i.test(m)) {
+  if (/\b(sad|udaas|depress|lonely|akela|anxious|ghabra|darr|panic|stress|tension|thak|dukhi|rona|pareshan|down|low|blue|hurt|broken|helpless|hopeless|tired|exhausted|burnt|burnout|overwhelm|rough|tough|struggl|suffer|pain|hurt|numb|empty|worthless|guilty|regret|can you talk|need to talk|need someone|talk to me|feeling down|feeling low|feeling bad|not feeling good|hard time|bad day)\b/i.test(m)) {
     return 'support'
   }
 
@@ -132,7 +132,7 @@ function detectIntent(message: string): Intent {
   }
 
   // Celebrate
-  if (/\b(mubarak|congrat|shabaash|well done|yay|wow|amazing|mast)\b/i.test(m)) {
+  if (/\b(mubarak|congrat|shabaash|well done|yay|wow|amazing|mast|celebrate|passed|pass my|passed my|exam|success|succeed|achiev|won|victory|did it|graduat|promotion|new job|got the|finally|proud of)\b/i.test(m)) {
     return 'celebrate'
   }
 
@@ -685,7 +685,13 @@ function safeExpress(
   opts: GenerateOptions,
   steps: string[]
 ): { text: string; persona: string; applied: boolean } {
-  const isMultiTurn = (opts.conversationHistory?.length || 0) > 0
+  // True multi-turn = there has been at least one PRIOR exchange
+  // (i.e. an assistant message exists in history before this turn).
+  // The current user message is always in history (saved before
+  // generateResponse runs), so we must exclude it from the check.
+  const hasPriorAssistant =
+    (opts.conversationHistory?.filter((m) => m.role === 'assistant').length || 0) > 0
+  const isMultiTurn = hasPriorAssistant
   try {
     const r = expressInOwnVoice(rawKnowledge, {
       topic,

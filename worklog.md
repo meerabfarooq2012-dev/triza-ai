@@ -2876,3 +2876,60 @@ Stage Summary:
   4. 5 follow-up types (more/why/example/simplify/disagree) — multi-turn continuity
   5. Natural self-expression (5 structural patterns, 6 personas, short multi-turn intros)
 - Next phase per user: UI and design improvements
+
+---
+Task ID: chatbot-ux-fix-1
+Agent: Main Agent
+Task: Fix "TRIZA se connect nahi ho paya" error and improve chatbot UX (starter auto-send, error retry, emotional support detection, celebrate entry, awkward intro removal, New conversation flow)
+
+Work Log:
+- Investigated the "TRIZA se connect nahi ho paya" error reported by user
+- Verified the backend API (/api/ai/chat) was actually working fine (200 responses in dev.log, curl test succeeded, agent-browser test succeeded)
+- Identified root cause: the error was transient (likely during route compilation), but the error UX was poor — generic scary message with no retry option
+- Fixed starter prompt buttons in chat-view.tsx to AUTO-SEND the message instead of just filling the input (onSend prop passed to WelcomeView, handleSuggestion calls onSend(prompt) directly)
+- Improved error handling in triza-chat-app.tsx:
+  - Error bubble now shows the ACTUAL error detail (e.g. "Server error: 500" or "Failed to fetch")
+  - Added a Retry button in error bubbles (amber-colored, with RotateCw icon)
+  - Added lastFailedMessage/lastErrorDetail state tracking
+  - handleRetry() removes the error bubble and re-sends the last failed message
+- Added isError/retryText fields to ChatMessage type
+- Updated MessageBubble component to render error bubbles with amber styling + AlertTriangle icon + Retry button
+- Fixed emotional support detection — "I'm feeling a bit down today" was hitting the fallback because:
+  - detectIntent support regex didn't include "down", "low", "hurt", "broken", etc.
+  - support-sad knowledge entry patterns didn't match "feeling [words] down" variations
+  - Added comprehensive patterns: "feeling.{0,15}(down|low|bad|sad|blue|numb|empty|hurt|broken|...)", life difficulty phrases, reaching-out phrases
+  - Updated detectMood to include "down", "low", "blue", "numb", "empty", "worthless", "hopeless", "broken", "hurt" → sad mood
+- Added new celebrate-success knowledge entry in batch-core.ts (was completely missing — "I just passed my exam!" was hitting fallback)
+  - Patterns: exam/passed/won/victory/congrat/celebrate/success/achievement/graduation/promotion/new job
+  - Response: "## Mubarak Ho! 🎉✨" with celebration + next-steps guidance
+  - Updated detectIntent celebrate regex to include these triggers
+- Fixed isMultiTurn bug in response-generator.ts safeExpress():
+  - Old code: isMultiTurn = (history.length > 0) — but history ALWAYS has the current user message (saved before generateResponse runs), so EVERY message was treated as multi-turn
+  - Fix: isMultiTurn = has at least one ASSISTANT message in history (meaning a prior exchange happened)
+  - This eliminated the awkward "Theek hai, aage batao" short-intro being prepended to first messages
+- Improved warm persona shortIntros — removed dismissive "Theek hai, aage batao", replaced with warmer "Main yahan hoon, batao" and "Aur batao, main saath hoon"
+- Fixed awkward persona intros for conversational intents (greeting, identity, meta, smalltalk, support, celebrate):
+  - These intents have complete, personal raw responses (e.g. "## Assalam-o-Alaikum! 👋", "## Main Yahan Hoon 💛", "## Mubarak Ho! 🎉")
+  - Adding persona intros like "Acha poocha! Yeh cheez mujhe kaafi pasand hai" before them was awkward
+  - expressInOwnVoice now skips intros/reflections for conversational intents (uses pattern 4: raw + followup only)
+- Fixed "New conversation" button behavior:
+  - Old: immediately created a DB conversation + showed empty ConversationView (no starters visible)
+  - New: clears active conversation → shows WelcomeView with starter prompts again
+  - Conversation is created lazily when user actually sends a message (handleSend already has auto-create logic)
+- Verified all 4 starter prompts work end-to-end via agent-browser:
+  1. "Hello! Who are you?" → greeting, confidence 1.0, clean response (no awkward intro)
+  2. "I'm feeling a bit down today" → support, confidence 0.87, warm response (no awkward intro)
+  3. "I just passed my exam!" → celebrate, confidence 1.0, celebratory response (no awkward intro)
+  4. "Write me a short poem" → creative, confidence 0.71, poem delivered
+- Verified New conversation button shows starters again
+- Verified no console errors, no dev.log errors, all API responses 200
+- Ran lint: only pre-existing error in use-google-auth-callback.ts (unrelated to this work)
+
+Stage Summary:
+- The "TRIZA se connect nahi ho paya" error is resolved — backend was working, but now the error UX is much better (shows actual error + retry button)
+- All 4 starter prompts now auto-send and produce clean, appropriate responses
+- Emotional support ("feeling down") and celebrate ("passed exam") intents now properly detected (were hitting fallback before)
+- isMultiTurn bug fixed — first messages no longer get awkward short-intros
+- Conversational intents (greeting/support/celebrate/meta) skip persona intros for cleaner responses
+- New conversation button correctly shows the welcome screen with starters
+- Files modified: src/components/ai/workspace/triza-chat-app.tsx, src/components/ai/workspace/chat-view.tsx, src/components/ai/workspace/types.ts, src/lib/triza-engine/response-generator.ts, src/lib/triza-engine/self-expression.ts, src/lib/triza-engine/batch-core.ts

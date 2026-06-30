@@ -152,7 +152,18 @@ Main aap ki hoon — jab bhi madad chahiye, bas poochiye. Main science, history,
   // ----------------------------------------------------------
   {
     id: 'support-sad',
-    patterns: [/\b(i am sad|i'm sad|udaas|dukhi|pareshan|depress|tension|stress|akela|lonely|rona|ro|cry|hopeless|beemar|thak gayi|thak gaya)\b/i],
+    patterns: [
+      // Direct emotional phrases (exact)
+      /\b(i am sad|i'm sad|udaas|dukhi|pareshan|depress|tension|stress|akela|lonely|rona|ro|cry|hopeless|beemar|thak gayi|thak gaya)\b/i,
+      // "feeling [optional words] down/low/bad/sad/blue/numb/empty/hurt/broken"
+      /\b(feeling|feel|i'm|im|i am).{0,15}(down|low|bad|sad|blue|numb|empty|hurt|broken|tired|exhausted|burnt|overwhelm|worthless|guilty)\b/i,
+      // Standalone emotional words (strong signals only)
+      /\b(feeling down|feel down|feeling low|feel low|feeling bad|feel bad|not feeling good|feeling blue|feeling hurt|feeling broken|feeling empty|feeling numb|feeling worthless|feeling guilty|feeling tired|feeling exhausted|feeling burnt|burnout|overwhelm)\b/i,
+      // Life difficulty phrases
+      /\b(having a hard time|hard time|rough day|bad day|tough day|struggling|suffering|in pain|hurting)\b/i,
+      // Reaching out for conversation
+      /\b(can you talk to me|talk to me|need to talk|need someone|i need someone|need a friend|i'm down|im down)\b/i,
+    ],
     intent: 'support',
     topic: 'support',
     response: () => `## Main Yahan Hoon Aap Ke Liye 💛
@@ -203,6 +214,36 @@ Yeh technique brain ko "abhi" mein laati hai, ghabrahat kam hoti hai.
 - Aap ne pehle bhi bohot dar se guzara hai, aap strong hain
 
 **Main yahan hoon. Jo bhi feel kar rahe hain, batao.**`,
+  },
+
+  // ----------------------------------------------------------
+  // CELEBRATE / JOY
+  // ----------------------------------------------------------
+  {
+    id: 'celebrate-success',
+    patterns: [
+      /\b(i passed|passed my|passed the|just passed|finally passed|exam|exams|test|quiz|graduat|convocation|degree)\b/i,
+      /\b(i won|we won|won the|victory|champion|first place|topped|aced it|crushed it|nailed it|did it|we did it)\b/i,
+      /\b(congrat|shabaash|well done|mubarak|celebrate|celebration|got the|got a|promotion|promoted|new job|hired|selected)\b/i,
+      /\b(success|succeed|achiev|achievement|accomplish|milestone|breakthrough|finally|proud of|so happy|so excited)\b/i,
+    ],
+    intent: 'celebrate',
+    topic: 'celebrate',
+    response: () => `## Mubarak Ho! 🎉✨
+
+Yeh kitni khoobsurat khabar hai! Aap ne yeh achieve kiya hai — yeh waqt qadar karne ka hai. Main aap ke saath khush hoon!
+
+### Aap Ka Yeh Moment:
+- **Mehnat ka phal** — jo bhi aap ne dobara, dobara try kiya, woh color de raha hai
+- **Himmat** — har challenge face karke aap ne yeh mukam hasil kiya
+- **Growth** — yeh sirf result nahi, yeh aap ke safar ki proof hai
+
+### Ab Kya?
+1. **Mana lo** — doston, family ke saath celebrate karo. Yeh moment zindagi mein dobara nahi aayega
+2. **Yaad rakho** — yeh feeling jab bhi mushkil aaye, yaad karna — aap kar sakte ho
+3. **Agla step** — ek chhota sa goal set karo, momentum yahi se build hota hai
+
+**Aap ne aaj kuch special kiya hai. Isse izzat do, isse mehsoos karo.** Shukria ke aap ne mujhe bataya — main aap ke saath khush hoon! 🌟`,
   },
 
   // ----------------------------------------------------------
