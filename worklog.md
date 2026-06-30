@@ -2081,3 +2081,90 @@ Stage Summary:
 - Verified end-to-end: train in browser → think on CPU → export HTML → open standalone HTML offline → AI works, learns, persists.
 - Files created: indexeddb-memory.ts, messages.ts, worker.ts, export-html.ts, use-trinity-browser.ts, brain-view.tsx (975 lines). Files updated: types.ts, sidebar.tsx, page.tsx, manifest.json.
 - No Hindi/Devanagari used. Roman Urdu explanations in AI responses. English UI labels.
+
+---
+Task ID: 3a
+Agent: general-purpose
+Task: Write 25 Biology & Life Sciences knowledge entries for TRIZA
+
+Work Log:
+- Read /home/z/my-project/worklog.md to review prior agent work (sync-schema fix, browser TRINITY, etc.) and confirmed the triza-engine folder contains types.ts + self-expression.ts only — no batch files yet, so this is the first knowledge-batch file.
+- Inspected types.ts to confirm the KnowledgeEntry interface: id (string), patterns (RegExp[]), intent (Intent union), topic (string), response (() => string). Confirmed valid Intent values including 'factual_question' and 'how_to'.
+- Designed 25 entries covering all assigned topics (cell, DNA, photosynthesis, evolution, body systems, genetics, microbes, ecology, cell division, protein synthesis, eye/ear, sleep, nutrition, enzymes).
+- Wrote all 25 entries to /home/z/my-project/src/lib/triza-engine/batch-biology.ts using exact required TypeScript format. Each entry has: unique kebab-case id, regex patterns with \b(...)\b/i word boundaries (English + Roman Urdu phrasings), intent (factual_question or how_to), topic 'biology', and a markdown-formatted response with ## / ### headings, bullet lists, tables, and bold key terms.
+- Ran runtime verification via tsx: all 25 entries load, no double-quotes inside any response (used single quotes + apostrophes only), word counts all in 250-400 range. Initial pass found 4 entries slightly under 250 words (cell-structure-basics 242, photosynthesis-explained 223, respiratory-system 248, digestive-system 249) — expanded each with additional scientifically accurate subsections.
+- Fixed a stray duplicate `}` accidentally introduced during the first MultiEdit (cell-structure entry had two closing braces).
+- Final verification: 25 entries, all word counts 252-345 (within 250-400), zero double-quotes inside responses, zero lint errors, ESLint passes clean.
+- Intent distribution: 21 factual_question + 4 how_to (photosynthesis-explained, cell-division, protein-synthesis, enzymes-explained — the four clear process-type entries).
+
+Stage Summary:
+- DELIVERED: /home/z/my-project/src/lib/triza-engine/batch-biology.ts — 25 Biology & Life Sciences knowledge entries for TRIZA.
+- Each entry: 252-345 words, scientifically accurate, bilingual patterns (English + Roman Urdu), markdown-formatted with tables and bullet lists, no inner double-quotes.
+- All IDs match the task spec exactly (cell-structure-basics, dna-and-genes, photosynthesis-explained, evolution-natural-selection, digestive-system, circulatory-system, respiratory-system, nervous-system, skeletal-system, muscular-system, immune-system, reproduction-basics, genetics-heredity, bacteria-vs-viruses, fungi-kingdom, plant-classification, animal-classification, ecosystems-food-chains, cell-division, protein-synthesis, human-eye-vision, human-ear-hearing, sleep-biology, nutrition-basics, enzymes-explained).
+- File is ready to be imported by the TRIZA knowledge aggregator. Recommend a future agent builds an index file (e.g. batch-index.ts) that combines batch-biology.ts with future batch-physics.ts, batch-history.ts, etc., and wires them into the self-expression engine.
+- No external dependencies added. Pure TypeScript. Zero lint errors. Passes `npx eslint` clean.
+
+---
+Task ID: 3b
+Agent: general-purpose
+Task: Write 25 Physics & Chemistry knowledge entries for TRIZA
+
+Work Log:
+- Read /home/z/my-project/worklog.md to review prior agent work (NOOR AI Workspace, TRINITY 3-layer AI, browser-native TRINITY export).
+- Read /home/z/my-project/src/lib/triza-engine/types.ts to understand the KnowledgeEntry interface (id, patterns, intent, topic, response).
+- Read /home/z/my-project/src/lib/triza-engine/self-expression.ts to understand the persona layer that wraps raw knowledge (physics/chemistry topics use the 'excited' persona by default).
+- Drafted 25 detailed markdown entries covering all assigned topics (gravity, electricity, magnetism, light, sound, heat, energy, force/motion, atomic structure, periodic table, chemical bonds, reactions, states of matter, acids/bases, water, oxygen, carbon, hydrogen, metals/non-metals, nuclear energy, quantum physics, relativity, friction, pressure, electromagnetism).
+- Each entry includes: ## main title, ### subsections, **bold** key terms, markdown tables, bullet lists, and a 'Why it matters' closing paragraph.
+- Each pattern uses /\b(...)\b/i word boundaries with BOTH English keywords AND Roman Urdu phrasings (e.g., 'gravity kya hai', 'bijli', 'paani', 'atom kya hota hai', 'ragad', 'dabaav', 'ph kya hai').
+- Wrote the complete file to /home/z/my-project/src/lib/triza-engine/batch-physics-chem.ts.
+- Verified word counts for all 25 responses (initial pass): most were 250-397 words; two entries (pressure-explained at 417, electromagnetism-spectrum at 443) exceeded the 400-word limit.
+- Trimmed pressure-explained (condensed atmospheric pressure paragraph, shortened fluid pressure section, tightened everyday-life table) and electromagnetism-spectrum (merged antennas/Wi-Fi bullet, removed redundant Maxwell's Gift section, tightened 'Why it matters').
+- Re-verified: ALL 25 entries now between 256-397 words (within required 250-400 range). Average 325 words.
+- Verified NO double-quotes appear inside any response template literal (used single quotes/apostrophes only) — zero violations.
+- Verified all 25 IDs are unique and match the required IDs from the task spec exactly.
+- Verified topic breakdown: 14 physics + 11 chemistry entries (matches task spec).
+- Ran TypeScript transpile check via ts API: 0 errors.
+- Ran runtime sanity check via tsx: 25 entries loaded, 0 issues, all sample pattern tests matched (both English and Roman Urdu queries).
+- Cleaned up temporary verification script.
+
+Stage Summary:
+- Delivered: /home/z/my-project/src/lib/triza-engine/batch-physics-chem.ts — 25 hand-written Physics & Chemistry knowledge entries.
+- Format: TypeScript const PHYSICS_CHEM_ENTRIES: KnowledgeEntry[] with proper import from './types'.
+- Each entry has: unique kebab-case id, regex patterns array with English + Roman Urdu phrasings, intent='factual_question', topic='physics'|'chemistry', and a detailed 250-400 word markdown response.
+- Content quality: scientifically accurate (formulas like F=G*m1*m2/r^2, V=I*R, E=mc^2, P=rho*g*h, KE=1/2*m*v^2 included), engaging 'Why it matters' closings, tables with concrete values (pH scale, EM spectrum wavelengths, periodic table groups, friction coefficients, etc.).
+- Verification: TypeScript transpiles cleanly (0 errors), runtime loads all 25 entries with no issues, sample pattern tests pass for both English and Roman Urdu queries.
+- Ready to be consumed by TRIZA's response generator + self-expression engine (will be wrapped in 'excited' persona per topic-based persona selection).
+
+---
+Task ID: 3e
+Agent: general-purpose
+Task: Write 25 Arts, Culture & Literature knowledge entries for TRIZA
+
+Work Log:
+- Read /home/z/my-project/worklog.md to review previous agents' work — understood the project is "TRIZA AI", a self-built AI with a knowledge base + self-expression engine (no external LLM).
+- Read /home/z/my-project/src/lib/triza-engine/types.ts to learn the KnowledgeEntry interface (id, patterns: RegExp[], intent, topic, response: () => string) and confirmed TRIZA voice principle: AI first memorizes facts, then rephrases in its own voice.
+- Read /home/z/my-project/src/lib/triza-engine/self-expression.ts to understand how raw knowledge gets wrapped in TRIZA's persona — confirmed my entries just need to provide raw facts in markdown.
+- Confirmed no existing batch-*.ts files exist — this is the first knowledge batch file being created.
+- Wrote /home/z/my-project/src/lib/triza-engine/batch-arts.ts with all 25 entries following the exact TypeScript format. Each entry has: unique kebab-case id, /pattern/i with word boundaries including BOTH English and Roman Urdu phrasings (e.g. "tolstoy kaun", "ghalib ki shayri", "iqbal ki nazm", "monet painting", "khattati", "mufakkir e pakistan"), intent: 'factual_question', topic ('literature'|'art'|'music'), and a markdown response (## title, ### subsections, **bold**, tables, bullets).
+- Used single quotes ONLY inside template strings (NEVER double quotes) — verified by grep showing zero double-quote-letter sequences.
+- After writing initial drafts, ran word-count verification and discovered 11 entries exceeded the 400-word limit. Iteratively trimmed each over-length entry with MultiEdit/Edit operations until ALL 25 entries fell within the 250-400 word range.
+- Final verification (node script):
+  * 25 entries total ✅
+  * All unique kebab-case ids ✅ (one entry 'michelangelo' is single-word but task spec explicitly requested that id)
+  * All intent='factual_question' ✅
+  * Topic distribution: 13 literature, 10 art, 2 music ✅ (matches task spec exactly)
+  * All patterns are RegExp[] with \b...\b and /i flag ✅
+  * Roman Urdu phrasings all match correctly ✅ (12 sample queries tested)
+  * No double-quotes inside any response string ✅
+  * All responses start with ## markdown heading ✅
+  * All responses 250-400 words ✅
+  * TypeScript compiles cleanly (npx tsc --noEmit shows no errors in batch-arts.ts) ✅
+  * Module loads correctly via bun/node ✅
+
+Stage Summary:
+- Delivered /home/z/my-project/src/lib/triza-engine/batch-arts.ts — 25 hand-written Arts/Culture/Literature knowledge entries for TRIZA's knowledge base.
+- Topics covered (one entry each, exactly per spec): Leo Tolstoy, Mark Twain, Jane Austen, Charles Dickens, Ernest Hemingway, Gabriel Garcia Marquez (magical realism), Allama Iqbal (Shikwa/Jawab-e-Shikwa), Mirza Ghalib (Urdu ghazal), Rumi (Persian Sufi, Masnavi), Rabindranath Tagore (Gitanjali, Nobel), George Orwell (1984, Animal Farm — replacing Shakespeare per spec), Agatha Christie (Poirot, Marple), J.R.R. Tolkien (Lord of the Rings), Leonardo da Vinci (Mona Lisa), Michelangelo (Sistine Chapel, David), Vincent van Gogh (Starry Night), Pablo Picasso (Cubism, Guernica), Claude Monet (water lilies), Frida Kahlo (Mexican self-portraits), Impressionism movement (replacing Renaissance per spec), Classical composers (Bach/Mozart/Beethoven), Jazz origins, Bollywood cinema, Hollywood golden age, Islamic/Chinese calligraphy.
+- All entries: 250-400 words DETAILED, markdown formatted (##, ###, **bold**, tables, bullets), factually accurate with dates/years/specific works, bilingual trigger patterns (English + Roman Urdu phrasings like "tolstoy kaun tha", "ghalib ki shayri", "iqbal ki nazm", "monet painting", "khattati").
+- Topic distribution: literature=13, art=10, music=2 = 25 total.
+- File is production-ready: TypeScript-clean, no lint issues, follows the exact KnowledgeEntry interface from types.ts, ready to be imported into TRIZA's knowledge base.
+- This is the FOURTH batch file in the triza-engine directory (joining existing batch-biology.ts, batch-geography.ts, and batch-physics-chem.ts written by previous agents, plus self-expression.ts and types.ts). The pattern is now well-established for future batches.
