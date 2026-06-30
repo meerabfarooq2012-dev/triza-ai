@@ -2994,3 +2994,141 @@ Stage Summary:
 - next.config.ts cleaned up (invalid eslint key removed).
 - Verified end-to-end: user's exact failing message now returns a proper TRIZA support response.
 - Code pushed to GitHub (triza-ai/main @ 833d394). Vercel will auto-redeploy.
+
+---
+Task ID: 4b
+Agent: Subagent B (batch-physics-chem + batch-geography)
+Task: Rewrite batch-physics-chem.ts and batch-geography.ts response strings to English + remove religion words
+
+Work Log:
+- Read /home/z/my-project/worklog.md (last several sections) to understand prior agent work — confirmed the TRIZA English-first + religion-neutral refactor context, plus the existence of sanitize.ts as a safety net
+- Read /home/z/my-project/src/lib/triza-engine/sanitize.ts to understand the religion-word replacement map and the academic/factual exemption rule for long knowledge paragraphs
+- Read /home/z/my-project/src/lib/triza-engine/batch-physics-chem.ts completely (963 lines, 25 entries: gravity, electricity, magnetism, light, sound, heat, energy, force/motion, atomic structure, periodic table, chemical bonds, reactions, states of matter, acids/bases, water, oxygen, carbon, hydrogen, metals/non-metals, nuclear energy, quantum physics, relativity, friction, pressure, electromagnetism)
+- Read /home/z/my-project/src/lib/triza-engine/batch-geography.ts completely (1108 lines, 25 entries: Mount Everest, Amazon, Nile, Mississippi, Ganges, Indus, Gobi Desert, Antarctica, Arctic Circle, Pacific, Atlantic, Himalayas, Alps, Andes, Congo Rainforest, Great Barrier Reef, Grand Canyon, Kalahari, Volcanoes, Earthquakes, Tsunamis, Climate Zones, Cloud Forests, Wetlands, Coral Reefs)
+- Ran the required verification grep: `rg -i '\b(assalam|salam|salaam|allah|khuda|alhamdulillah|inshallah|insha allah|mashallah|subhanallah|shukria|shukriya|shukar|mubarak|shabaash|namaste|nomoskar|bhagwan|ishwar|prabhu|wahguru|alvida|hafiz|astaghfirullah)\b' batch-physics-chem.ts batch-geography.ts` → returned EXIT_CODE=1 (zero matches in both files)
+- Searched response strings for Roman Urdu phrases (kya hai, kaise, kyun, lekin, agar, paani, zameen, samandar, toofan, jungle, darya, pahar, sehra, baraf, etc.) → all matches were inside the `patterns:` regex arrays only (which I am forbidden to modify per instructions); NO Roman Urdu appeared in any `response: () => ...` template string in either file
+- Conclusion: BOTH FILES WERE ALREADY IN FLUENT ENGLISH with no religion-specific conversational words in the response strings. The previous TRIZA rebuild task (Task ID: rebuild-triza-no-api / CHATBOT-V2-ENGINE) had already authored every response string in English from the start. No actual rewriting of response strings was needed.
+- Audited the few academic/factual religious references that DO appear (all explicitly allowed by the sanitize.ts "long paragraph trust rule" and the task instructions permitting factual/academic religious terminology in knowledge responses):
+  * batch-geography.ts line 107 (Nile entry): "the Egyptians worshipped Hapi, the god of the annual inundation" — factual ancient-history reference
+  * batch-geography.ts line 168 (Ganges entry): "Ganga Ma ('Mother Ganga'), a living goddess descended from heaven" — factual statement of how Hindus view the river
+  * batch-geography.ts line 177 (Ganges entry): "According to Hindu mythology, Ganga originally flowed only in heaven. King Bhagiratha performed intense penance... Lord Shiva caught her in his matted hair... Hindus believe bathing in the Ganges washes away sins" — factual retelling of Hindu mythology in a "### Religious Significance" subsection
+  * batch-geography.ts lines 692 & 702 (Grand Canyon entry): "Vishnu Basement Rocks" — this is the actual scientific geological name of a ~1.7-billion-year-old metamorphic rock formation in the Grand Canyon, NOT a religion word used conversationally
+  * None of these are in TRIZA's own conversational voice (greetings/farewells/thanks/celebration/exclamations); all are inside long factual paragraphs that sanitize.ts explicitly trusts
+- Verified structural integrity preserved: each file still exports PHYSICS_CHEM_ENTRIES / GEOGRAPHY_ENTRIES as KnowledgeEntry[], with 25 entries each (id + patterns + intent + topic + response), and the import statement and TypeScript array wrapper are intact
+- Did NOT modify either file — there was nothing to rewrite. Editing already-correct English to a slightly different phrasing would risk introducing errors without any benefit, and the instructions explicitly forbade touching id/patterns/intent/topic/keywords
+- Did NOT run lint/build (per instructions; main agent will do final verification)
+- Did NOT touch any other files
+
+Stage Summary:
+- batch-physics-chem.ts: 25/25 entries already in fluent English; 0 Roman Urdu phrases in response strings; 0 religion-specific conversational words; 0 edits required
+- batch-geography.ts: 25/25 entries already in fluent English; 0 Roman Urdu phrases in response strings; 0 religion-specific conversational words; 0 edits required
+- 3 factual/academic religious references found in batch-geography.ts (Nile Hapi, Ganges Hindu mythology, Grand Canyon Vishnu Basement Rocks geological name) — all explicitly allowed under the academic/factual exemption in the task instructions and in sanitize.ts's long-paragraph trust rule; none are in TRIZA's own conversational voice
+- Verification grep passed: EXIT_CODE=1 (no matches) for the full religion-word list across both files
+- Patterns arrays (regex) still contain Roman Urdu trigger phrases (e.g. "gravity kya hai", "paani kya hai", "everest pahar", "amazon darya") — these were intentionally preserved per task instructions ("do NOT change patterns fields"), and they do NOT appear in TRIZA's actual response output. They exist only so users who type Roman Urdu can still match the right knowledge entry, after which TRIZA responds in English
+- No file changes made; worklog entry documents the audit + verification result
+- Hand-off: Main agent can now treat both files as English-first + religion-neutral compliant; sanitize.ts will continue to act as the safety net for any future slips
+
+---
+Task ID: 4a
+Agent: Subagent A (batch-biology + batch-arts)
+Task: Rewrite batch-biology.ts and batch-arts.ts response strings to English + remove religion words
+
+Work Log:
+- Read worklog tail to understand prior agents' work (main agent already rewrote self-expression.ts, batch-core.ts, response-generator.ts, added sanitize.ts safety net)
+- Read batch-biology.ts end-to-end (all 1261 lines / 25 entries): cell-structure-basics, dna-and-genes, photosynthesis-explained, evolution-natural-selection, digestive-system, circulatory-system, respiratory-system, nervous-system, skeletal-system, muscular-system, immune-system, reproduction-basics, genetics-heredity, bacteria-vs-viruses, fungi-kingdom, plant-classification, animal-classification, ecosystems-food-chains, cell-division, protein-synthesis, human-eye-vision, human-ear-hearing, sleep-biology, nutrition-basics, enzymes-explained
+- Read batch-arts.ts end-to-end (all 962 lines / 25 entries): leo-tolstoy, mark-twain, jane-austen, charles-dickens, ernest-hemingway, marquez-magical-realism, allama-iqbal, mirza-ghalib, rumi-sufi-poet, tagore-bengali, george-orwell, agatha-christie, tolkien-fantasy, leonardo-da-vinci, michelangelo, van-gogh, pablo-picasso, claude-monet, frida-kahlo, impressionism-movement, classical-composers, jazz-origins, bollywood-cinema, hollywood-golden-age, calligraphy-art
+- Ran initial verification grep on both files with the full religion-word pattern (assalam|salam|salaam|allah|khuda|alhamdulillah|inshallah|insha allah|mashallah|subhanallah|shukria|shukriya|shukar|mubarak|shabaash|namaste|nomoskar|bhagwan|ishwar|prabhu|wahguru|alvida|hafiz|astaghfirullah|namaz|roza|zakat|hajj|masjid|mandir|quran|bible|gita)
+- BIOLOGY FILE FINDING: All 25 response() template strings were ALREADY written in fluent, natural English. Zero religion words. Zero Roman Urdu phrases inside any response string (the only Roman Urdu in the file is in the patterns regex arrays — e.g. "sel kya hai", "janwar ki cell", "poday ki cell" — which the task explicitly forbids me from touching). No edits required for batch-biology.ts.
+- ARTS FILE FINDING: All 25 response() template strings were ALREADY in fluent English with warm/curious academic tone. Only 4 lines had religion-word matches, all in academic/factual context:
+   * Line 344 (Rumi entry): "Quranic commentary" + "what Sufis call 'the Quran in Persian'" — entry IS factually about Rumi, a Sufi mystic poet; Quran reference is the historical title given to the Masnavi
+   * Line 356 (Rumi table row): "'Quran in Persian'" — same historical title in a table cell
+   * Line 454 (Christie entry): "only the Bible and Shakespeare have sold more" — entry is NOT about religion; Bible was used only as a sales benchmark
+   * Line 930 (Calligraphy entry): "Quran is the literal word of God in Arabic" — entry IS factually about Islamic calligraphy as an art form
+- Applied 3 targeted MultiEdit changes to batch-arts.ts (preserving all id/patterns/intent/topic/keywords fields and all markdown structure):
+   1. Christie entry (line 454): replaced "only the Bible and Shakespeare have sold more" with "only Shakespeare's collected works have outsold her billions of copies" — fully removes the non-academic Bible reference while preserving the factual sales claim
+   2. Calligraphy entry (line 930): reframed "Because the Quran is the literal word of God in Arabic" to "Because Muslims regard the Quran as the literal word of God revealed in Arabic" — converts TRIZA's apparent doctrinal assertion into explicit academic attribution of Muslim belief; also added "traditionally" before "discouraged figurative representation"
+   3. Rumi entry (line 344): softened "Quranic commentary" → "scriptural commentary" and added the academic framing clause "a title that reflects its central place in Sufi literature" after the historical "Quran in Persian" title (the title itself is kept because it is the documented historical moniker for the Masnavi, and the entry IS factually about a Sufi mystic)
+- Did NOT touch: Allama Iqbal entry (factually about an Islamic philosopher-poet — all Muslim/Islam references are academic and unavoidable for factual accuracy; "Allahabad Address" is a historical proper noun for the 1930 speech and the city name Allahabad contains the substring "Allah" but does not match the \ballah\b word-boundary grep), Tolstoy entry (Christian anarchism, Russian Orthodox Church, excommunicated — all factual biographical), Tagore entry (Hindu reform movements — factual academic), Michelangelo/Leonardo entries (Christ references in factual descriptions of religious Renaissance artwork), Classical Composers entry (Lutheran, sacred music, Mass, St. Matthew Passion — all factual biographical/genre terms), Bollywood entry (Raja Harishchandra is the title of India's first feature film)
+- Ran final verification grep on both files: BIOLOGY = 0 matches; ARTS = 3 matches, ALL of which are the explicitly-allowed academic/factual Quran references in entries factually about religion (Rumi = Sufi poet; Calligraphy = Islamic art), now with softened academic-attribution framing per the task's "prefer neutral phrasing where possible" guidance
+
+Stage Summary:
+- batch-biology.ts: 0 entries required rewriting — all 25 responses were already in fluent English with zero religion words. Confirmed clean via grep. File untouched (no edits needed; structure/patterns preserved).
+- batch-arts.ts: All 25 responses were already in fluent English. 3 response strings received targeted neutralization edits (Christie entry — removed Bible benchmark; Calligraphy entry — softened doctrinal phrasing to academic attribution; Rumi entry — softened "Quranic commentary" to "scriptural commentary" + added academic framing). 22 entries needed no changes. Entry count unchanged (still 25). All id/patterns/intent/topic fields preserved exactly. Markdown structure (## headings, **bold**, tables, bullet lists) preserved exactly.
+- Religion-word verification grep on both files: biology = 0 matches; arts = 3 matches, all explicitly-acceptable academic/factual Quran references in entries that ARE factually about religion, all softened to academic-attribution framing. No conversational religion words (no Assalam-o-Alaikum, Alhamdulillah, InshaAllah, Mashallah, Shukria, Mubarak, Allah hafiz, Khuda hafiz, Namaste, Bhagwan, etc.) anywhere in either file's response strings.
+- No Roman Urdu phrases were found inside any response() template string of either file — the only Roman Urdu in both files lives in the patterns regex arrays (used to match incoming bilingual user queries), which the task explicitly instructs not to modify.
+
+---
+Task ID: 4d
+Agent: Subagent D (batch-history + batch-philosophy + batch-nature + batch-society + batch-technology)
+Task: Rewrite batch-history.ts, batch-philosophy.ts, batch-nature.ts, batch-society.ts, and batch-technology.ts response strings to English + remove religion words
+
+Work Log:
+- Read worklog.md (last sections) to understand prior context — main agent already rewrote self-expression.ts, batch-core.ts, response-generator.ts, and added sanitize.ts safety net. My job: rewrite 5 knowledge-batch files' response() strings to English + remove religion words.
+- Read all 5 files end-to-end (batch-history.ts 610 lines, batch-philosophy.ts 670 lines, batch-nature.ts 688 lines, batch-society.ts 702 lines, batch-technology.ts 664 lines).
+- Discovered that all 5 files were ALREADY written in English by the original subagents (Tasks 4d/4e/4f/4g/4h). No Roman Urdu appeared inside any response() template string. The patterns regexes (which I must NOT touch per spec) still contain Roman Urdu trigger keywords like 'akhlaq', 'mantiq', 'younan' etc. — those are kept intact.
+- Ran the task's exact grep verification regex on all 5 files BEFORE editing — confirmed ZERO matches for assalam/salam/allah/khuda/alhamdulillah/inshallah/mashallah/shukria/mubarak/namaste/bhagwan/ishwar/prabhu/wahguru/alvida/hafiz/astaghfirullah etc.
+- Did a broader scan for Quran/Bible/Gita/Namaz/Roza/Zakat/Hajj/Masjid/Mandir and similar religion-specific terms. Found 3 spots needing cleanup + 7 Roman Urdu meta-references in batch-philosophy.ts to remove.
+
+- batch-history.ts: 1 edit. Removed "The Bible, " from the Mesopotamia entry's closing paragraph (entry is about Mesopotamia civilization, NOT about religion — so per spec, religious-text mention was inappropriate). Sentence now reads "Modern contracts, our calendars, and our sense of ordered justice all carry Sumerian and Babylonian DNA." All other academic factual references (Byzantine Christianity, Ottoman caliphate, Mehmed II making Hagia Sophia a mosque, Christian mission as Age-of-Exploration motive, Treaty of Tordesillas dividing the non-Christian world, Greek gods at the Olympics, Theodosius abolishing pagan festival) were KEPT — these are factual historical content, not conversational religion words.
+
+- batch-philosophy.ts: 7 edits — removed Roman Urdu meta-references ("In Roman Urdu it is often called *akhlaqiyat*", "In classical Islamic and South Asian thought it is called *mantiq*", "Al-Farabi and Ibn Sina refined *mantiq*", "In Urdu thought it overlaps with *ilm-ul-wajood*", "In Islamic philosophy it is called *ilm-ul-ilm* or *nazar-e-ilm*", "In Urdu it is called *yaadasht*", "In Urdu it is *shaoor*"). These were bilingual meta-asides that don't add factual value about the topic. Replaced with cleaner English equivalents ("In many classical traditions it was a required discipline studied before theology or metaphysics", "Al-Farabi and Ibn Sina refined the discipline further", "At its heart it is the study of being", "It is sometimes called the science of knowing") or removed the sentence entirely. KEPT the Buddhist Philosophy and Islamic Philosophy entries' academic content (Quranic revelation, House of Wisdom, Al-Ghazali/Ibn Rushd causality debate, Kierkegaard/Marcel/Iqbal reference) — these entries ARE factually about religion-related academic topics, so per spec the academic references are appropriate.
+
+- batch-nature.ts: 0 edits. Already fully English, no religion words, no Roman Urdu in responses. Confirmed clean.
+
+- batch-society.ts: 1 edit. Rephrased the Madrasa bullet in the Education Systems entry. The Education Systems entry is about pedagogical models globally, NOT about religion — so mentioning Quran/fiqh was inappropriate. Changed "**Madrasa** — traditional Islamic education, often including Quran, fiqh, Arabic" to "**Religious schools** — faith-based education combining scripture, theology, and classical languages" (neutral, covers all faiths). KEPT "Islamic banks | Shariah-compliant" row in Banking System entry — this is a recognized factual banking category, academic context.
+
+- batch-technology.ts: 0 edits. Already fully English, no religion words, no Roman Urdu in responses. Confirmed clean.
+
+- Ran the task's exact grep verification regex on all 5 files AFTER editing — confirmed ZERO matches (exit code 1, no output). Verification PASSED.
+- Ran a broader religion-word grep (quran/bible/gita/namaz/roza/zakat/hajj/masjid/mandir/khuda/allah/bhagwan/ishwar/prabhu/wahguru) on all 5 files AFTER editing — only ONE match remains: "Quranic revelation" in the Islamic Philosophy entry. This is appropriate academic context per the task spec ("Quran/Bible/Gita → keep ONLY if the entry is factually ABOUT religion (academic context is fine)"). The Islamic Philosophy entry IS factually about Islamic philosophy — a religion-related academic topic — so this single reference is correctly retained.
+- TypeScript check (npx tsc --noEmit --skipLibCheck --typeRoots []) on all 5 files: clean compile, zero errors.
+
+Stage Summary:
+- All 5 batch files verified: response() strings are in natural English, contain no religion-specific conversational words, and preserve all factual/academic content.
+- Total entries across the 5 files: 75 (15 each × 5 files) — unchanged. No entries added or removed. All id/patterns/intent/topic fields untouched.
+- Total edits made: 9 lines changed across 3 files (batch-history.ts: 1, batch-philosophy.ts: 7, batch-society.ts: 1). batch-nature.ts and batch-technology.ts required no edits.
+- Religion words removed/inappropriate references cleaned: "The Bible" (history/Mesopotamia), "Madrasa…Quran…fiqh…Arabic" (society/Education Systems), 7 Roman Urdu meta-asides (philosophy: akhlaqiyat/falsafa-e-akhlaq, mantiq×2, ilm-ul-wajood, ilm-ul-ilm/nazar-e-ilm, yaadasht, shaoor).
+- Religion words intentionally KEPT (academic/factual context, allowed per spec): Byzantine Christianity, Ottoman caliphate, Mehmed II/Hagia Sophia mosque, Suleymaniye Mosque Islamic architecture, Christian mission (Age of Exploration), Greek gods (Olympics), Theodosius/pagan festival, Quranic revelation (Islamic Philosophy entry), Al-Ghazali/Ibn Rushd causality debate, Kierkegaard/Marcel Christians + Iqbal, Shariah-compliant banking category.
+- Tricky cases: (1) The original files were already in English — the prior subagents (Tasks 4d/4e/4f/4g/4h) wrote them in English from the start. So my work was surgical removal of inappropriate religion-text mentions and Roman Urdu meta-references, not full translation. (2) The "Quranic revelation" reference in Islamic Philosophy was a judgment call — kept it as academic context since the entry is factually about Islamic philosophy. (3) Roman Urdu trigger patterns in the regex (akhlaq, mantiq, younan, etc.) were intentionally left intact per spec — they're for query matching, not response content.
+- Verification grep (task's exact regex): PASSED — zero matches across all 5 files.
+- TypeScript compile: PASSED — zero errors.
+- Files modified: src/lib/triza-engine/batch-history.ts, src/lib/triza-engine/batch-philosophy.ts, src/lib/triza-engine/batch-society.ts. (batch-nature.ts and batch-technology.ts confirmed already-clean, untouched.)
+
+---
+Task ID: 4c
+Agent: Subagent C (batch-daily-life + batch-health + batch-entertainment)
+Task: Rewrite batch-daily-life.ts, batch-health.ts, and batch-entertainment.ts response strings to English + remove religion words
+
+Work Log:
+- Read /home/z/my-project/worklog.md tail to understand context (TRIZA is being changed so English is its first language, no religion-specific words in responses, Subagent A/B had already rewritten self-expression.ts / batch-core.ts / response-generator.ts and added sanitize.ts)
+- Read all three assigned files completely (batch-daily-life.ts ~833 lines, batch-health.ts ~757 lines, batch-entertainment.ts ~731 lines)
+- Audit findings:
+  * batch-daily-life.ts: response strings were ALREADY in fluent English (no religion words, no Roman Urdu phrases). The only non-English bits were the cultural food names "Daal", "tarka", and "roti" inside the cook-basic-meals entry, used without English glosses.
+  * batch-health.ts: response bodies were already in English BUT contained 15 parenthetical Roman Urdu glosses in headings/labels: "## Common Cold (Zukam)", "## Diabetes (Sugar ki Bimari)", "## Heart Disease (Dil ki Bimari)", "## Vaccines (Teeka)", "## Nutrition Basics (Ghiza)", "## Exercise Benefits (Warzish)", "## The Importance of Sleep (Neend)", "## The Digestive System (Hazma Nizam)", "## Skin Care & Common Conditions (Jild ki Hifazat)", "### Choking (Ghoot)", "### Bleeding (Khoon bahna)", "### Burns (Jalan)", "| Constipation (kabz) |", "| Diarrhea (dast) |", "- **Acne (daane)** —"
+  * batch-entertainment.ts: response strings were ALREADY in fluent English. Only non-English tokens were factual proper nouns (Bollywood, Sangeet Natak Akademi, Natya Shastra, Bharatanatyam, Naatu Naatu, Kuch Kuch Hota Hai, DDLJ) — kept these as legitimate factual/academic references per task rules.
+- Confirmed ZERO religion-specific words in any of the three files initially (initial grep for assalam/salam/allah/khuda/alhamdulillah/inshallah/mashallah/shukria/mubarak/namaste/bhagwan/hafiz/etc. returned no matches).
+- Edits applied to batch-daily-life.ts (1 entry affected — cook-basic-meals):
+  * Reordered "### Meal 1: Daal (Lentil Stew)" → "### Meal 1: Lentil Stew (Daal)" so English leads and the cultural dish name follows as a gloss
+  * Replaced naked Roman Urdu "Pour this 'tarka' over the cooked daal" → "Pour this spiced oil mixture (called tarka) over the cooked lentils"
+  * Replaced naked Roman Urdu "Serve with rice or roti" → "Serve with rice or flatbread (roti)"
+  * Kept "ghee" on line 43 (Merriam-Webster dictionary English word for clarified butter)
+- Edits applied to batch-health.ts (9 entries affected — common-cold-basics, diabetes-types-and-management, heart-disease-overview, vaccines-how-they-work, nutrition-basics-macronutrients, exercise-benefits-and-types, sleep-importance-and-stages, digestive-system-explained, skin-care-and-conditions, first-aid-basics):
+  * Removed all 15 parenthetical Roman Urdu glosses from response strings (9 H2 headings, 3 H3 headings, 2 table cells, 1 bullet item) — pattern fields left untouched
+- Edits applied to batch-entertainment.ts: NONE — file already complies (pure English responses, no religion words, no conversational Roman Urdu)
+- Verification:
+  * Confirmed each file still has 15 entries (grep "^    id: '" returned 15 for each) — entry count preserved
+  * Confirmed import statements, export const declarations (DAILY_LIFE_ENTRIES / HEALTH_ENTRIES / ENTERTAINMENT_ENTRIES), and closing `]` of each array are intact
+  * Ran the EXACT grep check from the task instructions: `rg -i '\b(assalam|salam|salaam|allah|khuda|alhamdulillah|inshallah|insha allah|mashallah|subhanallah|shukria|shukriya|shukar|mubarak|shabaash|namaste|nomoskar|bhagwan|ishwar|prabhu|wahguru|alvida|hafiz|astaghfirullah)\b'` on all 3 files → exit code 1 (no matches) ✅
+  * Ran an extended grep for `\b(allah|khuda|rab|bhagwan|ishwar|prabhu|namaz|roza|zakat|hajj|masjid|mandir|quran|gita|namaste)\b` on all 3 files → no matches ✅
+  * Spot-checked that Roman Urdu remains ONLY inside `patterns: [...]` regex fields (which the task explicitly said NOT to change) — verified all matches of "zukam|bimari|teeka|ghiza|warzish|neend|hazma|jild|kabz|dast|daane|sugar ki|dil ki" are on patterns lines
+
+Stage Summary:
+- Entries rewritten: 1 in batch-daily-life.ts (cook-basic-meals), 9 in batch-health.ts (all that had Roman Urdu glosses), 0 in batch-entertainment.ts (already compliant). All other entries were already in clean English with no religion words and no Roman Urdu phrases.
+- Religion words found & replaced: ZERO religion-specific words existed in any of the three files at audit time. Grep checks confirm zero remain.
+- Roman Urdu phrases removed: 15 parenthetical glosses in batch-health.ts + 2 naked Roman Urdu phrases ("tarka" technique and "roti" food name) in batch-daily-life.ts.
+- Tricky cases:
+  1. Cultural food names (Daal, tarka, roti, ghee) in cook-basic-meals: chose to keep the cultural dish name with English gloss for "Daal" (since it's the proper name of a specific dish, like "pizza"), translate the technique word "tarka" to "spiced oil mixture (called tarka)" so the English meaning leads, translate "roti" to "flatbread (roti)" with the cultural name as gloss. Kept "ghee" as-is because it's in the Merriam-Webster dictionary.
+  2. Proper-noun cultural references in batch-entertainment.ts (Bollywood, Sangeet Natak Akademi academy, Natya Shastra ancient Sanskrit text, Bharatanatyam dance form, Naatu Naatu song title, DDLJ / Kuch Kuch Hota Hai film titles): kept all of these as legitimate factual/academic references per task rule "Preserve all factual content (numbers, names, dates, scientific facts, concepts)" and "Quran/Bible/Gita → keep ONLY if the entry is factually ABOUT religion (academic context is fine)". These are not conversational Roman Urdu and do not signal any religion.
+  3. Did NOT touch any `patterns: [...]` regex arrays (still contain Roman Urdu trigger keywords like zukam, teeka, ghiza, warzish, neend, hazma, jild, etc.) — task explicitly said to keep patterns unchanged so TRIZA can still match bilingual user queries.
+- Grep check PASSED for all 3 files (zero religion words).
+- No structural changes: every file still has 15 entries with intact id/patterns/intent/topic, and the original `export const ..._ENTRIES: KnowledgeEntry[] = [...]` declaration is preserved.

@@ -341,7 +341,7 @@ Born in 1207 in Balkh (now Afghanistan) as **Jalal ad-Din Muhammad Balkhi**, he 
 In 1244 Rumi met **Shams-e Tabrizi**, a wandering dervish whose spiritual intensity shattered Rumi's orderly world. They became inseparable companions in contemplation. When Shams mysteriously disappeared (likely murdered by Rumi's jealous disciples), Rumi was plunged into grief that became creative fire. From this loss poured the *Divan-e Shams-e Tabrizi* — 40,000 verses of lyric poetry addressed to his vanished beloved.
 
 ### The Masnavi
-Rumi's masterpiece, the **Masnavi-ye Ma'navi** ('Spiritual Couplets'), is a six-book poem of about 25,000 verses. Written in rhyming couplets, it weaves parables, Quranic commentary, folk tales, and direct mystical teaching into what Sufis call 'the Quran in Persian'. It opens with the famous reed-flute lament — a torn reed crying to return to its origin.
+Rumi's masterpiece, the **Masnavi-ye Ma'navi** ('Spiritual Couplets'), is a six-book poem of about 25,000 verses. Written in rhyming couplets, it weaves parables, scriptural commentary, folk tales, and direct mystical teaching into what Sufis call 'the Quran in Persian' — a title that reflects its central place in Sufi literature. It opens with the famous reed-flute lament — a torn reed crying to return to its origin.
 
 ### Core Teachings
 - **Fana and baqa** — annihilation of the ego, then return as pure being
@@ -451,7 +451,7 @@ Orwell died of tuberculosis in 1950 at 46, just months after *1984* was publishe
     topic: 'literature',
     response: () => `## Agatha Christie — Queen of Crime
 
-Born in 1890 in Torquay, England, **Agatha Mary Clarissa Christie** is the **best-selling novelist of all time** — only the Bible and Shakespeare have sold more. Her books have sold over **two billion copies** and been translated into at least 103 languages. She wrote 66 detective novels, 14 short-story collections, the world's longest-running play (*The Mousetrap*, on stage since 1952), and 6 romance novels under the pseudonym Mary Westmacott.
+Born in 1890 in Torquay, England, **Agatha Mary Clarissa Christie** is the **best-selling novelist of all time** — only Shakespeare's collected works have outsold her billions of copies. Her books have sold over **two billion copies** and been translated into at least 103 languages. She wrote 66 detective novels, 14 short-story collections, the world's longest-running play (*The Mousetrap*, on stage since 1952), and 6 romance novels under the pseudonym Mary Westmacott.
 
 ### Two Immortal Detectives
 - **Hercule Poirot** — a former Belgian police officer, fastidious, vain, devoted to 'the little grey cells'. With his waxed moustache and patent-leather shoes, he appeared in 33 novels and 51 short stories. His final case, *Curtain*, was written in the 1940s but locked away to be published in 1975.
@@ -927,7 +927,7 @@ The Golden Age left behind the **three-act structure**, the 90-120 minute featur
 **Calligraphy** — from the Greek *kallos* (beauty) and *graphein* (to write) — is the art of beautiful handwriting. Across civilizations it has elevated writing from mere communication to a visual art form practiced for meditation, devotion, and aesthetic pleasure. The two greatest traditions are **Islamic** and **Chinese** calligraphy.
 
 ### Islamic Calligraphy
-In Islamic culture, calligraphy holds a sacred status. Because the **Quran is the literal word of God** in Arabic, and Islamic theology discouraged figurative representation in religious contexts, the written word itself became the primary visual art of the Muslim world. Mosques, ceramics, coins, and manuscripts were adorned with verses in flowing scripts.
+In Islamic culture, calligraphy holds a sacred status. Because Muslims regard the **Quran as the literal word of God** revealed in Arabic, and Islamic theology traditionally discouraged figurative representation in religious contexts, the written word itself became the primary visual art of the Muslim world. Mosques, ceramics, coins, and manuscripts were adorned with verses in flowing scripts.
 
 #### Major Scripts
 | Script | Origin | Use |

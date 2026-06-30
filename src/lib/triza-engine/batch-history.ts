@@ -440,7 +440,7 @@ King **Hammurabi** of Babylon (r. 1792-1750 BCE) inscribed 282 laws on a black s
 Mesopotamia was conquered by Persia under **Cyrus the Great** in 539 BCE and never regained independence. Yet its inventions — writing, the wheel, the 60-minute hour, the seven-day week, codified law — became the foundation of every civilization that followed.
 
 **Why it matters:**
-Mesopotamia is where humans first crossed from prehistory into history. By inventing writing, cities, law, and timekeeping, its people created the very tools of civilization itself. The Bible, modern contracts, our calendars, and our sense of ordered justice all carry Sumerian and Babylonian DNA. To study Mesopotamia is to study the first answer humanity gave to the question: how do we live together in large numbers?`,
+Mesopotamia is where humans first crossed from prehistory into history. By inventing writing, cities, law, and timekeeping, its people created the very tools of civilization itself. Modern contracts, our calendars, and our sense of ordered justice all carry Sumerian and Babylonian DNA. To study Mesopotamia is to study the first answer humanity gave to the question: how do we live together in large numbers?`,
   },
 
   // ----------------------------------------------------------

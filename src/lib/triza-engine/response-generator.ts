@@ -74,6 +74,7 @@ import {
   detectMood,
   extractTopicWords,
 } from './self-expression'
+import { sanitizeReligion } from './sanitize'
 
 // ============================================================
 // Aggregate ALL knowledge — topic batches first, CORE last
@@ -377,7 +378,7 @@ function fuseCandidates(candidates: SearchResult[]): {
       }
     }
     return {
-      rawKnowledge: 'Mujhe yeh topic abhi nahi aata. Kya aap alag tareeqe se pooch sakte hain?',
+      rawKnowledge: "I do not know this topic yet. Could you try asking it in a different way?",
       matchedEntryId: 'no-match',
       topicDomain: 'unknown',
       confidence: 0,
@@ -447,13 +448,13 @@ function buildFollowUpResponse(
   switch (type) {
     case 'more': {
       return {
-        text: `## Aur Detail — ${topicLabel}
+        text: `## Going Deeper — ${topicLabel}
 
 ${prevEntry.response()}
 
 ---
 
-Yeh topic isi tarah expand hota rehta hai. Agar koi khaas hissa chahiye toh batao — main wahan deep dive kar sakta hoon.`,
+This topic keeps expanding from here. If there is a specific part you want me to focus on, let me know and I will dig into it.`,
         entryId: prevEntry.id + '+more',
         topic: topicLabel,
         confidence: 0.7,
@@ -461,11 +462,11 @@ Yeh topic isi tarah expand hota rehta hai. Agar koi khaas hissa chahiye toh bata
     }
     case 'why': {
       return {
-        text: `## Kyun? — ${topicLabel}
+        text: `## Why? — ${topicLabel}
 
-Jo main ne bataya (${prevSummary}), uski wajah yeh hai ke yeh ek **cause-and-effect chain** ka hissa hai. Har phenomenon ki ek underlying reason hoti hai — aur woh reason isi topic ko samajhne ki asli chaabi hai.
+The reason behind what I shared (${prevSummary}) is that this is part of a **cause-and-effect chain**. Every phenomenon has an underlying reason — and that reason is the real key to understanding the topic.
 
-**Kyun hota hai:** nature mein kuch bhi random nahi — har cheez ek system ko follow karti hai. Agar aap kisi specific point ki reason chahiye toh batao, main us par focus karunga.`,
+**Why it happens:** nothing in nature is random — everything follows a system. If you want the reason for a specific point, tell me and I will focus on it.`,
         entryId: prevEntry.id + '+why',
         topic: topicLabel,
         confidence: 0.6,
@@ -479,7 +480,7 @@ ${prevEntry.response()}
 
 ---
 
-**Real-life angle:** socho ke yeh same concept aap ki daily zindagi mein kahan hota hai — jab aap usse personally relate kar lete hain, toh yaad rakhna aasan ho jata hai. Koi aur example chahiye toh batao.`,
+**Real-life angle:** think about where this same concept shows up in your daily life — once you connect it personally, it becomes much easier to remember. Let me know if you would like another example.`,
         entryId: prevEntry.id + '+example',
         topic: topicLabel,
         confidence: 0.65,
@@ -487,13 +488,13 @@ ${prevEntry.response()}
     }
     case 'simplify': {
       return {
-        text: `## Aasan Alfaz Mein — ${topicLabel}
+        text: `## In Simpler Words — ${topicLabel}
 
-Theek hai, main bilkul simple karke batata hoon:
+Alright, let me make this much simpler:
 
 ${prevSummary}
 
-**Short version:** core idea sirf itni hai — baqi sab detail hai. Agar abhi bhi koi hissa confusing ho toh batao, main aur simple kar dunga.`,
+**Short version:** the core idea is just that — the rest is detail. If any part is still confusing, tell me and I will simplify it further.`,
         entryId: prevEntry.id + '+simplify',
         topic: topicLabel,
         confidence: 0.7,
@@ -501,11 +502,11 @@ ${prevSummary}
     }
     case 'disagree': {
       return {
-        text: `## Aap Ka Khayal Muhim Hai
+        text: `## Your View Matters
 
-Main ne jo bataya (${prevSummary}), aap us se disagree karte hain — yeh achi baat hai. Iska matlab hai aap soch kar jawab de rahe hain.
+What I shared (${prevSummary}) — you disagree with it, and that is a good thing. It means you are thinking carefully about the answer.
 
-Aap ka kya nazariya hai? Main dono sides sun ke behtar samjhoonga.`,
+What is your perspective? I will understand better once I hear both sides.`,
         entryId: prevEntry.id + '+disagree',
         topic: topicLabel,
         confidence: 0.55,
@@ -523,8 +524,8 @@ Aap ka kya nazariya hai? Main dono sides sun ke behtar samjhoonga.`,
  */
 function summarizePrev(raw: string): string {
   const lines = raw.split('\n').map((l) => l.trim()).filter(Boolean)
-  // Skip heading lines and "Ab main..." / "Yeh topic..." transition lines
-  const skip = /^(#{1,3}\s|---|Ab\s|Yeh\s|Mujhe|Socho|Trust|Aap\s|Real-life|Short\s|Kyun)/i
+  // Skip heading lines and transition phrases (English v3)
+  const skip = /^(#{1,3}\s|---|Now|This|I think|Pause|Imagine|Trust|Here|Real-life|Short|Why|Alright)/i
   for (const line of lines) {
     if (skip.test(line)) continue
     // Take the first substantive line (at least 40 chars to avoid fragments)
@@ -536,7 +537,7 @@ function summarizePrev(raw: string): string {
   for (const line of lines) {
     if (!skip.test(line)) return line.length > 180 ? line.slice(0, 180) + '…' : line
   }
-  return '(pichla jawab)'
+  return '(previous reply)'
 }
 
 // ============================================================
@@ -722,9 +723,15 @@ function finalize(
   startTime: number,
   userMessage: string
 ): TrizaResponse {
+  // RELIGION-NEUTRAL SAFETY NET — runs on EVERY response.
+  // Ensures no religion-specific words (Assalam-o-Alaikum, Mubarak,
+  // Shukria, Allah hafiz, etc.) leak into TRIZA's voice, regardless
+  // of which knowledge entry produced the text.
+  const sanitizedText = sanitizeReligion(expressed.text)
+
   return {
-    text: expressed.text,
-    rawKnowledge: expressed.text,
+    text: sanitizedText,
+    rawKnowledge: sanitizedText,
     matchedEntryId,
     topicDomain,
     confidence,

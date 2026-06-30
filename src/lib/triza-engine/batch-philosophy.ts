@@ -31,7 +31,7 @@ export const PHILOSOPHY_ENTRIES: KnowledgeEntry[] = [
     response: () => `## Ethics — The Study of Moral Philosophy
 
 ### What Is Ethics?
-Ethics (or moral philosophy) is the systematic study of what is right and wrong, good and bad, just and unjust. It asks how humans ought to live, what actions are permissible, and what kind of people we should become. In Roman Urdu it is often called *akhlaqiyat* or *falsafa-e-akhlaq*.
+Ethics (or moral philosophy) is the systematic study of what is right and wrong, good and bad, just and unjust. It asks how humans ought to live, what actions are permissible, and what kind of people we should become.
 
 ### The Three Main Branches
 - **Meta-ethics** — asks where moral values come from. Are they objective truths, social constructs, or emotional responses?
@@ -66,7 +66,7 @@ Ethics (or moral philosophy) is the systematic study of what is right and wrong,
     response: () => `## Logic — The Science of Valid Reasoning
 
 ### What Is Logic?
-Logic studies how conclusions follow from premises. It is the backbone of mathematics, computer science, philosophy, and law. In classical Islamic and South Asian thought it is called *mantiq*, and was a required discipline before studying theology.
+Logic studies how conclusions follow from premises. It is the backbone of mathematics, computer science, philosophy, and law. In many classical traditions it was a required discipline studied before theology or metaphysics.
 
 ### Main Types of Reasoning
 - **Deductive** — general to particular. All humans are mortal, Socrates is human, therefore Socrates is mortal. Conclusion is guaranteed if premises are true.
@@ -88,7 +88,7 @@ Logic studies how conclusions follow from premises. It is the backbone of mathem
 Modern logic uses symbols: **∧** (and), **∨** (or), **¬** (not), **→** (implies), **∀** (for all), **∃** (there exists). This formal language lets computers reason and underlies every programming language.
 
 ### A Brief History
-Aristotle invented formal logic with the syllogism. The Stoics added propositional reasoning. In the Islamic world, Al-Farabi and Ibn Sina refined *mantiq*. In the 19th century Frege launched modern symbolic logic, later expanded by Russell, Whitehead, and Gödel.
+Aristotle invented formal logic with the syllogism. The Stoics added propositional reasoning. In the medieval Islamic world, Al-Farabi and Ibn Sina refined the discipline further. In the 19th century Frege launched modern symbolic logic, later expanded by Russell, Whitehead, and Gödel.
 
 **Why it matters:** Logic is the immune system of the mind. It protects us from manipulation, propaganda, and self-deception — and it powers the algorithms running the modern world.`,
   },
@@ -104,7 +104,7 @@ Aristotle invented formal logic with the syllogism. The Stoics added proposition
     response: () => `## Metaphysics — The Study of Reality Itself
 
 ### What Is Metaphysics?
-Metaphysics is the branch of philosophy that asks what really exists and what reality is made of. The name comes from Aristotle's works catalogued *after* his Physics — *ta meta ta physika*, 'the books after the physics'. In Urdu thought it overlaps with *ilm-ul-wajood*, the study of being.
+Metaphysics is the branch of philosophy that asks what really exists and what reality is made of. The name comes from Aristotle's works catalogued *after* his Physics — *ta meta ta physika*, 'the books after the physics'. At its heart it is the study of being.
 
 ### Central Questions
 - What is ultimately real — matter, mind, or both?
@@ -145,7 +145,7 @@ Today metaphysics overlaps with physics. Quantum mechanics raises old questions:
     response: () => `## Epistemology — The Theory of Knowledge
 
 ### What Is Epistemology?
-Epistemology asks: what is knowledge? How do we get it? How sure can we be? The word comes from Greek *episteme* (knowledge) and *logos* (study). In Islamic philosophy it is called *ilm-ul-ilm* or *nazar-e-ilm*, the science of knowing.
+Epistemology asks: what is knowledge? How do we get it? How sure can we be? The word comes from Greek *episteme* (knowledge) and *logos* (study). It is sometimes called the science of knowing.
 
 ### The Classical Definition
 For over 2,000 years knowledge was defined as **justified true belief (JTB)** — you know X if:
@@ -477,7 +477,7 @@ The brain processes 11 million bits of information per second but only 50 bits r
     response: () => `## Memory — How the Brain Stores the Past
 
 ### What Is Memory?
-Memory is the mental process of encoding, storing, and retrieving information. It is not a video recording — it is a reconstructive act, rebuilt each time we remember, and therefore vulnerable to change. In Urdu it is called *yaadasht*.
+Memory is the mental process of encoding, storing, and retrieving information. It is not a video recording — it is a reconstructive act, rebuilt each time we remember, and therefore vulnerable to change.
 
 ### The Three Stages
 1. **Encoding** — converting sensory input into a form the brain can hold
@@ -579,7 +579,7 @@ Twin studies estimate IQ heritability at 50–80% in adults, but environment mat
     response: () => `## Consciousness — The Hardest Question in Science
 
 ### What Is Consciousness?
-Consciousness is the felt quality of experience — what it is like to be you, to see red, taste mango, or feel pain. The word covers wakefulness, awareness of self, and subjective experience. In Urdu it is *shaoor*.
+Consciousness is the felt quality of experience — what it is like to be you, to see red, taste mango, or feel pain. The word covers wakefulness, awareness of self, and subjective experience.
 
 ### Levels and Contents
 - **Wakefulness** — being alert vs asleep or in a coma

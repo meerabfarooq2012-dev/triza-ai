@@ -32,7 +32,7 @@ export const HEALTH_ENTRIES: KnowledgeEntry[] = [
     patterns: [/\b(common cold|cold|zukam|zukaam|sardi|sardee|nose ki sardi|khansi zukam|cough and cold|runny nose|nazla)\b/i],
     intent: 'factual_question',
     topic: 'health',
-    response: () => `## Common Cold (Zukam)
+    response: () => `## Common Cold
 
 The common cold is a mild viral infection of the upper respiratory tract — mainly the nose and throat. Adults average 2-3 colds per year; children can have 6-10. It is the most frequent illness humans get.
 
@@ -124,7 +124,7 @@ Flu causes 3-5 million severe cases and 290,000-650,000 deaths globally each yea
     patterns: [/\b(diabetes|sugar ki bimari|blood sugar|sugar ka marz|diabetes kya hai|diabetes ke ilaaj|type 1 diabetes|type 2 diabetes|sugar|glucose|insulin kya hai|sugar ki bimari ka ilaaj)\b/i],
     intent: 'factual_question',
     topic: 'health',
-    response: () => `## Diabetes (Sugar ki Bimari)
+    response: () => `## Diabetes
 
 Diabetes is a chronic condition where the body either does not make enough **insulin** or cannot use it effectively. Insulin is the hormone that moves glucose (sugar) from blood into cells for energy. Without it, sugar builds up in the blood and damages organs over time.
 
@@ -218,7 +218,7 @@ Untreated hypertension damages arteries, the heart, brain, kidneys, and eyes —
     patterns: [/\b(heart disease|cardiovascular|heart attack|dil ka attack|dil ki bimari|cardiac|coronary artery|heart failure|dil ki beemari|heart blockage|dil ka marz)\b/i],
     intent: 'factual_question',
     topic: 'health',
-    response: () => `## Heart Disease (Dil ki Bimari)
+    response: () => `## Heart Disease
 
 Heart disease is the leading cause of death globally — about 1 in 3 deaths worldwide. It refers to several conditions affecting the heart and blood vessels, with **coronary artery disease (CAD)** being the most common.
 
@@ -368,7 +368,7 @@ A healthy immune system is your best defense against infections and many chronic
     patterns: [/\b(vaccine|vaccines|vaccination|teeka|teeka kaisa lagta|teeka kyun|teeka kya hai|vaccine kya hai|immunization|teeka lagwana|teeka kaam kaise karta hai|mr teeka|bcg teeka)\b/i],
     intent: 'factual_question',
     topic: 'health',
-    response: () => `## Vaccines (Teeka)
+    response: () => `## Vaccines
 
 A vaccine is a biological preparation that trains your immune system to recognize and fight a specific disease **without causing the disease itself**. It is one of the most powerful public health tools ever invented — vaccines have saved an estimated 154 million lives in the past 50 years.
 
@@ -412,7 +412,7 @@ Vaccines have eradicated smallpox, nearly eliminated polio, and drastically redu
     patterns: [/\b(nutrition|macronutrients|balanced diet|healthy diet|khan pane ka tareeqa|healthy khana| khurak|protein|carbohydrates|fats|vitamins|minerals|diet plan|ghiza)\b/i],
     intent: 'factual_question',
     topic: 'health',
-    response: () => `## Nutrition Basics (Ghiza)
+    response: () => `## Nutrition Basics
 
 Nutrition is how the body takes in and uses food for growth, energy, and repair. A balanced diet provides the right mix of nutrients in the right amounts — it is the single biggest lifestyle factor in long-term health.
 
@@ -461,7 +461,7 @@ Poor diet is now the leading risk factor for chronic disease — more than smoki
     patterns: [/\b(exercise|workout|fitness|warzish|warzish karna|physical activity|jismani warzish|cardio|strength training|running|walk|khel kood|jism ki warzish|exercise kyun zaroori)\b/i],
     intent: 'factual_question',
     topic: 'health',
-    response: () => `## Exercise Benefits (Warzish)
+    response: () => `## Exercise Benefits
 
 Exercise is any planned physical activity that improves or maintains physical fitness and overall health. The human body evolved to move — regular exercise is one of the most powerful medicines available, and it is free.
 
@@ -508,7 +508,7 @@ Physical inactivity is one of the top 10 causes of global death, linked to 5 mil
     patterns: [/\b(sleep|neend|neend kyun zaroori|sleep stages|sleep cycle|insomnia|neend na aana|sleep disorders|sleep hygiene|neend ki kami|raat ko neend|sleep kyun zaroori hai)\b/i],
     intent: 'factual_question',
     topic: 'health',
-    response: () => `## The Importance of Sleep (Neend)
+    response: () => `## The Importance of Sleep
 
 Sleep is not "doing nothing" — it is an active, essential biological process during which the brain and body repair, consolidate memories, and regulate hormones. Humans spend about one-third of their lives asleep, and that time is anything but wasted.
 
@@ -615,7 +615,7 @@ About 1 in 8 people worldwide live with a mental disorder, yet stigma keeps mill
     patterns: [/\b(digestive system|digestion|hazma|hazma nizam|digestion kaise hota hai|stomach|pait|intestines|antariyan|constipation| kabz|diarrhea|dast|acidity|peptic ulcer|hazma ki bimari)\b/i],
     intent: 'factual_question',
     topic: 'health',
-    response: () => `## The Digestive System (Hazma Nizam)
+    response: () => `## The Digestive System
 
 The digestive system is a long tube — about 9 meters end to end — that breaks food down into nutrients the body can absorb, and removes what cannot be used. It works closely with the liver, pancreas, and gallbladder.
 
@@ -636,8 +636,8 @@ The digestive system is a long tube — about 9 meters end to end — that break
 | Problem | Symptoms | Common Causes |
 |---------|----------|---------------|
 | Acid reflux (GERD) | Heartburn, regurgitation | Weak sphincter, obesity, spicy food |
-| Constipation (kabz) | Hard stools, straining | Low fiber, dehydration, inactivity |
-| Diarrhea (dast) | Loose frequent stools | Infection, food poisoning, IBS |
+| Constipation | Hard stools, straining | Low fiber, dehydration, inactivity |
+| Diarrhea | Loose frequent stools | Infection, food poisoning, IBS |
 | Irritable Bowel Syndrome (IBS) | Cramps, bloating, altered bowel habits | Gut-brain interaction |
 | Peptic ulcer | Burning stomach pain | H. pylori bacteria, NSAIDs |
 | Gallstones | Pain after fatty meals | Crystallized bile |
@@ -662,7 +662,7 @@ Digestive problems are among the most common reasons people visit doctors, and t
     patterns: [/\b(skin|skin care|skin types|jild ki hifazat|jild|khoobsurti|acne|pimples|daane|eczema|dry skin|oily skin|sunscreen|sunblock|jild ki bimari|ringworm)\b/i],
     intent: 'factual_question',
     topic: 'health',
-    response: () => `## Skin Care & Common Conditions (Jild ki Hifazat)
+    response: () => `## Skin Care & Common Conditions
 
 The skin is the body's largest organ — about 2 square meters and 4 kg in an average adult. It protects against infection, regulates temperature, allows sensation, and even produces vitamin D in sunlight. Caring for it is more than vanity; it is part of overall health.
 
@@ -681,7 +681,7 @@ The skin is the body's largest organ — about 2 square meters and 4 kg in an av
 - **Protect** — broad-spectrum **sunscreen SPF 30+** every morning, even indoors near windows
 
 ### Common Skin Conditions
-- **Acne (daane)** — clogged pores from excess oil, dead skin, and bacteria; common in teens but affects adults too
+- **Acne** — clogged pores from excess oil, dead skin, and bacteria; common in teens but affects adults too
 - **Eczema** — dry, itchy, inflamed patches; often triggered by allergens or stress
 - **Psoriasis** — thick, scaly red patches from rapid skin cell turnover; autoimmune
 - **Fungal infections (ringworm, athlete's foot)** — itchy red rings; contagious
@@ -729,18 +729,18 @@ For an unresponsive adult not breathing normally:
 
 Hands-only CPR is effective for the first few minutes and is recommended for untrained bystanders.
 
-### Choking (Ghoot)
+### Choking
 - If they can cough, encourage coughing
 - If they cannot speak, breathe, or cough — perform the **Heimlich maneuver**: stand behind, make a fist above the navel, give 5 quick upward thrusts; repeat until dislodged or unconscious (then start CPR)
 
-### Bleeding (Khoon bahna)
+### Bleeding
 - Apply firm, direct pressure with a clean cloth
 - Elevate the wound above the heart if possible
 - Do not remove embedded objects — pad around them
 - Add layers without removing soaked bandages
 - Seek help for deep, large, or spurting wounds
 
-### Burns (Jalan)
+### Burns
 - Cool under running water for 20 minutes
 - Remove constrictive items before swelling starts
 - Do NOT apply ice, butter, or creams
