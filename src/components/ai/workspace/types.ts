@@ -1,9 +1,9 @@
 /**
- * Shared types for the AI workspace.
- * English UI labels only — but the AI itself understands Roman Urdu input.
+ * Shared types for the TRIZA AI workspace.
+ *
+ * TRIZA is a single-mode chatbot product. Two additional tabs
+ * (Cyber, Coding) are surfaced in the top nav as "coming soon".
  */
-
-export type WorkspaceMode = 'chat' | 'playground' | 'models' | 'brain'
 
 export interface ConversationSummary {
   id: string
@@ -19,6 +19,17 @@ export interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
   createdAt: string
+  /** TRIZA transparency metadata — only present on assistant replies */
+  meta?: MessageMeta
+}
+
+export interface MessageMeta {
+  mood?: string
+  intent?: string
+  confidence?: number
+  topicDomain?: string
+  selfExpressed?: boolean
+  processingTimeMs?: number
 }
 
 export interface ConversationDetail {
@@ -27,70 +38,4 @@ export interface ConversationDetail {
   createdAt: string
   updatedAt: string
   messages: ChatMessage[]
-}
-
-export interface ModelSummary {
-  id: string
-  name: string
-  type: string
-  description: string
-  dim: number
-  categoriesCount: number
-  trainedCategories: number
-  totalWords: number
-  createdAt: string
-}
-
-export interface ModelCategory {
-  id: string
-  name: string
-  emoji: string
-  color: string
-  description: string
-  prototypeVector: Buffer | null
-  trainedAt: string | null
-  trainingWords: { id: string; word: string }[]
-}
-
-export interface ModelDetail {
-  id: string
-  name: string
-  type: string
-  description: string
-  dim: number
-  createdAt: string
-  categories: ModelCategory[]
-}
-
-export interface AnalyzeResult {
-  best: {
-    categoryId: string
-    categoryName: string
-    emoji: string
-    color: string
-    description: string
-    similarity: number
-    hammingDistance: number
-    diff: {
-      totalBits: number
-      differentBits: number
-      sameBits: number
-      diffPositions: number[]
-      similarity: number
-    } | null
-    prototypeVector: number[] | null
-  } | null
-  confidence: number
-  inputVector: number[]
-  method: string
-  dim: number
-  all: {
-    categoryId: string
-    categoryName: string
-    emoji: string
-    color: string
-    similarity: number
-    hammingDistance: number
-    differentBits: number
-  }[]
 }
