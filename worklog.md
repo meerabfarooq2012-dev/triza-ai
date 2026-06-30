@@ -2696,3 +2696,53 @@ Stage Summary:
 - Root cause was a prop name typo (onDelete vs onDeleteConversation) that crashed the entire React tree
 - Fix pushed to github.com/meerabfarooq2012-dev/triza-ai (commit e7ec2a4); Vercel auto-deploy triggered
 - User can now see the working chat interface in the Preview Panel
+
+---
+Task ID: 17
+Agent: Main Agent
+Task: Fix "chat not working + landing page gone" — user reported "Hello! Who are you? ⚠️ Could not reach the AI backend. Please try again in a moment. yeh raha hai aur landing page bhi nahi hai app ne sab hi kharab kar diya hai"
+
+Work Log:
+- Diagnosed via curl: dev server was healthy (HTTP 200), chat API returned full 2214-byte TRIZA response with mood/intent/confidence in 1ms. The issue was NOT the server.
+- Root cause: STALE SERVICE WORKER CACHE. The old sw.js (triza-v4) used cache-first strategy for .js files, so the user's browser was serving the OLD broken JS bundle (with the onDelete bug from Task 15) from cache without checking the network. Even though the fix was pushed (Task 16, commit e7ec2a4), the browser never fetched the new JS.
+- Also found intermittent 500 error in self-expression.ts:321 — followUp.replace() crashed when followUp was undefined (race condition during module hot-reload). Added null guard.
+- Fix 1 — Service Worker v5 (public/sw.js):
+  * Bumped cache version triza-v4 → triza-v5 (forces deletion of ALL v4 caches)
+  * Changed .js files from cache-first → network-first (CRITICAL: code updates must always reach users)
+  * Changed .css/.json to network-first as well
+  * Changed navigation from stale-while-revalidate → network-first
+  * Added SW_UPDATED message to all clients on activate
+- Fix 2 — Layout cache-busting script (src/app/layout.tsx):
+  * Added inline <script> in <head> that runs BEFORE React hydrates
+  * Checks localStorage 'triza_sw_version' — if not 'triza-v5':
+    1. Unregisters ALL service workers
+    2. Deletes ALL caches (thiora-v*, triza-v1..v4)
+    3. Sets localStorage to 'triza-v5'
+    4. Reloads page with ?_sw=<timestamp> cache-busting param
+  * Migration runs exactly ONCE per browser (localStorage persists across tabs/sessions)
+  * After migration, the new triza-v5 SW registers normally via PwaProvider
+- Fix 3 — Chat retry logic (src/app/page.tsx):
+  * Added fetchWithRetry() helper: 3 attempts with exponential backoff (500ms/1000ms/1500ms)
+  * Only retries on 5xx + network errors; 4xx returned immediately (client error)
+  * Error message rewritten in Roman Urdu: 'TRIZA se connect nahi ho paya...'
+  * Mentions 'New conversation' button as recovery option
+- Fix 4 — Self-expression null guard (src/lib/triza-engine/self-expression.ts):
+  * Added `if (followUp)` guard before calling followUp.replace()
+  * Prevents intermittent 500: 'Cannot read properties of undefined (reading replace)'
+- Verified via Agent Browser (fresh browser context, no stale cache):
+  * Page URL: http://localhost:3000/?_sw=1782821805355 (migration script ran + reloaded)
+  * Welcome screen renders: "Hi, I'm TRIZA." + 4 emoji prompts + feature badges + top nav
+  * Typed "Hello! Who are you?" → clicked Send → TRIZA replied:
+    "## Main TRIZA Hoon. Mera naam **TRIZA** hai (The Resonant Intelligent Z-System Architecture)..."
+    with subheadings "Main Kya Kar Sakti Hoon?" / "Main Kya Hoon?" / "Main Kaise Kaam Karti Hoon?"
+  * Zero console errors
+  * Screenshot saved: /home/z/my-project/upload/triza-final-working.png
+- Committed (cae0381) and pushed to triza-ai remote → Vercel auto-deploy triggered
+
+Stage Summary:
+- Chat + landing page BOTH working: welcome screen renders, messages send successfully, TRIZA replies in own voice with mood/intent/confidence metadata
+- Root cause was stale service worker cache (triza-v4 with cache-first JS strategy) serving the old broken JS bundle (onDelete bug)
+- Fix: sw.js v5 (network-first JS) + layout inline script (one-time cache wipe on first load after update)
+- Chat now retries 3x on failure before showing error, and self-expression engine has null guard
+- Pushed to github.com/meerabfarooq2012-dev/triza-ai (commit cae0381); Vercel auto-deploy triggered
+- User action needed: just refresh the page — the migration script will auto-clear old cache and reload once
