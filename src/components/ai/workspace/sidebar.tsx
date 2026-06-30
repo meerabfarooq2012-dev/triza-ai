@@ -81,11 +81,11 @@ export function Sidebar({
                       {c.title}
                     </span>
                   </button>
-                  {onDelete && (
+                  {onDeleteConversation && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
-                        onDelete(c.id)
+                        onDeleteConversation(c.id)
                       }}
                       className="absolute right-1.5 top-1/2 hidden -translate-y-1/2 rounded p-1 text-zinc-600 hover:bg-zinc-800 hover:text-zinc-300 group-hover:block"
                       aria-label="Delete conversation"
