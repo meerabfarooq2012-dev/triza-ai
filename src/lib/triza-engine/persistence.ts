@@ -101,6 +101,10 @@ export interface CognitionSnapshot {
   system: SystemState
   meta: MetaState
   totalMessages: number
+  /** Phase 2: serialized emotional identity (P4+ mood/momentum/volatility). Null if not persisted. */
+  emotionalStateJson?: string | null
+  /** Phase 2: serialized sleep-cycle state (P29/P30 debt/integrity/phase). Null if not persisted. */
+  sleepStateJson?: string | null
 }
 
 const PERSIST_TAG = '[TRIZA/persistence]'
@@ -224,6 +228,11 @@ export async function incrementTraceUse(id: string): Promise<void> {
  * Upsert the singleton cognition-state row. The id is fixed at "singleton"
  * so there is always exactly one row representing TRIZA's latest state.
  *
+ * Phase 2: now also persists `emotionalStateJson` and `sleepStateJson`
+ * so TRIZA's emotional identity (P4+ mood/momentum/volatility) and
+ * sleep-cycle state (P29/P30 debt/integrity) survive server restarts.
+ * Both are optional — if omitted, the existing DB value is preserved.
+ *
  * Failure is non-fatal: logs a warning and returns.
  */
 export async function saveCognitionSnapshot(
@@ -231,6 +240,8 @@ export async function saveCognitionSnapshot(
   system: SystemState,
   meta: MetaState,
   totalMessages: number,
+  emotionalStateJson?: string,
+  sleepStateJson?: string,
 ): Promise<void> {
   try {
     const brainStateJson = JSON.stringify(brain)
@@ -243,12 +254,17 @@ export async function saveCognitionSnapshot(
         brainStateJson,
         systemStateJson,
         metaStateJson,
+        emotionalStateJson: emotionalStateJson ?? null,
+        sleepStateJson: sleepStateJson ?? null,
         totalMessages,
       },
       update: {
         brainStateJson,
         systemStateJson,
         metaStateJson,
+        // Only overwrite emotional/sleep if provided (preserve old value otherwise)
+        ...(emotionalStateJson !== undefined ? { emotionalStateJson } : {}),
+        ...(sleepStateJson !== undefined ? { sleepStateJson } : {}),
         totalMessages,
       },
     })
@@ -295,7 +311,14 @@ export async function loadCognitionSnapshot(): Promise<CognitionSnapshot | null>
         selfCorrections: 0,
       }
     }
-    return { brain, system, meta, totalMessages: row.totalMessages }
+    return {
+      brain,
+      system,
+      meta,
+      totalMessages: row.totalMessages,
+      emotionalStateJson: (row as any).emotionalStateJson ?? null,
+      sleepStateJson: (row as any).sleepStateJson ?? null,
+    }
   } catch (err) {
     console.warn(
       `${PERSIST_TAG} loadCognitionSnapshot failed (continuing fresh):`,

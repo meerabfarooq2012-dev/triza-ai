@@ -95,6 +95,12 @@ import { runTrinityForQuery, formatTrinityStep } from './trinity-bridge'
 // survives across turns (3 happy turns don't vanish in 1 sad turn).
 import { runCognition, replayScheduler, emotionalIdentity } from './cognition-engine'
 import type { CognitionSignal } from './cognition-engine'
+// TF-IDF retrieval — Phase 2 upgrade. Pre-computes term-frequency ×
+// inverse-document-frequency vectors for all KB entries at module load,
+// then fuses cosine-similarity scores with the existing regex/keyword
+// score so paraphrased questions (semantically related but lexically
+// different) still find the right entry. Pure CPU, computed once.
+import { tfidfScore } from './tfidf-retrieval'
 // SLEEP-4 — sleep-cycle singleton import is via cognitionSignal.layers.sleep
 // (populated by cognition-engine on every run). The type below mirrors the
 // shape of that layer so finalize() can apply sleep-driven behavior changes
@@ -424,20 +430,33 @@ function searchKnowledgeBase(message: string): SearchResult[] {
 
     const overlap = keywordOverlapScore(message, entry)
 
+    // ─── TF-IDF fusion (Phase 2) ───────────────────
+    // Pre-computed TF-IDF cosine similarity catches paraphrased
+    // questions where the user's words differ from the entry's
+    // patterns but are semantically related. Computed BEFORE the
+    // candidate gate so a strong TF-IDF match can qualify an entry
+    // even when regex + keyword overlap are both 0.
+    const tfidf = tfidfScore(message, entry.id)
+
     // Must have at least SOME signal to be a candidate.
-    if (!regexHit && overlap === 0) continue
+    // TF-IDF ≥ 0.05 counts as signal (catches paraphrases).
+    if (!regexHit && overlap === 0 && tfidf < 0.05) continue
 
     // Honest score: regex hit is a strong signal (0.6) plus the
     // keyword overlap (up to 0.4). Pure-overlap matches cap lower
     // than regex matches so a precise regex always wins.
     const score = regexHit ? Math.min(1, 0.6 + overlap * 0.4) : overlap * 0.7
 
+    // Fuse 60% honest regex/keyword score + 40% TF-IDF so a strong
+    // TF-IDF match can elevate a weak-overlap entry (and vice-versa).
+    const fusedScore = Math.min(1, score * 0.6 + tfidf * 0.4)
+
     // feedback-weighted score — entries users have 👍'd rank higher,
     // entries they have 👎'd rank lower. REAL Hebbian learning.
     // feedback-weighted score
-    const weightedScore = getWeightedScore(score, entry.id)
+    const weightedScore = getWeightedScore(fusedScore, entry.id)
 
-    results.push({ entry, score, weightedScore, regexHit, overlap })
+    results.push({ entry, score: fusedScore, weightedScore, regexHit, overlap })
   }
 
   // Sort by weightedScore desc; tie-break by:
@@ -834,6 +853,99 @@ export async function generateResponse(
     }
   }
 
+  // ─── WIRE-UP 1.2: TRINITY → retrieval boost ──────────
+  // The 3-mind architecture (Graph + HDC Analogy + Bayesian Logic)
+  // runs on every query. Previously its output was PURE TRANSPARENCY —
+  // shown but never consulted. Now, when the KB top score is weak
+  // (< 0.5) BUT TRINITY's analogy engine found a strong memory match
+  // (bestSimilarity > 50%), boost KB entries whose topic/id contains
+  // the significant words of TRINITY's topMatchLabel. This makes the
+  // 3 minds ACTUALLY contribute to the answer, not just decorate it.
+  if (
+    trinitySignal.bestSimilarity !== null &&
+    trinitySignal.bestSimilarity > 50 &&
+    trinitySignal.topMatchLabel &&
+    candidates.length > 0
+  ) {
+    const topWeighted = candidates[0].weightedScore
+    if (topWeighted < 0.5) {
+      const labelLower = trinitySignal.topMatchLabel.toLowerCase()
+      // Extract significant words (length > 3) from the analogy label.
+      const labelWords = labelLower
+        .split(/[^a-z0-9]+/)
+        .filter((w) => w.length > 3)
+      if (labelWords.length > 0) {
+        let trinityBoosted = 0
+        for (const c of candidates) {
+          const topicLower = c.entry.topic.toLowerCase()
+          const idLower = c.entry.id.toLowerCase()
+          if (labelWords.some((w) => topicLower.includes(w) || idLower.includes(w))) {
+            c.score = Math.min(1, c.score + 0.20)
+            c.weightedScore = getWeightedScore(c.score, c.entry.id)
+            trinityBoosted++
+          }
+        }
+        if (trinityBoosted > 0) {
+          const msgTokensSet = new Set(tokenize(userMessage))
+          candidates.sort((a, b) => {
+            if (b.weightedScore !== a.weightedScore) return b.weightedScore - a.weightedScore
+            if (b.score !== a.score) return b.score - a.score
+            if (b.overlap !== a.overlap) return b.overlap - a.overlap
+            const aIdSpecific = a.entry.id.split(/[^a-z0-9]+/).some((w) => w.length > 3 && msgTokensSet.has(w))
+            const bIdSpecific = b.entry.id.split(/[^a-z0-9]+/).some((w) => w.length > 3 && msgTokensSet.has(w))
+            if (aIdSpecific !== bIdSpecific) return aIdSpecific ? -1 : 1
+            return a.entry.id.localeCompare(b.entry.id)
+          })
+          steps.push(
+            `TRINITY drove retrieval: +0.20 boost to ${trinityBoosted} entries matching analogy "${trinitySignal.topMatchLabel}" (${trinitySignal.bestSimilarity.toFixed(0)}% similar, KB was weak)`,
+          )
+        }
+      }
+    }
+  }
+
+  // ─── WIRE-UP 1.5: P17 Attention → retrieval focus boost ──
+  // When the cognition engine reports the user is PAYING ATTENTION
+  // to novel features (attended === true AND novelty > 0.4), boost
+  // KB entries whose keywords contain the most specific (longest)
+  // tokens from the user's message. This simulates attention
+  // FOCUSING retrieval on the surprising/novel words — the user's
+  // attention literally shapes which entries TRIZA considers.
+  const attSignal = cognitionSignal.layers.observe
+  if (attSignal.attended && attSignal.novelty > 0.4 && candidates.length > 0) {
+    // Find the most specific (longest non-stopword) tokens — these
+    // are the "attention focus" words.
+    const focusTokens = tokenize(userMessage)
+      .sort((a, b) => b.length - a.length)
+      .slice(0, 3)
+    if (focusTokens.length > 0) {
+      let focused = 0
+      for (const c of candidates) {
+        const kws = ENTRY_KEYWORDS.get(c.entry.id) || []
+        if (focusTokens.some((ft) => kws.includes(ft))) {
+          c.score = Math.min(1, c.score + 0.10)
+          c.weightedScore = getWeightedScore(c.score, c.entry.id)
+          focused++
+        }
+      }
+      if (focused > 0) {
+        const msgTokensSet = new Set(tokenize(userMessage))
+        candidates.sort((a, b) => {
+          if (b.weightedScore !== a.weightedScore) return b.weightedScore - a.weightedScore
+          if (b.score !== a.score) return b.score - a.score
+          if (b.overlap !== a.overlap) return b.overlap - a.overlap
+          const aIdSpecific = a.entry.id.split(/[^a-z0-9]+/).some((w) => w.length > 3 && msgTokensSet.has(w))
+          const bIdSpecific = b.entry.id.split(/[^a-z0-9]+/).some((w) => w.length > 3 && msgTokensSet.has(w))
+          if (aIdSpecific !== bIdSpecific) return aIdSpecific ? -1 : 1
+          return a.entry.id.localeCompare(b.entry.id)
+        })
+        steps.push(
+          `P17 drove retrieval: +0.10 boost to ${focused} entries matching attention-focus tokens [${focusTokens.join(', ')}] (novelty ${attSignal.novelty.toFixed(2)})`,
+        )
+      }
+    }
+  }
+
   steps.push(
     candidates.length > 0
       ? `Top candidate: ${candidates[0].entry.id} (score ${candidates[0].score.toFixed(2)} → weighted ${candidates[0].weightedScore.toFixed(2)}, ${candidates[0].regexHit ? 'regex' : 'keyword'})`
@@ -845,12 +957,25 @@ export async function generateResponse(
   //    starting fresh. When previousTurn came from chat-history
   //    (placeholder id), re-derive the entry by searching the last
   //    user message from conversationHistory.
-  if (followUp !== 'none' && opts.previousTurn?.matchedEntryId) {
+  //
+  // ─── WIRE-UP 7: P35 Working Memory → follow-up context ──
+  // The working memory buffer (capacity 4, module-level singleton)
+  // retains the most recent substantive tokens across turns. When a
+  // follow-up like "tell me more" or "why" is detected and the normal
+  // context sources (previousTurn / conversation history) don't yield
+  // a prevEntry, fall back to working memory: extract its substantive
+  // tokens (length > 3, not in the current follow-up message), search
+  // the KB with them, and use the top match as the continuation topic.
+  // This gives TRIZA true multi-turn context — "tell me more about it"
+  // resolves "it" to the last topic buffered in working memory.
+  if (followUp !== 'none') {
     let prevEntry: KnowledgeEntry | null = null
-    const prevIdRaw = opts.previousTurn.matchedEntryId
-    if (prevIdRaw !== '__from_history__') {
+    let contextSource = 'none'
+    const prevIdRaw = opts.previousTurn?.matchedEntryId
+    if (prevIdRaw && prevIdRaw !== '__from_history__') {
       const prevId = prevIdRaw.split('+')[0]
       prevEntry = KNOWLEDGE_BASE.find((e) => e.id === prevId) || null
+      if (prevEntry) contextSource = 'previousTurn'
     } else if (opts.conversationHistory && opts.conversationHistory.length > 0) {
       // Re-derive: find the last SUBSTANTIVE user message (not a
       // follow-up itself) and search it. The current follow-up
@@ -865,44 +990,67 @@ export async function generateResponse(
           const prevCandidates = searchKnowledgeBase(um.content)
           if (prevCandidates.length > 0) {
             prevEntry = prevCandidates[0].entry
+            contextSource = 'conversation-history'
             break
           }
         }
       }
     }
-    const fu = buildFollowUpResponse(followUp, prevEntry, opts.previousTurn.rawKnowledge)
-    if (fu) {
-      steps.push(
-        `Continuing previous topic: ${prevEntry?.topic || 'previous reply'}`
-      )
-      const expressed = safeExpress(
-        fu.text,
-        prevEntry?.topic || 'previous',
-        intent,
-        userMessage,
-        opts,
-        steps,
-        cognitionSignal,
-      )
-      return finalize(
-        expressed,
-        fu.entryId,
-        fu.topic,
-        fu.confidence,
-        mood,
-        intent,
-        steps,
-        startTime,
-        userMessage,
-        cognitionSignal.layers.sleep,
-        cognitionSignal,
-        // Follow-up path: candidates was already searched for the
-        // current userMessage. Pass the top score so P37 can still
-        // trigger a clarifying question if the follow-up is ambiguous.
-        // Use 1.0 if no candidates (safe default — don't spuriously
-        // clarify on a clean follow-up).
-        candidates.length > 0 ? candidates[0].weightedScore : 1.0,
-      )
+
+    // P35 fallback: if no prevEntry yet, use working memory tokens.
+    // The working memory buffer retains substantive tokens from
+    // recent turns. Filter out tokens that appear in the CURRENT
+    // follow-up message (they're not "previous topic" context) and
+    // any stopwords, then search the KB with the survivors.
+    if (!prevEntry) {
+      const wmTokens = (cognitionSignal.layers.memory.workingMemory || [])
+        .filter((t) => t.length > 3) // substantive only
+        .filter((t) => !tokenize(userMessage).includes(t)) // not in current msg
+      if (wmTokens.length > 0) {
+        const wmQuery = wmTokens.join(' ')
+        const wmCandidates = searchKnowledgeBase(wmQuery)
+        if (wmCandidates.length > 0 && wmCandidates[0].weightedScore >= 0.15) {
+          prevEntry = wmCandidates[0].entry
+          contextSource = `working-memory[${wmTokens.join(', ')}]`
+        }
+      }
+    }
+
+    if (prevEntry && (prevIdRaw || contextSource.startsWith('working-memory') || contextSource === 'conversation-history')) {
+      const fu = buildFollowUpResponse(followUp, prevEntry, opts.previousTurn?.rawKnowledge)
+      if (fu) {
+        steps.push(
+          `Continuing previous topic: ${prevEntry.topic || 'previous reply'} (context: ${contextSource})`
+        )
+        const expressed = safeExpress(
+          fu.text,
+          prevEntry.topic || 'previous',
+          intent,
+          userMessage,
+          opts,
+          steps,
+          cognitionSignal,
+        )
+        return finalize(
+          expressed,
+          fu.entryId,
+          fu.topic,
+          fu.confidence,
+          mood,
+          intent,
+          steps,
+          startTime,
+          userMessage,
+          cognitionSignal.layers.sleep,
+          cognitionSignal,
+          // Follow-up path: candidates was already searched for the
+          // current userMessage. Pass the top score so P37 can still
+          // trigger a clarifying question if the follow-up is ambiguous.
+          // Use 1.0 if no candidates (safe default — don't spuriously
+          // clarify on a clean follow-up).
+          candidates.length > 0 ? candidates[0].weightedScore : 1.0,
+        )
+      }
     }
   }
 

@@ -1686,6 +1686,8 @@ model TrizaCognitionState {
   brainStateJson String
   systemStateJson String
   metaStateJson String
+  emotionalStateJson String?
+  sleepStateJson String?
   totalMessages Int @default(0)
   updatedAt DateTime @updatedAt
 }

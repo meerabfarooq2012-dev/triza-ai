@@ -101,11 +101,11 @@ export interface CognitionSignal {
   principlesExecuted: number
   /** Layer-by-layer results for transparency */
   layers: {
-    observe: { features: number; attention: number; attended: boolean }
+    observe: { features: number; attention: number; novelty: number; attended: boolean }
     hierarchy: { concept: string; level: number | null }
     causality: { valenceSum: number; agency: number; agencyLabel: string; alive: boolean }
     emotion: { value: number; label: string }
-    memory: { matches: number; patternCompleted: boolean; category: string | null }
+    memory: { matches: number; patternCompleted: boolean; category: string | null; workingMemory: string[] }
     reasoning: { confidence: number; mode: 'normal' | 'help-seeking'; counterfactual: boolean }
     output: { primitive: string; variation: string; skillBuilt: boolean }
     /**
@@ -233,6 +233,28 @@ export function setRestingCheckerForReplay(fn: () => boolean): void {
       metaState = snap.meta
       totalMessages = snap.totalMessages
       restoredFromDb = true
+
+      // Phase 2: restore emotional identity (P4+) + sleep-cycle state
+      // (P29/P30) so TRIZA's accumulated mood and sleep debt survive
+      // server restarts. Both modules have serialize()/deserialize()
+      // — we wire them into the existing snapshot load here.
+      if (snap.emotionalStateJson) {
+        emotionalIdentity.deserialize(snap.emotionalStateJson)
+        const em = emotionalIdentity.current()
+        console.log(
+          `[TRIZA] Restored emotional identity: mood "${em.moodLabel}" (${em.mood.toFixed(2)}), ` +
+          `momentum ${em.momentum.toFixed(2)}, volatility ${em.volatility.toFixed(2)}`,
+        )
+      }
+      if (snap.sleepStateJson) {
+        sleepCycle.deserialize(snap.sleepStateJson)
+        const ss = sleepCycle.current()
+        console.log(
+          `[TRIZA] Restored sleep state: phase ${ss.phase}, debt ${ss.debt.toFixed(1)}, ` +
+          `integrity ${ss.integrity.toFixed(2)}`,
+        )
+      }
+
       console.log(
         `[TRIZA] Restored cognition state from DB: ${totalMessages} messages lifetime, ` +
         `brain energy ${brainState.energy.toFixed(2)}, system debt ${systemState.debt.toFixed(2)}`,
@@ -801,11 +823,15 @@ export function runCognition(message: string, conversationId?: string): Cognitio
   }
 
   // 2) Always snapshot brain/system/meta state + bumped message counter.
+  //    Phase 2: also persist emotional identity (P4+) + sleep-cycle
+  //    state (P29/P30) so TRIZA's mood and sleep debt survive restarts.
   void saveCognitionSnapshot(
     brainState,
     systemState,
     metaState,
     totalMessages,
+    emotionalIdentity.serialize(),
+    sleepCycle.serialize(),
   ).catch(() => { /* already logged inside */ })
 
   // 3) If a conversationId was provided, persist a per-message
@@ -833,6 +859,7 @@ export function runCognition(message: string, conversationId?: string): Cognitio
       observe: {
         features: observation.features.length,
         attention: attentionSignal.attention,
+        novelty: attentionSignal.novelty,
         attended: attentionSignal.attended,
       },
       hierarchy: { concept: matchedConcept, level: conceptLevel },
@@ -847,6 +874,7 @@ export function runCognition(message: string, conversationId?: string): Cognitio
         matches: memMatches.length,
         patternCompleted: Object.keys(completed).length > observation.features.length,
         category: inferredCategory,
+        workingMemory: workingMemory.contents().map((item) => item.content),
       },
       reasoning: {
         confidence: metaState.confidence,

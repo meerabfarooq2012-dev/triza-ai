@@ -1709,6 +1709,13 @@ model TrizaCognitionState {
   systemStateJson String
   // JSON-serialized meta state {knowledge, confidence, mode, lastError, selfCorrections}
   metaStateJson String
+  // JSON-serialized emotional identity (P4+ mood, momentum, volatility, history).
+  // Phase 2: persists TRIZA's emotional identity across restarts so its
+  // accumulated mood survives `next dev` / Vercel cold starts.
+  emotionalStateJson String?
+  // JSON-serialized sleep-cycle state (P29/P30 phase, debt, integrity).
+  // Phase 2: persists TRIZA's sleep debt + rest state across restarts.
+  sleepStateJson String?
   // Total messages processed lifetime
   totalMessages Int @default(0)
   updatedAt DateTime @updatedAt
