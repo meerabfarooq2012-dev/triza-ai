@@ -4570,3 +4570,259 @@ Stage Summary:
 - PROFESSIONAL TONE FIXED: All 8 openers, 7 transitions, 8 bullet connectors, and 7 reflections in narrate-memory.ts replaced with professional equivalents. Casual phrasing ("Let me tell you how I've come to understand X") is gone; professional phrasing ("Here is what I understand about X") is in. Natural flowing prose structure preserved — no templates, just professional voice.
 - TRANSPARENCY: Users can see the fuzzy layer working via the "Fuzzy-match: normalized → \"...\" · fuzzy hits: ..." step in the cognition panel.
 - Both LOCAL (localhost:3000) and VERCEL (triza-ai.vercel.app) deploying. Verified live with 5 test cases covering typos, joined words, Roman Urdu + typo, and clean queries.
+
+---
+Task ID: 6-d
+Agent: general-purpose
+Task: Create batch-computing-deep.ts with detailed computing subtopic entries
+
+Work Log:
+- Read /home/z/my-project/worklog.md (last 200 lines) to understand prior context — project is TRIZA transparent AI chatbot with narrate-memory engine, 292+ KB entries across 13+ batch-*.ts files, fuzzy matching + professional narration voice already shipped (Phase 4/5)
+- Read /home/z/my-project/src/lib/triza-engine/batch-math.ts (310 lines) to learn the EXACT format: header comment block, `import type { KnowledgeEntry } from './types'`, exported CONST array, each entry has id (kebab-case) / patterns (/\b(...)\b/i regex with English + Roman Urdu) / keywords / intent / topic / response (() => multi-paragraph markdown with ### subheadings + "Why It Matters" close)
+- Read /home/z/my-project/src/lib/triza-engine/types.ts to confirm KnowledgeEntry interface shape
+- Read /home/z/my-project/src/lib/triza-engine/batch-computing.ts in full (352 lines, 12 entries) to AVOID DUPLICATION — existing entries: computing-programming-basics, computing-algorithms (already touches big-O + sorting/searching at intro level), computing-data-structures, computing-variables-types, computing-functions-control-flow, computing-oop, computing-binary-bits, computing-internet-web, computing-databases (intro level), computing-operating-systems, computing-ai-ml-basics (intro level), computing-security-cryptography (intro level)
+- Created /home/z/my-project/src/lib/triza-engine/batch-computing-deep.ts with 12 DETAILED subtopic entries that go DEEPER than the existing intro batch (different IDs prefixed `computing-deep-`, more specific regex patterns targeting subtopic terms, longer ~500-775 word responses with concrete mechanics):
+  1. computing-deep-sorting-algorithms (527 words) — bubble/selection/insertion/merge/quick/heap/counting/radix sort, stable vs in-place, Timsort/introsort
+  2. computing-deep-searching-algorithms (573 words) — linear, binary, hash tables O(1), BFS, DFS, Dijkstra, A-star
+  3. computing-deep-big-o-notation (580 words) — full complexity class ladder O(1)/O(log n)/O(n)/O(n log n)/O(n²)/O(2^n)/O(n!), best/worst/average, space complexity, amortized analysis
+  4. computing-deep-recursion (611 words) — base case, recursive case, call stack, tail recursion + TCO, linear/tree/divide-and-conquer/backtracking patterns, stack overflow
+  5. computing-deep-design-patterns (593 words) — Gang of Four, creational (Singleton/Factory/Abstract Factory), structural (Adapter/Decorator), behavioral (Observer/Strategy/Command), MVC architecture
+  6. computing-deep-version-control-git (636 words) — commits as DAG, branches as pointers, merge vs rebase, pull requests + code review, fork workflow
+  7. computing-deep-networking-protocols (650 words) — OSI 7-layer model in depth, TCP/IP, UDP, DNS resolution chain, HTTP/HTTPS/TLS, FTP, WebSocket, HTTP/2/3
+  8. computing-deep-database-types (697 words) — relational + normalization (1NF/2NF/3NF), ACID, document (MongoDB), key-value (Redis), column-family (Cassandra), graph (Neo4j), B-tree/B+ tree/LSM indexes, CAP theorem
+  9. computing-deep-web-development (618 words) — HTML/CSS/JS foundation, React/Vue/Angular/Next.js, backend stacks, REST vs GraphQL, full-stack unification
+  10. computing-deep-cloud-computing (698 words) — IaaS/PaaS/SaaS, virtualization + hypervisors, Docker containers, Kubernetes orchestration, serverless (Lambda), AWS/Azure/GCP
+  11. computing-deep-cybersecurity-attacks (723 words) — malware types (virus/worm/trojan/ransomware/spyware/adware), phishing/spear-phishing, DDoS, SQL injection, XSS, CSRF, defense in depth, zero trust
+  12. computing-deep-machine-learning-pipeline (775 words) — supervised (regression/classification), unsupervised (k-means/PCA), reinforcement learning, CNN/RNN/Transformer, train/val/test split, overfitting/underfitting, gradient descent + backprop
+- Ran `bunx eslint src/lib/triza-engine/batch-computing-deep.ts` → exit code 0, ZERO errors, ZERO warnings (clean exit, no output)
+- Ran runtime sanity check via bun: imported COMPUTING_DEEP_ENTRIES, confirmed all 12 entries load successfully, all topic='computing', all intent='factual_question', all response() functions render valid multi-paragraph markdown (527-775 words each, total ~7,700 words of educational content)
+- Ran religious-word scan over the new file (regex for god/allah/jesus/quran/bible/prayer/worship/religion/holy/sacred/divine/mosque/church/temple/islam/christian/muslim/hindu) → CLEAN, no matches
+- Verified 12 unique kebab-case IDs all prefixed `computing-deep-` (distinct from existing `computing-*` IDs) so the two batches can coexist without ID collisions when registered together
+
+Stage Summary:
+- CREATED: /home/z/my-project/src/lib/triza-engine/batch-computing-deep.ts (~390 lines, 12 KnowledgeEntry objects, ~7,700 words of deeper computer-science content)
+- EXPORTED: COMPUTING_DEEP_ENTRIES: KnowledgeEntry[] (follows identical format to MATH_ENTRIES in batch-math.ts)
+- COVERAGE: sorting algorithms (8 algorithms compared), searching algorithms (linear/binary/hash/BFS/DFS/Dijkstra/A*), Big O notation (all complexity classes + amortized/space), recursion (4 recursive patterns + TCO), design patterns (GoF 3 families + MVC), version control with Git (commits/branches/merge-vs-rebase/PRs), networking protocols (OSI 7-layer + TCP/IP/DNS/HTTP/HTTPS/WebSocket), database types (relational + 4 NoSQL families + indexes + CAP), web development (frontend/backend/full-stack + REST/GraphQL), cloud computing (IaaS/PaaS/SaaS + Docker/Kubernetes/serverless), cybersecurity (malware taxonomy + 4 attack vectors + defense in depth + zero trust), ML pipeline (3 paradigms + neural net architectures + overfitting/train-val-test)
+- ESLINT: PASS (0 errors, 0 warnings)
+- RELIGIOUS-WORD SCAN: PASS (clean)
+- RUNTIME: PASS (12/12 entries verified, all topic='computing', all intents='factual_question')
+- NO DUPLICATION: 12 new entries go DEEPER than the intro-level batch-computing.ts entries; IDs are prefixed `computing-deep-` to avoid collision; patterns target more specific subtopic terms (e.g. "bubble sort|selection sort|insertion sort" vs the existing broader "sorting algorithm" pattern)
+- NOTE: COMPUTING_DEEP_ENTRIES is exported but NOT YET registered in any central knowledge-base aggregator (response-generator.ts KNOWLEDGE_BASE array or similar). A follow-up wiring task should import and append COMPUTING_DEEP_ENTRIES alongside the existing COMPUTING_ENTRIES so TRIZA can match these deeper subtopic questions at runtime.
+
+---
+Task ID: 6-c
+Agent: general-purpose
+Task: Create batch-space-deep.ts with detailed astronomy subtopic entries
+
+Work Log:
+- Read worklog.md (last 200 lines) to understand previous work context and task numbering conventions
+- Read existing /home/z/my-project/src/lib/triza-engine/batch-math.ts as the format reference (header comment block, import type { KnowledgeEntry }, exported const array, per-entry shape with id/patterns/keywords/intent/topic/response)
+- Read existing /home/z/my-project/src/lib/triza-engine/batch-space.ts in full to identify what was already covered and avoid duplication
+  - Existing SPACE_ENTRIES (12 entries) cover: solar-system, sun-stars, earth-moon, mars-planets, gas-giants, black-holes, galaxies, big-bang, light-years-distance, telescopes, gravity, space-exploration
+  - Confirmed overlaps to avoid: existing entries briefly mention asteroid belt, Kuiper Belt, Oort Cloud, CMB (Penzias & Wilson 1964), dark matter/energy percentages, stellar evolution basics (main sequence/red giant/white dwarf), Local Group/galaxy types, Apollo/Voyager/Hubble/JWST/ISS/Mars rovers
+- Read /home/z/my-project/src/lib/triza-engine/types.ts to confirm the KnowledgeEntry schema (id, patterns: RegExp[], keywords?, intent, topic, response: () => string)
+- Designed 12 deeper subtopic entries that go DEEPER than existing coverage without duplicating:
+  1. space-stellar-evolution-deep — full life cycle across all star mass ranges (brown dwarf, red dwarf, Sun-like, massive, hypernova)
+  2. space-stellar-classification — OBAFGKM spectral types, HR diagram, luminosity classes, Annie Jump Cannon
+  3. space-exoplanets — detection methods (transit, RV, microlensing), habitable zone, Kepler, TRAPPIST-1, Proxima b
+  4. space-dark-matter-energy — Vera Rubin rotation curves, WIMPs/axions, MOND, cosmological constant, Lambda-CDM, 1998 acceleration discovery
+  5. space-neutron-stars-pulsars — formation, density, Jocelyn Bell Burnell 1967, magnetars, GW170817 kilonova
+  6. space-quasars-agn — accretion disks, supermassive BHs, relativistic jets, blazars, 3C 273, unified model
+  7. space-cmb-deep — recombination, COBE/WMAP/Planck missions, acoustic peaks, B-mode polarization, BICEP2
+  8. space-asteroids-comets-meteors-deep — meteor/meteoroid/meteorite distinction, meteor showers, NEOs, asteroid types, notable comets, DART
+  9. space-deep-missions — Cassini-Huygens, New Horizons, Galileo, Juno, Parker Solar Probe, Artemis, Chang'e, Mangalyaan (explicitly avoided Apollo/Voyager/Hubble/JWST/ISS already in batch-space.ts)
+  10. space-planetary-atmospheres — Venus runaway greenhouse, Mars thin atmosphere/atmospheric escape, Jupiter GRS, Saturn hexagon, exoplanet atmospheres
+  11. space-galaxy-clusters-large-scale — Virgo/Coma clusters, Laniakea supercluster, cosmic web, filaments/voids, Great Attractor (deepens existing galaxies entry without overlap)
+  12. space-origins-of-elements — Big Bang nucleosynthesis, stellar nucleosynthesis (B2FH paper), s-process/r-process, GW170817 gold production, cosmic cycle
+- Created /home/z/my-project/src/lib/triza-engine/batch-space-deep.ts with SPACE_DEEP_ENTRIES export (12 entries)
+- Each entry: id (kebab-case), patterns (/\b(...)\b/i with English + Roman Urdu tokens), keywords array, intent 'factual_question', topic 'astronomy', response arrow function returning ~500-730 word multi-paragraph markdown with ### Subheadings and "Why It Matters" close
+- NO religious content, English only, no emojis (verified during review)
+- Ran eslint: 0 errors, exit code 0
+- Ran runtime verification: all 12 entries load; word counts per response range from 502 to 732 words
+- Noted: file is NOT yet wired into response-generator.ts (would require importing SPACE_DEEP_ENTRIES and adding `...SPACE_DEEP_ENTRIES` to the KNOWLEDGE_BASE array) — flagging as next action
+
+Stage Summary:
+- Created /home/z/my-project/src/lib/triza-engine/batch-space-deep.ts with SPACE_DEEP_ENTRIES export
+- 12 new deeper astronomy/space science entries, all topic 'astronomy', no overlap with existing batch-space.ts broad topics
+- Entry IDs: space-stellar-evolution-deep, space-stellar-classification, space-exoplanets, space-dark-matter-energy, space-neutron-stars-pulsars, space-quasars-agn, space-cmb-deep, space-asteroids-comets-meteors-deep, space-deep-missions, space-planetary-atmospheres, space-galaxy-clusters-large-scale, space-origins-of-elements
+- ESLint: 0 errors (exit code 0)
+- Runtime: 12/12 entries load and call response() successfully; word counts 502-732 words each
+- Next action: wire SPACE_DEEP_ENTRIES into response-generator.ts KNOWLEDGE_BASE array (one import + one spread, ~3 line change) to activate the entries in TRIZA's retrieval pipeline
+
+---
+Task ID: 6-b
+Agent: general-purpose
+Task: Create batch-physics-chem-deep.ts with detailed physics/chemistry subtopic entries
+
+Work Log:
+- Read /home/z/my-project/worklog.md (last ~100 lines) to understand prior context: TRIZA knowledge base expanded in phases 1-5 from 236 to ~292 entries across 5 batches (math, computing, psychology, space, business); professional narration voice + fuzzy/typo-tolerant matching shipped in phase5.
+- Reviewed /home/z/my-project/src/lib/triza-engine/batch-math.ts in full (310 lines, 12 entries) as the FORMAT REFERENCE: header comment block, `import type { KnowledgeEntry } from './types'`, exported const array, each entry has id (kebab-case), patterns (single /\b(...)\b/i regex with English + Roman Urdu), keywords array, intent ('factual_question'), topic string, response arrow-function returning a template literal with NO top-level heading, prose open, ### Subheadings sections, closing `### Why It Matters` paragraph, English only, no emojis.
+- Reviewed /home/z/my-project/src/lib/triza-engine/batch-physics-chem.ts (existing 24 entries) to confirm topics already covered and avoid duplication: gravity, electricity, magnetism, light-and-optics, sound-waves, heat-temperature, energy-types, force-motion-laws, atomic-structure, periodic-table-organised, chemical-bonds, chemical-reactions, states-of-matter, acids-bases-ph, water-properties, oxygen-element, carbon-element, hydrogen-element, metals-nonmetals, nuclear-energy, quantum-physics-basics, relativity-einstein, friction-explained, pressure-explained, electromagnetism-spectrum.
+- Confirmed KnowledgeEntry interface in types.ts (id, patterns: RegExp[], keywords?: string[], intent: Intent, topic: string, response: () => string) before writing.
+- Designed 15 NEW deeper subtopic entries with non-overlapping focus vs existing base batch:
+  1. subatomic-particles-standard-model — quarks (6 flavours), leptons, gauge bosons, color charge, confinement, Higgs field
+  2. nuclear-physics-deep — alpha/beta/gamma decay detail, exponential decay law, half-life (C-14, U-238), mass defect, binding-energy curve
+  3. quantum-mechanics-deep — wavefunction, Born interpretation, Schrodinger equation, four quantum numbers (n,l,m_l,m_s), Pauli exclusion, tunneling
+  4. relativity-deep — Lorentz transformations, time dilation/length contraction math, proper time, equivalence principle, frame dragging, LIGO gravitational-wave detection
+  5. thermodynamics-laws — zeroth/first/second/third laws, entropy, enthalpy, Gibbs free energy, Carnot cycle efficiency formula
+  6. em-spectrum-deep — c=fλ, E=hf Planck relation, blackbody radiation, Wien's law, Stefan-Boltzmann, atmospheric windows, per-band applications
+  7. chemical-reaction-types — synthesis, decomposition, single/double displacement, combustion, redox (OIL RIG), activation energy, catalysts, Arrhenius
+  8. organic-chemistry-hydrocarbons — alkanes/alkenes/alkynes/aromatics with formulas, functional groups (alcohol/aldehyde/ketone/COOH/ester/amine), isomers, IUPAC
+  9. periodic-trends — atomic/ionic radius, ionization energy, electron affinity, electronegativity, effective nuclear charge, shielding effect
+  10. chemical-bonding-deep — sigma/pi bonds, VSEPR shapes (linear, trigonal planar, tetrahedral, trigonal bipyramidal, octahedral), sp/sp2/sp3 hybridization, intermolecular forces (H-bonds, Van der Waals)
+  11. acids-bases-deep — Arrhenius vs Brønsted-Lowry vs Lewis theories, Ka/pKa, buffers, Henderson-Hasselbalch equation, titration curves
+  12. electrochemistry — galvanic/voltaic vs electrolytic cells, standard reduction potentials, EMF series, batteries (lead-acid, NiMH, lithium-ion), Faraday's laws, corrosion
+  13. fluid-mechanics — pressure-depth relation, Pascal's principle, Archimedes buoyancy, Bernoulli's principle, continuity equation, viscosity, Reynolds number
+  14. optics-deep — Snell's law (n1 sinθ1 = n2 sinθ2), thin lens equation (1/f=1/u+1/v), convex/concave lenses, total internal reflection, fibre optics, dispersion, chromatic aberration
+  15. sound-acoustics-deep — wave properties (f, λ, v, amplitude), speed of sound per medium, Doppler effect, resonance, harmonics/overtones, beats, ultrasound/sonar/echolocation
+- Wrote /home/z/my-project/src/lib/triza-engine/batch-physics-chem-deep.ts (~440 lines) following batch-math.ts format exactly: header comment block (Batch 15), import type, exported const PHYSICS_CHEM_DEEP_ENTRIES: KnowledgeEntry[] with 15 entries, each with bilingual pattern regex, keywords array, intent 'factual_question', topic ('physics' for 10 entries, 'chemistry' for 5 entries), response arrow function with multi-paragraph markdown + ### subheadings + ### Why It Matters close.
+- Ran ESLint: `bunx eslint src/lib/triza-engine/batch-physics-chem-deep.ts` → 0 errors, 0 warnings (silent success).
+- Ran runtime verification: `bun -e "import {PHYSICS_CHEM_DEEP_ENTRIES} from './src/lib/triza-engine/batch-physics-chem-deep'; ..."` → all 15 entries loaded. Word counts ranged 422-682 words; 12 entries within 400-600 target, 3 entries slightly above 600 (relativity-deep: 602, fluid-mechanics: 616, optics-deep: 663, sound-acoustics-deep: 682) — within reasonable variance of the ~400-600 spec for deeper topics.
+- Did NOT wire the new batch into response-generator.ts KNOWLEDGE_BASE array — that integration step was not part of Task 6-b scope (only create the file). A future task will need to add the import and array spread.
+
+Stage Summary:
+- Created /home/z/my-project/src/lib/triza-engine/batch-physics-chem-deep.ts (15 new deeper physics/chemistry entries, ~440 lines, all in batch-math.ts format).
+- ESLint: 0 errors, 0 warnings.
+- Runtime: all 15 entries load successfully; every entry returns a multi-paragraph markdown response with ### subheadings and a closing ### Why It Matters paragraph. English only, no emojis, no religious content.
+- Entry IDs (15): subatomic-particles-standard-model, nuclear-physics-deep, quantum-mechanics-deep, relativity-deep, thermodynamics-laws, em-spectrum-deep, chemical-reaction-types, organic-chemistry-hydrocarbons, periodic-trends, chemical-bonding-deep, acids-bases-deep, electrochemistry, fluid-mechanics, optics-deep, sound-acoustics-deep.
+- Topic split: 10 physics entries, 5 chemistry entries.
+- No duplication with existing batch-physics-chem.ts (which covers general/overview topics). Each new entry goes one level deeper (Standard Model below atomic structure, half-life math below nuclear-energy overview, Schrodinger equation below quantum-physics-basics overview, Lorentz transforms below relativity-einstein overview, four laws below heat-temperature overview, photon energy below electromagnetism-spectrum overview, reaction-type classification below chemical-reactions overview, etc.).
+- Next action needed: wire PHYSICS_CHEM_DEEP_ENTRIES into KNOWLEDGE_BASE array in src/lib/triza-engine/response-generator.ts (and optionally extend allConcepts list in cognition-engine.ts) so TRIZA actually retrieves these deeper entries at runtime.
+
+---
+Task ID: 6-a
+Agent: general-purpose
+Task: Create batch-biology-deep.ts with detailed biology subtopic entries (DNA types, RNA types, mutations, chromosomes, genetic engineering, etc.)
+
+Work Log:
+- Read /home/z/my-project/worklog.md (last 200 lines) to understand previous work — project is TRIZA transparent AI chatbot with Phase 1+2+3+4+5 complete, ~292 KB entries across multiple batch-*.ts files (math, computing, psychology, space, business, biology, physics-chem, etc.), fuzzy typo matching + professional narration voice already wired in.
+- Read /home/z/my-project/src/lib/triza-engine/batch-math.ts (310 lines) to learn the EXACT required format: header comment block, `import type { KnowledgeEntry } from './types'`, exported CONST array, each entry uses `patterns: [/\b(...)\b/i]` word-boundary regex with English + Roman Urdu tokens, `keywords` array, `intent: 'factual_question'`, `topic: 'biology'`, response arrow function returning multi-paragraph markdown with `### Subheadings` and closing `### Why It Matters` paragraph (~400-600 words).
+- Read /home/z/my-project/src/lib/triza-engine/batch-biology.ts (1,261 lines) to confirm what topics are ALREADY covered and to avoid duplication — confirmed existing entries: cell-structure-basics, dna-and-genes (general), photosynthesis-explained, evolution-natural-selection, digestive-system, circulatory-system, respiratory-system, nervous-system, skeletal-system, muscular-system, immune-system (broad), reproduction-basics, genetics-heredity, bacteria-vs-viruses, fungi-kingdom, plant-classification, animal-classification, ecosystems-food-chains, cell-division (broad), protein-synthesis, human-eye-vision, human-ear-hearing, sleep-biology, nutrition-basics, enzymes-explained.
+- Read /home/z/my-project/src/lib/triza-engine/types.ts to confirm KnowledgeEntry interface (id: string, patterns: RegExp[], keywords?: string[], intent, topic, response: () => string).
+- Read /home/z/my-project/eslint.config.mjs to confirm lint rules are lenient (most rules disabled) — designed to easily pass with any reasonable TypeScript.
+- Created /home/z/my-project/src/lib/triza-engine/batch-biology-deep.ts with 15 NEW deeper subtopic entries (no duplication with existing batch-biology.ts):
+  1. dna-types-structure (490 words) — A-DNA, B-DNA, Z-DNA forms, major/minor grooves, conditions for each form
+  2. rna-types-detailed (522 words) — mRNA, tRNA, rRNA, miRNA, snRNA, structure & function of each
+  3. dna-replication-process (501 words) — semiconservative, Okazaki fragments, leading/lagging strand, helicase, primase, polymerase, ligase, replication fork
+  4. genetic-mutations-types (519 words) — point (silent/missense/nonsense), frameshift, larger-scale, causes, effects
+  5. chromosome-types-karyotype (524 words) — autosomes vs sex chromosomes, homologous pairs, karyotyping, aneuploidy (Down/Turner/Klinefelter)
+  6. genetic-engineering-crispr (530 words) — CRISPR-Cas9, recombinant DNA, gene cloning, GMOs, gene therapy
+  7. cellular-respiration-steps (559 words) — glycolysis, Krebs cycle, ETC, ATP production, aerobic vs anaerobic
+  8. meiosis-detailed-phases (501 words) — meiosis I/II, prophase I, metaphase I, crossing over, synapsis, chiasmata, independent assortment
+  9. mitosis-detailed-phases (508 words) — prophase, metaphase, anaphase, telophase, cytokinesis, mitotic spindle, sister chromatids
+  10. hormones-endocrine-system (504 words) — pituitary, thyroid, adrenal, insulin/glucagon, growth hormone, feedback loops
+  11. blood-types-abo-rh (526 words) — ABO system, Rh factor, universal donor/recipient, inheritance
+  12. human-brain-structure (502 words) — cerebrum, cerebellum, brainstem, four lobes, neurons, synapses, cerebral cortex
+  13. stem-cells-types (562 words) — totipotent/pluripotent/multipotent, embryonic vs adult, iPSCs, medical applications
+  14. immune-system-detailed (543 words) — innate vs adaptive, B cells, T cells (helper/cytotoxic), antibodies, vaccination, memory cells
+  15. ecology-levels-organization (571 words) — organism → population → community → ecosystem → biome → biosphere; mutualism/commensalism/parasitism
+- Each entry uses \b(...)\b/i word-boundary regex patterns, intent='factual_question', topic='biology', and returns a multi-paragraph markdown response (490-571 words each, total ~7,863 words) with 4-6 ### Subheadings and a closing `### Why It Matters` paragraph.
+- Each pattern carefully avoids over-triggering existing broad entries (e.g. rna-types-detailed triggers on `trna|rrna|mirna|snrna` rather than just `mrna` which is in protein-synthesis; meiosis-detailed-phases triggers on `prophase i|crossing over|synapsis` rather than just `mitosis|meiosis` which is in cell-division; immune-system-detailed triggers on `b cell|t cell|antibody|vaccination` rather than just `immune system`).
+- Ran `bunx eslint src/lib/triza-engine/batch-biology-deep.ts` — exit code 0, ZERO errors, ZERO warnings (clean exit, no output).
+- Verified runtime via `bun -e "import {BIOLOGY_DEEP_ENTRIES} from './src/lib/triza-engine/batch-biology-deep'; ..."`: all 15 entries load, all topic='biology', all response() functions return valid strings of 490-571 words each.
+- Ran religious-word scan (regex for god/allah/jesus/quran/bible/prayer/worship/religion/holy/sacred/divine/muhammad/mosque/church/temple/islam/christian/hindu/jew/muslim) — CLEAN, no matches. English only, no emojis.
+- Appended this worklog entry in append mode starting with `---` separator.
+
+Stage Summary:
+- File created: /home/z/my-project/src/lib/triza-engine/batch-biology-deep.ts (~466 lines, 15 KnowledgeEntry objects, ~7,863 words of detailed biology content)
+- EXPORTED: BIOLOGY_DEEP_ENTRIES: KnowledgeEntry[] (follows identical format to MATH_ENTRIES in batch-math.ts)
+- 15 entry IDs (all kebab-case, topic='biology', intent='factual_question'): dna-types-structure, rna-types-detailed, dna-replication-process, genetic-mutations-types, chromosome-types-karyotype, genetic-engineering-crispr, cellular-respiration-steps, meiosis-detailed-phases, mitosis-detailed-phases, hormones-endocrine-system, blood-types-abo-rh, human-brain-structure, stem-cells-types, immune-system-detailed, ecology-levels-organization
+- Coverage spans all 15 topics requested in the task spec — DNA forms (A/B/Z), 5 RNA types, replication mechanics, mutation types & causes, chromosome/karyotype biology, genetic engineering & CRISPR, cellular respiration, meiosis phases, mitosis phases, endocrine system, blood typing, brain anatomy, stem cells, adaptive immunity, and ecological organization + symbiosis.
+- ESLINT: PASS (exit code 0, zero errors, zero warnings)
+- RUNTIME: PASS — 15/15 entries load successfully, all return valid multi-paragraph markdown strings with `### Subheadings` and `### Why It Matters` closing paragraph
+- RELIGIOUS-WORD SCAN: PASS (clean, English only, no emojis)
+- NO DUPLICATION with batch-biology.ts: each new entry covers a DEEPER subtopic angle (specific DNA forms vs general DNA, specific RNA types vs general protein synthesis, mutation types vs general heredity, etc.) and uses more specific trigger patterns so the engine will route deep queries to the deep entry and broad queries to the existing broad entry.
+- NOTE: BIOLOGY_DEEP_ENTRIES is exported but NOT YET registered in any central knowledge-base index (no such step was requested in the task). A follow-up wiring task may be needed to import BIOLOGY_DEEP_ENTRIES into response-generator.ts's KNOWLEDGE_BASE array alongside the existing BIOLOGY_ENTRIES so TRIZA can actually match these entries during retrieval.
+
+---
+Task ID: 6-e
+Agent: general-purpose
+Task: Create batch-math-deep.ts with detailed math subtopic entries
+
+Work Log:
+- Read /home/z/my-project/worklog.md (last ~150 lines) to understand prior context — TRIZA knowledge base expanded through phases 1-6 with deep batches already created for biology (6-a), physics/chem (6-b), space (6-c), computing (6-d). Each deep batch follows the batch-math.ts format and exports a `<TOPIC>_DEEP_ENTRIES` array.
+- Read /home/z/my-project/src/lib/triza-engine/batch-math.ts in full (310 lines, 12 entries) as the FORMAT REFERENCE: header comment block, `import type { KnowledgeEntry } from './types'`, exported const array, each entry has id (kebab-case), patterns (single /\b(...)\b/i regex with English + Roman Urdu tokens), keywords array, intent ('factual_question'), topic string, response arrow-function returning a template literal with NO top-level heading, prose open, `### Subheadings` sections, closing `### Why It Matters` paragraph, English only, no emojis.
+- Confirmed existing MATH_ENTRIES coverage to avoid duplication: math-numbers-systems, math-arithmetic-operations, math-fractions-decimals, math-algebra-basics (mentions linear/quadratic/polynomial briefly at high level), math-geometry-basics (shapes only, no coordinate geometry), math-calculus-basics (high-level derivative/integral concept, no methods/rules), math-statistics-basics (mean/median/mode/spread/distribution overview, no inference/regression), math-probability-basics (general probability, Bayes, no distributions), math-pythagorean-theorem, math-trigonometry-basics, math-set-theory-logic, math-famous-constants.
+- Confirmed KnowledgeEntry interface in types.ts (id, patterns: RegExp[], keywords?: string[], intent: Intent, topic: string, response: () => string) before writing.
+- Designed 10 NEW deeper subtopic entries that go DEEPER than existing coverage without duplicating:
+  1. math-deep-linear-systems (467 words) — one-variable, two-variable systems, substitution/elimination/graphing methods, inconsistent vs dependent systems, Cramer's rule / Gaussian elimination mention
+  2. math-deep-quadratic-equations (488 words) — standard form, four solving techniques (factoring/completing the square/quadratic formula/graphing), discriminant (3 cases), vertex form, axis of symmetry
+  3. math-deep-polynomials (496 words) — degree, leading coefficient, factoring techniques (GCF/difference of squares/grouping/rational root theorem), remainder & factor theorems, synthetic division, binomial theorem, complex conjugate root pairs
+  4. math-deep-coordinate-geometry (502 words) — Cartesian plane, distance/midpoint formulas, slope, slope-intercept & point-slope forms, parallel/perpendicular slope rules, all four conic sections (circle/ellipse/parabola/hyperbola) with equations
+  5. math-deep-vectors-matrices (565 words) — vectors magnitude/addition/scaling, dot product (cosine interpretation), cross product (3D only), matrix addition/multiplication (non-commutative), identity matrix, determinant (singular matrix), inverse, linear transformations, eigenvectors/eigenvalues
+  6. math-deep-limits-continuity (641 words) — limit concept, left/right one-sided limits, squeeze theorem, limit laws, indeterminate forms, continuity definition, IVT & EVT, L'Hopital's rule
+  7. math-deep-derivatives (635 words) — formal definition (difference quotient), power rule, product rule, quotient rule, chain rule, implicit differentiation, second derivative & concavity, optimisation (critical points), related rates
+  8. math-deep-integration (615 words) — indefinite vs definite integrals, fundamental theorem of calculus (both parts), u-substitution, integration by parts, applications (volume of revolution, average value, work, probability density integration)
+  9. math-deep-probability-distributions (571 words) — discrete (Bernoulli/binomial/geometric/Poisson), continuous (uniform/normal/exponential), mean/variance/standard deviation, central limit theorem
+  10. math-deep-statistical-inference (674 words) — population vs sample, standard error, hypothesis testing, null/alternative, p-value, Type I/II errors, alpha/beta/power, confidence intervals, correlation vs causation, linear regression
+- Created /home/z/my-project/src/lib/triza-engine/batch-math-deep.ts with MATH_DEEP_ENTRIES export (10 entries) following batch-math.ts format exactly
+- Each entry: id prefixed `math-deep-` (kebab-case, distinct from existing `math-*` IDs), patterns `/\b(...)\b/i` with English + Roman Urdu tokens, keywords array, intent 'factual_question', topic 'mathematics', response arrow function returning multi-paragraph markdown with `### Subheadings` and closing `### Why It Matters` paragraph
+- NO religious content, English only, no emojis (verified during review)
+- Ran eslint: `bunx eslint src/lib/triza-engine/batch-math-deep.ts` → exit code 0, ZERO errors, ZERO warnings (clean exit, no output)
+- Ran runtime verification: `bun -e "import {MATH_DEEP_ENTRIES} from './src/lib/triza-engine/batch-math-deep'; ..."` → all 10 entries loaded. Word counts: 467, 488, 496, 502, 565, 571, 615, 635, 641, 674. 6 entries within 400-600 target, 4 slightly above (integration 615, derivatives 635, limits 641, statistical-inference 674) — within reasonable variance for inherently broad deeper topics.
+- Ran religious-word scan (regex for god/allah/jesus/quran/bible/prayer/worship/religion/prophet/mosque/church/temple/islam/christian/muslim/hindu/jew/sacred/divine/muhammad) → CLEAN, no matches
+- Ran emoji scan (Unicode emoji ranges) → CLEAN, no matches
+- Did NOT wire MATH_DEEP_ENTRIES into response-generator.ts KNOWLEDGE_BASE array — that integration step was not part of Task 6-e scope (only create the file). A future task will need to add the import and array spread.
+
+Stage Summary:
+- CREATED: /home/z/my-project/src/lib/triza-engine/batch-math-deep.ts (~290 lines, 10 KnowledgeEntry objects, ~5,654 words of deeper mathematics content)
+- EXPORTED: MATH_DEEP_ENTRIES: KnowledgeEntry[] (follows identical format to MATH_ENTRIES in batch-math.ts)
+- 10 entry IDs (all kebab-case, prefixed `math-deep-`, topic='mathematics', intent='factual_question'): math-deep-linear-systems, math-deep-quadratic-equations, math-deep-polynomials, math-deep-coordinate-geometry, math-deep-vectors-matrices, math-deep-limits-continuity, math-deep-derivatives, math-deep-integration, math-deep-probability-distributions, math-deep-statistical-inference
+- COVERAGE: systems of linear equations (with substitution/elimination/inconsistent/dependent cases), quadratic equations (4 solving techniques + discriminant + vertex form), polynomials (degree + factoring + remainder/factor theorems + binomial theorem), coordinate geometry (Cartesian plane + line equations + 4 conic sections), linear algebra (vectors + dot/cross product + matrices + determinants + eigenvalues), limits & continuity (one-sided + squeeze theorem + L'Hopital + IVT/EVT), derivatives (power/product/quotient/chain rules + implicit + optimisation + related rates), integration (FTC + substitution + parts + applications), probability distributions (binomial/Poisson/geometric/normal/exponential + CLT), statistical inference (hypothesis testing + p-value + Type I/II + confidence intervals + regression + correlation vs causation)
+- ESLINT: PASS (exit code 0, 0 errors, 0 warnings)
+- RELIGIOUS-WORD SCAN: PASS (clean)
+- EMOJI SCAN: PASS (clean)
+- RUNTIME: PASS — 10/10 entries load successfully, all return valid multi-paragraph markdown strings with `### Subheadings` and `### Why It Matters` closing paragraph, all topic='mathematics'
+- NO DUPLICATION: each new entry covers a DEEPER subtopic angle than the corresponding broad entry in batch-math.ts (linear systems vs algebra-basics overview; quadratic solving techniques vs algebra-basics mention; polynomial theorems vs algebra-basics mention; coordinate geometry + conics vs geometry-basics shapes-only; linear algebra is brand-new; limits/continuity vs calculus-basics derivative mention; derivative rules vs calculus-basics high-level concept; integration techniques vs calculus-basics high-level concept; specific named distributions vs statistics-basics general normal-distribution mention; hypothesis testing/inference vs statistics-basics descriptive-only). Each pattern targets more specific subtopic terms so the engine will route deep queries to the deep entry and broad queries to the existing broad entry.
+- NEXT ACTION: wire MATH_DEEP_ENTRIES into response-generator.ts KNOWLEDGE_BASE array (one import + one spread, ~3 line change) to activate the entries in TRIZA's retrieval pipeline alongside the existing MATH_ENTRIES.
+
+---
+Task ID: 6-f
+Agent: general-purpose
+Task: Create batch-psychology-health-deep.ts with detailed psychology + health subtopic entries
+
+Work Log:
+- Read /home/z/my-project/worklog.md (last ~150 lines) to understand prior context — project is TRIZA transparent AI chatbot; Phases 1-5 complete; knowledge base expanded through batches 14 (math), 15 (physics-chem-deep), 16-pending (this task). Followed same deeper-batch pattern as 6-a (biology-deep), 6-b (physics-chem-deep), 6-c (space-deep), 6-d/6-e (computing-deep).
+- Read /home/z/my-project/src/lib/triza-engine/batch-math.ts (first 120 lines) as the FORMAT REFERENCE: header comment block, `import type { KnowledgeEntry } from './types'`, exported const array, each entry uses `patterns: [/\b(...)\b/i]` word-boundary regex with English + Roman Urdu tokens, `keywords` array, `intent` ('factual_question' or 'how_to'), `topic` string, response arrow function returning multi-paragraph markdown with `### Subheadings` and closing `### Why It Matters` paragraph (~400-600 words).
+- Read /home/z/my-project/src/lib/triza-engine/types.ts to confirm KnowledgeEntry interface (id, patterns: RegExp[], keywords?, intent, topic, response: () => string).
+- Grepped existing batch-psychology.ts for all entry IDs: psychology-what-is, psychology-memory, psychology-learning, psychology-cognitive-biases, psychology-emotions, psychology-intelligence, psychology-personality, psychology-motivation, psychology-mental-health, psychology-social-influence — confirmed to AVOID duplicating these broad topics.
+- Grepped existing batch-health.ts for all entry IDs: common-cold-basics, influenza-flu-explained, diabetes-types-and-management, high-blood-pressure-hypertension, heart-disease-overview, cancer-overview-and-detection, immune-system-explained, vaccines-how-they-work, nutrition-basics-macronutrients, exercise-benefits-and-types, sleep-importance-and-stages, mental-health-overview, digestive-system-explained, skin-care-and-conditions, first-aid-basics — confirmed to AVOID duplicating these broad topics.
+- Spot-checked existing batch-psychology.ts entries (psychology-memory, psychology-personality, psychology-mental-health, psychology-social-influence) to see exact pattern regexes — designed new deep entry patterns to target MORE SPECIFIC subtopic terms (e.g. `attribution theory|cognitive dissonance|groupthink|fundamental attribution error` rather than the existing `conformity|asch|milgram` so the deep entry complements rather than collides with the broad entry).
+- Spot-checked existing first-aid-basics entry in batch-health.ts (covers DRABC, CPR basics, choking, wounds, burns at a beginner level) — designed new `first-aid-detailed-procedures` entry to go DEEPER with step-by-step procedures (compression depth and rate, AED chain of survival, tourniquet technique, burn-degree classification, FAST stroke test, RICE for sprains, anaphylaxis/epinephrine) so the two entries complement rather than duplicate.
+- Spot-checked existing biology-deep human-brain-structure entry (covers cerebrum/cerebellum/brainstem/lobes/neurons/synapses at anatomy level) — designed new `neuropsychology-brain-neurotransmitters` entry to go DEEPER into neurotransmitters (dopamine/serotonin/GABA/glutamate), split-brain research (Sperry/Gazzaniga), neuroplasticity, and imaging modalities — non-overlapping focus.
+- Created /home/z/my-project/src/lib/triza-engine/batch-psychology-health-deep.ts with 12 NEW deeper subtopic entries (6 psychology + 6 health):
+  1. developmental-psychology-piaget-erikson (417 words) — Piaget's 4 stages (sensorimotor/preoperational/concrete/formal), Erikson's 8 psychosocial stages, Bowlby & Ainsworth attachment theory with Strange Situation
+  2. cognitive-psychology-perception-attention (457 words) — bottom-up vs top-down perception, Gestalt grouping, selective attention, dichotic listening, inattentional blindness, Atkinson-Shiffrin 3-store model, schemas, cognitive load theory, problem-solving
+  3. abnormal-psychology-dsm5 (450 words) — DSM-5 structure, GAD/panic/phobias, major depressive disorder/bipolar I/II, schizophrenia positive/negative/cognitive symptoms, biopsychosocial model
+  4. therapeutic-approaches-modalities (464 words) — CBT (Beck/Ellis), psychoanalysis (Freud), humanistic (Rogers), behavioral/exposure, ACT and DBT third-wave therapies — when each is used
+  5. social-psychology-attribution-dissonance (538 words) — attribution theory (Heider/Kelley), fundamental attribution error, Festinger's cognitive dissonance, Janis groupthink, group polarization, Tajfel social identity, Zimbardo Stanford Prison
+  6. neuropsychology-brain-neurotransmitters (585 words) — 4 cortical lobes + Broca/Wernicke, dopamine/serotonin/GABA/glutamate/norepinephrine/acetylcholine, Sperry-Gazzaniga split-brain, neuroplasticity, fMRI/EEG/PET imaging
+  7. nutrition-detailed-micronutrients (566 words) — fat-soluble (A/D/E/K) and water-soluble (B-complex/C) vitamins, major and trace minerals, deficiency diseases (scurvy/beriberi/pellagra/goiter/anemia), RDA and Tolerable Upper Intake
+  8. exercise-physiology-aerobic-anaerobic (527 words) — aerobic vs anaerobic energy systems, ATP-PCr/glycolytic, cardio zones, VO2 max, Type I/IIa/IIx muscle fibers, hypertrophy, DOMS, overtraining syndrome
+  9. sleep-science-cycles-circadian (541 words) — N1/N2/N3/REM sleep architecture, suprachiasmatic nucleus + melatonin, insomnia/CBT-I, obstructive sleep apnea/CPAP, narcolepsy, restless legs, sleep hygiene
+  10. mental-health-self-care-practices (594 words, intent='how_to') — mindfulness/MBSR, box breathing/4-7-8, Pennebaker expressive writing, gratitude journaling, social connection (Harvard Study of Adult Development), progressive muscle relaxation, when to seek professional help
+  11. common-diseases-prevention-risk (607 words) — type 1 vs type 2 diabetes, hypertension/DASH, cardiovascular disease + INTERHEART 9 factors, cancer 4 categories + risk factors, autoimmune diseases (lupus/RA/MS/Hashimoto/celiac)
+  12. first-aid-detailed-procedures (712 words, intent='how_to') — CPR chain of survival + compression rate/depth, Heimlich for adults/infants, bleeding control + tourniquet, burn-degree classification, fracture splinting + RICE, FAST stroke test, anaphylaxis/epinephrine, when to call emergency
+- Each psychology entry uses topic='psychology'; each health entry uses topic='health'.
+- Entries 10 and 12 use intent='how_to' (procedural guidance); the other 10 use intent='factual_question'.
+- All 12 entries include `### Subheadings` and a closing `### Why It Matters` paragraph.
+- All 6 health entries include the "consult a doctor for diagnosis" reminder in the Why It Matters section (per task spec).
+- NO religious content, English only, no emojis — verified via ripgrep religious-word scan (zero matches) and ripgrep emoji-symbol scan (zero matches).
+- Ran `bunx eslint src/lib/triza-engine/batch-psychology-health-deep.ts` — exit code 0, ZERO errors, ZERO warnings (clean exit, no output).
+- Ran runtime verification via `bun -e "import {PSYCHOLOGY_HEALTH_DEEP_ENTRIES} from './src/lib/triza-engine/batch-psychology-health-deep'; ..."` — all 12 entries load successfully; all response() functions return valid multi-paragraph markdown strings; word counts range 417-712 words (10 entries within the 400-600 target, 2 slightly above for deeper procedural content — common-diseases at 607 and first-aid at 712, consistent with the precedent set in batch-physics-chem-deep where 3 entries went slightly above 600 for deeper coverage).
+- Did NOT wire the new batch into response-generator.ts KNOWLEDGE_BASE array — that integration step was not part of Task 6-f scope (only create the file). A future task will need to add the import and array spread.
+
+Stage Summary:
+- CREATED: /home/z/my-project/src/lib/triza-engine/batch-psychology-health-deep.ts (~470 lines, 12 KnowledgeEntry objects, ~6,400 words of deeper psychology + health content)
+- EXPORTED: PSYCHOLOGY_HEALTH_DEEP_ENTRIES: KnowledgeEntry[] (follows identical format to MATH_ENTRIES in batch-math.ts)
+- 12 entry IDs (all kebab-case):
+  - Psychology (6): developmental-psychology-piaget-erikson, cognitive-psychology-perception-attention, abnormal-psychology-dsm5, therapeutic-approaches-modalities, social-psychology-attribution-dissonance, neuropsychology-brain-neurotransmitters
+  - Health (6): nutrition-detailed-micronutrients, exercise-physiology-aerobic-anaerobic, sleep-science-cycles-circadian, mental-health-self-care-practices, common-diseases-prevention-risk, first-aid-detailed-procedures
+- Coverage: Piaget/Erikson/attachment, perception/attention/Atkinson-Shiffrin/schemas, DSM-5 anxiety/mood/psychotic disorders, 5 therapy modalities, attribution/dissonance/groupthink/social identity, brain lobes/neurotransmitters/split-brain/plasticity, vitamins+minerals+deficiency diseases, exercise energy systems+muscle fibers+overtraining, sleep architecture+circadian+disorders, mindfulness+breathing+journaling+social connection, diabetes/hypertension/CVD/cancer/autoimmune prevention, CPR+Heimlich+bleeding+burns+fractures+emergency recognition
+- ESLINT: PASS (exit code 0, zero errors, zero warnings)
+- RUNTIME: PASS — 12/12 entries load successfully; all return valid multi-paragraph markdown strings with ### Subheadings and ### Why It Matters closing paragraph; word counts 417-712
+- RELIGIOUS-WORD SCAN: PASS (clean, English only)
+- EMOJI SCAN: PASS (no emojis)
+- NO DUPLICATION with batch-psychology.ts or batch-health.ts — each new entry covers a DEEPER subtopic angle and uses more specific trigger patterns (e.g. deep entry triggers on `attribution theory|cognitive dissonance|groupthink` while existing social-influence entry triggers on `conformity|asch|milgram`; deep entry triggers on `dopamine|serotonin|GABA|split-brain` while existing human-brain-structure triggers on brain anatomy terms; deep nutrition entry triggers on `vitamin a|b12|scurvy|rickets` while existing nutrition-basics entry triggers on broad `nutrition|macronutrients` terms)
+- All 6 health entries include "consult a doctor" reminder in the Why It Matters paragraph (per task spec)
+- NOTE: PSYCHOLOGY_HEALTH_DEEP_ENTRIES is exported but NOT YET registered in any central knowledge-base aggregator. A follow-up wiring task should import and append PSYCHOLOGY_HEALTH_DEEP_ENTRIES alongside existing PSYCHOLOGY_ENTRIES and HEALTH_ENTRIES in response-generator.ts's KNOWLEDGE_BASE array so TRIZA can match these deeper subtopic questions at runtime.

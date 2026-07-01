@@ -70,6 +70,41 @@ import {
 import {
   CORE_ENTRIES,
 } from './batch-core'
+// Phase 4 batches — math, computing, psychology, space, business
+import {
+  MATH_ENTRIES,
+} from './batch-math'
+import {
+  COMPUTING_ENTRIES,
+} from './batch-computing'
+import {
+  PSYCHOLOGY_ENTRIES,
+} from './batch-psychology'
+import {
+  SPACE_ENTRIES,
+} from './batch-space'
+import {
+  BUSINESS_ENTRIES,
+} from './batch-business'
+// Phase 6 — deeper subtopic batches
+import {
+  BIOLOGY_DEEP_ENTRIES,
+} from './batch-biology-deep'
+import {
+  PHYSICS_CHEM_DEEP_ENTRIES,
+} from './batch-physics-chem-deep'
+import {
+  SPACE_DEEP_ENTRIES,
+} from './batch-space-deep'
+import {
+  COMPUTING_DEEP_ENTRIES,
+} from './batch-computing-deep'
+import {
+  MATH_DEEP_ENTRIES,
+} from './batch-math-deep'
+import {
+  PSYCHOLOGY_HEALTH_DEEP_ENTRIES,
+} from './batch-psychology-health-deep'
 
 // Assemble the full knowledge base (mirrors response-generator.ts)
 const KNOWLEDGE_BASE: KnowledgeEntry[] = [
@@ -85,6 +120,17 @@ const KNOWLEDGE_BASE: KnowledgeEntry[] = [
   ...ENTERTAINMENT_ENTRIES,
   ...PHILOSOPHY_ENTRIES,
   ...SOCIETY_ENTRIES,
+  ...MATH_ENTRIES,
+  ...COMPUTING_ENTRIES,
+  ...PSYCHOLOGY_ENTRIES,
+  ...SPACE_ENTRIES,
+  ...BUSINESS_ENTRIES,
+  ...BIOLOGY_DEEP_ENTRIES,
+  ...PHYSICS_CHEM_DEEP_ENTRIES,
+  ...SPACE_DEEP_ENTRIES,
+  ...COMPUTING_DEEP_ENTRIES,
+  ...MATH_DEEP_ENTRIES,
+  ...PSYCHOLOGY_HEALTH_DEEP_ENTRIES,
   ...CORE_ENTRIES,
 ]
 

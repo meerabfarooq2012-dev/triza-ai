@@ -84,6 +84,29 @@ import {
 import {
   BUSINESS_ENTRIES,
 } from './batch-business'
+// Phase 6 — deeper subtopic batches: DNA types, RNA types, quantum
+// mechanics, relativity, sorting algorithms, etc. Each adds 10-15
+// detailed entries going ONE LEVEL DEEPER than the broad batches
+// above (e.g. A/B/Z-DNA forms below general "dna-and-genes";
+// sorting algorithms below general "computing-algorithms").
+import {
+  BIOLOGY_DEEP_ENTRIES,
+} from './batch-biology-deep'
+import {
+  PHYSICS_CHEM_DEEP_ENTRIES,
+} from './batch-physics-chem-deep'
+import {
+  SPACE_DEEP_ENTRIES,
+} from './batch-space-deep'
+import {
+  COMPUTING_DEEP_ENTRIES,
+} from './batch-computing-deep'
+import {
+  MATH_DEEP_ENTRIES,
+} from './batch-math-deep'
+import {
+  PSYCHOLOGY_HEALTH_DEEP_ENTRIES,
+} from './batch-psychology-health-deep'
 import {
   CORE_ENTRIES,
 } from './batch-core'
@@ -170,12 +193,9 @@ type SleepLayer = {
 
 const KNOWLEDGE_BASE: KnowledgeEntry[] = [
   ...ARTS_ENTRIES,
-  ...BIOLOGY_ENTRIES,
   ...GEOGRAPHY_ENTRIES,
-  ...PHYSICS_CHEM_ENTRIES,
   ...DAILY_LIFE_ENTRIES,
   ...HISTORY_ENTRIES,
-  ...HEALTH_ENTRIES,
   ...TECHNOLOGY_ENTRIES,
   ...NATURE_ENTRIES,
   ...ENTERTAINMENT_ENTRIES,
@@ -184,10 +204,31 @@ const KNOWLEDGE_BASE: KnowledgeEntry[] = [
   // Phase 4 knowledge expansion: math, computing, psychology,
   // astronomy, economics/finance/business (~50+ new entries).
   ...MATH_ENTRIES,
-  ...COMPUTING_ENTRIES,
   ...PSYCHOLOGY_ENTRIES,
   ...SPACE_ENTRIES,
   ...BUSINESS_ENTRIES,
+  // Phase 6 — deeper subtopic entries: DNA types, RNA types,
+  // mutations, quantum mechanics, relativity, sorting algorithms,
+  // derivatives, integration, developmental psychology, nutrition
+  // details, etc. These go ONE LEVEL DEEPER than the broad batches
+  // above (~76 new entries). Placed BEFORE the broad biology,
+  // physics-chem, computing, and health batches so a SPECIFIC deep
+  // entry (e.g. "dna-types-structure" matching "types of DNA") is
+  // checked before the broad entry (e.g. "dna-and-genes" matching
+  // "dna") — when both hit on regex, array order is the FINAL
+  // tie-breaker after score/overlap, so deep-first ordering lets
+  // the more specific entry win on near-ties.
+  ...BIOLOGY_DEEP_ENTRIES,
+  ...PHYSICS_CHEM_DEEP_ENTRIES,
+  ...SPACE_DEEP_ENTRIES,
+  ...COMPUTING_DEEP_ENTRIES,
+  ...MATH_DEEP_ENTRIES,
+  ...PSYCHOLOGY_HEALTH_DEEP_ENTRIES,
+  // Broad batches come AFTER deep so deep wins on tie.
+  ...BIOLOGY_ENTRIES,
+  ...PHYSICS_CHEM_ENTRIES,
+  ...COMPUTING_ENTRIES,
+  ...HEALTH_ENTRIES,
   // CORE must be last — it contains greetings, identity, and
   // the catch-all fallback that matches everything.
   ...CORE_ENTRIES,
@@ -600,6 +641,13 @@ function searchKnowledgeBase(message: string): SearchResult[] {
   if (useNormalized) {
     for (const t of tokenize(normalized)) msgTokensSet.add(t)
   }
+  // Pre-compute a stable insertion-order index for each entry so the
+  // final tie-breaker respects KNOWLEDGE_BASE array order (deep
+  // entries placed before broad entries win near-ties) instead of
+  // lexicographic id order (which favored short ids like
+  // "computing-algorithms" over "computing-deep-sorting-algorithms").
+  const entryOrder = new Map<string, number>()
+  KNOWLEDGE_BASE.forEach((e, idx) => entryOrder.set(e.id, idx))
   results.sort((a, b) => {
     if (b.weightedScore !== a.weightedScore) return b.weightedScore - a.weightedScore
     if (b.score !== a.score) return b.score - a.score
@@ -611,7 +659,10 @@ function searchKnowledgeBase(message: string): SearchResult[] {
       .split(/[^a-z0-9]+/)
       .some((w) => w.length > 3 && msgTokensSet.has(w))
     if (aIdSpecific !== bIdSpecific) return aIdSpecific ? -1 : 1
-    return a.entry.id.localeCompare(b.entry.id)
+    // Final tie-breaker: array insertion order (deep before broad).
+    const aIdx = entryOrder.get(a.entry.id) ?? Number.MAX_SAFE_INTEGER
+    const bIdx = entryOrder.get(b.entry.id) ?? Number.MAX_SAFE_INTEGER
+    return aIdx - bIdx
   })
 
   return results

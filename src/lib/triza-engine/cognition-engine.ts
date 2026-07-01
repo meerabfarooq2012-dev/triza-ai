@@ -444,6 +444,26 @@ export function runCognition(message: string, conversationId?: string): Cognitio
     'galaxy', 'planet', 'star', 'algebra', 'geometry', 'calculus',
     'statistics', 'probability', 'algorithm', 'data', 'encryption',
     'memory', 'emotion', 'personality', 'motivation',
+    // Phase 6 — deeper subtopic concept names (DNA types, RNA,
+    // mutations, chromosomes, quantum, relativity, derivatives,
+    // integration, vectors, matrices, hormones, neurons, etc.)
+    'dna', 'rna', 'gene', 'mutation', 'chromosome', 'crispr',
+    'respiration', 'meiosis', 'mitosis', 'hormone', 'blood',
+    'brain', 'neuron', 'stem', 'immune', 'ecology',
+    'quark', 'nuclear', 'quantum', 'relativity', 'thermodynamics',
+    'spectrum', 'reaction', 'organic', 'periodic', 'bonding',
+    'acid', 'base', 'electrochemistry', 'fluid', 'optics', 'sound',
+    'stellar', 'exoplanet', 'dark', 'neutron', 'pulsar', 'quasar',
+    'asteroid', 'comet', 'atmosphere', 'galaxy cluster',
+    'sorting', 'searching', 'complexity', 'recursion', 'pattern',
+    'git', 'protocol', 'database', 'web', 'cloud', 'cybersecurity',
+    'machine learning', 'neural',
+    'equation', 'polynomial', 'coordinate', 'vector', 'matrix',
+    'limit', 'derivative', 'integration', 'distribution',
+    'inference', 'hypothesis',
+    'developmental', 'cognitive', 'abnormal', 'therapy', 'social',
+    'neuropsychology', 'neurotransmitter', 'nutrition', 'exercise',
+    'sleep', 'disease', 'first aid',
   ]
   const matchedConcept = labelObservation(observation, allConcepts) || 'thing'
   const conceptLevel = abstractionLadder.levelOf(matchedConcept)
