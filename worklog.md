@@ -3132,3 +3132,28 @@ Stage Summary:
   3. Did NOT touch any `patterns: [...]` regex arrays (still contain Roman Urdu trigger keywords like zukam, teeka, ghiza, warzish, neend, hazma, jild, etc.) — task explicitly said to keep patterns unchanged so TRIZA can still match bilingual user queries.
 - Grep check PASSED for all 3 files (zero religion words).
 - No structural changes: every file still has 15 entries with intact id/patterns/intent/topic, and the original `export const ..._ENTRIES: KnowledgeEntry[] = [...]` declaration is preserved.
+
+---
+Task ID: DEPLOY-1
+Agent: Main Agent
+Task: User asked "kya app ne is ko vercel per deploy kiya hai ke nahi" (have you deployed to Vercel) and specified repo "meerabfarooq2012-dev/triza-ai" for pushing code.
+
+Work Log:
+- Inspected git remote: was pointing to Marketo.git (wrong repo). Changed origin URL to triza-ai.git using same auth token.
+- Fetched triza-ai remote: found it ALREADY contains full TRIZA code (10+ commits ahead of old divergence point), including: feat(triza): English-first + religion-neutral, fix(proxy): same-origin CSRF, docs: Vercel deployment guide.
+- Common ancestor: 9a8034d. Local had 1 trivial commit (dev.pid only). Remote had 10+ TRIZA-specific commits.
+- Rebased local onto origin/main: git auto-dropped trivial local commit (content already upstream). Local now = remote at 781c0f1.
+- Audited triza-engine after rebase: 17 files present in src/lib/triza-engine/ (knowledge batches: arts/biology/core/daily-life/entertainment/geography/health/history/nature/philosophy/physics-chem/society/technology + response-generator.ts + self-expression.ts + sanitize.ts + types.ts). TRINITY architecture intact in src/components/trinity/ (4 files). Browser version in src/lib/trinity-browser/ (4 files).
+- Verified chat-engine.ts: CLEAN — header says "NO EXTERNAL AI APIs. Zero LLM cloud calls", imports generateResponse from @/lib/triza-engine/response-generator. No z-ai-web-dev-sdk in chat path.
+- Verified triza-landing.tsx badges: ['CPU-first', 'No external APIs', '100% transparent', 'Religion-neutral'] — correct, no LLM badges.
+- z-ai-web-dev-sdk only remains in: src/lib/ai-provider.ts and src/app/api/feedback/route.ts (NOT in chat path).
+- Push status: local HEAD = origin/main = 781c0f1. Nothing new to push — code already on triza-ai repo.
+- Started dev server (setsid, port 3000). Verified via Agent Browser: TRIZA landing page renders with HTTP 200. Page shows: hero "An AI that shows its work", description "transparent, CPU-first AI built from scratch. No black box, no borrowed models", 4 correct badges, live demo with mood/intent/confidence/steps, "Three minds. One brain." architecture section, feedback buttons.
+
+Stage Summary:
+- triza-ai repo ALREADY has all TRIZA code (pushed in previous session). Local now synced via rebase.
+- NO new push needed — local and remote identical at 781c0f1.
+- TRIZA landing page verified rendering correctly in browser: CPU-first branding, no LLM badges, transparent AI demo working.
+- TRIZA architecture 100% intact: 17 engine files + TRINITY (graph+HDC+Bayesian) + browser version.
+- Chat engine is clean (no external LLM) — uses local response-generator.
+- For Vercel deploy: user needs to import triza-ai repo on vercel.com (code is ready). vercel.json configured with Next.js + Prisma build.
