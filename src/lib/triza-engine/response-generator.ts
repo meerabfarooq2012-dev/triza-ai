@@ -747,8 +747,10 @@ export async function generateResponse(
   const keyPrincipleSteps = cognitionSignal.steps.filter(s =>
     s.startsWith('P14') || s.startsWith('P4') || s.startsWith('P6') ||
     s.startsWith('P15') || s.startsWith('P37') || s.startsWith('P1 ') ||
-    s.startsWith('P17') || s.startsWith('P12')
-  ).slice(0, 5)
+    s.startsWith('P17') || s.startsWith('P12') ||
+    s.startsWith('P19') || s.startsWith('P22') || s.startsWith('P25') ||
+    s.startsWith('P26') || s.startsWith('P32') || s.startsWith('P38')
+  ).slice(0, 16)
   steps.push(...keyPrincipleSteps)
 
   // 3.7. P28 Nocturnal-Replay — surface the background scheduler's
@@ -1363,6 +1365,50 @@ function finalize(
       `P29 drove depth: ${cogPhase.phase} (multiplier ${cogPhase.multiplier}) — ${depthLabel}`,
     )
 
+    // ─── WIRE-UP 11: P26 Affordance → response format ──────
+    // AFFORDANCE FILTERING DRIVES RESPONSE FORMAT. The selected
+    // action shapes HOW TRIZA answers (operates on main content
+    // BEFORE the clarifying prefix and suggestion suffix are added):
+    //   answer-concisely    → cap at 2 sentences
+    //   answer-stepwise     → prepend "Here's the approach: "
+    //   answer-with-example → (appended later, after suggestion)
+    //   greet-warmly        → prepend "Great to hear from you! "
+    //   answer-about-self   → skip (P14 handles first-person)
+    //   answer-casual/normal → no format change
+    const selectedAction = cognition.layers.output.selectedAction
+    if (selectedAction === 'answer-concisely') {
+      const s = sanitizedText.split(/(?<=[.!?])\s+/).filter((x) => x.trim().length > 0)
+      if (s.length > 2) {
+        sanitizedText = s.slice(0, 2).join(' ')
+        steps.push(`P26 drove format: answer-concisely → 2-sentence cap`)
+      }
+    } else if (selectedAction === 'answer-stepwise') {
+      sanitizedText = `Here's the approach: ` + sanitizedText
+      steps.push(`P26 drove format: answer-stepwise → prepended approach marker`)
+    } else if (selectedAction === 'greet-warmly') {
+      sanitizedText = `Great to hear from you! ` + sanitizedText
+      steps.push(`P26 drove format: greet-warmly → prepended greeting`)
+    }
+
+    // ─── WIRE-UP 9: P22 Deferred Imitation → style mirroring ─
+    // DEFERRED IMITATION DRIVES RESPONSE BREVITY. When an imitation
+    // buffer is ready for replay, TRIZA mirrors the user's message
+    // style: if the user was brief (≤ 1 sentence), TRIZA keeps its
+    // answer concise (≤ 2 sentences). Runs on main content BEFORE
+    // the clarifying prefix is prepended so it shapes the answer,
+    // not the question.
+    const imitationReady = cognition.layers.output.imitationReady
+    if (imitationReady) {
+      const userSentences = userMessage.split(/(?<=[.!?])\s+/).filter((x) => x.trim().length > 0)
+      if (userSentences.length <= 1) {
+        const s = sanitizedText.split(/(?<=[.!?])\s+/).filter((x) => x.trim().length > 0)
+        if (s.length > 2) {
+          sanitizedText = s.slice(0, 2).join(' ')
+          steps.push(`P22 drove brevity: mirrored user's 1-sentence style → truncated to 2 sentences`)
+        }
+      }
+    }
+
     // ─── WIRE-UP 2: P37 Confidence < 0.4 → clarifying question
     // META-COGNITION DRIVES CLARIFICATION.
     //
@@ -1400,16 +1446,89 @@ function finalize(
     // user. Now we parse the goal verb + subject and rewrite it using
     // the real matched KB entry's topic domain so the suggestion is
     // concrete and useful: "Want me to explore more about photosynthesis?"
+    // ─── WIRE-UP 10: P25 Curriculum → ordered next-topic ─────
+    // P25 CURRICULUM SEQUENCING ENHANCES THE SUGGESTION. When the
+    // cognition engine computed a curriculum-ordered next item, use
+    // it INSTEAD of the raw topGoal. This makes P25 actually drive
+    // the conversation path — the user is guided through topics in
+    // easy-first curriculum order, not a random goal-queue target.
     const topGoal = cognition.layers.topGoal
-    if (topGoal) {
+    const curriculumNext = cognition.layers.output.curriculumNext
+    if (curriculumNext) {
+      const suggestion = `Want me to explore ${curriculumNext} next? It's the natural next step.`
+      sanitizedText = sanitizedText + `\n\n💡 ${suggestion}`
+      steps.push(`P25 drove suggestion (curriculum-ordered): "${suggestion}"`)
+    } else if (topGoal) {
       const suggestion = formatGoalSuggestion(topGoal, topicDomain, matchedEntryId)
       if (suggestion) {
-        sanitizedText =
-          sanitizedText +
-          `\n\n💡 ${suggestion}`
-        steps.push(
-          `P10 drove suggestion: "${suggestion}"`,
-        )
+        sanitizedText = sanitizedText + `\n\n💡 ${suggestion}`
+        steps.push(`P10 drove suggestion: "${suggestion}"`)
+      }
+    }
+
+    // P26 answer-with-example → append example offer (after main
+    // content + suggestion so it reads as a standalone follow-up).
+    if (selectedAction === 'answer-with-example') {
+      sanitizedText = sanitizedText + `\n\nWould a concrete example help? I can walk through one.`
+      steps.push(`P26 drove format: answer-with-example → appended example offer`)
+    }
+
+    // ─── WIRE-UP 8: P19 Borrowed Emotion → tone blend ──────
+    // SOCIAL REFERENCING DRIVES TONE. When TRIZA was uncertain and
+    // borrowed emotion from the user, the borrowed value noticeably
+    // shifts the response tone. If the user's emotion is more
+    // positive than TRIZA's own → warm opener. More negative →
+    // empathetic hedge. The borrowing weight is 0.3 (trust 0.6 ×
+    // 0.5), so borrowed shifts by at most 0.3 × userEmotion. A
+    // threshold of 0.15 fires for genuinely emotional messages
+    // (userEmotion > 0.5) while ignoring tiny fluctuations. Prepended
+    // AFTER P37 so the tone opener wraps the clarifying question too.
+    const ownEmotion = cognition.layers.emotion.value
+    const borrowed = cognition.layers.emotion.borrowedEmotion
+    if (borrowed !== null && Math.abs(borrowed - ownEmotion) > 0.15) {
+      if (borrowed > ownEmotion) {
+        sanitizedText = `I'm picking up on your energy here — ` + sanitizedText
+        steps.push(`P19 drove tone: warm opener (borrowed ${borrowed.toFixed(2)} > own ${ownEmotion.toFixed(2)})`)
+      } else {
+        sanitizedText = `I sense this might feel uncertain — ` + sanitizedText
+        steps.push(`P19 drove tone: empathetic hedge (borrowed ${borrowed.toFixed(2)} < own ${ownEmotion.toFixed(2)})`)
+      }
+    }
+
+    // ─── WIRE-UP 12: P32 Counterfactual → what-if reflection ─
+    // COUNTERFACTUAL REASONING DRIVES A VISIBLE REFLECTION. When
+    // P32's regret-mode fired (low attention → TRIZA considered
+    // alternatives), append a reflection so the user sees TRIZA
+    // weighed other angles. This makes the counterfactual lesson
+    // VISIBLE in the response, not just a transparency log.
+    const cfLesson = cognition.layers.reasoning.counterfactualLesson
+    if (cfLesson) {
+      sanitizedText = sanitizedText + `\n\n💭 I considered a few angles before answering — there may be more to explore here.`
+      steps.push(`P32 drove reflection: appended what-if note (lesson: "${cfLesson.slice(0, 40)}")`)
+    }
+
+    // ─── WIRE-UP 13: P38 Triangulation → confidence calibration ─
+    // MULTI-MODAL BINDING DRIVES CONFIDENCE CALIBRATION. When the
+    // text + structure modalities AGREE (≥ 2 confirmed features, 0
+    // conflicts), TRIZA is more certain → boost confidence. When
+    // they DISAGREE (conflicts > 0), TRIZA is less certain →
+    // penalize. This makes triangulation actually calibrate TRIZA's
+    // reported certainty, not just log a transparency step.
+    const tri = cognition.layers.reasoning.triangulation
+    if (tri) {
+      // With 2 modalities (text + structure), a feature is "confirmed"
+      // when it appears in BOTH. So confirmed ∈ {0, 1}. The boost fires
+      // when ANY feature is triangulated (confirmed ≥ 1, 0 conflicts) —
+      // even one cross-modal agreement raises TRIZA's certainty.
+      if (tri.confirmed >= 1 && tri.conflicts === 0) {
+        const orig = finalConfidence
+        finalConfidence = Math.min(1, finalConfidence + 0.08)
+        steps.push(`P38 drove confidence boost: ${orig.toFixed(2)} → ${finalConfidence.toFixed(2)} (${tri.confirmed} features confirmed, 0 conflicts)`)
+      } else if (tri.conflicts > 0) {
+        const orig = finalConfidence
+        const penalty = Math.min(0.15, tri.conflicts * 0.05)
+        finalConfidence = Math.max(0, finalConfidence - penalty)
+        steps.push(`P38 drove confidence penalty: ${orig.toFixed(2)} → ${finalConfidence.toFixed(2)} (${tri.conflicts} modality conflicts)`)
       }
     }
   }

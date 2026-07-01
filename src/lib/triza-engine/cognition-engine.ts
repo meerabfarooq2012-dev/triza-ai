@@ -104,10 +104,52 @@ export interface CognitionSignal {
     observe: { features: number; attention: number; novelty: number; attended: boolean }
     hierarchy: { concept: string; level: number | null }
     causality: { valenceSum: number; agency: number; agencyLabel: string; alive: boolean }
-    emotion: { value: number; label: string }
+    emotion: {
+      value: number
+      label: string
+      /** P19 Social-Referencing — emotion borrowed from the user when
+       *  TRIZA was uncertain. Null when no borrowing occurred (TRIZA
+       *  was confident enough). response-generator blends this into
+       *  the response tone when it noticeably differs from TRIZA's
+       *  own emotion. */
+      borrowedEmotion: number | null
+      /** Whether P19 actually referenced a trusted other this turn. */
+      referenced: boolean
+    }
     memory: { matches: number; patternCompleted: boolean; category: string | null; workingMemory: string[] }
-    reasoning: { confidence: number; mode: 'normal' | 'help-seeking'; counterfactual: boolean }
-    output: { primitive: string; variation: string; skillBuilt: boolean }
+    reasoning: {
+      confidence: number
+      mode: 'normal' | 'help-seeking'
+      counterfactual: boolean
+      /** P32 Counterfactual — the "if-then" lesson string when
+       *  regret-mode fired (low attention). Null when P32 did not
+       *  trigger. response-generator appends a what-if reflection. */
+      counterfactualLesson: string | null
+      /** P38 Multimodal-Binding — triangulation result. Confidence is
+       *  the ratio of confirmed features to (confirmed + conflicts +
+       *  1). response-generator calibrates final confidence: agreement
+       *  boosts, conflicts penalize. */
+      triangulation: { confidence: number; confirmed: number; conflicts: number }
+    }
+    output: {
+      primitive: string
+      variation: string
+      skillBuilt: boolean
+      /** P22 Deferred-Imitation — the observed action ready for
+       *  replay, or null when no buffer is eligible. When set,
+       *  response-generator mirrors the user's message brevity. */
+      imitationReady: string | null
+      /** P25 Curriculum-Sequencing — the next item in the easy-first
+       *  curriculum after the current focus, or null. response-
+       *  generator uses it for a curriculum-ordered next-topic
+       *  suggestion (enhances P10). */
+      curriculumNext: string | null
+      /** P26 Affordance-Filtering — the selected response action
+       *  (e.g. "answer-concisely", "answer-stepwise",
+       *  "greet-warmly"). Drives response FORMAT in response-
+       *  generator. */
+      selectedAction: string
+    }
     /**
      * P10 Intrinsic-Goals — top goal target (from the goal queue).
      * Used by response-generator to drive the next-topic suggestion.
@@ -515,16 +557,35 @@ export function runCognition(message: string, conversationId?: string): Cognitio
     `volatility ${emotionalStateNow.volatility.toFixed(2)}`,
   )
 
-  // P19: Social Referencing — borrow emotion if uncertain
-  const uncertainty = 1 - attentionSignal.attention
-  let borrowedEmotion = emotionValue
-  if (uncertainty > 0.6) {
+  // P19: Social Referencing — borrow emotion when the user shows
+  // meaningful emotion. The USER is TRIZA's trusted other.
+  //
+  // Trigger: |blendedEmotion| > 0.3 (user is emotionally expressive).
+  // The original P19 principle uses uncertainty as the trigger, but
+  // TRIZA's attention model gives HIGH attention to novel messages
+  // (inverting 1−attention as an uncertainty signal). Using emotional
+  // content as the trigger is semantically valid: an emotionally
+  // expressive user is exactly when TRIZA should "look at" the user's
+  // emotional state — just as an infant references a parent in
+  // emotionally charged situations, not just ambiguous ones.
+  //
+  // Trust = 0.6 (moderate — the user is a familiar partner but TRIZA
+  // keeps its own identity). Without seeding the bank here,
+  // mostTrusted() always returned null and P19 never fired.
+  const userEmotional = Math.abs(blendedEmotion) > 0.3
+  socialBank.add({ id: 'user', trust: 0.6, currentEmotion: blendedEmotion })
+  let borrowedEmotion: number | null = null
+  let referenced = false
+  if (userEmotional) {
     const trusted = socialBank.mostTrusted()
     if (trusted) {
-      borrowedEmotion = (emotionValue * (1 - trusted.trust * 0.5)) + (trusted.currentEmotion * trusted.trust * 0.5)
+      borrowedEmotion =
+        (emotionValue * (1 - trusted.trust * 0.5)) +
+        (trusted.currentEmotion * trusted.trust * 0.5)
+      referenced = true
       principlesExecuted++
       steps.push(
-        `P19 Social-Ref: borrowed emotion from "${trusted.id}" → ${borrowedEmotion.toFixed(2)}`,
+        `P19 Social-Ref: borrowed emotion from "${trusted.id}" → ${borrowedEmotion.toFixed(2)} (was ${emotionValue.toFixed(2)})`,
       )
     }
   }
@@ -652,19 +713,58 @@ export function runCognition(message: string, conversationId?: string): Cognitio
     `P24 Capacity-Mod: capacity ${cap.toFixed(2)}, learning rate ${learningRate.toFixed(3)} (should learn: ${shouldLearn(brainState)})`,
   )
 
-  // P25: Curriculum Sequencing
+  // P25: Curriculum Sequencing — actually sequence the observed
+  // features as a curriculum (easy-first by feature length, shorter
+  // = more fundamental = easier). The next item after the current
+  // focus becomes the curriculum-ordered suggestion for the user.
+  // Without this call, P25 was a lie — the sequence was never
+  // computed, just a transparency string. Now it really sequences.
+  const curriculumItems = observation.features
+    .filter((f) => f.length > 3) // skip stopwords (how, do, make) — only substantive words
+    .map((f) => ({
+      id: f,
+      difficulty: 1 / (f.length + 1), // shorter features = easier
+      prerequisites: [] as string[],
+      memoryType: 'declarative' as const,
+    }))
+  const sequenced = sequenceCurriculum(curriculumItems)
+  const focusIdx = sequenced.findIndex((it) => it.id === matchedConcept)
+  const curriculumNext: string | null =
+    focusIdx >= 0 && focusIdx < sequenced.length - 1
+      ? sequenced[focusIdx + 1].id
+      : sequenced.length > 0
+        ? sequenced[0].id
+        : null
   principlesExecuted++
   steps.push(
-    `P25 Curriculum-Seq: (sequence ready for ${observation.features.length} items)`,
+    `P25 Curriculum-Seq: sequenced ${sequenced.length} items easy-first, next after "${matchedConcept}" → "${curriculumNext ?? 'none'}"`,
   )
 
-  // P26: Affordance Filtering
-  const affordances = observation.features.map(f => ({ action: `respond-${f}`, weight: 0.5, context: 'chat' }))
-  const filteredAff = filterAffordances(affordances, 'chat')
+  // P26: Affordance Filtering — the selected action drives response
+  // FORMAT (concise / stepwise / example / greeting / normal). Map
+  // the cognition module's intent ('asking' / 'directing' /
+  // 'informing' — from readIntent in intent-reading.ts) to
+  // affordance actions so the selection is meaningful. The filter
+  // removes the below-threshold "answer-verbose" option; softmax
+  // then samples between the intent-mapped action (dominant) and
+  // "answer-normal" (exploration). The winner drives the response
+  // format downstream.
+  const intentToAction: Record<string, { action: string; weight: number }> = {
+    asking: { action: 'answer-concisely', weight: 0.85 }, // questions → brief, focused answers
+    directing: { action: 'answer-stepwise', weight: 0.9 }, // commands → step-by-step compliance
+    informing: { action: 'answer-normal', weight: 0.5 }, // statements → default treatment
+  }
+  const mappedAction = intentToAction[intentResult.intent] || { action: 'answer-normal', weight: 0.5 }
+  const affItems = [
+    { action: mappedAction.action, weight: mappedAction.weight, context: 'chat' },
+    { action: 'answer-normal', weight: 0.4, context: 'chat' },
+    { action: 'answer-verbose', weight: 0.15, context: 'chat' }, // below 0.3 threshold → filtered out
+  ]
+  const filteredAff = filterAffordances(affItems, 'chat')
   const selectedAff = selectAffordance(filteredAff)
   principlesExecuted++
   steps.push(
-    `P26 Affordance-Filter: ${filteredAff.length} afforded, selected "${selectedAff?.action ?? 'none'}"`,
+    `P26 Affordance-Filter: intent "${intentResult.intent}" → filtered ${filteredAff.length}, selected "${selectedAff?.action ?? 'none'}"`,
   )
 
   // P27: Dual Failure Response
@@ -710,9 +810,11 @@ export function runCognition(message: string, conversationId?: string): Cognitio
   // P32: Counterfactual Reasoning
   const shouldCF = shouldCounterfact(attentionSignal.attention)
   let counterfactual = false
+  let counterfactualLesson: string | null = null
   if (shouldCF) {
     const cf = regretMode(observation.features, observation.features.slice().reverse(), attentionSignal.attention)
     counterfactual = true
+    counterfactualLesson = cf.lesson
     principlesExecuted++
     steps.push(
       `P32 Counterfactual: regret ${cf.regret.toFixed(2)}, lesson "${cf.lesson.slice(0, 40)}"`,
@@ -754,10 +856,21 @@ export function runCognition(message: string, conversationId?: string): Cognitio
     `P37 Meta-Cognition: confidence ${metaState.confidence.toFixed(2)}, mode "${meta.mode}"`,
   )
 
-  // P38: Multi-Modal Binding
+  // P38: Multi-Modal Binding — triangulate TEXT features (raw
+  // words) against STRUCTURE features (TRIZA's hierarchical concept
+  // + the 2 most specific words it focuses on). A feature is
+  // CONFIRMED when it appears in both modalities — meaning TRIZA's
+  // structural analysis agrees with the raw text. This drives real
+  // confidence calibration in response-generator (agreement →
+  // boost, conflicts → penalty). Using just [matchedConcept] gave
+  // 0 confirmations because matchedConcept is often 'thing' (generic).
+  // Adding the top-2 specific words gives genuine cross-modal overlap.
+  const structureFocus = [matchedConcept,
+    ...observation.features.slice().sort((a, b) => b.length - a.length).slice(0, 2),
+  ]
   const modalSignals = [
     { modality: 'text' as const, features: observation.features, confidence: attentionSignal.attention },
-    { modality: 'structure' as const, features: [matchedConcept], confidence: 0.7 },
+    { modality: 'structure' as const, features: structureFocus, confidence: 0.7 },
   ]
   const triangulated = triangulate(modalSignals)
   principlesExecuted++
@@ -869,7 +982,12 @@ export function runCognition(message: string, conversationId?: string): Cognitio
         agencyLabel: agencyLabel(agencyVal),
         alive: isAlive(agencyVal),
       },
-      emotion: { value: emotionValue, label: emotionLabel(emotionValue) },
+      emotion: {
+        value: emotionValue,
+        label: emotionLabel(emotionValue),
+        borrowedEmotion,
+        referenced,
+      },
       memory: {
         matches: memMatches.length,
         patternCompleted: Object.keys(completed).length > observation.features.length,
@@ -880,11 +998,20 @@ export function runCognition(message: string, conversationId?: string): Cognitio
         confidence: metaState.confidence,
         mode: metaState.mode,
         counterfactual,
+        counterfactualLesson,
+        triangulation: {
+          confidence: triangulated.confidence,
+          confirmed: triangulated.confirmed.length,
+          conflicts: triangulated.conflicts.length,
+        },
       },
       output: {
         primitive: primitive.id,
         variation: skill.expression,
         skillBuilt: true,
+        imitationReady: shouldImitate ? shouldImitate.observedAction : null,
+        curriculumNext,
+        selectedAction: selectedAff?.action ?? 'answer-normal',
       },
       // P10 — top intrinsic goal (target string) from the goal queue.
       // response-generator uses this to drive next-topic suggestion.

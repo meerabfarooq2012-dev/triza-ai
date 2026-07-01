@@ -48,12 +48,26 @@ const POSITIVE_WORDS: ReadonlySet<string> = new Set([
   'good', 'great', 'happy', 'love', 'excellent', 'wonderful', 'amazing',
   'best', 'beautiful', 'kind', 'nice', 'thanks', 'thank', 'awesome',
   'brilliant', 'perfect', 'joy', 'hope', 'calm', 'win',
+  // Phase 3: expanded emotion lexicon so P4+EmotionalIdentity and
+  // P19 Social-Referencing fire for a wider range of emotional language.
+  'excited', 'thrilled', 'delighted', 'glad', 'grateful', 'proud',
+  'fantastic', 'superb', 'joyful', 'cheerful', 'pleased', 'content',
+  'enthusiastic', 'eager', 'passionate', 'inspired', 'motivated',
+  'hopeful', 'optimistic', 'positive', 'fun', 'enjoy', 'enjoying',
+  'loving', 'like', 'cool', 'wow', 'yay', 'celebrate', 'celebration',
 ]);
 
 const NEGATIVE_WORDS: ReadonlySet<string> = new Set([
   'bad', 'sad', 'hate', 'awful', 'terrible', 'worst', 'ugly', 'mean',
   'wrong', 'no', 'not', 'never', 'angry', 'fear', 'pain', 'hurt',
   'broken', 'fail', 'loss', 'lonely',
+  // Phase 3: expanded emotion lexicon.
+  'frustrated', 'upset', 'worried', 'confused', 'anxious', 'nervous',
+  'scared', 'afraid', 'disappointed', 'annoyed', 'irritated', 'stressed',
+  'overwhelmed', 'depressed', 'miserable', 'gloomy', 'exhausted',
+  'tired', 'bored', 'jealous', 'guilty', 'ashamed', 'embarrassed',
+  'concerned', 'troubled', 'difficult', 'hard', 'struggling', 'lost',
+  'hopeless', 'helpless', 'panic', 'dread', 'despair', 'sorrow', 'grief',
 ]);
 
 /**
