@@ -4352,3 +4352,172 @@ Stage Summary:
 - Verified: assistantMessageId now returns Prisma CUID (cm...) on Vercel. Reply stays in UI after conversation reload. Metadata (mood/intent/confidence/steps) displays correctly.
 - Local server also confirmed running (status 200 on localhost:3000).
 - Both local AND Vercel now fully functional — TRIZA replies persist correctly in both environments.
+
+---
+Task ID: 2e
+Agent: general-purpose
+Task: Create batch-business.ts with 10 economics/finance/business knowledge entries
+
+Work Log:
+- Read worklog.md and the existing batch-math.ts to learn the exact KnowledgeEntry format (header comment, import, exported constant array, id/patterns/keywords/intent/topic/response structure, multi-paragraph markdown with ### subheadings)
+- Confirmed the KnowledgeEntry schema from src/lib/triza-engine/types.ts (Intent union, topic: string, response: () => string)
+- Verified the file naming convention by listing existing batch-*.ts files in triza-engine (14 existing batches; business is the new 15th)
+- Created /home/z/my-project/src/lib/triza-engine/batch-business.ts exporting BUSINESS_ENTRIES: KnowledgeEntry[] with 10 entries:
+  1. economics-supply-demand (economics) — supply/demand, equilibrium, shifts vs movements, elasticity
+  2. economics-inflation (economics) — CPI, demand-pull/cost-push, hyperinflation, deflation, stagflation
+  3. finance-interest-rates (finance) — simple vs compound, APR/APY, central banks, monetary policy
+  4. finance-investing-stocks (finance) — stocks/bonds, mutual funds/ETFs/index funds, diversification, risk/return, compounding
+  5. business-entrepreneurship (business) — startup lifecycle, seed/Series A/B, VC, business plans, IPO
+  6. economics-gdp-growth (economics) — real vs nominal GDP, per capita, business cycle, recessions/depressions
+  7. finance-budgeting-saving (finance) — 50/30/20 rule, emergency fund, debt payoff, retirement savings (401k/IRA)
+  8. business-marketing-basics (business) — 4 Ps, target audience, branding, digital marketing/SEO, positioning
+  9. economics-trade-globalization (economics) — comparative advantage, tariffs, trade deficits, WTO, protectionism
+  10. finance-cryptocurrency (finance) — blockchain, Bitcoin, Ethereum, wallets, DeFi, risks/volatility
+- Each entry uses \b(...)\b/i word-boundary regex patterns, intent 'factual_question', the requested topic string, keywords array, and a ~400-600 word multi-paragraph markdown response with ### Subheadings and a "Why It Matters" close — no religious content, English only
+- Ran `bunx eslint src/lib/triza-engine/batch-business.ts` — passed with no errors and no warnings (clean exit, no output)
+
+Stage Summary:
+- File created: /home/z/my-project/src/lib/triza-engine/batch-business.ts
+- Entries: 10 (BUSINESS_ENTRIES: KnowledgeEntry[])
+- Topics covered: economics (4), finance (4), business (2) — all 10 topics from the task spec
+- Lint result: PASSED, zero errors / zero warnings
+- File follows the exact format of batch-math.ts and is ready to be imported into the TRIZA knowledge registry
+
+---
+Task ID: 2c
+Agent: general-purpose
+Task: Create batch-psychology.ts with 10 psychology knowledge entries
+
+Work Log:
+- Read /home/z/my-project/worklog.md to understand previous work context
+- Read /home/z/my-project/src/lib/triza-engine/batch-math.ts (310 lines, 12 entries) and /home/z/my-project/src/lib/triza-engine/types.ts to learn the exact KnowledgeEntry schema and response style (paragraph intro + ### Subheadings + Why It Matters closing)
+- Read /home/z/my-project/src/lib/triza-engine/batch-philosophy.ts header to understand existing related batches
+- Created /home/z/my-project/src/lib/triza-engine/batch-psychology.ts with 10 entries covering all requested topics: psychology-what-is, psychology-memory, psychology-learning, psychology-cognitive-biases, psychology-emotions, psychology-intelligence, psychology-personality, psychology-motivation, psychology-mental-health, psychology-social-influence
+- Each entry uses \b(...)\b/i regex patterns, includes bilingual (English + Roman Urdu) trigger phrases, sets intent:'factual_question' and topic:'psychology', and returns a multi-paragraph markdown response (392-547 words each) with 3-6 ### subheadings
+- Verified file with bunx eslint — zero errors, zero warnings
+- Verified at runtime with bun: all 10 entries load, all topics='psychology', all intents='factual_question', all response() functions return valid strings with proper subheadings
+- Cross-checked full project tsc --noEmit: no errors related to batch-psychology.ts
+- Appended this worklog entry in append mode
+
+Stage Summary:
+- Created /home/z/my-project/src/lib/triza-engine/batch-psychology.ts (~370 lines)
+- 10 KnowledgeEntry items exported as PSYCHOLOGY_ENTRIES, total ~4,500 words of educational content
+- Topics: psychology definition/history/branches, memory (STM/LTM/working, forgetting), learning (Pavlov/Skinner/Bandura), cognitive biases (confirmation/anchoring/availability/Dunning-Kruger), emotions (Ekman, regulation), intelligence (IQ, Gardner, fluid/crystallized, nature-nurture), personality (Big Five OCEAN), motivation (intrinsic/extrinsic, Maslow, dopamine, procrastination), mental health (anxiety/depression/stress/CBT, when to seek help), social influence (Asch/Milgram/bystander/Cialdini)
+- ESLint: clean (0 errors). TypeScript: clean. Runtime: 10/10 entries verified
+- No religious words; English only; format matches batch-math.ts exactly
+
+---
+Task ID: 2d
+Agent: general-purpose
+Task: Create batch-space.ts with 12 astronomy knowledge entries
+
+Work Log:
+- Read /home/z/my-project/worklog.md (4354 lines) to understand previous work — project is TRIZA transparent AI chatbot, Phase 1+2+3 complete, 236 KB entries across multiple batch-* files, 39 cognition principles all wired
+- Read /home/z/my-project/src/lib/triza-engine/batch-math.ts (310 lines) to learn the EXACT format: KnowledgeEntry import from ./types, exported CONST array, each entry has id/patterns/keywords/intent/topic/response, patterns use \b(...)\b/i word boundaries, responses are multi-paragraph markdown with ### subheadings, Roman Urdu keywords included
+- Read /home/z/my-project/src/lib/triza-engine/types.ts to confirm KnowledgeEntry interface (id: string, patterns: RegExp[], keywords?: string[], intent: Intent, topic: string, response: () => string)
+- Created /home/z/my-project/src/lib/triza-engine/batch-space.ts with 12 detailed astronomy entries:
+  1. space-solar-system (420 words) — Sun, 8 planets, asteroid belt, comets, Kuiper Belt, Oort Cloud
+  2. space-sun-stars (481 words) — nuclear fusion, main sequence, red giant, white dwarf, stellar nucleosynthesis
+  3. space-earth-moon (562 words) — axial tilt seasons, Moon phases, tides, solar/lunar eclipses
+  4. space-mars-planets (560 words) — Mercury, Venus, Earth, Mars detailed comparison
+  5. space-gas-giants (605 words) — Jupiter, Saturn, Uranus, Neptune, rings, Galilean moons, Titan
+  6. space-black-holes (576 words) — formation, event horizon, singularity, Hawking radiation, LIGO, EHT
+  7. space-galaxies (537 words) — Milky Way, spiral/elliptical/irregular types, Andromeda, Local Group
+  8. space-big-bang (587 words) — Hubble expansion, CMB, 13.8B year age, dark matter/dark energy
+  9. space-light-years-distance (581 words) — AU, light-year, parsec, parallax, standard candles, redshift ladder
+  10. space-telescopes (584 words) — reflecting/refracting, Hubble, JWST, ground-based adaptive optics
+  11. space-gravity (633 words) — Newton's law, general relativity, gravitational waves (LIGO 2015), orbits
+  12. space-space-exploration (705 words) — Apollo, ISS, Mars rovers, Voyager 1&2, Artemis
+- Caught a syntax error during write: entry #10 (telescopes) had `response: () \`...` missing the `=>` arrow — fixed via Edit
+- Ran eslint: `bunx eslint src/lib/triza-engine/batch-space.ts` → ZERO errors, ZERO warnings (clean exit, no output)
+- Ran runtime sanity check via bun: loaded SPACE_ENTRIES, confirmed all 12 entries load, all topic='astronomy', all intent='factual_question', all responses render successfully (420-705 words each, total 6,879 words)
+- Ran religious-word scan over all 12 responses (regex for god/allah/jesus/quran/bible/prayer/worship/religion/holy/sacred/divine etc.) → CLEAN, no matches
+- Note: `tsc --noEmit` reports a pre-existing project-level error "Cannot find type definition file for 'minimatch'" — this is unrelated to my file (it's a tsconfig implicit-types issue affecting all files) and does not affect eslint or runtime
+
+Stage Summary:
+- CREATED: /home/z/my-project/src/lib/triza-engine/batch-space.ts (~320 lines, 12 KnowledgeEntry objects, 6,879 words of astronomy content)
+- EXPORTED: SPACE_ENTRIES: KnowledgeEntry[] (follows identical format to MATH_ENTRIES in batch-math.ts)
+- COVERAGE: solar system, sun & stars, earth & moon, inner planets, gas giants, black holes, galaxies, big bang, distance measurement, telescopes, gravity, space exploration
+- Each entry: id (kebab-case space-*), patterns (1 regex with \b...\b/i word boundaries + Roman Urdu tokens), keywords (5-8 string array), intent='factual_question', topic='astronomy', response () => rich multi-paragraph markdown with ### Subheadings
+- ESLINT: PASS (0 errors, 0 warnings)
+- RELIGIOUS-WORD SCAN: PASS (clean)
+- NOTE: SPACE_ENTRIES is exported but NOT YET registered in any central knowledge-base index (no such step was requested in the task). If TRIZA's main KB loader enumerates batches, a follow-up wiring task may be needed to include SPACE_ENTRIES alongside MATH_ENTRIES/PHYSICS_CHEM_ENTRIES/etc.
+
+---
+Task ID: 2b
+Agent: general-purpose
+Task: Create batch-computing.ts with 12 computer-science knowledge entries
+
+Work Log:
+- Read /home/z/my-project/worklog.md to review prior work context (Task 1 sync-schema fix, Task 2 worklog start)
+- Read /home/z/my-project/src/lib/triza-engine/batch-math.ts (310 lines) and types.ts to learn the exact KnowledgeEntry schema, header comment style, regex pattern format, and markdown response conventions
+- Read /home/z/my-project/src/lib/triza-engine/batch-technology.ts and eslint.config.mjs to confirm lint rules are lenient (most rules disabled) and to avoid topic overlap
+- Created /home/z/my-project/src/lib/triza-engine/batch-computing.ts exporting COMPUTING_ENTRIES: KnowledgeEntry[] with 12 entries: computing-programming-basics, computing-algorithms, computing-data-structures, computing-variables-types, computing-functions-control-flow, computing-oop, computing-binary-bits, computing-internet-web, computing-databases, computing-operating-systems, computing-ai-ml-basics, computing-security-cryptography
+- Each entry uses \b(...)\b/i word-boundary regex patterns, intent 'factual_question', topic 'computing', and a multi-paragraph markdown response (~450-600 words) with ### subheadings; no religious language; English only
+- Ran `bunx eslint src/lib/triza-engine/batch-computing.ts` — exited with code 0, no errors or warnings
+
+Stage Summary:
+- File created: /home/z/my-project/src/lib/triza-engine/batch-computing.ts
+- Entries: 12 (verified via grep count)
+- Total file size: ~6,728 words
+- Lint result: PASS (exit code 0, zero output)
+- Format matches batch-math.ts exactly: same header block, import style, entry layout, response() arrow functions returning template-literal markdown
+- Note: COMPUTING_ENTRIES is exported but not yet imported into any aggregator (e.g. trinity-bridge.ts or response-generator.ts); a follow-up task should wire it into the knowledge base loader so TRIZA can actually match these entries
+
+---
+Task ID: phase4-1
+Agent: main
+Task: Phase 4 — (1) expand TRIZA's knowledge base, (2) make TRIZA speak from memory in its own natural voice (no templates). User said "app iss ki khowladge mai izafa karo aur us ko khud bolna bhi sekho ke jo woh yaad kare use apni tone mai discribe kare koi tepletes nahi".
+
+Work Log:
+- Audited current state: 13 batch-*.ts files (~236 entries), response-generator.ts uses expressInOwnVoice() persona wrapping on top of raw KB markdown (## headings, ### subheadings, - bullets, | tables |). Templates everywhere.
+- Created 5 new knowledge batches (parallel via subagents 2b/2c/2d/2e + main wrote 2a):
+  • batch-math.ts: 12 entries (numbers, arithmetic, fractions/decimals, algebra, geometry, calculus, statistics, probability, Pythagorean theorem, trigonometry, set theory/logic, mathematical constants)
+  • batch-computing.ts: 12 entries (programming basics, algorithms, data structures, variables/types, functions/control-flow, OOP, binary/bits, internet/web, databases, operating systems, AI/ML, security/cryptography)
+  • batch-psychology.ts: 10 entries (what-is, memory, learning, cognitive biases, emotions, intelligence, personality, motivation, mental health, social influence)
+  • batch-space.ts: 12 entries (solar system, sun/stars, earth/moon, rocky planets, gas giants, black holes, galaxies, big bang, light-years/distance, telescopes, gravity, space exploration)
+  • batch-business.ts: 10 entries (supply/demand, inflation, interest rates, investing/stocks, entrepreneurship, GDP/growth, budgeting/saving, marketing, trade/globalization, cryptocurrency)
+  Total: 56 new entries. All ~400-600 words, multi-paragraph markdown, English, religion-neutral.
+- Wired all 5 batches into KNOWLEDGE_BASE array in response-generator.ts (topic batches before CORE fallback). Expanded allConcepts list in cognition-engine.ts with new domain names (computing, programming, finance, business, galaxy, planet, star, algebra, geometry, calculus, statistics, probability, algorithm, encryption, memory, emotion, personality, motivation) so P15 retrieval boost + P2 hierarchy grounding recognize the new topics.
+- BUILT narrate-memory.ts (new module, ~560 lines) — the "khud bolna" engine:
+  • parseMarkdown(): splits raw KB text into structured blocks (title, heading, paragraph, bullets, table, separator)
+  • stripInline(): removes **bold**, *italic*, `code`, [links](url) markers
+  • 8 varied OPENERS ("The way I think about X is this.", "When X comes to mind, here's what I find myself remembering.", "Let me tell you how I've come to understand X.", etc.)
+  • 7 SECTION_TRANSITIONS ("On X:", "Now, X —", "As for X:", "Turning to X:", etc.)
+  • 8 BULLET_CONNECTORS ("First,", "Then,", "Also,", "And there's", etc.) join bullets into flowing sentences
+  • 7 REFLECTIONS ("What stays with me about X is...", "The part I find most striking is...", etc.) close the reply
+  • narrateBullets(): joins items with varied connectors, lowercases flow
+  • narrateTable(): describes table in narrative form ("If you look across X and Y, you see: ...")
+  • narrateParagraph(): strips markdown, preserves labeled paragraphs ("Why it matters: ...")
+  • narrateFromMemory(): main exported function — assembles opener + body + reflection
+  • Conversational intents (greeting/identity/support) SKIP narration (their raw responses are already natural)
+  • Heading transitions ending in comma/colon are MERGED into the next content block (no hanging commas)
+  • Deterministic seed from message+topic → same question gets same voice shape, different questions get variety
+  • Defensive type guards (table cell coercion, parts type-check filter) prevent crashes
+- WIRED narrateFromMemory into safeExpress() in response-generator.ts:
+  • Runs BEFORE expressInOwnVoice()
+  • If narration applied (persona='narrator'), skip persona intro/reflection layer (redundant); still apply P4+ mood prepend + exclamation-density modulation
+  • If narration skipped (conversational intent), fall through to original expressInOwnVoice persona-wrapping path unchanged
+- NARRATOR-AWARE SENTENCE CAPS in finalize():
+  • Old 2-sentence caps (designed for bullet-heavy templates) would chop rich narration to nothing
+  • Narrated responses use 8-sentence cap for P29 trough / P26 answer-concisely / SLEEP detailDepth
+  • P22 imitation mirrors at 4 sentences for narrated (vs 2 for templated) so user brevity still respected
+- Lint: 1 pre-existing error (use-google-auth-callback.ts, unrelated). My code clean.
+- Committed: ce4ea0c (8 files: 6 new + 2 modified, +3500 lines)
+- Pushed: 5e3c20d..ce4ea0c main -> main → Vercel auto-deploy triggered
+- Live verification (curl + browser on BOTH local + Vercel):
+  • Algebra (new math knowledge) → "What I carry about mathematics is roughly this. Algebra is where mathematics stops being about specific numbers..." — 5 paragraphs of flowing prose, NO templates, NO bullets, NO headings ✅
+  • Black holes (new space knowledge) → "The picture I have of astronomy goes something like this. A black hole is a region of space where gravity is so strong..." — 36% KB match → P37 clarifying question + narration ✅
+  • Memory (new psychology knowledge) → "The picture I have of psychology goes something like this. Memory is the mental process of encoding, storing, and retrieving information..." ✅
+  • Photosynthesis (EXISTING biology knowledge) → "Let me tell you how I've come to understand biology..." — OLD knowledge ALSO narrated in new voice ✅
+  • Fractions/decimals → full 5-paragraph flowing prose, closes with reflection "I think what I really take from this is that understanding is never just about the facts — it's about how they hang together." ✅
+  • Greeting "Hello! Who are you?" → narration SKIPPED (correct — conversational intent keeps natural response) ✅
+  • Browser test on Vercel: reply rendered in DOM, no console/page errors ✅
+  • No crashes in dev log after defensive fixes ✅
+
+Stage Summary:
+- KNOWLEDGE EXPANDED: 236 → 292 entries (+56 new, ~24% growth). 5 new domains: mathematics, computing, psychology, astronomy, economics/finance/business.
+- TRIZA NOW SPEAKS IN ITS OWN VOICE ("khud bolna"): No more ## heading / ### subheading / - bullet / | table | templates. TRIZA reads its memory of the topic, then describes it in flowing first-person prose with varied openers, natural transitions, and reflective closes. Same question → same voice shape (deterministic seed); different questions → variety.
+- Conversational intents (greeting/identity/support) preserved unchanged — their raw responses were already natural.
+- Both LOCAL (localhost:3000) and VERCEL (triza-ai.vercel.app) verified live: narration applied, replies render in browser, no errors.
+- Combined Phase 1+2+3+4: 18 cognition→behavior connections working + 292 KB entries + natural-voice narration. TRIZA is now a transparent AI that shows its work AND speaks like a person remembering, not a textbook reciting.
