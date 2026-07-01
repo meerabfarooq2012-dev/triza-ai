@@ -214,36 +214,36 @@ function stripInline(text: string): string {
 // ============================================================
 
 const OPENERS = [
-  (topic: string) => `The way I think about ${topic} is this.`,
-  (topic: string) => `When ${topic} comes to mind, here's what I find myself remembering.`,
-  (topic: string) => `Let me tell you how I've come to understand ${topic}.`,
-  (topic: string) => `If I had to explain ${topic} in my own words, I'd start here.`,
-  (topic: string) => `Here's what ${topic} looks like from where I stand.`,
-  (topic: string) => `What I carry about ${topic} is roughly this.`,
-  (topic: string) => `So ${topic} — let me put it the way it sits in my mind.`,
-  (topic: string) => `The picture I have of ${topic} goes something like this.`,
+  (topic: string) => `Here is what I understand about ${topic}.`,
+  (topic: string) => `Let me explain ${topic} clearly.`,
+  (topic: string) => `I will outline what I know about ${topic}.`,
+  (topic: string) => `Here is a clear explanation of ${topic}.`,
+  (topic: string) => `Let me walk you through ${topic}.`,
+  (topic: string) => `I will describe ${topic} in a structured way.`,
+  (topic: string) => `Here is an overview of ${topic}.`,
+  (topic: string) => `Let me share a clear explanation of ${topic}.`,
 ]
 
 const SECTION_TRANSITIONS = [
+  (heading: string) => `Regarding ${heading.toLowerCase()}:`,
   (heading: string) => `On ${heading.toLowerCase()}:`,
-  (heading: string) => `Now, ${heading.toLowerCase()} —`,
   (heading: string) => `As for ${heading.toLowerCase()}:`,
   (heading: string) => `Turning to ${heading.toLowerCase()}:`,
-  (heading: string) => `Where ${heading.toLowerCase()} is concerned,`,
-  (heading: string) => `Here's the part about ${heading.toLowerCase()}.`,
-  (heading: string) => `${heading} is worth pausing on.`,
+  (heading: string) => `Concerning ${heading.toLowerCase()}:`,
+  (heading: string) => `With respect to ${heading.toLowerCase()}:`,
+  (heading: string) => `On the topic of ${heading.toLowerCase()}:`,
 ]
 
-const BULLET_CONNECTORS = ['First,', 'Then,', 'Also,', 'And there\'s', 'Plus,', 'On top of that,', 'What\'s more,', 'And']
+const BULLET_CONNECTORS = ['First,', 'Additionally,', 'Moreover,', 'Furthermore,', 'Next,', 'In addition,', 'Also,', 'Finally,']
 
 const REFLECTIONS = [
-  (topic: string) => `What stays with me about ${topic} is how the pieces connect — none of it stands alone.`,
-  (topic: string) => `The part I find most striking is that ${topic} isn't just a list of facts; it's a way of seeing.`,
-  (topic: string) => `If I sit with ${topic} for a moment, what I notice is how much of it shows up in places you wouldn't expect.`,
-  () => `That's the shape of it in my memory — the details may shift, but the core holds.`,
-  () => `I think what I really take from this is that understanding is never just about the facts — it's about how they hang together.`,
-  (topic: string) => `When I look back at ${topic} this way, I notice it teaches me something about how I learn, not just what I learn.`,
-  () => `That's how it lives in my mind — not as a textbook page, but as a felt sense of how things fit.`,
+  (topic: string) => `That covers the key points of ${topic} as I understand it.`,
+  (topic: string) => `These are the main aspects of ${topic} worth knowing.`,
+  () => `I hope this gives you a clear picture of the topic.`,
+  (topic: string) => `That summarizes ${topic} from my understanding.`,
+  () => `These are the essential points to keep in mind.`,
+  (topic: string) => `That outlines ${topic} in a structured way.`,
+  () => `I hope this explanation is clear and helpful.`,
 ]
 
 // ============================================================
@@ -342,7 +342,7 @@ function narrateTable(
     return cellPairs.join(', ')
   }).filter((d) => d.length > 0)
   if (descriptions.length === 0) return ''
-  return `If you look across ${cols}, you see: ${descriptions.join('; ')}.`
+  return `Comparing ${cols}: ${descriptions.join('; ')}.`
 }
 
 function narrateParagraph(
@@ -443,11 +443,13 @@ export function narrateFromMemory(
   const parts: string[] = []
 
   // ── P4 Emotion → slight opener flavor (optional) ──────
+  // Professional tone — the opener acknowledges the weight of the
+  // topic without sounding overly casual or emotional.
   if (typeof opts.emotion === 'number' && Number.isFinite(opts.emotion)) {
     if (opts.emotion <= -1) {
-      parts.push('This is one of those topics that asks me to slow down a little.')
+      parts.push('This is a topic that benefits from careful explanation.')
     } else if (opts.emotion >= 1) {
-      parts.push('This is one of those topics I genuinely enjoy talking about.')
+      parts.push('This is an engaging topic to explain.')
     }
   }
 

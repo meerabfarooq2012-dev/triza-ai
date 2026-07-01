@@ -127,6 +127,21 @@ import type { CognitionSignal } from './cognition-engine'
 // score so paraphrased questions (semantically related but lexically
 // different) still find the right entry. Pure CPU, computed once.
 import { tfidfScore } from './tfidf-retrieval'
+// FUZZY-MATCH — Phase 5 upgrade. Users often type with typos
+// ("fotosynthesis"), joined words ("whatisphotosynthesis"), or
+// mobile-keyboard slips ("photosynthsis"). The strict regex +
+// keyword-overlap retrieval missed all of those, sending the user
+// to the generic fallback. This layer normalizes the input and
+// fuzzy-maps each user token to the closest known KB keyword
+// (Levenshtein distance ≤ 2 for long words, ≤ 1 for medium).
+// Fuzzy hits ADD to the existing signals — they never replace
+// an exact match. Pure TypeScript, zero APIs.
+import {
+  normalizeInput,
+  correctTypos,
+  expandQueryToFuzzyKeywords,
+  type FuzzyExpansion,
+} from './fuzzy-match'
 // SLEEP-4 — sleep-cycle singleton import is via cognitionSignal.layers.sleep
 // (populated by cognition-engine on every run). The type below mirrors the
 // shape of that layer so finalize() can apply sleep-driven behavior changes
@@ -337,13 +352,44 @@ for (const e of KNOWLEDGE_BASE) {
   ENTRY_KEYWORDS.set(e.id, entryKeywords(e))
 }
 
+// Global union of ALL known KB keywords — used by the fuzzy-match
+// layer to map user tokens (with typos) to the closest real keyword.
+// Built once at module load.
+const ALL_KEYWORDS: Set<string> = new Set()
+for (const kws of ENTRY_KEYWORDS.values()) {
+  for (const k of kws) ALL_KEYWORDS.add(k.toLowerCase())
+}
+
+/**
+ * Normalize a raw user message: fix joined words ("whatisX" →
+ * "what is X") and correct common typos ("fotosynthesis" →
+ * "photosynthesis"). Returns the cleaned query. Used by
+ * searchKnowledgeBase so regex patterns + TF-IDF see the
+ * corrected form.
+ */
+function normalizeQuery(message: string): string {
+  return correctTypos(normalizeInput(message))
+}
+
 /**
  * Honest keyword-overlap score in [0,1].
  *   1.0 = every signal word in the user's message is a known keyword
  *   0.0 = no overlap
  * Weighted so rare keywords (longer) count more than common ones.
+ *
+ * Phase 5 — fuzzy hits: `fuzzyHits` is a Map<userToken, matchedKeyword>
+ * produced by expandQueryToFuzzyKeywords. When a user token doesn't
+ * exact-match any keyword but fuzzy-matches one (Levenshtein ≤ 2),
+ * we count it as a partial hit (0.7 weight) — strong enough to
+ * retrieve the right entry, weak enough that an exact match still
+ * wins. This is what makes "fotosynthesis" find the photosynthesis
+ * entry instead of the generic fallback.
  */
-function keywordOverlapScore(message: string, entry: KnowledgeEntry): number {
+function keywordOverlapScore(
+  message: string,
+  entry: KnowledgeEntry,
+  fuzzyHits?: Map<string, string>,
+): number {
   const msgTokens = tokenize(message)
   if (msgTokens.length === 0) return 0
   const kws = ENTRY_KEYWORDS.get(entry.id) || []
@@ -358,6 +404,14 @@ function keywordOverlapScore(message: string, entry: KnowledgeEntry): number {
     // exact hit, OR plural/stem hit (photoynthesis vs photosynthesize)
     if (kwSet.has(t) || kwSet.has(t.replace(/s$/, '')) || kwSet.has(t + 's')) {
       hit += weight
+      continue
+    }
+    // Fuzzy hit — the user typed a typo ("fotosynthesis") but the
+    // fuzzy layer mapped it to a real keyword ("photosynthesis").
+    // Only count if the matched keyword belongs to THIS entry.
+    const fuzzy = fuzzyHits?.get(t)
+    if (fuzzy && kwSet.has(fuzzy)) {
+      hit += weight * 0.7
     }
   }
   return total === 0 ? 0 : hit / total
@@ -448,20 +502,56 @@ function formatGoalSuggestion(
 function searchKnowledgeBase(message: string): SearchResult[] {
   const results: SearchResult[] = []
 
+  // ─── Phase 5: normalize input + expand fuzzy hits ──────────
+  // The user may have typed "whatisfotosynthesis" — joined word
+  // + typo. normalizeQuery fixes both ("what is photosynthesis"),
+  // and expandQueryToFuzzyKeywords maps any remaining typo tokens
+  // to their closest known KB keyword. We test regex patterns and
+  // run TF-IDF against BOTH the original and normalized forms so
+  // a typo-corrected match still triggers the regex.
+  const normalized = normalizeQuery(message)
+  const fuzzyExpansion: FuzzyExpansion = expandQueryToFuzzyKeywords(
+    message,
+    ALL_KEYWORDS,
+  )
+  // The effective query for regex testing = normalized if it
+  // differs from the original, else original. We test BOTH forms
+  // against each pattern (cheap — regex test is fast).
+  const useNormalized = normalized.toLowerCase() !== message.toLowerCase()
+  const queryForTfidf = useNormalized ? normalized : message
+
   for (const entry of KNOWLEDGE_BASE) {
     // Skip the catch-all fallback in the first pass; it's only
     // used if NOTHING else produces a real score.
     if (entry.id.startsWith(CATCHALL_ID_PREFIX)) continue
 
+    // Test regex against BOTH the original message and the
+    // normalized form. A pattern like /\bphotosynthesis\b/i won't
+    // match "fotosynthesis" but WILL match the normalized form
+    // "photosynthesis".
     let regexHit = false
     for (const pattern of entry.patterns) {
       if (pattern.test(message)) {
         regexHit = true
         break
       }
+      if (useNormalized && pattern.test(normalized)) {
+        regexHit = true
+        break
+      }
     }
 
-    const overlap = keywordOverlapScore(message, entry)
+    // Keyword overlap now receives the fuzzy-hits map so typo
+    // tokens ("fotosynthesis") count as partial matches against
+    // the corrected keyword ("photosynthesis").
+    const overlap = keywordOverlapScore(message, entry, fuzzyExpansion.fuzzyHits)
+    // Also compute overlap on the normalized form — if the typo
+    // fix turned "fotosynthesis" into "photosynthesis", the
+    // normalized overlap will be higher. Take the max.
+    const overlapNorm = useNormalized
+      ? keywordOverlapScore(normalized, entry, fuzzyExpansion.fuzzyHits)
+      : 0
+    const bestOverlap = Math.max(overlap, overlapNorm)
 
     // ─── TF-IDF fusion (Phase 2) ───────────────────
     // Pre-computed TF-IDF cosine similarity catches paraphrased
@@ -469,16 +559,21 @@ function searchKnowledgeBase(message: string): SearchResult[] {
     // patterns but are semantically related. Computed BEFORE the
     // candidate gate so a strong TF-IDF match can qualify an entry
     // even when regex + keyword overlap are both 0.
-    const tfidf = tfidfScore(message, entry.id)
+    // Phase 5: run against the normalized form too so typo-corrected
+    // tokens contribute to the cosine similarity.
+    const tfidf = Math.max(
+      tfidfScore(message, entry.id),
+      useNormalized ? tfidfScore(queryForTfidf, entry.id) : 0,
+    )
 
     // Must have at least SOME signal to be a candidate.
     // TF-IDF ≥ 0.05 counts as signal (catches paraphrases).
-    if (!regexHit && overlap === 0 && tfidf < 0.05) continue
+    if (!regexHit && bestOverlap === 0 && tfidf < 0.05) continue
 
     // Honest score: regex hit is a strong signal (0.6) plus the
     // keyword overlap (up to 0.4). Pure-overlap matches cap lower
     // than regex matches so a precise regex always wins.
-    const score = regexHit ? Math.min(1, 0.6 + overlap * 0.4) : overlap * 0.7
+    const score = regexHit ? Math.min(1, 0.6 + bestOverlap * 0.4) : bestOverlap * 0.7
 
     // Fuse 60% honest regex/keyword score + 40% TF-IDF so a strong
     // TF-IDF match can elevate a weak-overlap entry (and vice-versa).
@@ -489,7 +584,7 @@ function searchKnowledgeBase(message: string): SearchResult[] {
     // feedback-weighted score
     const weightedScore = getWeightedScore(fusedScore, entry.id)
 
-    results.push({ entry, score: fusedScore, weightedScore, regexHit, overlap })
+    results.push({ entry, score: fusedScore, weightedScore, regexHit, overlap: bestOverlap })
   }
 
   // Sort by weightedScore desc; tie-break by:
@@ -499,7 +594,12 @@ function searchKnowledgeBase(message: string): SearchResult[] {
   //      message? (e.g. "photosynthesis-explained" beats "carbon-cycle"
   //      for "what is photosynthesis" because the id-word is in the query)
   //   4. entry id alphabetical (stable)
+  // Phase 5: id-specificity check uses BOTH forms so a typo-corrected
+  // token that matches the entry id still gets the specificity boost.
   const msgTokensSet = new Set(tokenize(message))
+  if (useNormalized) {
+    for (const t of tokenize(normalized)) msgTokensSet.add(t)
+  }
   results.sort((a, b) => {
     if (b.weightedScore !== a.weightedScore) return b.weightedScore - a.weightedScore
     if (b.score !== a.score) return b.score - a.score
@@ -731,6 +831,16 @@ export async function generateResponse(
   const startTime = Date.now()
   const steps: string[] = []
 
+  // ─── Phase 5: normalize input EARLY ────────────────────────
+  // Compute the normalized form once and feed it to cognition,
+  // trinity, and search so ALL downstream processing (including
+  // goal/curriculum suggestion derivation) sees typo-corrected
+  // terms. The original `userMessage` is still used for DB save
+  // and display — we never alter what the user actually typed.
+  const normalizedMessage = normalizeQuery(userMessage)
+  const wasNormalized =
+    normalizedMessage.toLowerCase() !== userMessage.toLowerCase()
+
   // 1. Intent detection
   const intent = detectIntent(userMessage)
   steps.push(`Intent detected: ${intent}`)
@@ -749,14 +859,23 @@ export async function generateResponse(
   //      Bayesian Logic) on this query. This is the "3 minds, 1 brain"
   //      principle made REAL. Output is added to transparency steps so
   //      the user sees all 3 layers working on every reply.
-  const trinitySignal = runTrinityForQuery(userMessage)
+  // Phase 5: pass the NORMALIZED message so the analogy engine
+  // extracts corrected terms ("photosynthesis" not "fotosynthesis").
+  const trinitySignal = runTrinityForQuery(
+    wasNormalized ? normalizedMessage : userMessage,
+  )
   steps.push(formatTrinityStep(trinitySignal))
 
   // 3.6. COGNITION ENGINE — run all 39 founding principles (P1-P39)
   //      on this query. This is the O-H-C-E framework + 32 principles
   //      made REAL. Every principle contributes a transparency step.
   //      This is TRIZA's full mind, not just the Trinity core.
-  const cognitionSignal = runCognition(userMessage, opts.conversationId)
+  // Phase 5: pass the NORMALIZED message so P10 (intrinsic goals)
+  // and P25 (curriculum) derive suggestions from corrected terms.
+  const cognitionSignal = runCognition(
+    wasNormalized ? normalizedMessage : userMessage,
+    opts.conversationId,
+  )
   // Task PERM-MEM-2: surface the "Restored cognition state" step (added at
   // the top of runCognition when a DB snapshot was loaded at boot) so the
   // user can see TRIZA's memory persists across server restarts. The
@@ -810,6 +929,31 @@ export async function generateResponse(
 
   // 4. Knowledge search — top-N candidates with honest scores
   const candidates = searchKnowledgeBase(userMessage)
+
+  // ─── Phase 5: fuzzy-match transparency step ───────────────
+  // Surface what the fuzzy layer did so the user can see TRIZA
+  // understood their typos. Two sub-signals:
+  //   1. Whether the query was normalized (joined words split,
+  //      common typos corrected).
+  //   2. How many user tokens were fuzzy-mapped to real keywords
+  //      (e.g. "fotosynthesis" → "photosynthesis").
+  // Both are honesty signals: the user sees TRIZA's actual
+  // understanding, not a black box.
+  try {
+    const _fuzzy = expandQueryToFuzzyKeywords(userMessage, ALL_KEYWORDS)
+    const fuzzyEntries = Array.from(_fuzzy.fuzzyHits.entries())
+    if (wasNormalized || fuzzyEntries.length > 0) {
+      const parts: string[] = []
+      if (wasNormalized) parts.push(`normalized → "${normalizedMessage}"`)
+      if (fuzzyEntries.length > 0) {
+        const shown = fuzzyEntries.slice(0, 4).map(([k, v]) => `${k}→${v}`).join(', ')
+        parts.push(`fuzzy hits: ${shown}${fuzzyEntries.length > 4 ? ` (+${fuzzyEntries.length - 4} more)` : ''}`)
+      }
+      steps.push(`Fuzzy-match: ${parts.join(' · ')}`)
+    }
+  } catch {
+    // Defensive — never let transparency crash the reply.
+  }
 
   // ─── WIRE-UP 1: P15 Memory match → retrieval boost ───────
   // If the cognition engine's distributed-memory layer inferred a
