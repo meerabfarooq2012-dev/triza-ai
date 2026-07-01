@@ -4319,3 +4319,36 @@ Stage Summary:
 - DB persistence confirmed working: 74 conversations, 274 messages, including the test conversation with both user+assistant messages saved.
 - The prisma FK errors in the log were a red herring — caused by my own test using an invalid conversationId. Normal frontend flow has zero errors.
 - All Phase 1+2+3 cognition features remain intact and working (39 principles, 236 KB entries, feedback persistence, emotional/sleep state persistence).
+
+---
+Task ID: support-2
+Agent: main
+Task: User reported same "no reply" issue on Vercel ("is ko vercel per bhi theck karo waha peer bhi yahi problem hai"). Diagnose and fix Vercel deployment.
+
+Work Log:
+- Tested Vercel homepage (https://triza-ai.vercel.app/): 200 OK, loads fine.
+- Tested POST /api/ai/conversations on Vercel: initially got 403 "Forbidden — invalid origin" (no Origin header in curl). Re-tested with proper Origin/Referer headers (simulating browser same-origin): 200 OK, conversation created with Prisma CUID id (cmr28l2bt...). Conversation creation works.
+- Tested POST /api/ai/chat on Vercel with proper headers: 200 OK, TRIZA replied with full cognition (29 steps, confidence 0.85, mood neutral, intent greeting). API works.
+- KEY FINDING: Inspected the returned message IDs:
+  • userMessageId: "cmr28l9bt..." → starts with "cm" = Prisma CUID = saved to DB ✅
+  • assistantMessageId: "msg_ka4sodg8mr28lasv" → starts with "msg_" = in-memory fallback ❌
+  This means the ASSISTANT message was NOT persisting to the Vercel PostgreSQL DB — it fell back to in-memory, which is lost after each serverless function invocation ends.
+- ROOT CAUSE: The `metaJson String?` column was added to `AiMessage` in `schema.prisma` (local SQLite) during Phase 1, but was NOT added to `schema.sqlite.prisma` or `schema.postgresql.prisma` (the template schemas). Vercel's build runs `switch-db.mjs` which copies `schema.postgresql.prisma` → `schema.prisma`, then `prisma db push` syncs the Supabase DB. Since the template lacked `metaJson`, the Supabase AiMessage table didn't have the column → every assistant-message insert (which includes metaJson) failed with unknown-column error → caught by try/catch → in-memory fallback.
+- USER IMPACT: The API returned 200 with the reply text (so it looked like it worked), but the frontend then called loadConversationDetail() to sync with backend → fetched from DB → assistant message was missing → frontend OVERWROTE the optimistic reply with the DB version (no assistant message) → reply DISAPPEARED from UI. User saw "no reply".
+- VERIFIED via conversation-detail API: GET /api/ai/conversations/{id} on Vercel returned only 1 message (the user message) — assistant message was missing from DB.
+- FIX: Added `metaJson String?` (with full comment) to AiMessage model in BOTH `prisma/schema.sqlite.prisma` and `prisma/schema.postgresql.prisma`.
+- Ran comprehensive Python diff comparing ALL models/fields across all 3 schemas: confirmed schemas now fully in sync (no other missing columns).
+- Committed: "fix(vercel): add missing metaJson column to AiMessage in both schema templates" (303dbb2).
+- Pushed: 171c2c8..303dbb2 main -> main → Vercel auto-deploy triggered.
+- Waited 100s for deploy, then verified fix:
+  • POST /api/ai/chat on Vercel: userMessageId="cmr28tstv..." (DB ✅), assistantMessageId="cmr28tvdf..." (DB ✅ FIXED!). Both now Prisma CUIDs.
+- Browser verification on Vercel (agent-browser): opened https://triza-ai.vercel.app/, sent "Hello! Who are you?", reply rendered in DOM: "## Hello! 👋 I am TRIZA. 💡 Want me to explore hello next?" with metadata "neutral | greeting | 85% confident | 30 steps" (metadata display proves metaJson persisted + parsed). Feedback buttons enabled. POST /api/ai/chat → 200. No console/page errors.
+
+Stage Summary:
+- Vercel "no reply" bug FIXED and DEPLOYED.
+- Root cause: missing `metaJson` column in schema template files (schema.sqlite.prisma + schema.postgresql.prisma). Phase 1 only added it to the active schema.prisma, not the templates that switch-db.mjs uses for Vercel builds.
+- Symptom: assistant message failed to persist on Vercel PostgreSQL → frontend conversation reload wiped the optimistic reply → user saw "no reply" despite API returning 200.
+- Fix: added metaJson String? to AiMessage in both template schemas. Vercel rebuild ran prisma db push → column created on Supabase → assistant messages now persist.
+- Verified: assistantMessageId now returns Prisma CUID (cm...) on Vercel. Reply stays in UI after conversation reload. Metadata (mood/intent/confidence/steps) displays correctly.
+- Local server also confirmed running (status 200 on localhost:3000).
+- Both local AND Vercel now fully functional — TRIZA replies persist correctly in both environments.
