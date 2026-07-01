@@ -1667,3 +1667,59 @@ model AiTrainingWord {
   @@index([categoryId])
   @@index([word])
 }
+
+// ============================================================
+// TRIZA Cognition Persistence Models (must match schema.prisma)
+// ============================================================
+
+model TrizaMemoryTrace {
+  id          String   @id @default(cuid())
+  patternKey  String
+  patternJson String
+  category    String?
+  importance  Float    @default(0.5)
+  uses        Int      @default(0)
+  lastAccessed DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@index([patternKey])
+  @@index([importance])
+}
+
+model TrizaCognitionState {
+  id        String   @id @default("singleton")
+  brainStateJson String
+  systemStateJson String
+  metaStateJson String
+  totalMessages Int @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+model TrizaConversationInsight {
+  id          String   @id @default(cuid())
+  conversationId String
+  userMessage String
+  matchedConcept String?
+  intent      String?
+  emotion     Float?
+  agency      Float?
+  confidence  Float?
+  topGoal     String?
+  wasSurprising Boolean @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([conversationId])
+  @@index([matchedConcept])
+  @@index([createdAt])
+}
+
+/// Hebbian feedback-learning weights — one row per KnowledgeEntry.id.
+/// Survives server restarts so 👍/👎 learning is permanent.
+model TrizaFeedbackWeight {
+  entryId   String   @id
+  weight    Float    @default(1.0)
+  upCount   Int      @default(0)
+  downCount Int      @default(0)
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}

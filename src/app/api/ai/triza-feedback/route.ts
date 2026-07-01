@@ -6,6 +6,7 @@ import {
   feedbackRateLimit,
 } from '@/lib/rate-limit'
 import { adjustWeight, getWeight, type Reward } from '@/lib/triza-engine/feedback-learning'
+import { saveFeedbackWeight } from '@/lib/triza-engine/persistence'
 
 /**
  * ============================================================
@@ -94,9 +95,18 @@ async function handler(request: NextRequest) {
     const rewardSignal: Reward = reward === 'up' ? 1 : -1
     const newWeight = adjustWeight(entryId, rewardSignal)
 
+    // Persist the new weight to the DB (fire-and-forget) so 👍/👎
+    // learning survives server restarts. Non-fatal: if the DB is
+    // unavailable, the in-memory update above still takes effect
+    // for the current process lifetime.
+    const canonicalId = entryId.split('+')[0]
+    void saveFeedbackWeight(canonicalId, newWeight, rewardSignal).catch(() => {
+      /* already logged inside persistence.ts */
+    })
+
     return NextResponse.json({
       success: true,
-      entryId: entryId.split('+')[0], // echo back the canonical (first) id
+      entryId: canonicalId, // echo back the canonical (first) id
       reward,
       newWeight,
     })

@@ -31,7 +31,12 @@ import {
   saveConversationInsight,
   loadCognitionSnapshot,
   loadMemoryTraces,
+  loadAllFeedbackWeights,
 } from './persistence'
+
+import {
+  importFeedbackState,
+} from './feedback-learning'
 
 import {
   // Layer I — Perception & Grounding
@@ -261,6 +266,24 @@ export function setRestingCheckerForReplay(fn: () => boolean): void {
       err instanceof Error ? err.message : err,
     )
   }
+
+  // 3) Restore Hebbian feedback-learning weights so 👍/👎 learning
+  //    survives server restarts. Without this, every restart wiped
+  //    all reinforcement learning — entries users had praised would
+  //    lose their ranking boost. Now they persist permanently.
+  try {
+    const weights = await loadAllFeedbackWeights()
+    const weightCount = Object.keys(weights).length
+    if (weightCount > 0) {
+      importFeedbackState(weights, true)
+      console.log(`[TRIZA] Restored ${weightCount} feedback weights from DB.`)
+    }
+  } catch (err) {
+    console.warn(
+      '[TRIZA] Failed to load feedback weights (continuing with defaults):',
+      err instanceof Error ? err.message : err,
+    )
+  }
 })()
 
 // ─────────────────────────────────────────────
@@ -332,7 +355,27 @@ export function runCognition(message: string, conversationId?: string): Cognitio
   // ─── LAYER I: HIERARCHY (P2) ────────────────────────
   // P2: Hierarchical Grounding — knowledge tree
   // Find best matching concept in tree
-  const allConcepts = ['thing', 'physical', 'abstract', 'organism', 'object', 'idea', 'relation', 'plant', 'animal', 'mammal', 'tool', 'concept', 'method', 'event', 'place']
+  // Expanded concept list — generic concepts PLUS the real knowledge-base
+  // domain names. Previously only 15 generic concepts were used, which meant
+  // `inferredCategory` almost never matched a real KB entry's topic (e.g.
+  // "biology", "physics") so the P15 retrieval boost in response-generator
+  // was effectively dead code. Now if the user mentions "biology",
+  // "physics", "history", etc. labelObservation can pick that domain
+  // directly, and the concept→domain synonym map in response-generator
+  // handles the generic-concept case (e.g. "plant" → biology).
+  const allConcepts = [
+    // generic (kept for backward-compat with P2 hierarchy)
+    'thing', 'physical', 'abstract', 'organism', 'object', 'idea',
+    'relation', 'plant', 'animal', 'mammal', 'tool', 'concept',
+    'method', 'event', 'place',
+    // real KB domain names (must match batch-*.ts topics)
+    'biology', 'physics', 'chemistry', 'geography', 'history',
+    'philosophy', 'technology', 'science', 'nature', 'society',
+    'health', 'medicine', 'arts', 'art', 'music', 'literature',
+    'entertainment', 'math', 'mathematics', 'space', 'astronomy',
+    'psychology', 'economics', 'politics', 'religion', 'culture',
+    'food', 'sport', 'sports', 'travel', 'language',
+  ]
   const matchedConcept = labelObservation(observation, allConcepts) || 'thing'
   const conceptLevel = abstractionLadder.levelOf(matchedConcept)
   principlesExecuted++

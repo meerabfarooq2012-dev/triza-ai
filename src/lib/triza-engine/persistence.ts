@@ -374,3 +374,72 @@ export async function loadConversationInsights(
     return []
   }
 }
+
+// ─────────────────────────────────────────────
+// 4. Feedback Learning Weights (Hebbian, P-learn)
+// One row per KnowledgeEntry.id. Survives server restarts so 👍/👎
+// reinforcement is permanent. Loaded into the in-memory weight map
+// at startup (cognition-engine IIFE), upserted after every adjustWeight.
+// ─────────────────────────────────────────────
+
+/**
+ * Upsert a single feedback weight row. Called after every 👍/👎
+ * (fire-and-forget) so the learned weight survives restarts.
+ *
+ * @param entryId  The KnowledgeEntry.id (first id of a fused chain).
+ * @param weight   The new clamped weight in [0.1, 3.0].
+ * @param reward   +1 for 👍, -1 for 👎 (used to bump upCount/downCount).
+ *
+ * Failure is non-fatal: logs a warning and returns.
+ */
+export async function saveFeedbackWeight(
+  entryId: string,
+  weight: number,
+  reward: 1 | -1,
+): Promise<void> {
+  try {
+    await db.trizaFeedbackWeight.upsert({
+      where: { entryId },
+      create: {
+        entryId,
+        weight,
+        upCount: reward === 1 ? 1 : 0,
+        downCount: reward === -1 ? 1 : 0,
+      },
+      update: {
+        weight,
+        upCount: { increment: reward === 1 ? 1 : 0 },
+        downCount: { increment: reward === -1 ? 1 : 0 },
+      },
+    })
+  } catch (err) {
+    console.warn(
+      `${PERSIST_TAG} saveFeedbackWeight failed (non-fatal):`,
+      err instanceof Error ? err.message : err,
+    )
+  }
+}
+
+/**
+ * Load ALL feedback weights from the DB. Used at startup to restore
+ * the in-memory Hebbian weight map so learning survives restarts.
+ * Returns a plain { entryId: weight } object (empty on DB failure).
+ */
+export async function loadAllFeedbackWeights(): Promise<Record<string, number>> {
+  try {
+    const rows = await db.trizaFeedbackWeight.findMany({
+      select: { entryId: true, weight: true },
+    })
+    const out: Record<string, number> = {}
+    for (const r of rows) {
+      out[r.entryId] = r.weight
+    }
+    return out
+  } catch (err) {
+    console.warn(
+      `${PERSIST_TAG} loadAllFeedbackWeights failed (continuing with empty weights):`,
+      err instanceof Error ? err.message : err,
+    )
+    return {}
+  }
+}

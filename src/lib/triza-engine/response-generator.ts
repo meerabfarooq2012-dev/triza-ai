@@ -342,6 +342,70 @@ interface SearchResult {
 
 const CATCHALL_ID_PREFIX = 'fallback'
 
+// ============================================================
+// P10 Goal → human-readable suggestion formatter
+// Turns a raw goal target like "continue:thing" or
+// "understand:feature" into a concrete, useful suggestion using
+// the matched KB entry's topic domain (e.g. "Biology: Photosynthesis").
+// Returns null when no meaningful suggestion can be composed.
+// ============================================================
+
+function formatGoalSuggestion(
+  goalTarget: string,
+  topicDomain: string,
+  matchedEntryId: string | null,
+): string | null {
+  if (!goalTarget || typeof goalTarget !== 'string') return null
+
+  // Parse "verb:subject" — default verb is "explore".
+  let verb = 'explore'
+  let rawSubject = goalTarget
+  const colonIdx = goalTarget.indexOf(':')
+  if (colonIdx > -1) {
+    verb = goalTarget.slice(0, colonIdx).toLowerCase()
+    rawSubject = goalTarget.slice(colonIdx + 1)
+  }
+
+  // Derive a readable subject. Priority:
+  //   1. The part of topicDomain after the colon (e.g. "Photosynthesis"
+  //      from "Biology: Photosynthesis") — most specific.
+  //   2. The full topicDomain if no colon.
+  //   3. The matchedEntryId's first word (e.g. "photosynthesis" from
+  //      "photosynthesis-explained").
+  //   4. The raw goal subject (fallback, usually a generic concept).
+  let subject: string | null = null
+  if (topicDomain && topicDomain !== 'unknown') {
+    const colonPos = topicDomain.indexOf(':')
+    subject = colonPos > -1
+      ? topicDomain.slice(colonPos + 1).trim()
+      : topicDomain.trim()
+  }
+  if ((!subject || subject.length < 2) && matchedEntryId) {
+    const firstWord = matchedEntryId.split(/[^a-z0-9]+/i)[0]
+    if (firstWord && firstWord.length > 2) subject = firstWord
+  }
+  if (!subject || subject.length < 2) {
+    subject = rawSubject
+  }
+  // If the subject is still a useless generic concept, skip the
+  // suggestion entirely — better no suggestion than a meaningless one.
+  const GENERIC = new Set([
+    'thing', 'object', 'idea', 'concept', 'method', 'relation',
+    'feature', 'activity', 'item', 'topic', 'subject',
+  ])
+  if (GENERIC.has(String(subject).toLowerCase())) return null
+
+  // Map goal verbs to friendly suggestion phrasings.
+  const verbPhrase: Record<string, string> = {
+    continue: `Want me to continue exploring ${subject}?`,
+    understand: `Want to understand ${subject} more deeply?`,
+    explore: `Want me to explore ${subject} next?`,
+    learn: `Want to learn more about ${subject}?`,
+    explain: `Should I explain ${subject} in more detail?`,
+  }
+  return verbPhrase[verb] ?? `Want me to explore ${subject} next?`
+}
+
 function searchKnowledgeBase(message: string): SearchResult[] {
   const results: SearchResult[] = []
 
@@ -700,14 +764,52 @@ export async function generateResponse(
   // that category substring, then re-sort by weighted score so the
   // boosted entries actually rank higher. This is P15 actually
   // DRIVING retrieval ranking, not just decoration.
+  //
+  // CONCEPT→DOMAIN SYNONYM MAP: `inferredCategory` is often a generic
+  // concept (e.g. "plant", "organism", "event") that never literally
+  // appears in KB entry topics like "Biology: Photosynthesis". Without
+  // this map the boost was dead code. Now we expand the generic concept
+  // into the real KB domains it implies, so "plant" boosts biology/
+  // nature entries, "event" boosts history entries, etc.
+  const CONCEPT_TO_DOMAINS: Record<string, string[]> = {
+    plant: ['biology', 'nature', 'photosynth', 'ecosystem', 'botan', 'tree', 'flower'],
+    organism: ['biology', 'nature', 'life', 'cell', 'evolution', 'species'],
+    animal: ['biology', 'nature', 'mammal', 'species', 'wildlife'],
+    mammal: ['biology', 'nature', 'animal'],
+    physical: ['physics', 'chemistry', 'energy', 'matter', 'force', 'motion'],
+    object: ['physics', 'matter', 'physical', 'material'],
+    abstract: ['philosophy', 'math', 'logic', 'concept', 'idea'],
+    idea: ['philosophy', 'concept', 'thought', 'theory'],
+    concept: ['philosophy', 'logic', 'theory', 'abstract'],
+    method: ['technology', 'science', 'process', 'algorithm', 'technique'],
+    tool: ['technology', 'engineering', 'device', 'machine', 'instrument'],
+    event: ['history', 'society', 'war', 'revolution', 'movement'],
+    place: ['geography', 'country', 'city', 'location', 'region', 'continent'],
+    relation: ['society', 'philosophy', 'relationship', 'social'],
+    thing: [], // too generic — no boost (avoid noise)
+  }
   const p15Category = cognitionSignal.layers.memory.category
   if (p15Category && candidates.length > 0) {
     const catLower = p15Category.toLowerCase()
+    // Build the set of substrings to match: the category itself PLUS
+    // any synonym domains from the map above.
+    const matchSubstrings = new Set<string>([catLower])
+    const synonyms = CONCEPT_TO_DOMAINS[catLower]
+    if (synonyms) {
+      for (const s of synonyms) matchSubstrings.add(s)
+    }
     let boosted = 0
     for (const c of candidates) {
       const topicLower = c.entry.topic.toLowerCase()
       const idLower = c.entry.id.toLowerCase()
-      if (topicLower.includes(catLower) || idLower.includes(catLower)) {
+      let matched = false
+      for (const sub of matchSubstrings) {
+        if (topicLower.includes(sub) || idLower.includes(sub)) {
+          matched = true
+          break
+        }
+      }
+      if (matched) {
         c.score = Math.min(1, c.score + 0.15)
         c.weightedScore = getWeightedScore(c.score, c.entry.id)
         boosted++
@@ -727,7 +829,7 @@ export async function generateResponse(
         return a.entry.id.localeCompare(b.entry.id)
       })
       steps.push(
-        `P15 drove retrieval: +0.15 boost to entries matching category "${p15Category}"`,
+        `P15 drove retrieval: +0.15 boost to ${boosted} entries matching category "${p15Category}" (+${matchSubstrings.size - 1} synonym domains)`,
       )
     }
   }
@@ -794,6 +896,12 @@ export async function generateResponse(
         userMessage,
         cognitionSignal.layers.sleep,
         cognitionSignal,
+        // Follow-up path: candidates was already searched for the
+        // current userMessage. Pass the top score so P37 can still
+        // trigger a clarifying question if the follow-up is ambiguous.
+        // Use 1.0 if no candidates (safe default — don't spuriously
+        // clarify on a clean follow-up).
+        candidates.length > 0 ? candidates[0].weightedScore : 1.0,
       )
     }
   }
@@ -816,6 +924,9 @@ export async function generateResponse(
   )
 
   // 8. Finalize
+  // Pass the actual KB top-score so P37 (clarifying question) and
+  // P10 (next-topic suggestion) use HONEST match quality, not the
+  // inverted attention-based confidence.
   return finalize(
     expressed,
     fused.matchedEntryId,
@@ -828,6 +939,7 @@ export async function generateResponse(
     userMessage,
     cognitionSignal.layers.sleep,
     cognitionSignal,
+    candidates.length > 0 ? candidates[0].weightedScore : 0,
   )
 }
 
@@ -968,6 +1080,11 @@ function finalize(
   // not just decorate it. All four are ADDITIVE to SLEEP-4's
   // sleep-driven shaping above.
   cognition?: CognitionSignal,
+  // KB top candidate score (0..1) — the HONEST match quality from
+  // searchKnowledgeBase. Used by WIRE-UP 2 (P37) to trigger a
+  // clarifying question when TRIZA genuinely doesn't know the answer.
+  // Defaults to 1.0 (no clarification) when not provided.
+  kbTopScore: number = 1.0,
 ): TrizaResponse {
   // RELIGION-NEUTRAL SAFETY NET — runs on EVERY response.
   // Ensures no religion-specific words (Assalam-o-Alaikum, Mubarak,
@@ -1099,34 +1216,53 @@ function finalize(
     )
 
     // ─── WIRE-UP 2: P37 Confidence < 0.4 → clarifying question
-    // If meta-cognition is uncertain AND in help-seeking mode,
-    // prepend a clarifying question so TRIZA asks before answering.
-    const reasoning = cognition.layers.reasoning
-    if (reasoning.confidence < 0.4 && reasoning.mode === 'help-seeking') {
-      const conf = Math.round(reasoning.confidence * 100)
+    // META-COGNITION DRIVES CLARIFICATION.
+    //
+    // FIX: previously this used `reasoning.confidence` which is derived
+    // from `attentionSignal.attention` — an INVERTED signal (high for
+    // novel queries, low for familiar). That meant TRIZA asked
+    // clarifying questions on FAMILIAR topics and answered NOVEL ones
+    // without checking. The honest confidence signal is the actual
+    // knowledge-base match quality: `kbTopScore` (passed in from
+    // generateResponse as candidates[0].weightedScore).
+    // Low KB score → TRIZA genuinely doesn't know → ask first.
+    const effectiveConfidence = kbTopScore
+    if (effectiveConfidence < 0.4) {
+      const conf = Math.round(effectiveConfidence * 100)
       const topGoal = cognition.layers.topGoal
       const matchedConcept = cognition.layers.hierarchy.concept
-      const subject = topGoal ?? matchedConcept
+      // Build a human-readable subject. Prefer the matched KB entry's
+      // topic (e.g. "Biology: Photosynthesis"), fall back to concept.
+      const subject = topicDomain && topicDomain !== 'unknown'
+        ? topicDomain
+        : (topGoal ?? matchedConcept ?? 'that')
       sanitizedText =
-        `I'm only ${conf}% sure I understood. Did you mean ${subject} or something else?\n\n` +
+        `I'm only ${conf}% sure I understood. Did you mean ${subject}, or something else?\n\n` +
         sanitizedText
       steps.push(
-        `P37 drove clarifying question (confidence ${conf}% < 40%)`,
+        `P37 drove clarifying question (KB match ${conf}% < 40%) — asked before answering`,
       )
     }
 
     // ─── WIRE-UP 5: P10 Goal queue → next-topic suggestion ───
-    // If P10 produced a top intrinsic goal, append a suggestion
-    // inviting the user to explore it next. This makes P10
-    // actually DRIVE the conversation, not just log a goal.
+    // P10 INTRINSIC GOALS DRIVE THE CONVERSATION FORWARD.
+    //
+    // FIX: previously the raw goal target (e.g. "continue:thing",
+    // "understand:feature") was shown verbatim — meaningless to the
+    // user. Now we parse the goal verb + subject and rewrite it using
+    // the real matched KB entry's topic domain so the suggestion is
+    // concrete and useful: "Want me to explore more about photosynthesis?"
     const topGoal = cognition.layers.topGoal
     if (topGoal) {
-      sanitizedText =
-        sanitizedText +
-        `\n\n💡 Want me to explore "${topGoal}" next?`
-      steps.push(
-        `P10 drove suggestion: "${topGoal}"`,
-      )
+      const suggestion = formatGoalSuggestion(topGoal, topicDomain, matchedEntryId)
+      if (suggestion) {
+        sanitizedText =
+          sanitizedText +
+          `\n\n💡 ${suggestion}`
+        steps.push(
+          `P10 drove suggestion: "${suggestion}"`,
+        )
+      }
     }
   }
 
