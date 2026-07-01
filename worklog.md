@@ -4147,3 +4147,35 @@ Files audited (NO modifications made):
   • /home/z/my-project/prisma/schema.prisma (lines 1681-1744)
   • /home/z/my-project/PRINCIPLES.md (267 lines)
   • 13 batch-*.ts knowledge files (236 total entries counted)
+
+---
+Task ID: phase1-1
+Agent: main
+Task: Phase 1 — wire 4 cognition principles to actually drive behavior + persist feedback weights. User chose option 1 (all 4 fixes together), then deploy.
+
+Work Log:
+- Audit (subagent audit-1) confirmed: P4 emotion ✅, P14 agency ✅ working; P37/P10/P15 wired but buggy; P17 display-only; feedback weights in-memory only (lost on restart); Triza models missing from sqlite/pg schema variants (would break Vercel persistence)
+- Fix #1 (P37 confidence): replaced reasoning.confidence (inverted attention signal) with kbTopScore = candidates[0].weightedScore passed through finalize(). Now low KB match → clarifying question. Verified: 'xyzzy qwerty bloop' → 'I'm only 0% sure I understood'; 'how do plants make food' (35%) → 'I'm only 35% sure... Did you mean biology?'
+- Fix #2 (P10 suggestion): wrote formatGoalSuggestion() — parses 'continue:X'/'understand:X', uses matched entry's topicDomain to compose 'Want me to continue exploring biology?'. Returns null for generic concepts. Verified: suggestion now reads 'Want me to continue exploring biology?' (was 'continue:thing')
+- Fix #3 (P15 boost): expanded allConcepts in cognition-engine.ts from 15 generic → 45+ incl real KB domains (biology, physics, history, philosophy, technology...). Added CONCEPT_TO_DOMAINS synonym map in response-generator WIRE-UP 1 so 'plant' → biology/nature/photosynth boost fires. Verified: 'how do plants make food' → 3 biology entries FUSED (cell-structure-basics+plant-classification+ecosystems-food-chains)
+- Fix #4 (persist feedback): added TrizaFeedbackWeight Prisma model (entryId, weight, upCount, downCount). Added saveFeedbackWeight() + loadAllFeedbackWeights() in persistence.ts. Wired save in /api/ai/triza-feedback route (fire-and-forget after adjustWeight). Wired restore in cognition-engine startup IIFE (importFeedbackState). CRITICAL: also added ALL Triza models (TrizaMemoryTrace, TrizaCognitionState, TrizaConversationInsight, TrizaFeedbackWeight) to schema.sqlite.prisma AND schema.postgresql.prisma — switch-db.mjs overwrites schema.prisma from these, so without this Vercel builds would lose all Triza tables. Verified: 2 👍 → weight 1.3 in DB; restart → log 'Restored 1 feedback weights from DB' → weight still 1.3 (was 1.0 before fix)
+- Bug fixed during testing: WIRE-UPs 2 & 5 were inside finalize() not safeExpress() — initial param addition to safeExpress caused 'candidates/kbTopScore is not defined' runtime crash. Moved kbTopScore param to finalize() (which already had matchedEntryId + topicDomain). Also fixed topic→topicDomain param-name mismatches (2 spots).
+- Live verification (curl + python json parse):
+  - 'how do plants make food' → 20 steps, Top candidate cell-structure-basics (0.35→0.40), Fused 3 entries, P14 drove voice first-person, P4 drove tone neutral, P29 drove depth trough (truncated 2 sentences), P10 drove suggestion 'Want me to continue exploring biology?'
+  - 👍 on fused entry → newWeight 1.15 → second 👍 → 1.30; DB row: {entryId:cell-structure-basics, weight:1.3, upCount:2}
+  - Server restart → 'Restored 1 feedback weights from DB' → GET feedback API returns weight 1.3 (restored, not default 1.0)
+- Lint: 1 pre-existing error (use-google-auth-callback.ts, unrelated). My code clean.
+- Committed: 'feat(triza): wire 4 cognition principles to actually drive behavior + persist feedback' (c470540, 10 files, +447/-21)
+- Pushed: d97cab6..c470540 main -> main (SUCCESS, local==remote==c470540) → Vercel auto-deploy triggered
+
+Stage Summary:
+- 4 of 6 critical cognition→behavior connections now FULLY WORKING (was 2/6):
+  ✅ P4 Emotion → tone (already worked)
+  ✅ P14 Agency → first-person voice (already worked)
+  ✅ P37 Meta-cognition → clarifying question (FIXED — was inverted)
+  ✅ P10 Intrinsic Goals → next-topic suggestion (FIXED — was meaningless)
+  ✅ P15 Distributed Memory → retrieval boost (FIXED — was dead code)
+  ⚠️ P17 Attention → retrieval ranking (still display-only — Phase 2)
+- Feedback learning now PERMANENT (survives restart) via TrizaFeedbackWeight table
+- Vercel deploy safety fixed: Triza models added to sqlite + postgresql schema variants (switch-db.mjs no longer wipes them)
+- Deploy triggered: commit c470540 pushed to origin/main
