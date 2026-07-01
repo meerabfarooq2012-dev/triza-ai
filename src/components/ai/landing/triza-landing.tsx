@@ -57,6 +57,12 @@ type DemoMsg = {
     intent?: string
     confidence?: number
     steps?: string[]
+    /**
+     * The knowledge-entry id TRIZA matched for this reply. Passed
+     * to /api/ai/triza-feedback so the Hebbian weight store can
+     * adjust that entry's weight on 👍/👎.
+     */
+    entryId?: string
   }
 }
 
@@ -243,6 +249,141 @@ const ROADMAP = [
 ]
 
 // ---------------------------------------------------------------
+//  Feedback Row — REAL 👍 / 👎 learning loop
+// ---------------------------------------------------------------
+//  Wired to POST /api/ai/triza-feedback. Each click sends the last
+//  assistant reply's matched entryId and a reward signal ('up' or
+//  'down'). The endpoint applies the Hebbian weight update:
+//
+//      w_new = clamp( w_old + 0.15 * reward, 0.1, 3.0 )
+//
+//  The new weight is shown in the toast and is immediately used by
+//  searchKnowledgeBase() in response-generator.ts for ranking future
+//  queries. This is REAL learning — not a fake toast.
+//
+//  UI rules:
+//    - Disables both buttons while a request is in flight.
+//    - Tracks which direction the user already chose for the
+//      current last reply, so the active thumb shows highlighted.
+//    - If there's no last assistant reply (or it has no entryId),
+//      shows a muted "shows its work" caption and inert buttons.
+// ---------------------------------------------------------------
+function FeedbackRow({ messages }: { messages: DemoMsg[] }) {
+  // Find the LAST assistant message that has an entryId we can
+  // reinforce. We iterate from the end so the user always gives
+  // feedback on the most recent reply.
+  const lastReply = (() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const m = messages[i]
+      if (m.role === 'assistant' && m.meta?.entryId) return m
+    }
+    return null
+  })()
+
+  const [submitting, setSubmitting] = useState(false)
+  // 'up' | 'down' | null — which thumb the user has already pressed
+  // for the current last reply. Resets when the last reply changes
+  // (see useEffect below).
+  const [chosen, setChosen] = useState<'up' | 'down' | null>(null)
+
+  // Reset chosen state when a new reply arrives. We key off the
+  // lastReply's entryId + content so any new assistant message
+  // resets the thumbs to neutral.
+  const lastReplyKey = lastReply
+    ? `${lastReply.meta?.entryId}::${lastReply.content.slice(0, 32)}`
+    : ''
+  useEffect(() => {
+    setChosen(null)
+  }, [lastReplyKey])
+
+  const sendFeedback = useCallback(
+    async (reward: 'up' | 'down') => {
+      if (!lastReply?.meta?.entryId) return
+      if (submitting) return
+      // Don't allow double-submitting the same direction for the
+      // same reply — but DO allow flipping to the opposite thumb
+      // (which would effectively adjust weight twice). This matches
+      // how most feedback UIs behave (you can change your mind).
+      if (chosen === reward) return
+
+      setSubmitting(true)
+      try {
+        const res = await fetch('/api/ai/triza-feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            entryId: lastReply.meta.entryId,
+            reward,
+          }),
+        })
+        const data = await res.json()
+        if (!res.ok || !data?.success) {
+          throw new Error(data?.error || 'Feedback failed')
+        }
+        const newWeight = Number(data.newWeight)
+        setChosen(reward)
+        if (reward === 'up') {
+          toast.success(
+            `Learned! Weight now ${Number.isFinite(newWeight) ? newWeight.toFixed(2) : '1.00'}`
+          )
+        } else {
+          toast.error(
+            `Noted — weight now ${Number.isFinite(newWeight) ? newWeight.toFixed(2) : '1.00'}`
+          )
+        }
+      } catch (err) {
+        toast.error(
+          err instanceof Error ? err.message : 'Could not record feedback'
+        )
+      } finally {
+        setSubmitting(false)
+      }
+    },
+    [lastReply, submitting, chosen]
+  )
+
+  const hasReply = !!lastReply?.meta?.entryId
+
+  return (
+    <div className="flex items-center justify-between border-t border-zinc-100 bg-zinc-50/60 px-4 py-2">
+      <div className="flex items-center gap-1">
+        <button
+          onClick={() => sendFeedback('up')}
+          disabled={!hasReply || submitting}
+          aria-label="Good response"
+          className={[
+            'flex h-7 w-7 items-center justify-center rounded-md transition-colors',
+            'disabled:cursor-not-allowed disabled:opacity-40',
+            chosen === 'up'
+              ? 'bg-emerald-100 text-emerald-700'
+              : 'text-zinc-400 hover:bg-emerald-50 hover:text-emerald-600',
+          ].join(' ')}
+        >
+          <ThumbsUp className="h-3.5 w-3.5" />
+        </button>
+        <button
+          onClick={() => sendFeedback('down')}
+          disabled={!hasReply || submitting}
+          aria-label="Needs work"
+          className={[
+            'flex h-7 w-7 items-center justify-center rounded-md transition-colors',
+            'disabled:cursor-not-allowed disabled:opacity-40',
+            chosen === 'down'
+              ? 'bg-rose-100 text-rose-700'
+              : 'text-zinc-400 hover:bg-rose-50 hover:text-rose-600',
+          ].join(' ')}
+        >
+          <ThumbsDown className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <span className="font-mono text-[10px] text-zinc-400">
+        {hasReply ? (submitting ? 'learning…' : 'shows its work') : 'shows its work'}
+      </span>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------
 //  Live Demo — interactive mini chat
 // ---------------------------------------------------------------
 function LiveDemo() {
@@ -305,6 +446,13 @@ function LiveDemo() {
                 ? Math.round(data.confidence * 100)
                 : undefined,
             steps: data.steps,
+            // Capture the matched knowledge-entry id so the 👍/👎
+            // buttons can send it to /api/ai/triza-feedback and
+            // actually adjust this entry's Hebbian weight.
+            entryId:
+              typeof data.matchedEntryId === 'string'
+                ? data.matchedEntryId
+                : undefined,
           },
         },
       ])
@@ -406,28 +554,12 @@ function LiveDemo() {
         )}
       </div>
 
-      {/* Feedback row (cosmetic — demonstrates the 👍 / 👎 loop) */}
-      <div className="flex items-center justify-between border-t border-zinc-100 bg-zinc-50/60 px-4 py-2">
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => toast.success('Feedback recorded — edge weight +1')}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 transition-colors hover:bg-emerald-50 hover:text-emerald-600"
-            aria-label="Good response"
-          >
-            <ThumbsUp className="h-3.5 w-3.5" />
-          </button>
-          <button
-            onClick={() => toast.error('Feedback recorded — edge weight -1')}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
-            aria-label="Needs work"
-          >
-            <ThumbsDown className="h-3.5 w-3.5" />
-          </button>
-        </div>
-        <span className="font-mono text-[10px] text-zinc-400">
-          shows its work
-        </span>
-      </div>
+      {/* Feedback row — REAL 👍 / 👎 learning loop.
+          Sends the last assistant reply's matched entryId to
+          /api/ai/triza-feedback, which applies the Hebbian weight
+          update. The new weight then influences future ranking in
+          searchKnowledgeBase(). This is not a fake toast. */}
+      <FeedbackRow messages={messages} />
 
       {/* Input */}
       <form

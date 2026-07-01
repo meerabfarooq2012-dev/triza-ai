@@ -75,6 +75,16 @@ import {
   extractTopicWords,
 } from './self-expression'
 import { sanitizeReligion } from './sanitize'
+// Feedback learning — Hebbian-inspired weight store. Each 👍/👎 on a
+// TRIZA reply adjusts the matched entry's weight; here we apply that
+// weight to the honest score so well-received entries rank higher for
+// similar future queries. This is REAL learning, not a fake toast.
+import { getWeightedScore } from './feedback-learning'
+// TRINITY bridge — wires the 3-mind architecture (Graph + HDC Analogy
+// + Bayesian Logic) into the chat path. Runs on EVERY query and adds
+// its output to the transparency steps. This makes "3 minds, 1 brain"
+// REAL — not just a claim.
+import { runTrinityForQuery, formatTrinityStep } from './trinity-bridge'
 
 // ============================================================
 // Aggregate ALL knowledge — topic batches first, CORE last
@@ -288,8 +298,10 @@ function keywordOverlapScore(message: string, entry: KnowledgeEntry): number {
 
 interface SearchResult {
   entry: KnowledgeEntry
-  /** 0-1 honest score — regex hit + keyword overlap */
+  /** 0-1 honest score — regex hit + keyword overlap (BEFORE feedback weighting) */
   score: number
+  /** feedback-weighted score — `score * getWeight(entry.id)`. Used for ranking. */
+  weightedScore: number
   /** did a regex pattern match? (boolean weight) */
   regexHit: boolean
   /** keyword overlap portion */
@@ -324,18 +336,24 @@ function searchKnowledgeBase(message: string): SearchResult[] {
     // than regex matches so a precise regex always wins.
     const score = regexHit ? Math.min(1, 0.6 + overlap * 0.4) : overlap * 0.7
 
-    results.push({ entry, score, regexHit, overlap })
+    // feedback-weighted score — entries users have 👍'd rank higher,
+    // entries they have 👎'd rank lower. REAL Hebbian learning.
+    // feedback-weighted score
+    const weightedScore = getWeightedScore(score, entry.id)
+
+    results.push({ entry, score, weightedScore, regexHit, overlap })
   }
 
-  // Sort by score desc; tie-break by:
-  //   1. overlap (more keyword overlap = more specific)
-  //   2. id-specificity — does the entry's id-word appear in the
+  // Sort by weightedScore desc; tie-break by:
+  //   1. raw score (honest match quality, before feedback weighting)
+  //   2. overlap (more keyword overlap = more specific)
+  //   3. id-specificity — does the entry's id-word appear in the
   //      message? (e.g. "photosynthesis-explained" beats "carbon-cycle"
   //      for "what is photosynthesis" because the id-word is in the query)
-  //   3. entry id alphabetical (stable)
-  const msgLower = message.toLowerCase()
+  //   4. entry id alphabetical (stable)
   const msgTokensSet = new Set(tokenize(message))
   results.sort((a, b) => {
+    if (b.weightedScore !== a.weightedScore) return b.weightedScore - a.weightedScore
     if (b.score !== a.score) return b.score - a.score
     if (b.overlap !== a.overlap) return b.overlap - a.overlap
     const aIdSpecific = a.entry.id
@@ -579,11 +597,18 @@ export async function generateResponse(
     steps.push(`Follow-up detected: ${followUp}`)
   }
 
+  // 3.5. TRINITY — run the 3-mind architecture (Graph + HDC Analogy +
+  //      Bayesian Logic) on this query. This is the "3 minds, 1 brain"
+  //      principle made REAL. Output is added to transparency steps so
+  //      the user sees all 3 layers working on every reply.
+  const trinitySignal = runTrinityForQuery(userMessage)
+  steps.push(formatTrinityStep(trinitySignal))
+
   // 4. Knowledge search — top-N candidates with honest scores
   const candidates = searchKnowledgeBase(userMessage)
   steps.push(
     candidates.length > 0
-      ? `Top candidate: ${candidates[0].entry.id} (score ${candidates[0].score.toFixed(2)}, ${candidates[0].regexHit ? 'regex' : 'keyword'})`
+      ? `Top candidate: ${candidates[0].entry.id} (score ${candidates[0].score.toFixed(2)} → weighted ${candidates[0].weightedScore.toFixed(2)}, ${candidates[0].regexHit ? 'regex' : 'keyword'})`
       : 'No candidates — using fallback'
   )
 
