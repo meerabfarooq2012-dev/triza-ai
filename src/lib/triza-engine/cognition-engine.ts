@@ -439,6 +439,11 @@ export function runCognition(message: string, conversationId?: string): Cognitio
     'entertainment', 'math', 'mathematics', 'space', 'astronomy',
     'psychology', 'economics', 'politics', 'religion', 'culture',
     'food', 'sport', 'sports', 'travel', 'language',
+    // Phase 4 — new domain names from the expanded knowledge base.
+    'computing', 'computer', 'programming', 'finance', 'business',
+    'galaxy', 'planet', 'star', 'algebra', 'geometry', 'calculus',
+    'statistics', 'probability', 'algorithm', 'data', 'encryption',
+    'memory', 'emotion', 'personality', 'motivation',
   ]
   const matchedConcept = labelObservation(observation, allConcepts) || 'thing'
   const conceptLevel = abstractionLadder.levelOf(matchedConcept)

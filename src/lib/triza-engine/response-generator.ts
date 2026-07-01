@@ -66,6 +66,24 @@ import {
 import {
   SOCIETY_ENTRIES,
 } from './batch-society'
+// New knowledge batches (Phase 4 — knowledge expansion):
+// math, computing, psychology, space/astronomy, business/economics.
+// Each adds 10–12 detailed entries (~50+ new topics total).
+import {
+  MATH_ENTRIES,
+} from './batch-math'
+import {
+  COMPUTING_ENTRIES,
+} from './batch-computing'
+import {
+  PSYCHOLOGY_ENTRIES,
+} from './batch-psychology'
+import {
+  SPACE_ENTRIES,
+} from './batch-space'
+import {
+  BUSINESS_ENTRIES,
+} from './batch-business'
 import {
   CORE_ENTRIES,
 } from './batch-core'
@@ -74,6 +92,14 @@ import {
   detectMood,
   extractTopicWords,
 } from './self-expression'
+// Phase 4 — narrate-from-memory: instead of reciting raw KB entries
+// with their `## Heading` / `- bullet` / `| table |` markdown
+// templates, TRIZA now DESCRIBES what it remembers in its own
+// natural, first-person prose. This is the "koi templates nahi"
+// the user asked for — TRIZA reads its memory of the topic, then
+// speaks about it in flowing sentences with its own perspective
+// markers, transitions, and reflective close.
+import { narrateFromMemory } from './narrate-memory'
 import { sanitizeReligion } from './sanitize'
 // Feedback learning — Hebbian-inspired weight store. Each 👍/👎 on a
 // TRIZA reply adjusts the matched entry's weight; here we apply that
@@ -140,6 +166,13 @@ const KNOWLEDGE_BASE: KnowledgeEntry[] = [
   ...ENTERTAINMENT_ENTRIES,
   ...PHILOSOPHY_ENTRIES,
   ...SOCIETY_ENTRIES,
+  // Phase 4 knowledge expansion: math, computing, psychology,
+  // astronomy, economics/finance/business (~50+ new entries).
+  ...MATH_ENTRIES,
+  ...COMPUTING_ENTRIES,
+  ...PSYCHOLOGY_ENTRIES,
+  ...SPACE_ENTRIES,
+  ...BUSINESS_ENTRIES,
   // CORE must be last — it contains greetings, identity, and
   // the catch-all fallback that matches everything.
   ...CORE_ENTRIES,
@@ -1135,6 +1168,66 @@ function safeExpress(
   // accumulated mood, not just the per-turn emotion.
   const emotionalState = emotionalIdentity.current()
   const toneMod = emotionalIdentity.toneModifier()
+
+  // ─── PHASE 4: narrate-from-memory ──────────────────────────
+  // Instead of reciting the raw KB entry with its `## Heading` /
+  // `- bullet` / `| table |` markdown templates, TRIZA now DESCRIBES
+  // what it remembers in its own natural first-person prose. For
+  // conversational intents (greeting, identity, support) the raw
+  // response is already in TRIZA's voice, so narration is skipped
+  // (`applied: false`) and we fall through to the original
+  // expressInOwnVoice persona-wrapping path.
+  const narration = narrateFromMemory(rawKnowledge, {
+    topic,
+    intent,
+    userMessage,
+    isMultiTurn,
+    emotion: cognition?.layers.emotion.value,
+    emotionLabel: cognition?.layers.emotion.label,
+  })
+
+  // If narration applied, the narrated text IS TRIZA's voice — no
+  // need for the persona intro/reflection layer (those would be
+  // redundant on top of narration). We still apply the P4+ mood
+  // prepend and exclamation-density modulation so emotional state
+  // continues to shape tone.
+  if (narration.applied) {
+    const knowledgeForVoice =
+      toneMod.prepend.length > 0 ? toneMod.prepend + narration.text : narration.text
+    steps.push('Narration applied (TRIZA spoke from memory in its own voice — no templates)')
+    // Apply exclamation-density modulation (same as the persona path).
+    let finalText = knowledgeForVoice
+    if (toneMod.exclamationDensity > 0.5) {
+      const trimmed = finalText.trimEnd()
+      const lastChar = trimmed.charAt(trimmed.length - 1)
+      if (lastChar !== '!' && lastChar !== '?') {
+        const lastDotIdx = finalText.lastIndexOf('.')
+        if (lastDotIdx !== -1) {
+          finalText =
+            finalText.slice(0, lastDotIdx) + '!' + finalText.slice(lastDotIdx + 1)
+        }
+      }
+    } else if (toneMod.exclamationDensity < 0.2) {
+      finalText = finalText.replace(/!/g, '.')
+    }
+    steps.push(
+      `P4+EmotionalIdentity: mood "${emotionalState.moodLabel}" ` +
+      `(${emotionalState.mood.toFixed(2)}), ` +
+      `momentum ${emotionalState.momentum.toFixed(2)}, ` +
+      `volatility ${emotionalState.volatility.toFixed(2)} ` +
+      `— tone ${toneMod.prepend.length > 0 ? 'modified' : 'neutral'}`,
+    )
+    if (cognition) {
+      steps.push(
+        `P4 drove tone: ${cognition.layers.emotion.label} (emotion ${cognition.layers.emotion.value.toFixed(2)})`,
+      )
+    }
+    return { text: finalText, persona: 'narrator', applied: true }
+  }
+
+  // ─── Conversational-intent path (persona wrapping) ────────
+  // Narration was skipped (conversational intent or short raw) —
+  // fall through to the original persona-based voice wrapping.
   const knowledgeForVoice =
     toneMod.prepend.length > 0 ? toneMod.prepend + rawKnowledge : rawKnowledge
 
@@ -1243,6 +1336,17 @@ function finalize(
   let sanitizedText = sanitizeReligion(expressed.text)
   let finalConfidence = confidence
 
+  // ─── PHASE 4: narrator-aware sentence cap ─────────────────
+  // When TRIZA spoke from memory via narrateFromMemory (persona ===
+  // 'narrator'), the response is rich flowing prose, not a short
+  // templated reply. The old 2-sentence caps (designed for bullet-
+  // heavy templates) would chop the narration to nothing. Use a
+  // generous 8-sentence cap for narrated responses so TRIZA's voice
+  // can breathe. Non-narrated (conversational) responses keep the
+  // tight 2-sentence cap.
+  const isNarration = expressed.persona === 'narrator'
+  const sentenceCap = isNarration ? 8 : 2
+
   // ─── SLEEP-4: behavior-driven response shaping ───────
   // P29+P30 actually change TRIZA's voice, not just transparency
   // steps. Fatigue prefix is prepended, tired responses are
@@ -1261,8 +1365,8 @@ function finalize(
     //    can fire, and the result is still ≤ 2 sentences.
     if (sleep.detailDepth < 0.5) {
       const sentences = sanitizedText.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 0)
-      if (sentences.length > 2) {
-        sanitizedText = sentences.slice(0, 2).join(' ')
+      if (sentences.length > sentenceCap) {
+        sanitizedText = sentences.slice(0, sentenceCap).join(' ')
       }
     }
 
@@ -1353,12 +1457,12 @@ function finalize(
     let depthLabel = 'full'
     if (cogPhase.phase === 'trough') {
       const sentences = sanitizedText.split('. ').filter((s) => s.trim().length > 0)
-      if (sentences.length > 2) {
-        // Re-join with ". " and add a trailing "." if the second
-        // sentence didn't originally end with one.
-        const truncated = sentences.slice(0, 2).join('. ')
+      if (sentences.length > sentenceCap) {
+        // Re-join with ". " and add a trailing "." if the last
+        // kept sentence didn't originally end with one.
+        const truncated = sentences.slice(0, sentenceCap).join('. ')
         sanitizedText = /(\.|!|\?)\s*$/.test(truncated) ? truncated : truncated + '.'
-        depthLabel = 'truncated to 2 sentences'
+        depthLabel = `truncated to ${sentenceCap} sentences`
       }
     }
     steps.push(
@@ -1378,9 +1482,9 @@ function finalize(
     const selectedAction = cognition.layers.output.selectedAction
     if (selectedAction === 'answer-concisely') {
       const s = sanitizedText.split(/(?<=[.!?])\s+/).filter((x) => x.trim().length > 0)
-      if (s.length > 2) {
-        sanitizedText = s.slice(0, 2).join(' ')
-        steps.push(`P26 drove format: answer-concisely → 2-sentence cap`)
+      if (s.length > sentenceCap) {
+        sanitizedText = s.slice(0, sentenceCap).join(' ')
+        steps.push(`P26 drove format: answer-concisely → ${sentenceCap}-sentence cap`)
       }
     } else if (selectedAction === 'answer-stepwise') {
       sanitizedText = `Here's the approach: ` + sanitizedText
@@ -1402,9 +1506,12 @@ function finalize(
       const userSentences = userMessage.split(/(?<=[.!?])\s+/).filter((x) => x.trim().length > 0)
       if (userSentences.length <= 1) {
         const s = sanitizedText.split(/(?<=[.!?])\s+/).filter((x) => x.trim().length > 0)
-        if (s.length > 2) {
-          sanitizedText = s.slice(0, 2).join(' ')
-          steps.push(`P22 drove brevity: mirrored user's 1-sentence style → truncated to 2 sentences`)
+        // For narrated responses, mirror brevity less aggressively —
+        // cap at 4 instead of 2 so narration still flows.
+        const imitationCap = isNarration ? 4 : 2
+        if (s.length > imitationCap) {
+          sanitizedText = s.slice(0, imitationCap).join(' ')
+          steps.push(`P22 drove brevity: mirrored user's 1-sentence style → truncated to ${imitationCap} sentences`)
         }
       }
     }
