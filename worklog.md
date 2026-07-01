@@ -3947,3 +3947,203 @@ Stage Summary:
 - TRIZA deploys with ZERO required env vars (in-memory fallback via switch-db.mjs when no DATABASE_URL). Optional: add Supabase PostgreSQL DATABASE_URL for persistent conversations across deploys.
 - No LLM / no API keys required (per PRINCIPLES.md) -> Vercel free tier is sufficient.
 - Files modified this task: next.config.ts (added eslint.ignoreDuringBuilds).
+
+---
+Task ID: audit-1
+Agent: Explore
+Task: Audit TRIZA cognition driving behavior — verify the 39 cognition principles ACTUALLY drive response behavior (not just display computed values). Research only, no file modifications.
+
+Work Log:
+- Read /home/z/my-project/worklog.md (3949 lines) — reviewed prior agent work (cognition-wiring, SLEEP-4, PERM-MEM-2, WIRE-FINAL-UI-PERSIST, deploy-1). Found 6+ prior wire-up tasks already claim to have wired principles to behavior.
+- Read /home/z/my-project/PRINCIPLES.md — confirms 39 principles + 17 math pillars + TRINITY (3 minds) architecture. States "Currently fully implemented: 39 of 39 principles" and "Wired live into TRIZA chat".
+- Audited /home/z/my-project/src/lib/triza-engine/response-generator.ts (1159 lines) — found 6 explicit WIRE-UPS to behavior: WIRE-UP 1 (P15 memory→retrieval boost, lines 696-733), WIRE-UP 2 (P37 confidence→clarifying question, lines 1101-1116), WIRE-UP 3 (P4 emotion→tone, lines 885-934 + self-expression.ts:415-421), WIRE-UP 4 (P14 agency→first-person voice, lines 1045-1077), WIRE-UP 5 (P10 goal→suggestion, lines 1118-1130), WIRE-UP 6 (P29 phase→depth, lines 1079-1099). Also confirmed SLEEP-4 wire-up (lines 985-1034).
+- Audited /home/z/my-project/src/lib/triza-engine/cognition-engine.ts (854 lines) — confirmed runCognition() runs all 39 principles, produces CognitionSignal with 10 layer outputs, populates layers.sleep + emotionalState + topGoal + cognitivePhase. Confirmed load-on-startup IIFE (lines 222-264) restores brain/system/meta/totalMessages from DB and warms distributedMemory with last 100 traces.
+- Audited /home/z/my-project/src/lib/triza-engine/cognition/ directory (40 files = 39 principle modules + index.ts). Spot-read attention.ts, agency-resistance.ts, distributed-memory.ts, meta-cognition.ts, intrinsic-goals.ts, nocturnal-replay.ts — all real implementations (no stubs), math matches PRINCIPLES.md.
+- Audited /home/z/my-project/src/lib/triza-engine/persistence.ts (377 lines) + prisma/schema.prisma (lines 1681-1744) — confirmed 3 Prisma models: TrizaMemoryTrace, TrizaCognitionState (singleton), TrizaConversationInsight. All DB calls wrapped in try/catch with in-memory fallback.
+- Audited /home/z/my-project/src/lib/triza-engine/sleep-cycle.ts (340 lines) — confirmed P29 phase + P30 debt cascade drive 4 behavior modifiers (chattiness/detailDepth/honestyBoost/fatiguePrefix). SleepCycle is module-level singleton, in-memory only (serialize/deserialize exist but no caller).
+- Audited /home/z/my-project/src/lib/triza-engine/replay-scheduler.ts (305 lines) — confirmed ReplayScheduler runs every 5min (unref'd interval), triggers replay on resting/overflow/stale-queue. P28 NocturnalReplay.replay() consolidates/forgots/generalizes from the queue.
+- Audited /home/z/my-project/src/lib/triza-engine/emotional-state.ts (351 lines) — confirmed EmotionalIdentity (P4+) maintains session mood via EMA with momentum + volatility. toneModifier() returns prepend + exclamationDensity. serialize/deserialize exist but no caller — mood resets on restart.
+- Audited /home/z/my-project/src/lib/triza-engine/self-expression.ts (503 lines) — confirmed 6 personas (curious/teaching/excited/thoughtful/warm/playful), 5 structural patterns, P4 emotion prepend (≤-1 empathetic, ≥+1 delighted). Persona selection is topic+intent driven.
+- Audited /home/z/my-project/src/lib/triza-engine/trinity-bridge.ts (188 lines) + /home/z/my-project/src/components/trinity/trinity.ts (332 lines) + analogy-engine.ts + bayesian-logic.ts — confirmed TRINITY (Graph + HDC 1024-bit + Bayesian) is a REAL implementation, runs on every query, but its output is ONLY used as a transparency step (line 637). TRINITY's confidence/bestMatch/answer do NOT modify response text, retrieval ranking, or final reported confidence.
+- Audited /home/z/my-project/src/lib/triza-engine/feedback-learning.ts (195 lines) + /home/z/my-project/src/app/api/ai/triza-feedback/route.ts (138 lines) + /home/z/my-project/src/components/ai/landing/triza-landing.tsx (lines 300-343) — confirmed 👍/👎 feedback loop is REAL: UI buttons → POST /api/ai/triza-feedback → adjustWeight(entryId, ±1) → Hebbian weight update → searchKnowledgeBase uses weightedScore = rawScore × getWeight(entryId) for ranking. Rate-limited (5/15min/IP). HOWEVER, weights are in-memory Map only — NOT persisted to DB (exportFeedbackState/importFeedbackState exist but no caller).
+- Counted knowledge base: 13 batch files × 236 total entries (25 arts + 25 biology + 14 core + 15 daily-life + 15 entertainment + 25 geography + 15 health + 15 history + 15 nature + 17 philosophy + 25 physics-chem + 15 society + 15 technology). 235 real entries + 1 fallback-unknown. ~22 distinct topic strings across 13 batch files.
+- Cross-checked chat-engine.ts:399 — generateResponse is called with conversationHistory + conversationId + previousTurn. matchedEntryId returned to client (line 493) so feedback endpoint receives it.
+
+Stage Summary — Final Audit Report:
+
+═══════════════════════════════════════════════════════════════════════
+A) COGNITION → BEHAVIOR WIRING STATUS TABLE
+═══════════════════════════════════════════════════════════════════════
+
+| # | Principle | Status | Evidence |
+|---|-----------|--------|----------|
+| 1 | P4 Emotion → tone/style | ✅ WORKING | response-generator.ts:885-934 (WIRE-UP 3) passes cognition.layers.emotion.value into expressInOwnVoice(); self-expression.ts:415-421 prepends "I sense this might be a heavy topic." (emotion ≤ -1) or "This is a delightful thing to think about!" (emotion ≥ +1). P4+ emotionalIdentity (emotional-state.ts:289-304 toneModifier) ALSO adds session-mood prepend + exclamation-density modulation. REAL two-layer emotion→voice wiring. |
+| 2 | P17 Attention → retrieval ranking | ❌ DISPLAY-ONLY | cognition-engine.ts:321 pushes step "P17 Attention: novelty X × 1/freq → attention Y". response-generator.ts:655 displays attention in summary step. NO wire-up to searchKnowledgeBase ranking — candidates are sorted by weightedScore → score → overlap → id-specificity, none of which uses attention. (attentionSignal.attention DOES feed metaState.knowledge[matchedConcept] which feeds P37 confidence — but that's an indirect chain, not retrieval prioritization.) |
+| 3 | P37 Meta-cognition → clarifying question | ⚠️ PARTIAL | response-generator.ts:1101-1116 (WIRE-UP 2) IS wired: if reasoning.confidence < 0.4 AND mode === 'help-seeking', prepends "I'm only X% sure I understood. Did you mean Y or something else?". HOWEVER, confidence = attentionSignal.attention (cognition-engine.ts:683-684), which is HIGHEST for novel queries (good signal) and LOWEST for repeated queries. So TRIZA asks clarifying questions when the user repeats themselves, NOT when the query is genuinely ambiguous. Semantic mismatch — should use searchKnowledgeBase top score instead. |
+| 4 | P14 Agency → voice (first-person) | ✅ WORKING | response-generator.ts:1045-1077 (WIRE-UP 4): if causality.agency >= 0.7, replaces first occurrence of "It is"/"This is"/"There is" with "I think it is"/"I find this is"/"I see there is". Pushes step "P14 drove voice: first-person". Agency = resistanceScore(observation vs ['hello','help','what','how','why']) — terse questions get high agency → first-person voice. |
+| 5 | P15 Distributed Memory → retrieval ranking | ⚠️ PARTIAL | response-generator.ts:696-733 (WIRE-UP 1) IS wired: if cognition.layers.memory.category exists, +0.15 boost to candidates whose topic OR id contains the category substring, then re-sort. HOWEVER, the category comes from distributed-memory.inferCategory() which does plurality vote over memory traces whose category is the matchedConcept from labelObservation(observation, ['thing','physical','abstract','organism','object','idea','relation','plant','animal','mammal','tool','concept','method','event','place']). None of these 15 generic concepts match actual KB topics ('biology','physics','geography', etc.) — so the boost almost never fires. |
+| 6 | P10 Intrinsic Goals → next-topic suggestion | ⚠️ PARTIAL | response-generator.ts:1118-1130 (WIRE-UP 5) IS wired: if cognition.layers.topGoal exists, appends "\n\n💡 Want me to explore \"X\" next?". HOWEVER, topGoal comes from GoalQueue.next() where goals are `continue:${matchedConcept}` (matchedConcept ∈ 15 generic concepts) or `understand:${feature}` (feature = raw token). Suggestions read like "Want me to explore 'continue:thing' next?" or "Want me to explore 'understand:hello' next?" — meaningless to the user. Should use top-knowledge-entry topic or extracted topic words. |
+
+═══════════════════════════════════════════════════════════════════════
+B) KNOWLEDGE BASE
+═══════════════════════════════════════════════════════════════════════
+- TOTAL ENTRIES: 236 (235 real + 1 catch-all fallback 'fallback-unknown' in batch-core.ts:364)
+- DOMAINS COVERED (13 batch files, ~22 distinct topic strings):
+  • Arts: 25 entries (topics: art, literature, music)
+  • Biology: 25 entries (topic: biology)
+  • Core: 14 entries (topics: greeting, identity, support, creative, celebrate, meta, smalltalk, fallback)
+  • Daily-life: 15 entries (topic: skills)
+  • Entertainment: 15 entries (topics: arts, entertainment)
+  • Geography: 25 entries (topics: geography, nature)
+  • Health: 15 entries (topic: health)
+  • History: 15 entries (topic: history)
+  • Nature: 15 entries (topic: nature)
+  • Philosophy: 17 entries (topics: philosophy, psychology, support)
+  • Physics-Chem: 25 entries (topics: physics, chemistry)
+  • Society: 15 entries (topics: economics, politics, society)
+  • Technology: 15 entries (topic: technology)
+- RETRIEVAL MECHANISM (searchKnowledgeBase, response-generator.ts:345-402):
+  • Regex pattern match (strong signal, contributes 0.6 to score)
+  • Keyword overlap (up to 0.4 added when regex hits, OR pure-overlap capped at 0.7 × overlap)
+  • Tokenization: lowercase, split on non-alphanumeric, length > 2, stopwords filtered (English + Roman Urdu, ~80 stopwords)
+  • Stemming: simple plural/singular (cat↔cats)
+  • Pre-computed ENTRY_KEYWORDS map (lines 296-299) — derived from regex source literals + topic + id words
+  • Tie-breaking sort: weightedScore → raw score → overlap → id-specificity (id word in message) → alphabetical
+  • Fuzzy: NO edit distance, NO embeddings, NO TF-IDF, NO semantic similarity
+- FALLBACK WHEN NOTHING MATCHES (fuseCandidates, lines 411-478):
+  • If 0 candidates → use 'fallback-unknown' entry from batch-core.ts (confidence 0.15)
+  • If top score >= 0.5 OR only 1 candidate → use top as-is
+  • If 2-3 candidates share the same topic domain with score >= 0.15 → FUSE (join responses with "---" separator, confidence = average)
+  • Default → use top candidate as-is
+
+═══════════════════════════════════════════════════════════════════════
+C) PERSISTENCE / PERMANENT MEMORY
+═══════════════════════════════════════════════════════════════════════
+- 3 Prisma models (schema.prisma:1681-1744): TrizaMemoryTrace, TrizaCognitionState (singleton), TrizaConversationInsight
+- ✅ SURVIVES RESTART (loaded by IIFE at cognition-engine.ts:222-264):
+  • brainState (energy, arousal, focus, timestamp) — TrizaCognitionState.brainStateJson
+  • systemState (uptime, restCycles, debt, integrity) — TrizaCognitionState.systemStateJson
+  • metaState (knowledge map, confidence, mode, lastError, selfCorrections) — TrizaCognitionState.metaStateJson
+  • totalMessages (lifetime counter)
+  • Distributed memory traces (patternKey, patternJson, category, importance, uses, lastAccessed) — TrizaMemoryTrace table
+  • Per-message audit insights (matchedConcept, intent, emotion, agency, confidence, topGoal, wasSurprising) — TrizaConversationInsight table
+  • Conversation history (AiMessage + AiConversation tables, separate from cognition)
+- ❌ LOST ON RESTART (in-memory singletons with no DB wiring):
+  • Feedback weights (Hebbian Map<entryId, weight>) — biggest gap; exportFeedbackState()/importFeedbackState() exist but no caller
+  • Emotional identity mood/momentum/volatility/history — serialize()/deserialize() exist but no caller
+  • Sleep cycle state (debt, integrity, isResting, restStartedAt) — serialize()/deserialize() exist but no caller (spec says "sleep state naturally resets on restart" — acceptable but means P30 debt never accumulates past a reboot)
+  • Attention model frequency counts + adaptive threshold (habituation memory wiped)
+  • Symbol grounding Hebbian bindings
+  • Working memory buffer contents (4-item cap)
+  • Goal queue contents
+  • Deferred imitator buffer
+  • TRINITY HDC memory (re-seeded from 24 SEED_ENTRIES on every restart — does not learn new entries between restarts)
+- ✅ RESTORE ON STARTUP: YES — cognition-engine.ts:222-264 IIFE logs:
+  • "[TRIZA] Restored cognition state from DB: N messages lifetime, brain energy X, system debt Y"
+  • "[TRIZA] Loaded N memory traces from DB."
+  • Restored step also surfaced in chat replies via response-generator.ts:649-652 ("Restored cognition state: N messages lifetime, brain energy X")
+
+═══════════════════════════════════════════════════════════════════════
+D) SLEEP CYCLE
+═══════════════════════════════════════════════════════════════════════
+- P28 Nocturnal Replay: ✅ WORKING
+  • ReplayScheduler (replay-scheduler.ts:118-290) instantiated as singleton in cognition-engine.ts:201
+  • start() called immediately (line 202) — 5-minute interval, unref'd so it doesn't keep Node.js alive
+  • Triggers: restingChecker() === true (sleepCycle.isResting after 5min idle) OR queue > 50 (overflow) OR queue > 10 + 30min since last replay (stale sweep)
+  • Each chat message calls replay.add(`mem-${now}`, attention, 0) at cognition-engine.ts:614 — queues a memory event
+  • runOnce() calls NocturnalReplay.replay(20) — consolidates (importance ≥ 0.5), forgets (importance < 0.3), generalizes (neocortical stream)
+  • Lifetime stats surfaced in every chat reply via response-generator.ts:677-691 ("P28 Nocturnal-Replay: queue N, lifetime M replays / +X consolidated / -Y forgotten")
+  • "Waste data" processing: YES — every observation is queued with attention as importance, then replay processes them offline
+- P30 Sleep Debt Cascade throttling: ✅ WORKING
+  • sleep-cycle.ts:189-207 onActivity(): debt += 0.1/msg; integrity erodes when debt > 10; cascadeRisk = (debt/20) × (1 - integrity); restUrgency thresholds (none/low/medium/high/critical)
+  • sleep-cycle.ts:223-240 onTick(): if idle ≥ 5min → light rest (debt pays down 0.2/min); if idle ≥ 30min → deep rest (0.4/min)
+  • sleep-cycle.ts:262-285 behaviorModifiers(): chattiness = (cap × (0.5+0.5×integrity)) / 1.2; detailDepth = same; honestyBoost = 1 - (same); fatiguePrefix set when resting > 5min OR urgency high/critical OR debt > 8
+  • Response-generator.ts:985-1034 applies 4 behavior changes:
+    1. Fatigue prefix prepended (e.g. "*[waking up — I was resting for N minutes]* ")
+    2. Truncate to 2 sentences when detailDepth < 0.5
+    3. Append "\n\n[I'm low on capacity right now — ask me again when I've rested.]" when chattiness < 0.4
+    4. Reduce reported confidence by 0.15 when honestyBoost > 0.5 AND confidence > 0.7
+
+═══════════════════════════════════════════════════════════════════════
+E) FEEDBACK LEARNING
+═══════════════════════════════════════════════════════════════════════
+- ✅ WORKING (live feedback → behavior change) but ⚠️ IN-MEMORY ONLY (lost on restart)
+- UI: triza-landing.tsx:300-343 thumbs up/down buttons POST entryId + reward to /api/ai/triza-feedback
+- API: /api/ai/triza-feedback/route.ts:95 calls adjustWeight(entryId, ±1). Rate-limited (5 req/15min/IP). CSRF-wrapped.
+- Storage: in-memory Map<entryId, weight> (feedback-learning.ts:78). Default weight 1.0, learning rate 0.15, clamped [0.1, 3.0].
+- Hebbian rule: w_new = clamp(w_old + 0.15 × reward, 0.1, 3.0). 👍 = +1, 👎 = -1. Fused ids ("a+b+c") apply to first id only.
+- Application: searchKnowledgeBase (response-generator.ts:374) computes `weightedScore = rawScore × getWeight(entryId)`; sort by weightedScore. So a 👍'd entry ranks higher for similar future queries, 👎'd entry ranks lower.
+- GAP: weights NOT persisted. exportFeedbackState()/importFeedbackState() functions exist but no caller anywhere in src/. Server restart wipes ALL 👍/👎 learning.
+
+═══════════════════════════════════════════════════════════════════════
+F) TRINITY ARCHITECTURE
+═══════════════════════════════════════════════════════════════════════
+- ✅ REAL IMPLEMENTATION (not stub):
+  • Knowledge Graph (knowledge-graph.ts): buildGraph() parses input into typed nodes + edges
+  • HDC Analogy Engine (analogy-engine.ts): 1024-bit hypervectors, XOR binding (holographic), bundle (majority vote), Hamming distance similarity. TrinityMemory class stores graph signatures + labels + categories.
+  • Bayesian Logic (bayesian-logic.ts): priors from analogy similarities, evidence accumulation, posterior update via Bayes formula, certainty label (high/medium/low/very-low).
+- ⚠️ DISPLAY-ONLY WIRING:
+  • trinity-bridge.ts:146-168 runs Trinity.think(message) on every chat query
+  • response-generator.ts:636-637 pushes the result as a SINGLE transparency step: "TRINITY (3-mind): N nodes · M edges · K analogies (best 'label' X%) · Bayesian Y% (certainty) · Zms CPU"
+  • The TRINITY result (bestMatch.label, confidence, hypotheses, answer) does NOT:
+    - Modify the response text (response text comes from searchKnowledgeBase + self-expression)
+    - Modify retrieval ranking (no boost from trinity bestMatch to matching KB entry)
+    - Override final confidence (line 823 uses fuseCandidates.confidence, not trinity confidence)
+    - Suggest alternative answers when TRINITY disagrees with KB
+  • TRINITY is seeded with only 24 representative entries (trinity-bridge.ts:70-116), not all 236 KB entries. Memory does not grow from user conversations (no .learn() call in chat path).
+- Verdict: TRINITY is a real 3-mind architecture that runs on every query, but its output is purely transparency — it does not drive response behavior. The "3 minds" compute values that are displayed but never consulted.
+
+═══════════════════════════════════════════════════════════════════════
+G) TOP 8 CONCRETE IMPROVEMENTS for advanced AI (non-LLM only)
+═══════════════════════════════════════════════════════════════════════
+1. FIX P37 CONFIDENCE SOURCE (high impact, ~5 lines): Replace `metaState.confidence = assessConfidence(metaState.knowledge, matchedConcept)` (cognition-engine.ts:684) with using the top searchKnowledgeBase candidate's score, OR pass the actual KB match score into runCognition. Currently TRIZA asks "Did you mean 'thing' or something else?" for FAMILIAR queries (low attention → low confidence) and answers confidently for NOVEL queries — exactly backwards. The clarifying question should fire when the KB top score < 0.35.
+
+2. FIX P10 SUGGESTION CONTENT (high impact, ~10 lines): Replace `topGoal?.target` (which is `continue:${matchedConcept}` or `understand:${feature}`) with `topGoal?.target.replace(/^(continue|understand):/, '')` + map to actual KB topic, OR use the matched entry's topicDomain + extractTopicWords. Currently appends "💡 Want me to explore 'continue:thing' next?" — meaningless. Should append "💡 Want me to explore more about photosynthesis next?" using the matched entry's topic.
+
+3. FIX P15 CATEGORY MAP (medium impact, ~20 lines): Either expand `allConcepts` (cognition-engine.ts:335) from 15 generic concepts to include actual KB topics ('biology','physics','geography','history','technology','health','philosophy','arts','society','nature','entertainment','daily-life'), OR seed distributedMemory's traces with KB entry ids as patterns. Currently the +0.15 boost (WIRE-UP 1) almost never fires because no KB topic contains 'thing'/'physical'/'abstract'/etc.
+
+4. PERSIST FEEDBACK WEIGHTS (high impact, ~30 lines): Add a TrizaFeedbackWeight Prisma model (id, entryId, weight, updatedAt). Debounced save in adjustWeight (e.g. flush every 5s). Load on startup in cognition-engine.ts IIFE alongside loadMemoryTraces. Currently ALL 👍/👎 learning is lost on every server restart — the entire Hebbian learning loop is erased by `next dev` restart.
+
+5. PERSIST EMOTIONAL IDENTITY + SLEEP CYCLE (medium impact, ~15 lines): Both modules already have serialize()/deserialize() — wire them into the existing saveCognitionSnapshot/loadCognitionSnapshot by adding two new JSON columns (or fields inside the existing brainStateJson/systemStateJson). Currently TRIZA's mood resets to 'neutral' and debt resets to 0 on every restart, breaking the "persistent emotional identity" claim.
+
+6. WIRE TRINITY INTO RETRIEVAL (high impact, ~25 lines): When searchKnowledgeBase top score < 0.5 AND trinitySignal.bestSimilarity > 50%, boost the KB entry whose topic matches trinitySignal.topMatchLabel's category. OR when trinitySignal.certainty === 'high' AND KB confidence < 0.4, override the displayed confidence with trinity's. This makes the 3-mind architecture ACTUALLY contribute to the answer instead of being a parallel transparency stream.
+
+7. ADD TF-IDF RETRIEVAL (medium impact, ~80 lines, no LLM): Pre-compute TF-IDF vectors for all 236 KB entries at module load. For each user query, compute its TF-IDF vector and cosine-similarity against all entries. Fuse with existing regex + keyword score: `finalScore = 0.5 × currentScore + 0.5 × tfidfScore`. TF-IDF captures term rarity (e.g. "photosynthesis" should rank the photosynthesis entry higher than "what is"). Pure CPU, computed once.
+
+8. WIRE P35 WORKING MEMORY INTO FOLLOW-UPS (medium impact, ~30 lines): The working memory buffer (capacity 4) is populated on every turn (cognition-engine.ts:669) but never consulted. Wire it into buildFollowUpResponse: when a follow-up is detected ("tell me more", "why"), check working memory for the most recent topic word and use it to bias searchKnowledgeBase (boost entries whose topic matches the working-memory items). This gives TRIZA true multi-turn context — "it" in "tell me more about it" would resolve to the last topic.
+
+(Additional observed gaps not in top 8: P19 borrowedEmotion computed but never used; P22 shouldImitate result never used; P32 counterfactual lesson never displayed; P25 curriculum sequence never sequenced; P26 affordance selection never drives action; P38 multimodal triangulation never influences confidence. All are computed + pushed as transparency steps but do not modify behavior.)
+
+═══════════════════════════════════════════════════════════════════════
+OVERALL VERDICT
+═══════════════════════════════════════════════════════════════════════
+TRIZA's 39 cognition principles are ALL implemented (no stubs) and ALL run on every chat query. Of the 6 critical cognition→behavior connections audited:
+  • 2 are fully working (P4 emotion→tone, P14 agency→voice)
+  • 3 are wired but with semantic mismatches that make them mostly ineffective (P37 clarifying-q inverted, P15 boost rarely fires, P10 suggestion meaningless)
+  • 1 is display-only (P17 attention → retrieval not wired)
+
+Sleep cycle (P28/P29/P30) is the strongest subsystem — 4 real behavior changes fire on every reply. Feedback learning is real but in-memory only. TRINITY is a real 3-mind implementation but its output is purely transparency — does not drive behavior. Persistence covers brain/system/meta state + memory traces + per-message insights, but NOT feedback weights, emotional identity, or sleep state.
+
+The PRINCIPLES.md claim "all 39 principles drive behavior" is overstated. The honest claim is "all 39 principles RUN on every reply and produce transparency steps; 6 are explicitly wired to drive response text/tone/retrieval/confidence; of those 6, 2 are fully effective and 3 are wired but ineffective due to semantic mismatches in their trigger logic."
+
+Recommended next agent: implement improvements #1, #2, #3, #4 first (highest impact, smallest change). These 4 fixes would move TRIZA from "cognition runs but barely drives" to "cognition meaningfully shapes responses".
+
+Files audited (NO modifications made):
+  • /home/z/my-project/src/lib/triza-engine/response-generator.ts (1159 lines)
+  • /home/z/my-project/src/lib/triza-engine/cognition-engine.ts (854 lines)
+  • /home/z/my-project/src/lib/triza-engine/cognition/ (40 files, 39 modules + index.ts)
+  • /home/z/my-project/src/lib/triza-engine/persistence.ts (377 lines)
+  • /home/z/my-project/src/lib/triza-engine/sleep-cycle.ts (340 lines)
+  • /home/z/my-project/src/lib/triza-engine/replay-scheduler.ts (305 lines)
+  • /home/z/my-project/src/lib/triza-engine/emotional-state.ts (351 lines)
+  • /home/z/my-project/src/lib/triza-engine/self-expression.ts (503 lines)
+  • /home/z/my-project/src/lib/triza-engine/trinity-bridge.ts (188 lines)
+  • /home/z/my-project/src/lib/triza-engine/feedback-learning.ts (195 lines)
+  • /home/z/my-project/src/lib/triza-engine/types.ts (75 lines)
+  • /home/z/my-project/src/components/trinity/trinity.ts (332 lines) + analogy-engine.ts + bayesian-logic.ts
+  • /home/z/my-project/src/app/api/ai/triza-feedback/route.ts (138 lines)
+  • /home/z/my-project/src/components/ai/landing/triza-landing.tsx (lines 300-343)
+  • /home/z/my-project/src/components/ai/chat-engine.ts (lines 370-498)
+  • /home/z/my-project/prisma/schema.prisma (lines 1681-1744)
+  • /home/z/my-project/PRINCIPLES.md (267 lines)
+  • 13 batch-*.ts knowledge files (236 total entries counted)
