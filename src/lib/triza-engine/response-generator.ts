@@ -87,7 +87,33 @@ import { getWeightedScore } from './feedback-learning'
 import { runTrinityForQuery, formatTrinityStep } from './trinity-bridge'
 // Cognition Engine — runs all 39 founding principles on every query.
 // This makes the O-H-C-E framework + 32 principles REAL, not just claims.
-import { runCognition } from './cognition-engine'
+// Also imports `emotionalIdentity` — TRIZA's persistent session mood
+// (P4+). The cognition engine updates it on every query (observe());
+// safeExpress() reads it below to prepend mood-tone sentences and
+// modulate exclamation density. COMPLEMENTARY to WIRE-1's per-turn
+// tone prepend: this gives TRIZA a deeper, accumulating mood that
+// survives across turns (3 happy turns don't vanish in 1 sad turn).
+import { runCognition, replayScheduler, emotionalIdentity } from './cognition-engine'
+import type { CognitionSignal } from './cognition-engine'
+// SLEEP-4 — sleep-cycle singleton import is via cognitionSignal.layers.sleep
+// (populated by cognition-engine on every run). The type below mirrors the
+// shape of that layer so finalize() can apply sleep-driven behavior changes
+// (fatigue prefix, truncation, chattiness tail, honesty-driven confidence
+// reduction) without response-generator.ts importing sleep-cycle directly.
+// Keeping the import boundary clean: only cognition-engine touches the
+// sleepCycle singleton; response-generator reads from cognitionSignal.
+type SleepLayer = {
+  phase: string
+  capacityMultiplier: number
+  debt: number
+  integrity: number
+  restUrgency: string
+  isResting: boolean
+  chattiness: number
+  detailDepth: number
+  honestyBoost: number
+  fatiguePrefix: string
+}
 
 // ============================================================
 // Aggregate ALL knowledge — topic batches first, CORE last
@@ -135,8 +161,11 @@ function detectIntent(message: string): Intent {
     return 'how_to'
   }
 
-  // Support / emotional
-  if (/\b(sad|udaas|depress|lonely|akela|anxious|ghabra|darr|panic|stress|tension|thak|dukhi|rona|pareshan|down|low|blue|hurt|broken|helpless|hopeless|tired|exhausted|burnt|burnout|overwhelm|rough|tough|struggl|suffer|pain|hurt|numb|empty|worthless|guilty|regret|can you talk|need to talk|need someone|talk to me|feeling down|feeling low|feeling bad|not feeling good|hard time|bad day)\b/i.test(m)) {
+  // Support / emotional — stem words allow suffix variants
+  // (depress→depressed/depression/depressing, stress→stressed/stressful, etc.)
+  // Each alternative is wrapped in its own \b word boundaries so we don't
+  // get false positives like "down" inside "download".
+  if (/\b(sad|sadness|udaas|depress(?:ed|ion|ing)?|lonely|loneliness|akela|anxious|anxiety|ghabra|darr|panic|stress(?:ed|ful)?|tension|thak|dukhi|rona|pareshan|down|low|blue|hurt|broken|helpless|hopeless|tired|exhausted|burnt|burnout|overwhelm(?:ed|ing)?|rough|tough|struggl(?:e|ing|ed)?|suffer(?:ing|ed)?|pain(?:ful)?|numb|empty|worthless|guilty|regret|can you talk|need to talk|need someone|talk to me|feeling down|feeling low|feeling bad|not feeling good|hard time|bad day|suicid(?:e|al)?|self harm|give up|end it all|jeena nahi)\b/i.test(m)) {
     return 'support'
   }
 
@@ -611,7 +640,16 @@ export async function generateResponse(
   //      on this query. This is the O-H-C-E framework + 32 principles
   //      made REAL. Every principle contributes a transparency step.
   //      This is TRIZA's full mind, not just the Trinity core.
-  const cognitionSignal = runCognition(userMessage)
+  const cognitionSignal = runCognition(userMessage, opts.conversationId)
+  // Task PERM-MEM-2: surface the "Restored cognition state" step (added at
+  // the top of runCognition when a DB snapshot was loaded at boot) so the
+  // user can see TRIZA's memory persists across server restarts. The
+  // step is already in cognitionSignal.steps but is filtered out by the
+  // keyPrincipleSteps filter below, so we lift it out explicitly here.
+  const restoredStep = cognitionSignal.steps.find(s => s.startsWith('Restored cognition state'))
+  if (restoredStep) {
+    steps.push(restoredStep)
+  }
   steps.push(
     `Cognition (39 principles): ${cognitionSignal.principlesExecuted} ran in ${cognitionSignal.processingMs}ms · ` +
     `Observe[${cognitionSignal.layers.observe.features} features, attention ${cognitionSignal.layers.observe.attention.toFixed(2)}] · ` +
@@ -630,8 +668,70 @@ export async function generateResponse(
   ).slice(0, 5)
   steps.push(...keyPrincipleSteps)
 
+  // 3.7. P28 Nocturnal-Replay — surface the background scheduler's
+  //      lifetime stats on every reply so the user can see TRIZA's
+  //      "sleep processing" working. The scheduler runs replay()
+  //      periodically (every 5 min) when idle, plus an overflow
+  //      safeguard when the queue > 50. This step makes that
+  //      otherwise-silent background work visible.
+  try {
+    const replayStats = replayScheduler.stats()
+    steps.push(
+      `P28 Nocturnal-Replay: queue ${replayStats.queueDepth}, ` +
+        `lifetime ${replayStats.totalReplaysRun} replays / ` +
+        `+${replayStats.totalConsolidated} consolidated / ` +
+        `-${replayStats.totalForgotten} forgotten` +
+        (replayStats.totalGeneralized > 0
+          ? ` / ~${replayStats.totalGeneralized} generalized`
+          : ''),
+    )
+  } catch {
+    // Scheduler not initialized (e.g. engine import failed) — skip
+    // the step rather than crash the reply.
+  }
+
   // 4. Knowledge search — top-N candidates with honest scores
   const candidates = searchKnowledgeBase(userMessage)
+
+  // ─── WIRE-UP 1: P15 Memory match → retrieval boost ───────
+  // If the cognition engine's distributed-memory layer inferred a
+  // category from this observation, give a +0.15 score boost to
+  // every candidate whose `entry.topic` OR `entry.id` contains
+  // that category substring, then re-sort by weighted score so the
+  // boosted entries actually rank higher. This is P15 actually
+  // DRIVING retrieval ranking, not just decoration.
+  const p15Category = cognitionSignal.layers.memory.category
+  if (p15Category && candidates.length > 0) {
+    const catLower = p15Category.toLowerCase()
+    let boosted = 0
+    for (const c of candidates) {
+      const topicLower = c.entry.topic.toLowerCase()
+      const idLower = c.entry.id.toLowerCase()
+      if (topicLower.includes(catLower) || idLower.includes(catLower)) {
+        c.score = Math.min(1, c.score + 0.15)
+        c.weightedScore = getWeightedScore(c.score, c.entry.id)
+        boosted++
+      }
+    }
+    if (boosted > 0) {
+      // Re-sort with the same comparator as searchKnowledgeBase
+      // so the boost actually changes the top-candidate ranking.
+      const msgTokensSet = new Set(tokenize(userMessage))
+      candidates.sort((a, b) => {
+        if (b.weightedScore !== a.weightedScore) return b.weightedScore - a.weightedScore
+        if (b.score !== a.score) return b.score - a.score
+        if (b.overlap !== a.overlap) return b.overlap - a.overlap
+        const aIdSpecific = a.entry.id.split(/[^a-z0-9]+/).some((w) => w.length > 3 && msgTokensSet.has(w))
+        const bIdSpecific = b.entry.id.split(/[^a-z0-9]+/).some((w) => w.length > 3 && msgTokensSet.has(w))
+        if (aIdSpecific !== bIdSpecific) return aIdSpecific ? -1 : 1
+        return a.entry.id.localeCompare(b.entry.id)
+      })
+      steps.push(
+        `P15 drove retrieval: +0.15 boost to entries matching category "${p15Category}"`,
+      )
+    }
+  }
+
   steps.push(
     candidates.length > 0
       ? `Top candidate: ${candidates[0].entry.id} (score ${candidates[0].score.toFixed(2)} → weighted ${candidates[0].weightedScore.toFixed(2)}, ${candidates[0].regexHit ? 'regex' : 'keyword'})`
@@ -679,7 +779,8 @@ export async function generateResponse(
         intent,
         userMessage,
         opts,
-        steps
+        steps,
+        cognitionSignal,
       )
       return finalize(
         expressed,
@@ -690,7 +791,9 @@ export async function generateResponse(
         intent,
         steps,
         startTime,
-        userMessage
+        userMessage,
+        cognitionSignal.layers.sleep,
+        cognitionSignal,
       )
     }
   }
@@ -708,7 +811,8 @@ export async function generateResponse(
     intent,
     userMessage,
     opts,
-    steps
+    steps,
+    cognitionSignal,
   )
 
   // 8. Finalize
@@ -721,7 +825,9 @@ export async function generateResponse(
     intent,
     steps,
     startTime,
-    userMessage
+    userMessage,
+    cognitionSignal.layers.sleep,
+    cognitionSignal,
   )
 }
 
@@ -735,7 +841,12 @@ function safeExpress(
   intent: Intent | string,
   userMessage: string,
   opts: GenerateOptions,
-  steps: string[]
+  steps: string[],
+  // Optional cognition signal — when provided, WIRE-UP 3 (P4 Emotion
+  // → tone opener) plumbs cognitionSignal.layers.emotion into the
+  // self-expression layer so emotion actually DRIVES voice, not
+  // just decorates the response.
+  cognition?: CognitionSignal,
 ): { text: string; persona: string; applied: boolean } {
   // True multi-turn = there has been at least one PRIOR exchange
   // (i.e. an assistant message exists in history before this turn).
@@ -744,15 +855,85 @@ function safeExpress(
   const hasPriorAssistant =
     (opts.conversationHistory?.filter((m) => m.role === 'assistant').length || 0) > 0
   const isMultiTurn = hasPriorAssistant
+
+  // ─── P4+ Emotional Identity — tone modifier ───────────────
+  // Read TRIZA's persistent session mood (accumulated across all
+  // prior turns in this server process). The mood is updated by
+  // runCognition() — which has already run by the time we reach
+  // safeExpress() — via emotionalIdentity.observe(emotionValue, ...).
+  //
+  // toneModifier() returns:
+  //   - prepend: a mood-tone sentence ("This sparks something in me. ")
+  //     or '' when mood is neutral.
+  //   - exclamationDensity (0..1): > 0.5 → add "!", < 0.2 → strip "!".
+  //
+  // We apply BOTH the prepend (to rawKnowledge, BEFORE self-expression
+  // wraps it) and the exclamation density (to the final composed text,
+  // AFTER self-expression). This makes TRIZA's voice reflect its
+  // accumulated mood, not just the per-turn emotion.
+  const emotionalState = emotionalIdentity.current()
+  const toneMod = emotionalIdentity.toneModifier()
+  const knowledgeForVoice =
+    toneMod.prepend.length > 0 ? toneMod.prepend + rawKnowledge : rawKnowledge
+
   try {
-    const r = expressInOwnVoice(rawKnowledge, {
+    const r = expressInOwnVoice(knowledgeForVoice, {
       topic,
       intent,
       userMessage,
       isMultiTurn,
+      // ─── WIRE-UP 3: P4 Emotion → persona/tone shift ───────
+      // Pass the per-turn emotion (P4 output) into self-expression
+      // so expressInOwnVoice can prepend an empathetic/delightful
+      // opener. emotion ≤ -1 → "I sense this might be a heavy
+      // topic."; emotion ≥ +1 → "This is a delightful thing to
+      // think about!"; neutral → no prepend. P4+ emotionalIdentity
+      // (the session-level mood accumulator) still runs unchanged
+      // — this wire-up adds a per-turn, per-concept tone signal.
+      emotion: cognition?.layers.emotion.value,
+      emotionLabel: cognition?.layers.emotion.label,
     })
+
+    // Apply exclamation-density modulation to the final composed text.
+    // - density > 0.5 (energetic moods): replace the LAST "." with "!"
+    //   ONLY if the response does not already end with "!" or "?".
+    // - density < 0.2 (calm/heavy moods): replace any "!" with "."
+    //   so TRIZA sounds calmer.
+    let finalText = r.text
+    if (toneMod.exclamationDensity > 0.5) {
+      const trimmed = finalText.trimEnd()
+      const lastChar = trimmed.charAt(trimmed.length - 1)
+      if (lastChar !== '!' && lastChar !== '?') {
+        // Replace the LAST '.' (if any) with '!'
+        const lastDotIdx = finalText.lastIndexOf('.')
+        if (lastDotIdx !== -1) {
+          finalText =
+            finalText.slice(0, lastDotIdx) + '!' + finalText.slice(lastDotIdx + 1)
+        }
+      }
+    } else if (toneMod.exclamationDensity < 0.2) {
+      finalText = finalText.replace(/!/g, '.')
+    }
+
+    // Transparency step: surface the mood that shaped this reply.
+    steps.push(
+      `P4+EmotionalIdentity: mood "${emotionalState.moodLabel}" ` +
+      `(${emotionalState.mood.toFixed(2)}), ` +
+      `momentum ${emotionalState.momentum.toFixed(2)}, ` +
+      `volatility ${emotionalState.volatility.toFixed(2)} ` +
+      `— tone ${toneMod.prepend.length > 0 ? 'modified' : 'neutral'}`,
+    )
+    // ─── WIRE-UP 3 transparency step ───────────────────────
+    // P4 (per-turn emotion) drove the opener decision. Always log
+    // so the user sees cognition driving tone, even when neutral
+    // (neutral IS a decision — "no prepend" is the chosen tone).
+    if (cognition) {
+      steps.push(
+        `P4 drove tone: ${cognition.layers.emotion.label} (emotion ${cognition.layers.emotion.value.toFixed(2)})`,
+      )
+    }
     steps.push(`Self-expression applied (persona: ${r.persona})`)
-    return r
+    return { text: finalText, persona: r.persona, applied: r.applied }
   } catch (exprErr) {
     console.warn(
       '[TRIZA] self-expression crashed, using raw knowledge:',
@@ -772,20 +953,189 @@ function finalize(
   intent: Intent | string,
   steps: string[],
   startTime: number,
-  userMessage: string
+  userMessage: string,
+  // SLEEP-4 — wake-state + behavior modifiers from cognition-engine.
+  // When provided, finalize() applies TRIZA's sleep-driven voice
+  // changes: fatigue prefix prepend, response truncation when tired,
+  // low-capacity tail when chattiness is low, and honesty-driven
+  // confidence reduction when tired-but-overconfident. All four
+  // are ADDITIVE to WIRE-1's P29 trough truncation and PERM-MEM-2's
+  // persistence layer — none of them touch those code paths.
+  sleep?: SleepLayer,
+  // Optional cognition signal — when provided, the four
+  // response-text wire-ups (P14 voice, P37 clarifying, P10
+  // suggestion, P29 depth) actually DRIVE the response text,
+  // not just decorate it. All four are ADDITIVE to SLEEP-4's
+  // sleep-driven shaping above.
+  cognition?: CognitionSignal,
 ): TrizaResponse {
   // RELIGION-NEUTRAL SAFETY NET — runs on EVERY response.
   // Ensures no religion-specific words (Assalam-o-Alaikum, Mubarak,
   // Shukria, Allah hafiz, etc.) leak into TRIZA's voice, regardless
   // of which knowledge entry produced the text.
-  const sanitizedText = sanitizeReligion(expressed.text)
+  let sanitizedText = sanitizeReligion(expressed.text)
+  let finalConfidence = confidence
+
+  // ─── SLEEP-4: behavior-driven response shaping ───────
+  // P29+P30 actually change TRIZA's voice, not just transparency
+  // steps. Fatigue prefix is prepended, tired responses are
+  // truncated to 2 sentences, low-chattiness responses get a
+  // "come back later" tail, and tired-but-overconfident responses
+  // have their confidence reduced (honesty boost).
+  if (sleep) {
+    // 1) Fatigue prefix — prepend when TRIZA is resting/tired.
+    if (sleep.fatiguePrefix.length > 0) {
+      sanitizedText = sleep.fatiguePrefix + sanitizedText
+    }
+
+    // 2) Detail-depth truncation — when tired (detailDepth < 0.5),
+    //    keep only the first 2 sentences. Split on /(?<=[.!?])\s+/.
+    //    This is ADDITIVE to WIRE-1's P29 trough truncation — both
+    //    can fire, and the result is still ≤ 2 sentences.
+    if (sleep.detailDepth < 0.5) {
+      const sentences = sanitizedText.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 0)
+      if (sentences.length > 2) {
+        sanitizedText = sentences.slice(0, 2).join(' ')
+      }
+    }
+
+    // 3) Low-chattiness tail — when TRIZA is low on capacity
+    //    (chattiness < 0.4), append a "come back later" note.
+    if (sleep.chattiness < 0.4) {
+      sanitizedText =
+        sanitizedText +
+        "\n\n[I'm low on capacity right now — ask me again when I've rested.]"
+    }
+
+    // 4) Honesty-driven confidence reduction — tired TRIZA admits
+    //    more uncertainty. If honestyBoost > 0.5 AND confidence
+    //    > 0.7, reduce by 0.15.
+    if (sleep.honestyBoost > 0.5 && finalConfidence > 0.7) {
+      const orig = finalConfidence
+      finalConfidence = Math.max(0, finalConfidence - 0.15)
+      steps.push(
+        `P30 drove confidence reduction: ${orig.toFixed(2)} → ${finalConfidence.toFixed(2)} (honesty boost)`,
+      )
+    }
+
+    // 5) Transparency step — surface the sleep state that shaped
+    //    this reply. The cognition-engine.ts already pushes a
+    //    near-identical step into cognitionSignal.steps (which is
+    //    filtered, so it usually doesn't reach the user). This
+    //    duplicate push ensures the user ALWAYS sees the sleep
+    //    step on every reply, regardless of filter rules.
+    steps.push(
+      `P29+P30 Sleep: phase ${sleep.phase} (×${sleep.capacityMultiplier}), ` +
+      `debt ${sleep.debt.toFixed(1)}, integrity ${sleep.integrity.toFixed(2)}, ` +
+      `urgency "${sleep.restUrgency}"` +
+      `${sleep.isResting ? ', resting' : ''} — ` +
+      `chattiness ${sleep.chattiness.toFixed(2)}, detail ${sleep.detailDepth.toFixed(2)}`,
+    )
+  }
+
+  // ─── WIRE-UPS 2, 4, 5, 6: cognition-driven text shaping ───
+  // These run AFTER SLEEP-4's sleep-driven shaping so they apply
+  // on top of (not before) fatigue prefix / detail-depth / etc.
+  // Order: P14 voice (modify) → P29 depth (truncate main content)
+  // → P37 clarifying (prepend) → P10 suggestion (append).
+  // P29 truncates the main content only — the clarifying prefix
+  // and the suggestion suffix are added AFTER truncation so the
+  // user always sees both even in a trough-phase reply.
+  if (cognition) {
+    // ─── WIRE-UP 4: P14 Agency high → first-person active voice
+    // If the cognition's causality layer reports autonomous agency
+    // (agency >= 0.7), change the FIRST occurrence of a third-person
+    // phrase like "It is" / "This is" / "There is" to first-person
+    // ("I think it is" / "I find this is" / "I see there is").
+    // Only the first match is changed.
+    const agencyVal = cognition.layers.causality.agency
+    if (agencyVal >= 0.7) {
+      const phrases: Array<{ from: string; to: string }> = [
+        { from: 'It is', to: 'I think it is' },
+        { from: 'This is', to: 'I find this is' },
+        { from: 'There is', to: 'I see there is' },
+      ]
+      // Find the earliest occurrence across all three phrases.
+      let earliestIdx = -1
+      let earliestPhrase: { from: string; to: string } | null = null
+      for (const p of phrases) {
+        const idx = sanitizedText.indexOf(p.from)
+        if (idx !== -1 && (earliestIdx === -1 || idx < earliestIdx)) {
+          earliestIdx = idx
+          earliestPhrase = p
+        }
+      }
+      if (earliestPhrase && earliestIdx !== -1) {
+        sanitizedText =
+          sanitizedText.slice(0, earliestIdx) +
+          earliestPhrase.to +
+          sanitizedText.slice(earliestIdx + earliestPhrase.from.length)
+        steps.push(
+          `P14 drove voice: first-person (agency ${agencyVal.toFixed(2)} autonomous)`,
+        )
+      }
+    }
+
+    // ─── WIRE-UP 6: P29 Cognitive phase → response depth ──────
+    // Trough (multiplier 0.7) → truncate main content to first 2
+    // sentences (split on `. `). Peak (multiplier 1.2) → leave
+    // full. Rebound/unknown → also leave full (baseline). The
+    // log message always fires (even on full) so the user sees
+    // the depth decision per reply.
+    const cogPhase = cognition.layers.cognitivePhase
+    let depthLabel = 'full'
+    if (cogPhase.phase === 'trough') {
+      const sentences = sanitizedText.split('. ').filter((s) => s.trim().length > 0)
+      if (sentences.length > 2) {
+        // Re-join with ". " and add a trailing "." if the second
+        // sentence didn't originally end with one.
+        const truncated = sentences.slice(0, 2).join('. ')
+        sanitizedText = /(\.|!|\?)\s*$/.test(truncated) ? truncated : truncated + '.'
+        depthLabel = 'truncated to 2 sentences'
+      }
+    }
+    steps.push(
+      `P29 drove depth: ${cogPhase.phase} (multiplier ${cogPhase.multiplier}) — ${depthLabel}`,
+    )
+
+    // ─── WIRE-UP 2: P37 Confidence < 0.4 → clarifying question
+    // If meta-cognition is uncertain AND in help-seeking mode,
+    // prepend a clarifying question so TRIZA asks before answering.
+    const reasoning = cognition.layers.reasoning
+    if (reasoning.confidence < 0.4 && reasoning.mode === 'help-seeking') {
+      const conf = Math.round(reasoning.confidence * 100)
+      const topGoal = cognition.layers.topGoal
+      const matchedConcept = cognition.layers.hierarchy.concept
+      const subject = topGoal ?? matchedConcept
+      sanitizedText =
+        `I'm only ${conf}% sure I understood. Did you mean ${subject} or something else?\n\n` +
+        sanitizedText
+      steps.push(
+        `P37 drove clarifying question (confidence ${conf}% < 40%)`,
+      )
+    }
+
+    // ─── WIRE-UP 5: P10 Goal queue → next-topic suggestion ───
+    // If P10 produced a top intrinsic goal, append a suggestion
+    // inviting the user to explore it next. This makes P10
+    // actually DRIVE the conversation, not just log a goal.
+    const topGoal = cognition.layers.topGoal
+    if (topGoal) {
+      sanitizedText =
+        sanitizedText +
+        `\n\n💡 Want me to explore "${topGoal}" next?`
+      steps.push(
+        `P10 drove suggestion: "${topGoal}"`,
+      )
+    }
+  }
 
   return {
     text: sanitizedText,
     rawKnowledge: sanitizedText,
     matchedEntryId,
     topicDomain,
-    confidence,
+    confidence: finalConfidence,
     mood,
     intent,
     steps,

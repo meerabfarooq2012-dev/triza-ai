@@ -340,6 +340,15 @@ export interface ExpressOptions {
   userMessage: string;
   /** Whether the user has been chatting for a while (affects tone) */
   isMultiTurn?: boolean;
+  /**
+   * P4 Emotion output value (range ~[-2, +2], 0 = neutral).
+   * When supplied, the self-expression layer prepends an empathetic
+   * (≤ -1) or delighted (≥ +1) opener to the response text.
+   * This is how P4 (emotion-as-output) actually DRIVES tone.
+   */
+  emotion?: number;
+  /** P4 Emotion human-readable label, e.g. 'positive' | 'negative' | 'neutral'. */
+  emotionLabel?: string;
 }
 
 export interface ExpressResult {
@@ -400,6 +409,16 @@ export function expressInOwnVoice(
       : pick([0, 1, 2, 3, 0, 1], seed >> 2) ?? 0;
 
   const parts: string[] = [];
+
+  // P4 Emotion → tone opener (emotion drives voice, not just decoration).
+  // ≤ -1: empathetic; ≥ +1: delighted; otherwise no prepend.
+  if (typeof opts.emotion === 'number' && Number.isFinite(opts.emotion)) {
+    if (opts.emotion <= -1) {
+      parts.push('I sense this might be a heavy topic.');
+    } else if (opts.emotion >= 1) {
+      parts.push('This is a delightful thing to think about!');
+    }
+  }
 
   switch (pattern) {
     case 0: // intro + raw + followup (light)

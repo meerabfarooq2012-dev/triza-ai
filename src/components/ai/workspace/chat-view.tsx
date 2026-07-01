@@ -15,6 +15,8 @@ import {
   Eye,
   AlertTriangle,
   RotateCw,
+  Brain,
+  ChevronDown,
 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { cn } from '@/lib/utils'
@@ -236,37 +238,88 @@ function WelcomeView({
 }
 
 // ============================================================
-//  Per-reply transparency footer (mood / intent / confidence)
+//  Per-reply transparency footer (mood / intent / confidence + steps)
 // ============================================================
 function ReplyMeta({ meta }: { meta: MessageMeta }) {
   const confidencePct = Math.round((meta.confidence ?? 0) * 100)
+  const steps = meta.steps ?? []
+  const processingMs = meta.processingTimeMs
+  // Pick a colored badge for principle steps so the eye can scan them
+  const stepColor = (s: string): string => {
+    if (s.startsWith('P14')) return 'text-amber-300' // agency = original contribution
+    if (s.startsWith('P4')) return 'text-rose-300' // emotion
+    if (s.startsWith('P28') || s.startsWith('P29') || s.startsWith('P30')) return 'text-indigo-300' // sleep
+    if (s.startsWith('P15') || s.startsWith('P16')) return 'text-emerald-300' // memory
+    if (s.startsWith('P10')) return 'text-cyan-300' // goals
+    if (s.startsWith('TRINITY') || s.startsWith('Cognition')) return 'text-violet-300'
+    if (s.startsWith('Intent') || s.startsWith('Mood')) return 'text-zinc-400'
+    return 'text-zinc-400'
+  }
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px]">
-      {meta.mood && (
-        <span className="inline-flex items-center gap-1 rounded-full border border-zinc-800 bg-zinc-950 px-2 py-0.5 text-zinc-500">
-          <span className="text-zinc-600">mood</span>
-          <span className="font-medium text-zinc-300">{meta.mood}</span>
-        </span>
-      )}
-      {meta.intent && (
-        <span className="inline-flex items-center gap-1 rounded-full border border-zinc-800 bg-zinc-950 px-2 py-0.5 text-zinc-500">
-          <span className="text-zinc-600">intent</span>
-          <span className="font-medium text-zinc-300">
-            {meta.intent.replace(/_/g, ' ')}
+    <div className="mt-2 space-y-2">
+      {/* Badges row */}
+      <div className="flex flex-wrap items-center gap-2 text-[10px]">
+        {meta.mood && (
+          <span className="inline-flex items-center gap-1 rounded-full border border-zinc-800 bg-zinc-950 px-2 py-0.5 text-zinc-500">
+            <span className="text-zinc-600">mood</span>
+            <span className="font-medium text-zinc-300">{meta.mood}</span>
           </span>
-        </span>
-      )}
-      {typeof meta.confidence === 'number' && (
-        <span className="inline-flex items-center gap-1 rounded-full border border-zinc-800 bg-zinc-950 px-2 py-0.5 text-zinc-500">
-          <span className="text-zinc-600">conf</span>
-          <span className="font-medium text-emerald-400">{confidencePct}%</span>
-        </span>
-      )}
-      {meta.topicDomain && (
-        <span className="inline-flex items-center gap-1 rounded-full border border-zinc-800 bg-zinc-950 px-2 py-0.5 text-zinc-500">
-          <span className="text-zinc-600">topic</span>
-          <span className="font-medium text-zinc-300">{meta.topicDomain}</span>
-        </span>
+        )}
+        {meta.intent && (
+          <span className="inline-flex items-center gap-1 rounded-full border border-zinc-800 bg-zinc-950 px-2 py-0.5 text-zinc-500">
+            <span className="text-zinc-600">intent</span>
+            <span className="font-medium text-zinc-300">
+              {meta.intent.replace(/_/g, ' ')}
+            </span>
+          </span>
+        )}
+        {typeof meta.confidence === 'number' && (
+          <span className="inline-flex items-center gap-1 rounded-full border border-zinc-800 bg-zinc-950 px-2 py-0.5 text-zinc-500">
+            <span className="text-zinc-600">conf</span>
+            <span className="font-medium text-emerald-400">{confidencePct}%</span>
+          </span>
+        )}
+        {meta.topicDomain && (
+          <span className="inline-flex items-center gap-1 rounded-full border border-zinc-800 bg-zinc-950 px-2 py-0.5 text-zinc-500">
+            <span className="text-zinc-600">topic</span>
+            <span className="font-medium text-zinc-300">{meta.topicDomain}</span>
+          </span>
+        )}
+        {typeof processingMs === 'number' && (
+          <span className="inline-flex items-center gap-1 rounded-full border border-zinc-800 bg-zinc-950 px-2 py-0.5 text-zinc-500">
+            <span className="text-zinc-600">cpu</span>
+            <span className="font-medium text-zinc-300">{processingMs}ms</span>
+          </span>
+        )}
+      </div>
+
+      {/* Collapsible thinking steps — TRIZA's transparent cognition */}
+      {steps.length > 0 && (
+        <details className="group rounded-lg border border-zinc-800/80 bg-zinc-950/50 text-[11px] text-zinc-400">
+          <summary className="flex cursor-pointer list-none items-center gap-1.5 px-3 py-1.5 text-zinc-500 transition-colors hover:text-zinc-300">
+            <Brain className="h-3.5 w-3.5 text-emerald-400" />
+            <span className="font-medium text-zinc-400">
+              TRIZA ki soch ({steps.length} steps)
+            </span>
+            <ChevronDown className="ml-auto h-3.5 w-3.5 text-zinc-600 transition-transform group-open:rotate-180" />
+          </summary>
+          <ol className="max-h-72 overflow-y-auto border-t border-zinc-800/60 px-3 py-2">
+            {steps.map((s, i) => (
+              <li
+                key={i}
+                className={cn(
+                  'flex gap-2 border-b border-zinc-900/60 py-1 last:border-0',
+                  stepColor(s),
+                )}
+              >
+                <span className="shrink-0 tabular-nums text-zinc-600">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="break-words leading-relaxed">{s}</span>
+              </li>
+            ))}
+          </ol>
+        </details>
       )}
     </div>
   )

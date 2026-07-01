@@ -24,6 +24,16 @@
  */
 
 import {
+  // Persistence (Task PERM-MEM-2) — DB-backed permanent memory.
+  // Optional: failures degrade to in-memory gracefully.
+  saveMemoryTrace,
+  saveCognitionSnapshot,
+  saveConversationInsight,
+  loadCognitionSnapshot,
+  loadMemoryTraces,
+} from './persistence'
+
+import {
   // Layer I — Perception & Grounding
   observe, label as labelObservation,
   ConceptTree, createDefaultTree,
@@ -69,6 +79,13 @@ import {
   triangulate,
   SensorimotorGrounding,
 } from './cognition/index'
+// Emotional Identity — TRIZA's persistent mood across a session.
+// COMPLEMENTARY to P4 (per-concept emotion): this accumulates
+// per-concept emotion values into a moving-average mood with
+// momentum and volatility. See emotional-state.ts for the math.
+import { EmotionalIdentity } from './emotional-state'
+import { sleepCycle } from './sleep-cycle'
+import { ReplayScheduler } from './replay-scheduler'
 
 // ─────────────────────────────────────────────
 // Types
@@ -86,6 +103,45 @@ export interface CognitionSignal {
     memory: { matches: number; patternCompleted: boolean; category: string | null }
     reasoning: { confidence: number; mode: 'normal' | 'help-seeking'; counterfactual: boolean }
     output: { primitive: string; variation: string; skillBuilt: boolean }
+    /**
+     * P10 Intrinsic-Goals — top goal target (from the goal queue).
+     * Used by response-generator to drive the next-topic suggestion.
+     */
+    topGoal: string | null
+    /**
+     * P29 Cognitive-Peak — current circadian phase + capacity multiplier.
+     * Used by response-generator to drive response depth (trough truncates).
+     */
+    cognitivePhase: { phase: string; multiplier: number }
+    /**
+     * P4+ Emotional Identity — TRIZA's persistent session mood.
+     * Accumulated from per-concept P4 emotion values via an
+     * exponential moving average with momentum + volatility.
+     * response-generator uses toneModifier() to shape TRIZA's voice.
+     */
+    emotionalState: { mood: number; moodLabel: string; momentum: number; volatility: number }
+    /**
+     * SLEEP-4: TRIZA's wake-state + behavior modifiers (P29+P30 driven).
+     * Populated from sleepCycle.current() + behaviorModifiers() at the
+     * END of runCognition (after onActivity(1) is called). response-
+     * generator.ts reads this to drive:
+     *   - fatiguePrefix (prepend when resting/tired)
+     *   - detailDepth (truncate response to 2 sentences when < 0.5)
+     *   - chattiness (append low-capacity tail when < 0.4)
+     *   - honestyBoost (reduce reported confidence when tired & over-confident)
+     */
+    sleep: {
+      phase: string
+      capacityMultiplier: number
+      debt: number
+      integrity: number
+      restUrgency: string
+      isResting: boolean
+      chattiness: number
+      detailDepth: number
+      honestyBoost: number
+      fatiguePrefix: string
+    }
   }
   /** All transparency step strings — to be merged into response steps array */
   steps: string[]
@@ -111,9 +167,110 @@ const workingMemory = new WorkingMemory(4) // Miller's 7±2, conservative
 const sensorimotor = new SensorimotorGrounding()
 const dualStore = new DualTypeStore()
 
+// P4+ Emotional Identity — TRIZA's persistent session-level mood.
+// Module-level singleton: accumulates per-concept P4 emotion values
+// across the whole session via an exponential moving average with
+// momentum + volatility. Survives across queries within the same
+// server process (matching the persistence model of every other
+// singleton above). response-generator reads `emotionalIdentity`
+// directly to apply tone modifiers in safeExpress().
+//
+// Exported so response-generator (and any other consumer) can read
+// the current mood + toneModifier() without having to plumb the
+// state through every function call. The singleton is updated by
+// runCognition() on every query (see the observe() call below).
+export const emotionalIdentity = new EmotionalIdentity()
+
 let brainState = { energy: 0.7, arousal: 0.5, focus: 0.6, timestamp: Date.now() }
 let systemState = { uptime: 0, restCycles: 0, debt: 0, integrity: 1 }
 let metaState = { knowledge: {} as Record<string, number>, confidence: 0.5, mode: 'normal' as const, lastError: null as string | null, selfCorrections: 0 }
+
+/** Lifetime message counter — restored from DB on boot if a snapshot exists. */
+let totalMessages = 0
+/** True once a snapshot has been successfully loaded from DB at boot. */
+let restoredFromDb = false
+
+// ─────────────────────────────────────────────
+// P28 Nocturnal-Replay background scheduler
+// ─────────────────────────────────────────────
+// Module-level singleton. Starts a 5-minute auto-replay interval
+// (unref'd so it won't keep Node.js alive on shutdown). The
+// scheduler decouples itself from SLEEP-4's sleep-cycle module
+// via setRestingChecker — cognition-engine wires that up after
+// both modules are loaded (see setRestingCheckerForReplay below).
+export const replayScheduler = new ReplayScheduler(replay)
+replayScheduler.start() // 5-minute default interval, unref'd
+
+/**
+ * Wire a resting-checker (from SLEEP-4's sleep-cycle module, or any
+ * source) into the ReplayScheduler. The scheduler will run replay
+ * cycles whenever this returns true. Safe to call multiple times.
+ *
+ * Exported so SLEEP-4 (or any other module) can register its
+ * resting-state provider at boot.
+ */
+export function setRestingCheckerForReplay(fn: () => boolean): void {
+  replayScheduler.setRestingChecker(fn)
+}
+
+// ─────────────────────────────────────────────
+// Load-on-startup (Task PERM-MEM-2) — restore cognition state +
+// memory traces from DB. IIFE so it runs exactly once at module
+// load. All DB calls are optional: on failure we just continue
+// with fresh defaults. Never throws.
+// ─────────────────────────────────────────────
+;(async () => {
+  try {
+    const snap = await loadCognitionSnapshot()
+    if (snap) {
+      brainState = snap.brain
+      systemState = snap.system
+      metaState = snap.meta
+      totalMessages = snap.totalMessages
+      restoredFromDb = true
+      console.log(
+        `[TRIZA] Restored cognition state from DB: ${totalMessages} messages lifetime, ` +
+        `brain energy ${brainState.energy.toFixed(2)}, system debt ${systemState.debt.toFixed(2)}`,
+      )
+    } else {
+      console.log('[TRIZA] No cognition snapshot in DB — starting fresh.')
+    }
+  } catch (err) {
+    console.warn(
+      '[TRIZA] Failed to load cognition snapshot (continuing fresh):',
+      err instanceof Error ? err.message : err,
+    )
+  }
+
+  try {
+    const traces = await loadMemoryTraces(100)
+    if (traces.length > 0) {
+      console.log(`[TRIZA] Loaded ${traces.length} memory traces from DB.`)
+      // Warm the distributed memory: a single partialMatch call per
+      // trace registers its features in the trace map so the first
+      // user message's P15 retrieval is not biased toward "no match".
+      for (const t of traces) {
+        if (Object.keys(t.pattern).length > 0) {
+          distributedMemory.partialMatch(t.pattern, 0.0)
+        }
+      }
+    }
+  } catch (err) {
+    console.warn(
+      '[TRIZA] Failed to load memory traces (continuing with empty memory):',
+      err instanceof Error ? err.message : err,
+    )
+  }
+})()
+
+// ─────────────────────────────────────────────
+// SLEEP-4: wire sleep-cycle's resting state into the ReplayScheduler.
+// When TRIZA is resting (5+ min idle per SleepCycle.IDLE_THRESHOLD_MS),
+// the scheduler will run NocturnalReplay cycles to consolidate memories.
+// This is the "sota bhi hai" (it also sleeps) behavior made REAL —
+// P30 sleep state drives P28 replay, not just transparency steps.
+// ─────────────────────────────────────────────
+setRestingCheckerForReplay(() => sleepCycle.current().isResting)
 
 // ─────────────────────────────────────────────
 // Main — run all 39 principles on a user message
@@ -126,11 +283,29 @@ let metaState = { knowledge: {} as Record<string, number>, confidence: 0.5, mode
  * "39 principles, 1 mind". Every principle contributes to the
  * transparency steps so the user sees the whole cognition.
  */
-export function runCognition(message: string): CognitionSignal {
+export function runCognition(message: string, conversationId?: string): CognitionSignal {
   const t0 = Date.now()
   const steps: string[] = []
   let principlesExecuted = 0
   const now = Date.now()
+
+  // ─── SLEEP-4: ON-TICK ──────────────────────────────
+  // Advance sleep-cycle's rest state if idle time has passed since
+  // the last message. If TRIZA has been idle for 5+ minutes, this
+  // puts it into "light rest" and pays down some debt. If 30+ min,
+  // "deep rest" (2x faster paydown). This MUST run BEFORE we accrue
+  // new work debt for this message — otherwise we'd pay down debt
+  // from a session that just resumed, which is wrong.
+  sleepCycle.onTick()
+
+  // ─── RESTORED-FROM-DB TRANSPARENCY STEP ─────
+  // If a cognition snapshot was loaded from DB at boot, surface it so
+  // the user can see TRIZA "remembers" across restarts.
+  if (restoredFromDb) {
+    steps.push(
+      `Restored cognition state: ${totalMessages} messages lifetime, brain energy ${brainState.energy.toFixed(2)}`,
+    )
+  }
 
   // ─── LAYER I: OBSERVE (P1, P17) ─────────────────────
   // P1: Active Perception — observe pehle, label baad mein
@@ -220,6 +395,59 @@ export function runCognition(message: string): CognitionSignal {
   principlesExecuted++
   steps.push(
     `P4 Emotion: ${emotionValue.toFixed(2)} (${emotionLabel(emotionValue)})`,
+  )
+
+  // P4+ Emotional Identity — accumulate this turn's emotional signal
+  // into TRIZA's persistent session mood. This is COMPLEMENTARY to
+  // P4 (per-concept emotion) — it gives TRIZA a moving-average mood
+  // with momentum, so 3 happy turns don't get instantly wiped out by
+  // 1 sad turn (and vice versa).
+  //
+  // INPUT TO observe():
+  // The spec says `emotionalIdentity.observe(emotionValue, ...)`. We
+  // pass a BLENDED value `blendedEmotion = (emotionValue + sentimentScaled) / 2`
+  // where `sentimentScaled = observation.attributes.sentimentPolarity × 2`
+  // (scales P1's [-1,+1] sentiment polarity to P4's [-2,+2] range).
+  //
+  // WHY BLEND:
+  // P4's emotionValue is the per-CONCEPT emotion (valenced links
+  // tied to the matched concept). Currently it is 0 for almost all
+  // user messages because `matchedConcept` comes from
+  // `labelObservation(observation, allConcepts)` where `allConcepts`
+  // is a list of 15 GENERIC concepts ('thing', 'physical', ...)
+  // that have NO valenced causal links in the seed data (the
+  // valenced causes are 'study', 'exercise', 'smoking', etc.).
+  // So P4 alone gives TRIZA no emotional signal from the user's
+  // actual words.
+  //
+  // P1's `observe()` ALREADY computes `sentimentPolarity` from a
+  // positive/negative word lexicon (love, wonderful, great → +;
+  // terrible, awful, sad → −). Blending this with P4 ensures
+  // TRIZA's mood accumulates meaningfully from what the user
+  // actually says. When P4 returns 0 (common case), the blend
+  // reduces to sentimentScaled/2 = sentimentPolarity — still a
+  // valid emotional signal in [-2, +2]. When P4 returns non-zero
+  // (matched concept has valenced links), both signals contribute.
+  //
+  // The blend is clamped to [-2, +2] to stay in the canonical
+  // emotion range.
+  const sentimentPolarity: number =
+    (observation.attributes.sentimentPolarity as number) || 0
+  const sentimentScaled: number = sentimentPolarity * 2 // [-1,+1] → [-2,+2]
+  const blendedEmotion: number = Math.max(
+    -2,
+    Math.min(2, (emotionValue + sentimentScaled) / 2),
+  )
+  const emotionalStateNow = emotionalIdentity.observe(
+    blendedEmotion,
+    `concept:${matchedConcept}`,
+  )
+  steps.push(
+    `P4+EmotionalIdentity: observed ${blendedEmotion.toFixed(2)} ` +
+    `(P4 ${emotionValue.toFixed(2)} + sentiment ${sentimentScaled.toFixed(2)}) → ` +
+    `mood "${emotionalStateNow.moodLabel}" (${emotionalStateNow.mood.toFixed(2)}), ` +
+    `momentum ${emotionalStateNow.momentum.toFixed(2)}, ` +
+    `volatility ${emotionalStateNow.volatility.toFixed(2)}`,
   )
 
   // P19: Social Referencing — borrow emotion if uncertain
@@ -491,6 +719,68 @@ export function runCognition(message: string): CognitionSignal {
   brainState = updateState(brainState, 'effort')
   brainState = updateState(brainState, 'novelty')
 
+  // ─── SLEEP-4: ON-ACTIVITY + behavior modifiers ───────
+  // This message counts as 1 unit of work. MUST run AFTER all
+  // other principles have finished their work for this turn —
+  // onActivity resets rest state and accrues fresh debt that the
+  // NEXT call's onTick will see. We then read the updated state +
+  // derived behavior modifiers and surface them in layers.sleep so
+  // response-generator.ts can drive TRIZA's voice (fatigue prefix,
+  // truncation, chattiness tail, honesty-driven confidence cut).
+  sleepCycle.onActivity(1)
+  const sleepState = sleepCycle.current()
+  const sleepMods = sleepCycle.behaviorModifiers()
+  steps.push(
+    `P29+P30 Sleep: phase ${sleepState.phase} (×${sleepState.capacityMultiplier}), ` +
+    `debt ${sleepState.debt.toFixed(1)}, integrity ${sleepState.integrity.toFixed(2)}, ` +
+    `urgency "${sleepState.restUrgency}"` +
+    `${sleepState.isResting ? ', resting' : ''} — ` +
+    `chattiness ${sleepMods.chattiness.toFixed(2)}, detail ${sleepMods.detailDepth.toFixed(2)}`,
+  )
+
+  // ─── PERSISTENCE (Task PERM-MEM-2) ─────────────
+  // Fire-and-forget (DO NOT await) so the chat response is not
+  // blocked by DB writes. All persistence calls are try/catch-
+  // wrapped internally and degrade to in-memory on failure — TRIZA
+  // never crashes from DB issues.
+  totalMessages += 1
+
+  // 1) Save the observed pattern as a distributed-memory trace.
+  //    Only when an inferred category exists — empty category means
+  //    the observation was too ambiguous to be worth remembering.
+  if (inferredCategory) {
+    void saveMemoryTrace(
+      matchedConcept,
+      pattern,
+      inferredCategory,
+      attentionSignal.attention,
+    ).catch(() => { /* already logged inside */ })
+  }
+
+  // 2) Always snapshot brain/system/meta state + bumped message counter.
+  void saveCognitionSnapshot(
+    brainState,
+    systemState,
+    metaState,
+    totalMessages,
+  ).catch(() => { /* already logged inside */ })
+
+  // 3) If a conversationId was provided, persist a per-message
+  //    insight row capturing what cognition inferred at reply time.
+  if (conversationId) {
+    void saveConversationInsight({
+      conversationId,
+      userMessage: message,
+      matchedConcept,
+      intent: intentResult.intent,
+      emotion: emotionValue,
+      agency: agencyVal,
+      confidence: metaState.confidence,
+      topGoal: topGoal?.target ?? null,
+      wasSurprising: surpriseResult.value > 0.5,
+    }).catch(() => { /* already logged inside */ })
+  }
+
   // ─── ASSEMBLE RESULT ────────────────────────────────
   const processingMs = Date.now() - t0
 
@@ -524,6 +814,37 @@ export function runCognition(message: string): CognitionSignal {
         primitive: primitive.id,
         variation: skill.expression,
         skillBuilt: true,
+      },
+      // P10 — top intrinsic goal (target string) from the goal queue.
+      // response-generator uses this to drive next-topic suggestion.
+      topGoal: topGoal?.target ?? null,
+      // P29 — current circadian phase + capacity multiplier.
+      // response-generator uses this to drive response depth (trough → 2 sentences).
+      cognitivePhase: { phase, multiplier: capMult },
+      // P4+ — TRIZA's persistent session mood (moving average of
+      // recent per-concept P4 emotion values, with momentum + volatility).
+      // response-generator uses toneModifier() to prepend mood-tone
+      // sentences and modulate exclamation density.
+      emotionalState: {
+        mood: emotionalStateNow.mood,
+        moodLabel: emotionalStateNow.moodLabel,
+        momentum: emotionalStateNow.momentum,
+        volatility: emotionalStateNow.volatility,
+      },
+      // SLEEP-4 — wake-state + behavior modifiers. response-generator
+      // uses fatiguePrefix (prepend), detailDepth (truncate), chattiness
+      // (append tail), and (integrity × capacity) for honesty-confidence cut.
+      sleep: {
+        phase: sleepState.phase,
+        capacityMultiplier: sleepState.capacityMultiplier,
+        debt: sleepState.debt,
+        integrity: sleepState.integrity,
+        restUrgency: sleepState.restUrgency,
+        isResting: sleepState.isResting,
+        chattiness: sleepMods.chattiness,
+        detailDepth: sleepMods.detailDepth,
+        honestyBoost: sleepMods.honestyBoost,
+        fatiguePrefix: sleepMods.fatiguePrefix,
       },
     },
     steps,

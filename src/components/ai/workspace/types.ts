@@ -34,6 +34,12 @@ export interface MessageMeta {
   topicDomain?: string
   selfExpressed?: boolean
   processingTimeMs?: number
+  /**
+   * Transparency steps — every cognitive principle that fired for this reply.
+   * Rendered in a collapsible "TRIZA's thinking" section so the user can
+   * see exactly how the 39 principles + 3-mind Trinity produced the answer.
+   */
+  steps?: string[]
 }
 
 export interface ConversationDetail {

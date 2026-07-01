@@ -40,6 +40,8 @@ interface MemMessage {
   role: 'user' | 'assistant'
   content: string
   createdAt: Date
+  /** In-memory mirror of AiMessage.metaJson (parsed). Optional. */
+  meta?: Record<string, unknown>
 }
 
 interface MemConversation {
@@ -160,12 +162,23 @@ export async function getConversation(conversationId: string) {
       title: convo.title,
       createdAt: convo.createdAt.toISOString(),
       updatedAt: convo.updatedAt.toISOString(),
-      messages: convo.messages.map((m) => ({
-        id: m.id,
-        role: m.role,
-        content: m.content,
-        createdAt: m.createdAt.toISOString(),
-      })),
+      messages: convo.messages.map((m) => {
+        let meta: Record<string, unknown> | undefined
+        if (m.metaJson) {
+          try {
+            meta = JSON.parse(m.metaJson)
+          } catch {
+            meta = undefined
+          }
+        }
+        return {
+          id: m.id,
+          role: m.role,
+          content: m.content,
+          createdAt: m.createdAt.toISOString(),
+          meta,
+        }
+      }),
     }
   } catch (err) {
     if (dbCheckedOut && !(err instanceof Error && err.message === 'not found in DB')) {
@@ -187,6 +200,7 @@ export async function getConversation(conversationId: string) {
         role: m.role,
         content: m.content,
         createdAt: m.createdAt.toISOString(),
+        meta: m.meta,
       })),
     }
   }
@@ -408,7 +422,20 @@ export async function sendMessage(
 
   try {
     const assistantMsg = await db.aiMessage.create({
-      data: { conversationId, role: 'assistant', content: trizaResponse.text },
+      data: {
+        conversationId,
+        role: 'assistant',
+        content: trizaResponse.text,
+        metaJson: JSON.stringify({
+          mood: trizaResponse.mood,
+          intent: trizaResponse.intent,
+          confidence: trizaResponse.confidence,
+          topicDomain: trizaResponse.topicDomain,
+          processingTimeMs: trizaResponse.processingTimeMs,
+          selfExpressed: trizaResponse.selfExpressed,
+          steps: trizaResponse.steps ?? [],
+        }),
+      },
     })
     assistantMessageId = assistantMsg.id
 
@@ -432,6 +459,15 @@ export async function sendMessage(
       role: 'assistant',
       content: trizaResponse.text,
       createdAt: new Date(),
+      meta: {
+        mood: trizaResponse.mood,
+        intent: trizaResponse.intent,
+        confidence: trizaResponse.confidence,
+        topicDomain: trizaResponse.topicDomain,
+        processingTimeMs: trizaResponse.processingTimeMs,
+        selfExpressed: trizaResponse.selfExpressed,
+        steps: trizaResponse.steps ?? [],
+      },
     }
     if (c) {
       c.messages.push(msg)

@@ -195,6 +195,7 @@ export function TrizaChatApp() {
           topicDomain: data.topicDomain,
           selfExpressed: data.selfExpressed,
           processingTimeMs: data.processingTimeMs,
+          steps: Array.isArray(data.steps) ? data.steps : undefined,
         }
         setLastAssistantMeta(meta)
         // Success — clear retry/error state
