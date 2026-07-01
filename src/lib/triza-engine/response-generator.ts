@@ -85,6 +85,9 @@ import { getWeightedScore } from './feedback-learning'
 // its output to the transparency steps. This makes "3 minds, 1 brain"
 // REAL — not just a claim.
 import { runTrinityForQuery, formatTrinityStep } from './trinity-bridge'
+// Cognition Engine — runs all 39 founding principles on every query.
+// This makes the O-H-C-E framework + 32 principles REAL, not just claims.
+import { runCognition } from './cognition-engine'
 
 // ============================================================
 // Aggregate ALL knowledge — topic batches first, CORE last
@@ -603,6 +606,29 @@ export async function generateResponse(
   //      the user sees all 3 layers working on every reply.
   const trinitySignal = runTrinityForQuery(userMessage)
   steps.push(formatTrinityStep(trinitySignal))
+
+  // 3.6. COGNITION ENGINE — run all 39 founding principles (P1-P39)
+  //      on this query. This is the O-H-C-E framework + 32 principles
+  //      made REAL. Every principle contributes a transparency step.
+  //      This is TRIZA's full mind, not just the Trinity core.
+  const cognitionSignal = runCognition(userMessage)
+  steps.push(
+    `Cognition (39 principles): ${cognitionSignal.principlesExecuted} ran in ${cognitionSignal.processingMs}ms · ` +
+    `Observe[${cognitionSignal.layers.observe.features} features, attention ${cognitionSignal.layers.observe.attention.toFixed(2)}] · ` +
+    `Hierarchy[${cognitionSignal.layers.hierarchy.concept} L${cognitionSignal.layers.hierarchy.level ?? '?'}] · ` +
+    `Causality[agency ${cognitionSignal.layers.causality.agency.toFixed(2)} ${cognitionSignal.layers.causality.agencyLabel}] · ` +
+    `Emotion[${cognitionSignal.layers.emotion.value.toFixed(2)} ${cognitionSignal.layers.emotion.label}] · ` +
+    `Memory[${cognitionSignal.layers.memory.matches} matches, cat: ${cognitionSignal.layers.memory.category ?? '-'}] · ` +
+    `Reasoning[conf ${cognitionSignal.layers.reasoning.confidence.toFixed(2)}, ${cognitionSignal.layers.reasoning.mode}]`,
+  )
+  // Also push a few key individual principle steps (top 5 most surprising)
+  // so the user sees specific principles, not just a summary.
+  const keyPrincipleSteps = cognitionSignal.steps.filter(s =>
+    s.startsWith('P14') || s.startsWith('P4') || s.startsWith('P6') ||
+    s.startsWith('P15') || s.startsWith('P37') || s.startsWith('P1 ') ||
+    s.startsWith('P17') || s.startsWith('P12')
+  ).slice(0, 5)
+  steps.push(...keyPrincipleSteps)
 
   // 4. Knowledge search — top-N candidates with honest scores
   const candidates = searchKnowledgeBase(userMessage)
