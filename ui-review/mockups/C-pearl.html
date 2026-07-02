@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>TRIZA — Pearl Light</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fbfaf7;
+    --bg-soft: #ffffff;
+    --bg-tint: #f4f2ec;
+    --ink: #1a1a1a;
+    --ink-soft: #3d3d3d;
+    --muted: #8a8a85;
+    --line: #e8e6df;
+    --accent: #1a1a1a;
+    --accent-soft: #2d5a4a;
+    --emerald: #2d5a4a;
+    --emerald-soft: #5a8a7a;
+  }
+  body { background: var(--bg); color: var(--ink); font-family: 'Inter', sans-serif; }
+  .font-display { font-family: 'Instrument Serif', serif; }
+  .font-mono { font-family: 'JetBrains Mono', monospace; }
+  .serif-italic { font-family: 'Instrument Serif', serif; font-style: italic; }
+  .subtle-line { border: 1px solid var(--line); }
+  .soft-shadow { box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px -8px rgba(0,0,0,0.08); }
+  .hover-lift { transition: all 0.2s ease; }
+  .hover-lift:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+  .dot { width:5px; height:5px; border-radius:50%; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- ============ LANDING HERO ============ -->
+<section class="relative overflow-hidden">
+  <!-- nav -->
+  <nav class="relative max-w-6xl mx-auto px-8 py-6 flex items-center justify-between">
+    <div class="flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center font-display text-lg" style="background:var(--ink); color:var(--bg)">T</div>
+      <div class="font-semibold text-base tracking-tight">TRIZA</div>
+      <div class="font-mono text-[10px] uppercase tracking-[0.2em] ml-1" style="color:var(--muted)">transparent AI</div>
+    </div>
+    <div class="hidden md:flex items-center gap-8 text-sm" style="color:var(--ink-soft)">
+      <a class="hover:text-black transition">Architecture</a>
+      <a class="hover:text-black transition">Live demo</a>
+      <a class="hover:text-black transition">Features</a>
+      <a class="hover:text-black transition">Roadmap</a>
+    </div>
+    <button class="px-5 py-2.5 rounded-full text-sm font-medium transition hover-lift" style="background:var(--ink); color:var(--bg)">Try TRIZA</button>
+  </nav>
+
+  <!-- hero -->
+  <div class="relative max-w-6xl mx-auto px-8 pt-24 pb-28">
+    <div class="max-w-3xl">
+      <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full font-mono text-[11px] uppercase tracking-wider mb-8 subtle-line" style="color:var(--ink-soft)">
+        <span class="dot" style="background:var(--emerald)"></span>
+        Engine online · v1.0
+      </div>
+      <h1 class="text-6xl lg:text-7xl leading-[1.02] tracking-tight mb-8" style="font-weight:500">
+        An AI that shows<br>its <span class="serif-italic" style="color:var(--emerald)">work</span>.
+      </h1>
+      <p class="text-xl leading-relaxed mb-10 max-w-xl" style="color:var(--ink-soft); font-weight:300">
+        Three minds — knowledge graph, hyperdimensional analogy, and Bayesian logic — compose one transparent answer. No black box. Ever.
+      </p>
+      <div class="flex flex-wrap items-center gap-4 mb-12">
+        <button class="px-7 py-3.5 rounded-full font-medium hover-lift" style="background:var(--ink); color:var(--bg)">See it think →</button>
+        <button class="px-7 py-3.5 rounded-full font-medium subtle-line hover-lift">View architecture</button>
+      </div>
+      <div class="flex flex-wrap gap-x-6 gap-y-2 font-mono text-[11px] uppercase tracking-wider" style="color:var(--muted)">
+        <span>· CPU-first</span><span>· No external APIs</span><span>· 100% transparent</span><span>· Religion-neutral</span>
+      </div>
+    </div>
+
+    <!-- demo card below hero, full width -->
+    <div class="mt-20 grid lg:grid-cols-3 gap-6">
+      <!-- main demo -->
+      <div class="lg:col-span-2 rounded-2xl p-8 soft-shadow" style="background:var(--bg-soft); border:1px solid var(--line)">
+        <div class="flex items-center justify-between mb-6">
+          <div class="font-mono text-[10px] uppercase tracking-wider" style="color:var(--muted)">live demo</div>
+          <div class="flex items-center gap-1.5">
+            <div class="dot" style="background:var(--emerald)"></div>
+            <div class="dot" style="background:var(--line)"></div>
+            <div class="dot" style="background:var(--line)"></div>
+          </div>
+        </div>
+        <div class="space-y-4">
+          <div class="flex justify-end">
+            <div class="max-w-[80%] px-4 py-2.5 rounded-2xl rounded-tr-sm text-sm" style="background:var(--ink); color:var(--bg)">I just passed my exam!</div>
+          </div>
+          <div class="flex gap-3">
+            <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center font-semibold text-sm" style="background:var(--bg-tint); color:var(--ink); border:1px solid var(--line)">T</div>
+            <div class="flex-1">
+              <div class="px-4 py-3 rounded-2xl rounded-tl-sm text-sm leading-relaxed" style="background:var(--bg-tint); border:1px solid var(--line)">Congratulations! That's a real win — your effort paid off. Savor it. 🎉</div>
+              <div class="flex flex-wrap items-center gap-3 mt-2.5 font-mono text-[10px]" style="color:var(--muted)">
+                <span>😊 happy</span><span>·</span><span>celebrate</span><span>·</span>
+                <span class="flex items-center gap-1.5"><span class="inline-block w-16 h-1 rounded-full" style="background:var(--line)"><span class="block h-full rounded-full" style="background:var(--emerald); width:95%"></span></span>95%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- side stat -->
+      <div class="rounded-2xl p-8 flex flex-col justify-between" style="background:var(--ink); color:var(--bg)">
+        <div>
+          <div class="font-mono text-[10px] uppercase tracking-wider mb-4" style="opacity:0.5">transparency</div>
+          <div class="text-5xl font-display leading-none mb-2">100%</div>
+          <div class="text-sm" style="opacity:0.7">of reasoning steps are visible to you — mood, intent, confidence, full pipeline.</div>
+        </div>
+        <div class="font-mono text-[10px] uppercase tracking-wider mt-8" style="opacity:0.4">no black box · ever</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- built on strip -->
+  <div class="relative border-t" style="border-color:var(--line)">
+    <div class="max-w-6xl mx-auto px-8 py-6 flex flex-wrap items-center justify-center gap-x-10 gap-y-3 font-mono text-[11px] uppercase tracking-wider" style="color:var(--muted)">
+      <span>Built on</span><span>Neon Postgres</span><span>·</span><span>Vercel Edge</span><span>·</span><span>Knowledge Graph</span><span>·</span><span>HDC Vectors</span><span>·</span><span>Bayesian Logic</span>
+    </div>
+  </div>
+</section>
+
+<div class="max-w-6xl mx-auto px-8 py-4 text-center font-mono text-[10px] uppercase tracking-[0.3em]" style="color:var(--muted)">— workspace preview below —</div>
+
+<!-- ============ WORKSPACE PREVIEW ============ -->
+<section class="max-w-6xl mx-auto px-8 pb-16">
+  <div class="rounded-2xl overflow-hidden soft-shadow subtle-line" style="background:var(--bg-soft)">
+    <div class="grid grid-cols-[260px_1fr] h-[560px]">
+      <aside class="border-r flex flex-col" style="border-color:var(--line); background:var(--bg-tint)">
+        <div class="p-5 border-b" style="border-color:var(--line)">
+          <div class="flex items-center gap-2.5 mb-5">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center font-display text-sm" style="background:var(--ink); color:var(--bg)">T</div>
+            <div>
+              <div class="font-semibold text-sm">TRIZA</div>
+              <div class="font-mono text-[9px] uppercase tracking-wider" style="color:var(--muted)">transparent AI</div>
+            </div>
+          </div>
+          <button class="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition hover-lift" style="background:var(--bg-soft); border:1px solid var(--line)">
+            <span class="text-lg leading-none">+</span> New conversation
+          </button>
+        </div>
+        <div class="flex-1 overflow-hidden p-3">
+          <div class="font-mono text-[10px] uppercase tracking-wider px-2 mb-2" style="color:var(--muted)">Recent</div>
+          <div class="space-y-0.5">
+            <div class="px-3 py-2.5 rounded-lg text-sm flex items-center gap-2" style="background:var(--bg-soft); border-left:2px solid var(--emerald)">
+              <span class="dot" style="background:var(--emerald)"></span>
+              <span class="truncate">Exam celebration</span>
+            </div>
+            <div class="px-3 py-2.5 rounded-lg text-sm hover:bg-white/60 transition" style="color:var(--muted)"><span class="truncate">Poem about rain</span></div>
+            <div class="px-3 py-2.5 rounded-lg text-sm hover:bg-white/60 transition" style="color:var(--muted)"><span class="truncate">Quantum physics question</span></div>
+            <div class="px-3 py-2.5 rounded-lg text-sm hover:bg-white/60 transition" style="color:var(--muted)"><span class="truncate">Math help — calculus</span></div>
+          </div>
+        </div>
+        <div class="p-4 border-t flex items-center gap-2 font-mono text-[10px]" style="border-color:var(--line); color:var(--muted)">
+          <span class="dot" style="background:var(--emerald)"></span> Engine online · v1.0
+        </div>
+      </aside>
+
+      <div class="flex flex-col">
+        <div class="h-14 border-b flex items-center justify-between px-6" style="border-color:var(--line)">
+          <div class="flex items-center gap-1">
+            <button class="px-4 py-1.5 rounded-full text-sm font-medium" style="background:var(--ink); color:var(--bg)">Chatbot</button>
+            <button class="px-4 py-1.5 rounded-full text-sm" style="color:var(--muted)">Cyber <span class="font-mono text-[9px] uppercase">soon</span></button>
+            <button class="px-4 py-1.5 rounded-full text-sm" style="color:var(--muted)">Coding <span class="font-mono text-[9px] uppercase">soon</span></button>
+          </div>
+          <div class="flex items-center gap-2 font-mono text-[10px] uppercase tracking-wider" style="color:var(--muted)">
+            <span class="dot" style="background:var(--emerald)"></span> TRINITY engine
+          </div>
+        </div>
+
+        <div class="flex-1 overflow-hidden p-6 space-y-5" style="background:var(--bg)">
+          <div class="flex justify-end">
+            <div class="max-w-[70%] px-4 py-2.5 rounded-2xl rounded-tr-sm text-sm" style="background:var(--ink); color:var(--bg)">Hello! Who are you?</div>
+          </div>
+          <div class="flex gap-3">
+            <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center font-semibold text-sm" style="background:var(--bg-tint); border:1px solid var(--line)">T</div>
+            <div class="flex-1 max-w-[80%]">
+              <div class="px-4 py-3 rounded-2xl rounded-tl-sm text-sm leading-relaxed" style="background:var(--bg-soft); border:1px solid var(--line)">
+                Hello! I'm <strong>TRIZA</strong> — a transparent AI built on three reasoning layers. I show my mood, intent, confidence, and full reasoning steps for every reply.
+              </div>
+              <div class="flex flex-wrap items-center gap-3 mt-2.5 font-mono text-[10px]" style="color:var(--muted)">
+                <span>neutral</span><span>·</span><span>greeting</span><span>·</span>
+                <span class="flex items-center gap-1.5"><span class="inline-block w-16 h-1 rounded-full" style="background:var(--line)"><span class="block h-full rounded-full" style="background:var(--emerald); width:75%"></span></span>75%</span>
+              </div>
+              <button class="mt-2 flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider hover:text-black transition" style="color:var(--muted)">
+                <span>▸</span> Show reasoning
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-5 border-t" style="border-color:var(--line); background:var(--bg)">
+          <div class="flex items-end gap-3 rounded-2xl px-4 py-3" style="background:var(--bg-soft); border:1px solid var(--line)">
+            <textarea class="flex-1 bg-transparent outline-none text-sm resize-none placeholder:opacity-40" rows="1" placeholder="Message TRIZA…"></textarea>
+            <button class="w-9 h-9 rounded-xl flex items-center justify-center transition hover-lift" style="background:var(--ink); color:var(--bg)">→</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
