@@ -3,8 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "next-themes";
-import { PwaProvider } from "@/components/providers/pwa-provider";
-import { RootJsonLd } from "@/components/seo/json-ld";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const viewport: Viewport = {
-  themeColor: "#d97706",
+  themeColor: "#10b981",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -27,29 +25,33 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    template: "%s | Thiora Marketplace",
-    default: "Thiora - Freelance. Digital. Physical. One Platform.",
+    template: "%s | TRIZA AI",
+    default: "TRIZA — A transparent AI that shows its work",
   },
   description:
-    "Create your own customizable shop, sell digital & physical products, or offer freelance services — all in one place.",
+    "TRIZA is a transparent, CPU-first AI built from scratch — no black box, no borrowed models. Every reply shows its mood, intent, confidence, and reasoning steps. Powered by the TRINITY engine: knowledge graph, HDC analogy, and Bayesian logic.",
   keywords: [
-    "marketplace",
-    "freelance",
-    "digital products",
-    "sell online",
-    "Thiora",
-    "Pakistan",
-    "online shop",
-    "e-commerce",
-    "freelance services",
-    "digital downloads",
-    "physical products",
-    "seller",
+    "TRIZA",
+    "TRIZA AI",
+    "transparent AI",
+    "explainable AI",
+    "CPU-first AI",
+    "self-built AI",
+    "reasoning engine",
+    "TRINITY engine",
+    "knowledge graph AI",
+    "hyperdimensional computing",
+    "HDC vectors",
+    "Bayesian AI",
+    "religion-neutral AI",
+    "no external APIs",
+    "open AI architecture",
+    "AI that shows its work",
   ],
-  authors: [{ name: "Thiora", url: "https://thiora.vercel.app" }],
-  creator: "Thiora",
-  publisher: "Thiora",
-  metadataBase: new URL("https://thiora.vercel.app"),
+  authors: [{ name: "TRIZA", url: "https://triza-ai.vercel.app" }],
+  creator: "TRIZA",
+  publisher: "TRIZA",
+  metadataBase: new URL("https://triza-ai.vercel.app"),
   alternates: {
     canonical: "/",
     languages: {
@@ -70,20 +72,20 @@ export const metadata: Metadata = {
       { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     ],
     // Use PNG (not SVG) for shortcut icon — Google's favicon crawler
-    // handles PNG more reliably than SVG, ensuring the Thiora "T" logo
-    // appears correctly in Google search results.
+    // handles PNG more reliably than SVG, ensuring the TRIZA neural
+    // logo appears correctly in Google search results.
     shortcut: "/icon-512x512.png",
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Thiora",
+    title: "TRIZA",
   },
   openGraph: {
-    title: "Thiora - Freelance. Digital. Physical. One Platform.",
+    title: "TRIZA — A transparent AI that shows its work",
     description:
-      "Create your own customizable shop, sell digital & physical products, or offer freelance services — all in one place.",
-    siteName: "Thiora",
+      "TRIZA is a transparent, CPU-first AI built from scratch. No black box, no borrowed models — every reply shows its mood, intent, confidence, and reasoning steps.",
+    siteName: "TRIZA",
     type: "website",
     url: "/",
     images: [
@@ -91,7 +93,7 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1344,
         height: 768,
-        alt: "Thiora Marketplace — Freelance. Digital. Physical.",
+        alt: "TRIZA — Self-Built AI · Pure Reasoning Engine",
       },
     ],
     locale: "en_US",
@@ -99,12 +101,12 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Thiora - Freelance. Digital. Physical. One Platform.",
+    title: "TRIZA — A transparent AI that shows its work",
     description:
-      "Create your own customizable shop, sell digital & physical products, or offer freelance services — all in one place.",
+      "TRIZA is a transparent, CPU-first AI built from scratch. Every reply shows its mood, intent, confidence, and reasoning steps.",
     images: ["/og-image.png"],
-    creator: "@thiora",
-    site: "@thiora",
+    creator: "@triza_ai",
+    site: "@triza_ai",
   },
   robots: {
     index: true,
@@ -117,8 +119,8 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
-  category: "marketplace",
-  classification: "Marketplace Platform",
+  category: "technology",
+  classification: "AI Application",
 };
 
 export default function RootLayout({
@@ -149,23 +151,115 @@ export default function RootLayout({
             `,
           }}
         />
+        {/* Force-clear stale service worker caches from older versions (thiora-v*, triza-v1..v4).
+             This runs BEFORE React hydrates so the user always gets fresh JS bundles.
+             Uses localStorage so the migration happens exactly ONCE per browser —
+             after that the new triza-v5 SW registers and works normally. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function(){
+                if(!('serviceWorker' in navigator)) return;
+                var REQUIRED = 'triza-v5';
+                var KEY = 'triza_sw_version';
+                try {
+                  var current = localStorage.getItem(KEY) || '';
+                  if(current === REQUIRED) return; // already migrated, skip
+
+                  // Migrate: unregister all SWs + clear all caches + reload once
+                  navigator.serviceWorker.getRegistrations().then(function(regs){
+                    return Promise.all(regs.map(function(r){ return r.unregister(); }));
+                  }).then(function(){
+                    if('caches' in window){
+                      return caches.keys().then(function(keys){
+                        return Promise.all(keys.map(function(k){ return caches.delete(k); }));
+                      });
+                    }
+                  }).then(function(){
+                    localStorage.setItem(KEY, REQUIRED);
+                    var u = new URL(location.href);
+                    u.searchParams.set('_sw', Date.now());
+                    location.replace(u.toString());
+                  }).catch(function(e){
+                    // Even on error, mark as migrated so we don't loop
+                    try { localStorage.setItem(KEY, REQUIRED); } catch(_){}
+                  });
+                } catch(e) {}
+              })();
+            `,
+          }}
+        />
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#d97706" />
+        <meta name="theme-color" content="#10b981" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="Thiora" />
+        <meta name="apple-mobile-web-app-title" content="TRIZA" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="application-name" content="Thiora" />
-        <meta name="msapplication-TileColor" content="#d97706" />
-        <meta name="msapplication-navbutton-color" content="#d97706" />
+        <meta name="application-name" content="TRIZA" />
+        <meta name="msapplication-TileColor" content="#10b981" />
+        <meta name="msapplication-navbutton-color" content="#10b981" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="icon" type="image/png" sizes="192x192" href="/icon-192x192.png" />
         <link rel="icon" type="image/png" sizes="512x512" href="/icon-512x512.png" />
         {/* Prevent phone number detection for native app feel */}
         <meta name="format-detection" content="telephone=no" />
-        {/* JSON-LD Structured Data for SEO rich results */}
-        <RootJsonLd />
+        {/* Structured data (JSON-LD) for rich search results.
+             English copy — describes TRIZA as a transparent AI application. */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@graph": [
+                {
+                  "@type": "SoftwareApplication",
+                  name: "TRIZA AI",
+                  applicationCategory: "AIApplication",
+                  operatingSystem: "Web",
+                  description:
+                    "TRIZA is a transparent, CPU-first AI built from scratch. No black box, no borrowed models — every reply shows its mood, intent, confidence, and reasoning steps. Powered by the TRINITY engine: knowledge graph, HDC analogy, and Bayesian logic.",
+                  url: "https://triza-ai.vercel.app",
+                  offers: {
+                    "@type": "Offer",
+                    price: "0",
+                    priceCurrency: "USD",
+                  },
+                  featureList: [
+                    "Transparent reasoning — mood, intent, confidence, steps",
+                    "CPU-first — no GPU required",
+                    "No external API calls",
+                    "Religion-neutral responses",
+                    "Learns from thumbs up / down feedback",
+                    "TRINITY engine: knowledge graph + HDC + Bayesian logic",
+                  ],
+                  softwareVersion: "1.0",
+                  keywords:
+                    "transparent AI, explainable AI, CPU-first AI, self-built AI, TRINITY engine, knowledge graph, HDC, Bayesian",
+                },
+                {
+                  "@type": "Organization",
+                  name: "TRIZA AI",
+                  url: "https://triza-ai.vercel.app",
+                  logo: "https://triza-ai.vercel.app/icon-512x512.png",
+                  sameAs: ["https://github.com/meerabfarooq2012-dev/triza-ai"],
+                },
+                {
+                  "@type": "WebSite",
+                  name: "TRIZA AI",
+                  url: "https://triza-ai.vercel.app",
+                  inLanguage: "en",
+                  potentialAction: {
+                    "@type": "CommunicateAction",
+                    target:
+                      "https://triza-ai.vercel.app/#demo",
+                    name: "Try TRIZA live demo",
+                  },
+                },
+              ],
+            }),
+          }}
+        />
       </head>
       <body
         className={`
@@ -181,9 +275,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <PwaProvider>
-            {children}
-          </PwaProvider>
+          {children}
           <Toaster />
         </ThemeProvider>
       </body>

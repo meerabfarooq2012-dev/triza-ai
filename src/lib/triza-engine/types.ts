@@ -30,6 +30,13 @@ export interface KnowledgeEntry {
   id: string;
   /** Regex patterns that trigger this entry (word-boundary, case-insensitive) */
   patterns: RegExp[];
+  /**
+   * Optional keywords for fuzzy / keyword-overlap matching.
+   * When a regex doesn't match, TRIZA tokenizes the user's message
+   * and compares against these keywords — so paraphrased questions
+   * still find the right entry. Derived from patterns if omitted.
+   */
+  keywords?: string[];
   /** The intent category */
   intent: Intent;
   /** Topic domain, e.g. "science", "history" */

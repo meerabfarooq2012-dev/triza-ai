@@ -66,6 +66,7 @@ export type ViewMode =
   | 'my-downloads'
   | 'wallet'
   | 'payment-settings'
+  | 'triza-chat'
 
 // ----- Core Domain Models -----
 

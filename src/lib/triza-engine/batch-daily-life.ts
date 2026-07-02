@@ -615,13 +615,13 @@ Cooking is a survival skill, a money-saver, and a quiet form of self-care. You d
 
 That is enough to cook hundreds of meals.
 
-### Meal 1: Daal (Lentil Stew)
+### Meal 1: Lentil Stew (Daal)
 1. Rinse 1 cup of yellow or red lentils until water is clear
 2. Add to a pot with 3 cups of water, half a teaspoon of turmeric, and salt
 3. Boil, then simmer for 20 minutes until soft
 4. In a small pan, heat 2 tablespoons of oil, add cumin seeds, garlic, and dried red chilies
-5. Pour this 'tarka' over the cooked daal and cover for 2 minutes
-6. Serve with rice or roti
+5. Pour this spiced oil mixture (called tarka) over the cooked lentils and cover for 2 minutes
+6. Serve with rice or flatbread (roti)
 
 ### Meal 2: Egg Fried Rice
 1. Cook 1 cup of rice (see the rice guide) and let it cool

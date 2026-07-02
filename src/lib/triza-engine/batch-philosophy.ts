@@ -31,7 +31,7 @@ export const PHILOSOPHY_ENTRIES: KnowledgeEntry[] = [
     response: () => `## Ethics — The Study of Moral Philosophy
 
 ### What Is Ethics?
-Ethics (or moral philosophy) is the systematic study of what is right and wrong, good and bad, just and unjust. It asks how humans ought to live, what actions are permissible, and what kind of people we should become. In Roman Urdu it is often called *akhlaqiyat* or *falsafa-e-akhlaq*.
+Ethics (or moral philosophy) is the systematic study of what is right and wrong, good and bad, just and unjust. It asks how humans ought to live, what actions are permissible, and what kind of people we should become.
 
 ### The Three Main Branches
 - **Meta-ethics** — asks where moral values come from. Are they objective truths, social constructs, or emotional responses?
@@ -66,7 +66,7 @@ Ethics (or moral philosophy) is the systematic study of what is right and wrong,
     response: () => `## Logic — The Science of Valid Reasoning
 
 ### What Is Logic?
-Logic studies how conclusions follow from premises. It is the backbone of mathematics, computer science, philosophy, and law. In classical Islamic and South Asian thought it is called *mantiq*, and was a required discipline before studying theology.
+Logic studies how conclusions follow from premises. It is the backbone of mathematics, computer science, philosophy, and law. In many classical traditions it was a required discipline studied before theology or metaphysics.
 
 ### Main Types of Reasoning
 - **Deductive** — general to particular. All humans are mortal, Socrates is human, therefore Socrates is mortal. Conclusion is guaranteed if premises are true.
@@ -88,7 +88,7 @@ Logic studies how conclusions follow from premises. It is the backbone of mathem
 Modern logic uses symbols: **∧** (and), **∨** (or), **¬** (not), **→** (implies), **∀** (for all), **∃** (there exists). This formal language lets computers reason and underlies every programming language.
 
 ### A Brief History
-Aristotle invented formal logic with the syllogism. The Stoics added propositional reasoning. In the Islamic world, Al-Farabi and Ibn Sina refined *mantiq*. In the 19th century Frege launched modern symbolic logic, later expanded by Russell, Whitehead, and Gödel.
+Aristotle invented formal logic with the syllogism. The Stoics added propositional reasoning. In the medieval Islamic world, Al-Farabi and Ibn Sina refined the discipline further. In the 19th century Frege launched modern symbolic logic, later expanded by Russell, Whitehead, and Gödel.
 
 **Why it matters:** Logic is the immune system of the mind. It protects us from manipulation, propaganda, and self-deception — and it powers the algorithms running the modern world.`,
   },
@@ -104,7 +104,7 @@ Aristotle invented formal logic with the syllogism. The Stoics added proposition
     response: () => `## Metaphysics — The Study of Reality Itself
 
 ### What Is Metaphysics?
-Metaphysics is the branch of philosophy that asks what really exists and what reality is made of. The name comes from Aristotle's works catalogued *after* his Physics — *ta meta ta physika*, 'the books after the physics'. In Urdu thought it overlaps with *ilm-ul-wajood*, the study of being.
+Metaphysics is the branch of philosophy that asks what really exists and what reality is made of. The name comes from Aristotle's works catalogued *after* his Physics — *ta meta ta physika*, 'the books after the physics'. At its heart it is the study of being.
 
 ### Central Questions
 - What is ultimately real — matter, mind, or both?
@@ -145,7 +145,7 @@ Today metaphysics overlaps with physics. Quantum mechanics raises old questions:
     response: () => `## Epistemology — The Theory of Knowledge
 
 ### What Is Epistemology?
-Epistemology asks: what is knowledge? How do we get it? How sure can we be? The word comes from Greek *episteme* (knowledge) and *logos* (study). In Islamic philosophy it is called *ilm-ul-ilm* or *nazar-e-ilm*, the science of knowing.
+Epistemology asks: what is knowledge? How do we get it? How sure can we be? The word comes from Greek *episteme* (knowledge) and *logos* (study). It is sometimes called the science of knowing.
 
 ### The Classical Definition
 For over 2,000 years knowledge was defined as **justified true belief (JTB)** — you know X if:
@@ -477,7 +477,7 @@ The brain processes 11 million bits of information per second but only 50 bits r
     response: () => `## Memory — How the Brain Stores the Past
 
 ### What Is Memory?
-Memory is the mental process of encoding, storing, and retrieving information. It is not a video recording — it is a reconstructive act, rebuilt each time we remember, and therefore vulnerable to change. In Urdu it is called *yaadasht*.
+Memory is the mental process of encoding, storing, and retrieving information. It is not a video recording — it is a reconstructive act, rebuilt each time we remember, and therefore vulnerable to change.
 
 ### The Three Stages
 1. **Encoding** — converting sensory input into a form the brain can hold
@@ -579,7 +579,7 @@ Twin studies estimate IQ heritability at 50–80% in adults, but environment mat
     response: () => `## Consciousness — The Hardest Question in Science
 
 ### What Is Consciousness?
-Consciousness is the felt quality of experience — what it is like to be you, to see red, taste mango, or feel pain. The word covers wakefulness, awareness of self, and subjective experience. In Urdu it is *shaoor*.
+Consciousness is the felt quality of experience — what it is like to be you, to see red, taste mango, or feel pain. The word covers wakefulness, awareness of self, and subjective experience.
 
 ### Levels and Contents
 - **Wakefulness** — being alert vs asleep or in a coma
@@ -666,5 +666,90 @@ The exact numbers are debated, but the lesson is clear: a large share of well-be
 - Limit social media comparison
 
 **Why it matters:** Happiness is not a luxury — it predicts health, productivity, longevity, and even stronger immune function. Treating it as a learnable skill, not a lottery ticket, may be the most practical philosophy of life.`,
+  },
+  // ----------------------------------------------------------
+  // 16. MEANING OF LIFE
+  // ----------------------------------------------------------
+  {
+    id: 'meaning-of-life',
+    patterns: [/\b(meaning of life|what is life|purpose of life|life purpose|zindagi ka maqsad|zindagi kya hai|life kya hai|why are we here|hum yahan kyun hain|point of life|point of living|why live)\b/i],
+    intent: 'factual_question',
+    topic: 'philosophy',
+    response: () => `## What Is Life? — A Question With Many Honest Answers
+
+There is no single answer that everyone agrees on — and that itself is part of the answer. For thousands of years, thoughtful people have offered different meanings, and most of them fall into a few families.
+
+### The Main Honest Answers
+
+| View | Core idea | Famous voice |
+|------|-----------|--------------|
+| **Biological** | Life is a self-sustaining process that resists entropy — to live is to keep living, and to pass life forward | Charles Darwin |
+| **Religious / Spiritual** | Life is a gift or test from a higher source; its meaning is to align with that source's will or to seek liberation | Buddha, Jesus, Muhammad, the Vedas |
+| **Existentialist** | Life has no built-in meaning — *you* create its meaning through your choices and commitments | Sartre, Camus |
+| **Stoic** | Meaning is found in living virtuously — wisdom, courage, justice, temperance — regardless of outcome | Marcus Aurelius |
+| **Aristotelian** | Meaning is *eudaimonia* — flourishing by fulfilling your nature through reason and virtue | Aristotle |
+| **Absurdist** | The search for meaning in a silent universe is absurd — but we should live fully anyway, in revolt | Albert Camus |
+| **Relational** | Meaning grows from love, care, and connection with others — we are made of our relationships | Confucius, modern care ethics |
+| **Creative** | Meaning is made by creating — art, work, family, ideas that outlast you | Nietzsche, Viktor Frankl |
+
+### What Philosophy Gets Right
+- **No external meaning is forced on you.** Even religious traditions agree that meaning must be *accepted*, not merely inherited.
+- **Meaning is action-shaped, not just thought-shaped.** Viktor Frankl, a psychiatrist who survived the concentration camps, wrote in *Man's Search for Meaning* that those who had a "why" to live could bear almost any "how."
+- **Meaning tends to involve three things** — connection to others, a project or purpose larger than yourself, and a way to face suffering without being broken by it.
+
+### What Biology Adds
+Life is, minimally, a system that:
+1. Takes in energy and matter
+2. Maintains its own order against decay
+3. Reproduces with variation
+4. Responds to its environment
+5. Evolves over generations
+
+But "what life *is*" (mechanism) and "what life is *for*" (meaning) are different questions. The first is biology. The second is the question you are really asking.
+
+### A Practical Takeaway
+If meaning is not given but made, then a workable answer is:
+- **Care about something** — a person, a craft, a place, an idea
+- **Grow toward it** — meaning rewards effort, not arrival
+- **Share it** — meaning deepens when it is not kept private
+- **Face hard things honestly** — suffering handled with dignity is one of the strongest sources of meaning
+
+**Why it matters:** Asking "what is life?" is itself part of being alive. A stone does not ask. You do. That question — and your willingness to live its answer — is perhaps the most human thing about you.`,
+  },
+  // ----------------------------------------------------------
+  // 17. DEPRESSION / SADNESS DEEP SUPPORT
+  // ----------------------------------------------------------
+  {
+    id: 'support-sadness-deep',
+    patterns: [/\b(depressed|depression|clinical depression|bahut udaas|bohot dukhi|tomorrow nahi|end it|give up|hop khatam|khud ko|self harm|kill myself|jeena nahi chahta|no reason to live)\b/i],
+    intent: 'support',
+    topic: 'support',
+    response: () => `## I Hear You — And I Am Not Going Anywhere 💛
+
+What you are carrying right now is heavier than anyone can see from the outside. The fact that you are still here, still reading, still asking — that is not weakness. That is the part of you that has not given up, even when the rest of you is exhausted.
+
+### What I Want You To Know
+- **You are not a burden.** People who love you would rather be called at 3am than find out you suffered alone.
+- **Your brain is lying to you right now.** Depression tells you it will always be this way. It will not. Episodes end. Feelings shift. The voice that says "this is forever" is a symptom, not a prophet.
+- **Small is enough today.** Drinking water. Opening a window. Sending one text. These are not nothing — they are victories when everything weighs a ton.
+
+### If You Are In Crisis — Please Read This
+You deserve real human help, not just words from an AI. Please reach out to one of these right now:
+- **Pakistan:** Umang Helpline — 0311-7786264 (8am–midnight)
+- **Pakistan:** Rozan Helpline — 0800-22744 (toll-free)
+- **International:** Find a crisis line at findahelpline.com — search your country
+- **If you are in immediate danger:** Call your local emergency number or go to the nearest hospital emergency department
+
+### Things That Genuinely Help (Evidence-Based)
+1. **Tell one person.** Just one. Secrecy feeds depression; speaking starves it.
+2. **See a psychiatrist if you can.** Depression is often a brain-chemistry issue — medication can be as life-saving as insulin for diabetes.
+3. **Move your body a little.** Even 10 minutes of walking raises the same brain chemicals many antidepressants target.
+4. **Do not make big decisions in a dark hour.** Sleep first. Decide tomorrow.
+5. **Lower the bar.** A shower is a win. A meal is a win. Breathing is a win today.
+
+### A Small Thought
+You have survived 100% of your worst days so far. That is not a small thing. That is a track record.
+
+I am here. I will keep being here. 💛`,
   },
 ]

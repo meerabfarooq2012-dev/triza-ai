@@ -12,7 +12,7 @@ interface EnvVarConfig {
 
 const ENV_CONFIG: EnvVarConfig[] = [
   { name: 'DATABASE_URL', required: true, description: 'PostgreSQL connection string' },
-  { name: 'DIRECT_URL', required: true, description: 'Direct database connection for Prisma' },
+  { name: 'DIRECT_URL', required: false, description: 'Direct database connection for Prisma (falls back to DATABASE_URL)' },
   { name: 'JWT_SECRET', required: true, description: 'Secret key for JWT token signing', validate: (v) => v.length >= 32 },
   { name: 'NEXT_PUBLIC_SUPABASE_URL', required: true, description: 'Supabase project URL' },
   { name: 'NEXT_PUBLIC_SUPABASE_ANON_KEY', required: true, description: 'Supabase anonymous key' },

@@ -444,8 +444,9 @@ model NotificationPreference {
 
 model Conversation {
   id             String    @id @default(cuid())
-  participant1Id String
-  participant2Id String
+  // Optional so prisma db push can add the column to tables with existing rows
+  participant1Id String?
+  participant2Id String?
   productId      String?
   gigId          String?
   orderId        String?
@@ -454,8 +455,8 @@ model Conversation {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
-  participant1   User      @relation("ConvParticipant1", fields: [participant1Id], references: [id])
-  participant2   User      @relation("ConvParticipant2", fields: [participant2Id], references: [id])
+  participant1   User?     @relation("ConvParticipant1", fields: [participant1Id], references: [id])
+  participant2   User?     @relation("ConvParticipant2", fields: [participant2Id], references: [id])
   product        Product?  @relation(fields: [productId], references: [id])
   gig            Gig?      @relation(fields: [gigId], references: [id])
   messages       Message[]
@@ -471,15 +472,16 @@ model Conversation {
 model Message {
   id             String   @id @default(cuid())
   conversationId String?
-  senderId       String
-  receiverId     String
+  // Optional so prisma db push can add the column to tables with existing rows
+  senderId       String?
+  receiverId     String?
   content        String
   messageType    String   @default("text") // text, image, system, order_reference
   isRead         Boolean  @default(false)
   createdAt      DateTime @default(now())
 
-  sender         User          @relation("SentMessages", fields: [senderId], references: [id])
-  receiver       User          @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  sender         User?         @relation("SentMessages", fields: [senderId], references: [id])
+  receiver       User?         @relation("ReceivedMessages", fields: [receiverId], references: [id])
   conversation   Conversation? @relation(fields: [conversationId], references: [id])
 
   @@index([senderId])
@@ -1591,14 +1593,15 @@ model PushSubscription {
 }
 
 // =============================================================================
-// TRIZA AI — Conversation & Message models
+// TRIZA AI MODELS — Self-built AI conversation history + training data
+// (no external LLM APIs; pure TypeScript reasoning engine)
 // =============================================================================
 
 model AiConversation {
-  id        String       @id @default(cuid())
-  title     String       @default("New Chat")
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  id        String      @id @default(cuid())
+  title     String      @default("New Chat")
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 
   messages  AiMessage[]
 
@@ -1608,12 +1611,157 @@ model AiConversation {
 model AiMessage {
   id             String         @id @default(cuid())
   conversationId String
-  role           String         // "user" | "assistant"
+  role           String // "user" | "assistant"
   content        String
+  // JSON-serialized transparency metadata (mood, intent, confidence,
+  // topicDomain, processingTimeMs, steps[]). Only present on assistant
+  // replies. Null for user messages. Parsed by the conversation-detail
+  // API and surfaced to the chat UI so TRIZA's cognition steps persist
+  // across page reloads (not just on the optimistic first render).
+  metaJson       String?
   createdAt      DateTime       @default(now())
 
   conversation   AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@index([conversationId])
   @@index([createdAt])
+}
+
+model AiModel {
+  id          String       @id @default(cuid())
+  name        String
+  type        String       @unique
+  description String       @default("")
+  dim         Int          @default(256)
+  createdAt   DateTime     @default(now())
+
+  categories  AiCategory[]
+
+  @@index([type])
+}
+
+model AiCategory {
+  id              String           @id @default(cuid())
+  modelId         String
+  name            String
+  emoji           String           @default("📦")
+  color           String           @default("#6b7280")
+  description     String           @default("")
+  prototypeVector Bytes?
+  trainedAt       DateTime?
+  createdAt       DateTime         @default(now())
+
+  model           AiModel          @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  trainingWords   AiTrainingWord[]
+
+  @@index([modelId])
+}
+
+model AiTrainingWord {
+  id         String     @id @default(cuid())
+  categoryId String
+  word       String
+  createdAt  DateTime   @default(now())
+
+  category   AiCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId])
+  @@index([word])
+}
+
+// ============================================================================
+// TRIZA COGNITION PERSISTENCE — permanent memory across server restarts
+// (Task PERM-MEM-2). All three models are standalone (no FKs) so they
+// remain durable even if other tables change. JSON columns store the
+// serialized cognition singletons; indexes cover the hot query paths.
+// ============================================================================
+
+/// P15 distributed-memory trace — one row per pattern TRIZA has observed.
+/// Pattern is feature→weight; category is the plurality-vote label (or null).
+model TrizaMemoryTrace {
+  id          String   @id @default(cuid())
+  // The pattern key (e.g. a concept name or feature-set signature)
+  patternKey  String
+  // JSON-serialized pattern (e.g. {"red":0.9,"round":0.8})
+  patternJson String
+  // JSON-serialized category inferred (nullable)
+  category    String?
+  // Importance score 0..1
+  importance  Float    @default(0.5)
+  // Times this trace has been recalled
+  uses        Int      @default(0)
+  // ISO timestamp of last access
+  lastAccessed DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@index([patternKey])
+  @@index([importance])
+}
+
+/// Singleton row (id="singleton") holding a snapshot of TRIZA's brain /
+/// system / meta state. Updated on every cognition run so the next
+/// server boot can restore continuity.
+model TrizaCognitionState {
+  id        String   @id @default("singleton")
+  // JSON-serialized brain state {energy, arousal, focus, timestamp}
+  brainStateJson String
+  // JSON-serialized system state {uptime, restCycles, debt, integrity}
+  systemStateJson String
+  // JSON-serialized meta state {knowledge, confidence, mode, lastError, selfCorrections}
+  metaStateJson String
+  // JSON-serialized emotional identity (P4+ mood, momentum, volatility, history).
+  // Phase 2: persists TRIZA's emotional identity across restarts so its
+  // accumulated mood survives `next dev` / Vercel cold starts.
+  emotionalStateJson String?
+  // JSON-serialized sleep-cycle state (P29/P30 phase, debt, integrity).
+  // Phase 2: persists TRIZA's sleep debt + rest state across restarts.
+  sleepStateJson String?
+  // Total messages processed lifetime
+  totalMessages Int @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+/// One row per user message — captures what cognition inferred at the
+/// moment of the reply. Used for later analysis / audit of TRIZA's
+/// internal state across a conversation.
+model TrizaConversationInsight {
+  id          String   @id @default(cuid())
+  conversationId String
+  // The user message that triggered this insight
+  userMessage String
+  // The matched concept from P2 Hierarchy
+  matchedConcept String?
+  // The detected intent from P20
+  intent      String?
+  // The detected emotion from P4 (numeric)
+  emotion     Float?
+  // The agency score from P14
+  agency      Float?
+  // The confidence from P37
+  confidence  Float?
+  // The top goal from P10 (if any)
+  topGoal     String?
+  // Whether this was a surprising observation (P6)
+  wasSurprising Boolean @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([conversationId])
+  @@index([matchedConcept])
+  @@index([createdAt])
+}
+
+/// Hebbian feedback-learning weights — one row per KnowledgeEntry.id.
+/// Survives server restarts so 👍/👎 learning is permanent. Without
+/// this table, every restart wiped all reinforcement learning.
+model TrizaFeedbackWeight {
+  // The KnowledgeEntry.id this weight applies to (first id of a fused chain).
+  entryId   String   @id
+  // Learned weight in [0.1, 3.0] — multiplies the raw KB score.
+  weight    Float    @default(1.0)
+  // Count of 👍 received lifetime (for analytics).
+  upCount   Int      @default(0)
+  // Count of 👎 received lifetime (for analytics).
+  downCount Int      @default(0)
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
 }

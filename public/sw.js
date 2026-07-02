@@ -1,9 +1,19 @@
 /// <reference lib="webworker" />
 
-const CACHE_NAME = 'thiora-v3';
-const STATIC_CACHE = 'thiora-static-v3';
-const DYNAMIC_CACHE = 'thiora-dynamic-v3';
-const API_CACHE = 'thiora-api-v3';
+// =============================================================================
+//  TRIZA Service Worker — v5
+//  - Bumped cache version to force-clear ALL v4 caches (which contained
+//    the broken JS bundle with the onDelete bug)
+//  - Changed .js strategy from cache-first → network-first so JS updates
+//    always reach the user immediately (critical for a frequently-updated app)
+//  - Added auto-reload: when a new SW activates, it tells all clients to
+//    reload so the user sees the fix without manual refresh
+// =============================================================================
+
+const CACHE_NAME = 'triza-v5';
+const STATIC_CACHE = 'triza-static-v5';
+const DYNAMIC_CACHE = 'triza-dynamic-v5';
+const API_CACHE = 'triza-api-v5';
 
 const STATIC_ASSETS = [
   '/',
@@ -12,10 +22,8 @@ const STATIC_ASSETS = [
   '/manifest.json',
 ];
 
-// Cache-first: static assets (CSS, JS, images, fonts)
+// Static assets that are safe to cache-first (NOT JS — JS must always be fresh)
 const CACHE_FIRST_EXTENSIONS = [
-  '.css',
-  '.js',
   '.png',
   '.jpg',
   '.jpeg',
@@ -29,11 +37,11 @@ const CACHE_FIRST_EXTENSIONS = [
   '.webp',
 ];
 
-// Network-first: API calls
+// Network-first: API calls + ALL JavaScript (so code updates reach users)
 const API_PATHS = ['/api/'];
+const NETWORK_FIRST_EXTENSIONS = ['.js', '.css', '.json'];
 
 // Branding assets that must ALWAYS be fresh (never stale cache)
-// These are fetched from network first so logo/icon updates reach users immediately
 const NETWORK_FIRST_PATHS = [
   '/logo.svg',
   '/logo.png',
@@ -42,6 +50,7 @@ const NETWORK_FIRST_PATHS = [
   '/apple-touch-icon.png',
   '/og-image.png',
   '/manifest.json',
+  '/sw.js',
 ];
 
 // Install event — cache static assets
@@ -54,7 +63,7 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// Activate event — clean up old caches
+// Activate event — clean up ALL old caches + claim clients + trigger reload
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -68,17 +77,32 @@ self.addEventListener('activate', (event) => {
           )
           .map((name) => caches.delete(name))
       );
+    }).then(() => {
+      // Take control of all clients immediately
+      return self.clients.claim();
+    }).then(() => {
+      // Tell all open tabs to reload so they get the fresh JS bundle
+      return self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    }).then((clientList) => {
+      clientList.forEach((client) => {
+        client.postMessage({ type: 'SW_UPDATED', version: CACHE_NAME });
+      });
     })
   );
-  self.clients.claim();
+});
+
+// Listen for messages from the client
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 // Helper: determine caching strategy
 function getStrategy(url) {
   const urlObj = new URL(url);
 
-  // Branding assets (logo, icons, og-image) → ALWAYS network-first
-  // This ensures logo/branding updates reach users immediately
+  // Branding assets + sw.js → ALWAYS network-first
   for (const path of NETWORK_FIRST_PATHS) {
     if (urlObj.pathname === path) {
       return 'network-first';
@@ -92,16 +116,23 @@ function getStrategy(url) {
     }
   }
 
-  // Static assets → cache-first
+  // JavaScript + CSS + JSON → network-first (CRITICAL: code updates must reach users)
+  for (const ext of NETWORK_FIRST_EXTENSIONS) {
+    if (urlObj.pathname.endsWith(ext)) {
+      return 'network-first';
+    }
+  }
+
+  // Other static assets (images, fonts) → cache-first
   for (const ext of CACHE_FIRST_EXTENSIONS) {
     if (urlObj.pathname.endsWith(ext)) {
       return 'cache-first';
     }
   }
 
-  // Same-origin navigation/pages → stale-while-revalidate
+  // Same-origin navigation/pages → network-first (always serve fresh HTML)
   if (urlObj.origin === self.location.origin) {
-    return 'stale-while-revalidate';
+    return 'network-first';
   }
 
   // External resources → network-first
@@ -127,9 +158,6 @@ self.addEventListener('fetch', (event) => {
     case 'network-first':
       event.respondWith(networkFirst(request));
       break;
-    case 'stale-while-revalidate':
-      event.respondWith(staleWhileRevalidate(request));
-      break;
     default:
       event.respondWith(networkFirst(request));
   }
@@ -150,7 +178,6 @@ async function cacheFirst(request) {
     }
     return response;
   } catch (error) {
-    // If it's a navigation request, show offline page
     if (request.mode === 'navigate') {
       const offline = await caches.match('/offline.html');
       if (offline) return offline;
@@ -175,7 +202,6 @@ async function networkFirst(request) {
       return cached;
     }
 
-    // If it's a navigation request, show offline page
     if (request.mode === 'navigate') {
       const offline = await caches.match('/offline.html');
       if (offline) return offline;
@@ -189,50 +215,13 @@ async function networkFirst(request) {
   }
 }
 
-// Stale-while-revalidate: serve from cache, update in background
-async function staleWhileRevalidate(request) {
-  const cache = await caches.open(DYNAMIC_CACHE);
-  const cached = await cache.match(request);
-
-  const fetchPromise = fetch(request)
-    .then((response) => {
-      if (response.ok) {
-        cache.put(request, response.clone());
-      }
-      return response;
-    })
-    .catch(() => {
-      // Network failed, that's fine — we already returned cached
-      return null;
-    });
-
-  // Return cached immediately if available, otherwise wait for network
-  if (cached) {
-    return cached;
-  }
-
-  const networkResponse = await fetchPromise;
-  if (networkResponse) {
-    return networkResponse;
-  }
-
-  // If it's a navigation request, show offline page
-  if (request.mode === 'navigate') {
-    const offline = await caches.match('/offline.html');
-    if (offline) return offline;
-  }
-
-  return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
-}
-
 // =============================================================================
 // Push Notification Handlers
 // =============================================================================
 
-// Push event — show notification when a push message is received
 self.addEventListener('push', (event) => {
   let data = {
-    title: 'Thiora',
+    title: 'TRIZA',
     body: 'You have a new notification',
     icon: '/logo.svg',
     badge: '/logo.svg',
@@ -248,7 +237,6 @@ self.addEventListener('push', (event) => {
       const parsed = event.data.json();
       data = { ...data, ...parsed };
     } catch {
-      // If not JSON, use the text as the body
       data.body = event.data.text();
     }
   }
@@ -278,7 +266,6 @@ self.addEventListener('push', (event) => {
   );
 });
 
-// Notification click event — open the app when notification is clicked
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
@@ -288,17 +275,14 @@ self.addEventListener('notificationclick', (event) => {
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // If there's already a window open, focus it and navigate
       for (const client of clientList) {
         if (client.url.includes(self.location.origin) && 'focus' in client) {
-          // Navigate to the target URL if different
           if (urlToOpen !== '/' && client.navigate) {
             client.navigate(urlToOpen);
           }
           return client.focus();
         }
       }
-      // No window open — open a new one
       return self.clients.openWindow(urlToOpen);
     })
   );

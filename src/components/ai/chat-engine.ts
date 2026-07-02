@@ -27,6 +27,7 @@ import {
   generateResponse,
   type GenerateOptions,
 } from '@/lib/triza-engine/response-generator'
+import { extractTopicWords } from '@/lib/triza-engine/self-expression'
 import type { TrizaResponse } from '@/lib/triza-engine/types'
 
 // ============================================================
@@ -39,6 +40,8 @@ interface MemMessage {
   role: 'user' | 'assistant'
   content: string
   createdAt: Date
+  /** In-memory mirror of AiMessage.metaJson (parsed). Optional. */
+  meta?: Record<string, unknown>
 }
 
 interface MemConversation {
@@ -159,12 +162,23 @@ export async function getConversation(conversationId: string) {
       title: convo.title,
       createdAt: convo.createdAt.toISOString(),
       updatedAt: convo.updatedAt.toISOString(),
-      messages: convo.messages.map((m) => ({
-        id: m.id,
-        role: m.role,
-        content: m.content,
-        createdAt: m.createdAt.toISOString(),
-      })),
+      messages: convo.messages.map((m) => {
+        let meta: Record<string, unknown> | undefined
+        if (m.metaJson) {
+          try {
+            meta = JSON.parse(m.metaJson)
+          } catch {
+            meta = undefined
+          }
+        }
+        return {
+          id: m.id,
+          role: m.role,
+          content: m.content,
+          createdAt: m.createdAt.toISOString(),
+          meta,
+        }
+      }),
     }
   } catch (err) {
     if (dbCheckedOut && !(err instanceof Error && err.message === 'not found in DB')) {
@@ -186,6 +200,7 @@ export async function getConversation(conversationId: string) {
         role: m.role,
         content: m.content,
         createdAt: m.createdAt.toISOString(),
+        meta: m.meta,
       })),
     }
   }
@@ -347,12 +362,58 @@ export async function sendMessage(
   // 2. Generate TRIZA response — NO external API calls
   //    Uses knowledge base + self-expression (own voice)
   // ---------------------------------------------------------
+  // Build previousTurn from history so the engine can handle
+  // follow-ups ("tell me more", "why", "aur batao") by continuing
+  // the last topic instead of starting fresh. We re-derive the
+  // matched entry by searching the LAST user message — this gives
+  // us the entry id + topic without needing to persist metadata.
+  let previousTurn: GenerateOptions['previousTurn']
+  if (history.length >= 2) {
+    const lastAssistant = [...history]
+      .reverse()
+      .find((m) => m.role === 'assistant')
+    const lastUser = [...history].reverse().find((m) => m.role === 'user')
+    if (lastAssistant && lastUser) {
+      previousTurn = {
+        rawKnowledge: lastAssistant.content,
+        topicWords: extractTopicWords(lastUser.content, 8),
+        // matchedEntryId is filled by the engine itself below;
+        // setting a placeholder so the follow-up branch triggers.
+        matchedEntryId: '__from_history__',
+      }
+    }
+  }
+
   const genOpts: GenerateOptions = {
     conversationHistory: history,
     conversationId,
+    previousTurn,
   }
 
-  const trizaResponse = await generateResponse(userMessage, genOpts)
+  // BULLETPROOF: if the TRIZA engine crashes for ANY reason
+  // (edge case in self-expression, knowledge base, etc.),
+  // fall back to a graceful message so the API NEVER returns 500
+  // and the user NEVER sees "Could not reach the AI backend".
+  let trizaResponse
+  try {
+    trizaResponse = await generateResponse(userMessage, genOpts)
+  } catch (genErr) {
+    console.error(
+      '[TRIZA] generateResponse crashed, using fallback:',
+      genErr instanceof Error ? genErr.message : genErr
+    )
+    trizaResponse = {
+      text: `Mujhe maaf karein — abhi thodi technical dikkat aa gayi. Maine aapka sawaal suna hai ("${userMessage.slice(0, 80)}"). Kripya thodi der baad dobara poochein, main zaroor jawab doonga.`,
+      rawKnowledge: 'Fallback response (engine error).',
+      confidence: 0.2,
+      mood: 'neutral',
+      intent: 'unknown',
+      topicDomain: 'fallback',
+      processingTimeMs: 0,
+      selfExpressed: false,
+      topicWords: [],
+    }
+  }
 
   // ---------------------------------------------------------
   // 3. Save assistant message (DB or in-memory)
@@ -361,7 +422,20 @@ export async function sendMessage(
 
   try {
     const assistantMsg = await db.aiMessage.create({
-      data: { conversationId, role: 'assistant', content: trizaResponse.text },
+      data: {
+        conversationId,
+        role: 'assistant',
+        content: trizaResponse.text,
+        metaJson: JSON.stringify({
+          mood: trizaResponse.mood,
+          intent: trizaResponse.intent,
+          confidence: trizaResponse.confidence,
+          topicDomain: trizaResponse.topicDomain,
+          processingTimeMs: trizaResponse.processingTimeMs,
+          selfExpressed: trizaResponse.selfExpressed,
+          steps: trizaResponse.steps ?? [],
+        }),
+      },
     })
     assistantMessageId = assistantMsg.id
 
@@ -385,6 +459,15 @@ export async function sendMessage(
       role: 'assistant',
       content: trizaResponse.text,
       createdAt: new Date(),
+      meta: {
+        mood: trizaResponse.mood,
+        intent: trizaResponse.intent,
+        confidence: trizaResponse.confidence,
+        topicDomain: trizaResponse.topicDomain,
+        processingTimeMs: trizaResponse.processingTimeMs,
+        selfExpressed: trizaResponse.selfExpressed,
+        steps: trizaResponse.steps ?? [],
+      },
     }
     if (c) {
       c.messages.push(msg)

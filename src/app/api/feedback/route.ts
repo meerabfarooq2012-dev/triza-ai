@@ -1,21 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db'
 import { authenticateRequest } from '@/lib/auth-middleware';
-import ZAI from 'z-ai-web-dev-sdk';
 import { rateLimit, getRateLimitKey, feedbackRateLimit } from '@/lib/rate-limit';
 import { withCsrf } from '@/lib/with-csrf';
 
-// Singleton ZAI instance
-let zaiInstance: ZAI | null = null;
+// ───────────────────────────────────────────────────────────────
+// LOCAL ONLY — No external LLM (TRIZA principle)
+// ───────────────────────────────────────────────────────────────
+// Previously this route imported an external LLM SDK and used it to
+// generate a reply to each feedback message. That has been REMOVED
+// in keeping with TRIZA's founding principle:
+//     "NO external AI APIs, NO LLM, NO borrowed models, NO API keys."
+// We now return a locally-generated acknowledgment. The route's
+// response shape ({ thread, userMessage, aiMessage }) is preserved
+// so the frontend continues to work unchanged.
 
-async function getZAI(): Promise<ZAI> {
-  if (!zaiInstance) {
-    zaiInstance = await ZAI.create();
-  }
-  return zaiInstance;
+/**
+ * Build a simple, honest, locally-generated acknowledgment for a
+ * user feedback message. No AI, no network, no API keys.
+ */
+function buildLocalAcknowledgment(userContent: string): string {
+  const trimmed = userContent.trim();
+  const snippet = trimmed.length > 80 ? `${trimmed.slice(0, 77)}...` : trimmed;
+  return [
+    `Thank you for your feedback${snippet ? `: "${snippet}"` : ''}.`,
+    '',
+    'Our team will review it and get back to you if needed. Thiora',
+    'is a 100% locally-run platform — we no longer use external AI',
+    'to auto-reply to feedback, but every message is read by a human',
+    'on our support team.',
+    '',
+    'If your message is urgent, please contact support directly.',
+    'Thanks for helping us improve Thiora!',
+  ].join('\n');
 }
-
-const SYSTEM_PROMPT = `You are a friendly and helpful support assistant for Thiora, a Pakistani marketplace platform. Thiora allows users to create shops, sell digital & physical products, and offer freelance services (gigs). Key features: escrow payments, 10% platform commission, supports Easypaisa/JazzCash/PayFast/crypto payments (Bitcoin, Ethereum, Solana via Direct Escrow), custom shop branding. Answer questions about how to use the platform, give guidance, and collect feedback. Keep responses concise and helpful. If you can't answer something, suggest they contact support. Respond in English but you can mention that Pakistani payment methods are supported.`;
 
 // GET /api/feedback?sessionId=string
 // Fetch a feedback thread with its messages by sessionId
@@ -139,47 +157,13 @@ export const POST = withCsrf(async (request: NextRequest) => {
       },
     });
 
-    // Load the last 10 messages for conversation context
-    const recentMessages = await db.feedbackMessage.findMany({
-      where: { threadId: thread.id },
-      orderBy: { createdAt: 'asc' },
-      take: 10,
-      select: {
-        senderType: true,
-        content: true,
-      },
-    });
+    // Note: We previously loaded the last 10 messages to build LLM
+    // context. That step is no longer needed since we generate the
+    // reply locally without any AI. We keep the DB read minimal.
+    // (Intentionally not fetching recent messages — no LLM context.)
 
-    // Build messages array for LLM
-    const chatMessages: { role: 'user' | 'assistant'; content: string }[] = [
-      { role: 'assistant', content: SYSTEM_PROMPT },
-    ];
-
-    for (const msg of recentMessages) {
-      chatMessages.push({
-        role: msg.senderType === 'user' ? 'user' : 'assistant',
-        content: msg.content,
-      });
-    }
-
-    // Generate AI response
-    let aiContent: string;
-    try {
-      const zai = await getZAI();
-      const response = await zai.chat.completions.create({
-        messages: chatMessages,
-        thinking: { type: 'disabled' },
-      });
-
-      // Extract the AI response content
-      aiContent =
-        response?.choices?.[0]?.message?.content ||
-        "I'm sorry, I couldn't generate a response. Please try again or contact our support team directly.";
-    } catch (llmError) {
-      console.error('LLM error:', llmError);
-      aiContent =
-        "I'm having trouble responding right now. Please try again in a moment, or contact our support team for immediate assistance.";
-    }
+    // Generate a locally-built acknowledgment (NO LLM, NO network).
+    const aiContent = buildLocalAcknowledgment(content);
 
     // Save the AI response
     const aiMessage = await db.feedbackMessage.create({

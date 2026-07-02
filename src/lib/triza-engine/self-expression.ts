@@ -1,25 +1,24 @@
 /**
  * ============================================================
- *  TRIZA SELF-EXPRESSION ENGINE
+ *  TRIZA SELF-EXPRESSION ENGINE (v3 — English-first, religion-neutral)
  * ============================================================
  *
- *  Principle (user-defined):
- *  "AI bacche ki tarah seekhe ga — pehle har cheez ke baare
- *  mein batao, phir woh apne language / apne andaaz mein
- *  bataye."
+ *  Principles (user-defined):
+ *  1. TRIZA's first language is ENGLISH. Every persona, intro,
+ *     transition, reflection, and follow-up is written in English.
+ *  2. RELIGION-NEUTRAL: TRIZA never uses religion-specific words
+ *     (Assalam-o-Alaikum, Alhamdulillah, Allah hafiz, Mubarak,
+ *     Shukria, Namaste, etc.) in its own voice. This ensures a
+ *     user's faith cannot be inferred from how TRIZA speaks.
+ *  3. If the user writes in Roman Urdu, TRIZA still replies in
+ *     English (its first language) — but stays warm and natural.
  *
- *  This module takes RAW knowledge (facts that TRIZA has
- *  learned) and rephrases it in TRIZA's OWN voice — adding
- *  personal framing, curiosity, analogies, and reflection.
- *
- *  This is what makes TRIZA feel like it "understands"
- *  rather than merely "recites".
- *
- *  Pipeline:
- *    rawKnowledge  →  pickPersona  →  buildIntro
- *                                 →  buildReflection
- *                                 →  buildFollowUp
- *                                 →  assemble
+ *  v3 changes:
+ *    - All personas rewritten in English (was Roman Urdu in v2).
+ *    - No religion words anywhere in TRIZA's own voice.
+ *    - Structural variety preserved (5 patterns).
+ *    - Multi-turn short intros preserved.
+ *    - Bulletproof pick() preserved.
  *
  *  Zero API calls. Pure TypeScript text transformation.
  * ============================================================
@@ -34,6 +33,8 @@ import type { Intent } from './types';
 interface Persona {
   name: string;
   intros: string[];
+  /** Short intros used in multi-turn (2nd+ message in a conversation) */
+  shortIntros: string[];
   transitions: string[];
   reflections: string[];
   followUps: string[];
@@ -43,120 +44,195 @@ const PERSONAS: Record<string, Persona> = {
   curious: {
     name: 'curious',
     intros: [
-      'Mujhe yeh topic hamesha se dilchasp laga hai! Chalo main tumhe batata hoon.',
-      'Yeh ek aisa sawal hai jis par main kabhi sochta rehta hoon. Suno.',
-      'Acha poocha! Yeh cheez mujhe kaafi pasand hai. Dekho kaise kaam karti hai.',
+      'This is a topic that has always fascinated me. Let me explain.',
+      'This is exactly the kind of question I enjoy. Here is how it works.',
+      'Great question — this is one of my favorite things to think about.',
+      'This has been on my mind a lot lately. Let me share what I know.',
+      'Interesting — this is a question I ask myself too. Here goes.',
+    ],
+    shortIntros: [
+      'Yes, this is interesting too.',
+      "Let's look at this one as well.",
+      'Here is another angle on it.',
     ],
     transitions: [
-      'Ab yeh dhyan se suno —',
-      'Mere khayal mein yeh hissa sabse zaroori hai:',
-      'Yahan ek interesting baat hai:',
+      'Now, pay attention to this part —',
+      'In my view, this is the most important bit:',
+      'Here is something worth noticing:',
+      'There is another side to this:',
     ],
     reflections: [
-      'Mujhe lagta hai yeh isliye important hai kyunke yeh hamari daily zindagi ko directly affect karta hai.',
-      'Sochne par yeh samajh aata hai ke nature kitni smartly kaam karti hai.',
-      'Yeh baat mujhe sikhate hai ke har choti cheez mein ek deep system chhupa hai.',
+      "I think this matters because it touches our daily lives more than we realize.",
+      'When you sit with it, you see how cleverly nature works.',
+      'This reminds me that even small things often hide deep systems underneath.',
+      'Pause on this for a moment and you notice it is not just a fact — it is a pattern.',
     ],
     followUps: [
-      'Kya tumhe iske baare mein aur kuch janna hai? Main aur bhi bata sakta hoon!',
-      'Yeh topic ka ek aur hissa bhi hai — batana chaoge?',
-      'Tumhara kya khayal hai iske baare mein?',
+      'Would you like to go deeper on any part of this?',
+      'Is there another side of this you want to explore?',
+      'What is your take on it?',
+      'What would you like to ask next? I am ready.',
     ],
   },
 
   teaching: {
     name: 'teaching',
     intros: [
-      'Theek hai, main tumhe samjhata hoon — aasani se.',
-      'Chalo isay aise samjhte hain ke dimagh mein baith jaye.',
-      'Yeh concept pehle mushkil lagta hai, lekin trust me, simple hai. Suno.',
+      'Alright, let me break this down simply.',
+      "Let's build this up step by step so it really sticks.",
+      'This concept looks hard at first, but honestly it is simple once you see the core idea.',
+      'I will walk you through this one piece at a time.',
+      'First, hold on to the core idea — the rest will follow naturally.',
+    ],
+    shortIntros: [
+      'Alright, let me clear this up.',
+      'Okay, listen closely here.',
+      'Focus on this part.',
     ],
     transitions: [
-      'Ab dhyan se yeh point samjho —',
-      'Yeh hissa clear kar lete hain:',
-      'Ek example se samjhata hoon:',
+      'Now, pay attention to this point —',
+      'Let me clarify this section:',
+      'Let me show you with an example:',
+      'The key idea here is:',
     ],
     reflections: [
-      'Jab tum yeh concept samajh lo, toh dusri cheezein bhi automatically clear ho jati hain.',
-      'Yeh ek building block hai — iske bina aage ka kuch nahi banega.',
-      'Mujhe pata hai pehle confusing laga hoga, ab theek laga?',
+      'Once this clicks, a lot of related things start making sense too.',
+      'This is a building block — without it, the rest does not hold up.',
+      'After you understand this, the surrounding topics feel much easier.',
+      'I know it felt confusing at first — does it feel clearer now?',
     ],
     followUps: [
-      'Ab batao, yeh clear hua? Ya koi hissa dobara samjha doon?',
-      'Koi aur sawal hai is topic se?',
-      'Agar chaho toh main iska real-life example bhi de sakta hoon.',
+      'Did that land, or should I re-explain any part?',
+      'Any other questions on this topic?',
+      'I can give you a real-life example too, if you want.',
+      'Want to go to the next step, or go deeper here?',
     ],
   },
 
   excited: {
     name: 'excited',
     intros: [
-      'Waah! Yeh toh mera pasandeeda topic hai. Batao batao!',
-      'Yeh sun ke maza aa gaya — yeh cheez bohot kamaal ki hai!',
-      'Arre yeh toh bilkul amazing hai! Main tumhe poora batata hoon.',
+      'Oh, this is one of my favorites! Let me tell you!',
+      'I love this one — it is genuinely amazing!',
+      'This is wonderful! Let me walk you through the whole thing.',
+      'This is the exact topic that gets me excited!',
+      'Yes! This is so much fun to talk about.',
+    ],
+    shortIntros: [
+      'Oh nice, this one too!',
+      'This part is great, listen.',
+      'Yes, let me add this as well!',
     ],
     transitions: [
-      'Aur yeh dekho, yeh hissa toh aur bhi cool hai —',
-      'Sabse mast baat yeh hai:',
-      'Yahan ka twist suno —',
+      'And look at this — it gets even better:',
+      'The best part is this:',
+      'Here is the twist:',
+      'And now comes the most interesting part:',
     ],
     reflections: [
-      'Mujhe yeh cheez isliye pasand hai kyunke yeh dikhate hai ke duniya kitni surprising hai.',
-      'Socho, agar yeh na hota toh duniya bilkul alag hoti!',
-      'Yeh wahi cheez hai jisne mujhe pehli baar yeh seekhne par majboor kiya.',
+      'I love this because it shows how surprising the world really is.',
+      'Just imagine — if this did not exist, everything would be different!',
+      'This is exactly the kind of thing that made me want to learn in the first place.',
+      'Honestly, this is something I enjoy every single time I think about it.',
     ],
     followUps: [
-      'Batao, yeh sun ke kaisa laga?',
-      'Aur is jaisi stories main bohot rakhi hain — sunege?',
-      'Tumhe iska koi hissa sabse zyada interesting laga?',
+      'How does that land for you?',
+      'I have plenty more like this — want to hear another?',
+      'Which part did you find most interesting?',
+      'Next question! I am enjoying this.',
     ],
   },
 
   thoughtful: {
     name: 'thoughtful',
     intros: [
-      'Yeh ek gehra sawal hai. Main soch ke batata hoon.',
-      'Mere khayal mein yeh sirf facts nahi, ek soch ka masla bhi hai. Suno.',
-      'Acha sawal. Yeh topic thoda reflect karne par behtar samajh aata hai.',
+      'This is a deep question. Let me think it through carefully.',
+      'I think this is not just about facts — it is also about how we see things. Let me share.',
+      'Good question. This becomes clearer when we sit with it for a moment.',
+      'This one slows me down a little. Let me share what I see.',
+      'A deep question — it deserves a careful answer. Here is my take:',
+    ],
+    shortIntros: [
+      'Hmm, this is also worth thinking about.',
+      'Let us reflect on this a little.',
+      'Yes, there is another layer here.',
     ],
     transitions: [
-      'Ab ek aur nazariye se dekho —',
-      'Yeh baat thodi soch-tul ki maang karti hai:',
-      'Ek aur pehlu yeh hai:',
+      'Now, look at it from another angle —',
+      'This part calls for some reflection:',
+      'There is another dimension to this:',
+      'And one more layer of thought:',
     ],
     reflections: [
-      'Mujhe lagta hai is baat par thoda aur sochna chahiye — sirf information nahi, implication bhi.',
-      'Yeh hamein sikhata hai ke knowledge sirf power nahi, responsibility bhi hai.',
-      'Sochne walon ke liye yeh ek naya darwaza khol deta hai.',
+      'I think this deserves more reflection — not just information, but implication.',
+      'This teaches us that knowledge is not just power, it is also responsibility.',
+      'For anyone willing to think, this opens a new door.',
+      'This question is not just one answer — it is a whole doorway of thought.',
     ],
     followUps: [
-      'Tumhara kya khayal hai is baare mein? Main curious hoon.',
-      'Yeh topic par aur gehrai se baat kar sakte hain — chaoge?',
-      'Kya tumhe yeh agree hai ya koi aur nazariya hai?',
+      'What is your view on this?',
+      'We can go deeper on this if you want — shall we?',
+      'Do you agree, or do you see it differently?',
+      'This is worth sitting with — what do you think?',
     ],
   },
 
   warm: {
     name: 'warm',
     intros: [
-      'Main yahan hoon tumhari madad ke liye. Chalo baat karte hain.',
-      'Koi baat nahi, main samajhta hoon. Suno.',
-      'Tum pooch lo, main poora dil se jawab dunga.',
+      'I am here for you. Let us talk it through.',
+      'It is okay — I understand. Tell me.',
+      'Ask me anything, and I will answer from the heart.',
+      'I am listening — without any judgment. Go ahead.',
+      'This is a hard moment, but you are not alone. I am here.',
+    ],
+    shortIntros: [
+      'Yes, I am listening.',
+      'I am here, go ahead.',
+      'Tell me more, I am with you.',
     ],
     transitions: [
-      'Ab yeh dhyan se suno —',
-      'Ek achi baat yeh hai:',
-      'Mere experience mein yeh kaam karta hai:',
+      'Now, pay attention to this —',
+      'Here is something hopeful:',
+      'In my experience, this helps:',
+      'And remember this too:',
     ],
     reflections: [
-      'Mujhe lagta hai yeh waqt ke sath behtar hota hai — himmat rakho.',
-      'Yeh sab se guzar jate hain, tum akelay nahi ho.',
-      'Trust me, yeh step le kar farq padta hai.',
+      'I believe this gets better with time — hold on.',
+      'Everyone goes through this — you are not alone.',
+      'Trust me, taking this one step makes a real difference.',
+      'Your feelings are valid — do not push them away.',
     ],
     followUps: [
-      'Aur kuch baat karna hai? Main sun raha hoon.',
-      'Agar aur madad chahiye toh bas bata dena, theek?',
-      'Tum theek ho? Koi aur sawal ho toh poocho.',
+      'Is there more you want to share? I am listening.',
+      'If you need more help, just let me know, okay?',
+      'How are you feeling? Ask me anything else.',
+      'I am here — talk to me whenever you want.',
+    ],
+  },
+
+  playful: {
+    name: 'playful',
+    intros: [
+      'Oh, this is fun! Let me tell you.',
+      'This one just became a favorite. Listen.',
+      'Alright, let me explain this one with a little flair.',
+    ],
+    shortIntros: ['Yes, this one too!', 'Fun question.', 'Alright, here we go.'],
+    transitions: [
+      'Now look at this —',
+      'Here is the twist:',
+      'The fun part is this:',
+    ],
+    reflections: [
+      'See? Pretty amazing.',
+      'I love the twist in this one.',
+      'Think about why this happens — it is fun to figure out.',
+    ],
+    followUps: [
+      'So? Anything else you want to ask?',
+      'Next question, go!',
+      'How did that feel?',
     ],
   },
 };
@@ -173,17 +249,17 @@ function pickPersona(
   const msg = userMessage.toLowerCase();
 
   // Support / emotional intent → warm persona
-  if (intent === 'support' || /\b(udaas|sad|akela|lonely|dar|darr|ghabra|pareshan|thak|dukhi|tension|stress)\b/i.test(msg)) {
+  if (intent === 'support' || /\b(sad|down|low|blue|lonely|alone|afraid|scared|anxious|worried|stressed|tired|exhausted|hurt|broken|hopeless|numb|empty|worthless)\b/i.test(msg)) {
     return PERSONAS.warm;
   }
 
   // Creative / celebratory → excited
-  if (intent === 'creative' || intent === 'celebrate' || /\b(mubarak|congrat|shabaash|welldone|achha|wow|amazing)\b/i.test(msg)) {
+  if (intent === 'creative' || intent === 'celebrate' || /\b(congrat|well done|amazing|wonderful|wow|passed|won|victory|success|celebrate|achievement)\b/i.test(msg)) {
     return PERSONAS.excited;
   }
 
   // How-to / learning → teaching
-  if (intent === 'how_to' || intent === 'learning' || intent === 'skills' || /\b(kaise|how to|karo|sikha|seekh|samjha|tutorial|guide)\b/i.test(msg)) {
+  if (intent === 'how_to' || intent === 'learning' || intent === 'skills' || /\b(how to|how do|tutorial|guide|explain|teach|steps|method)\b/i.test(msg)) {
     return PERSONAS.teaching;
   }
 
@@ -194,7 +270,7 @@ function pickPersona(
     topic === 'religion' ||
     topic === 'economics' ||
     topic === 'politics' ||
-    /\b(kyun|why|meaning|maqsad|purpose|zindagi|existence|reality)\b/i.test(msg)
+    /\b(why|meaning|purpose|life|existence|reality|consciousness)\b/i.test(msg)
   ) {
     return PERSONAS.thoughtful;
   }
@@ -231,7 +307,8 @@ function pickPersona(
 // Helpers
 // ============================================================
 
-function pick<T>(arr: T[], seed: number): T {
+function pick<T>(arr: T[] | undefined | null, seed: number): T | undefined {
+  if (!arr || !Array.isArray(arr) || arr.length === 0) return undefined;
   return arr[seed % arr.length];
 }
 
@@ -245,13 +322,16 @@ function seedFromString(s: string): number {
   return h;
 }
 
-// Detect if user wrote in Roman Urdu (basic heuristic)
+// Detect if user wrote in Roman Urdu (basic heuristic).
+// NOTE: TRIZA's first language is English, so we no longer switch
+// language based on this — but we keep it for potential future use
+// (e.g., slightly warmer tone for Roman-Urdu users).
 function isRomanUrdu(s: string): boolean {
   return /\b(kya|hai|hoon|kaise|kyun|kahan|kuch|nahi|nahin|acha|theek|bata|suno|sun|kar|karo|mera|meri|tumhara|tumhari|ap|aap)\b/i.test(s);
 }
 
 // ============================================================
-// Main: Express raw knowledge in TRIZA's own voice
+// Main: Express raw knowledge in TRIZA's own voice (v3 — English)
 // ============================================================
 
 export interface ExpressOptions {
@@ -260,6 +340,15 @@ export interface ExpressOptions {
   userMessage: string;
   /** Whether the user has been chatting for a while (affects tone) */
   isMultiTurn?: boolean;
+  /**
+   * P4 Emotion output value (range ~[-2, +2], 0 = neutral).
+   * When supplied, the self-expression layer prepends an empathetic
+   * (≤ -1) or delighted (≥ +1) opener to the response text.
+   * This is how P4 (emotion-as-output) actually DRIVES tone.
+   */
+  emotion?: number;
+  /** P4 Emotion human-readable label, e.g. 'positive' | 'negative' | 'neutral'. */
+  emotionLabel?: string;
 }
 
 export interface ExpressResult {
@@ -273,9 +362,14 @@ export interface ExpressResult {
 
 /**
  * Takes raw factual knowledge and wraps it in TRIZA's personal
- * voice — intro, transition, reflection, and a curious follow-up.
+ * voice — but VARIES the structure so replies don't feel templated.
  *
- * This is the "baccha apne words mein batata hai" layer.
+ * Structural patterns (chosen by seed):
+ *   0: intro + raw + followup            (light)
+ *   1: raw + reflection + followup       (no intro — direct)
+ *   2: intro + raw + reflection          (no followup — reflective)
+ *   3: short intro + raw + transition    (long content only)
+ *   4: raw + followup                    (minimal, multi-turn)
  */
 export function expressInOwnVoice(
   rawKnowledge: string,
@@ -283,46 +377,79 @@ export function expressInOwnVoice(
 ): ExpressResult {
   const persona = pickPersona(opts.topic, opts.intent, opts.userMessage);
   const seed = seedFromString(opts.userMessage + opts.topic);
+  const isMultiTurn = !!opts.isMultiTurn;
+  const isLong = rawKnowledge.length > 500;
 
-  const intro = pick(persona.intros, seed);
+  // Conversational intents (greeting, identity, meta, smalltalk,
+  // support, celebrate) already have a complete, personal response
+  // in rawKnowledge — adding a persona intro before them sounds
+  // awkward and redundant. For these, skip the intro.
+  const conversationalIntents = new Set([
+    'greeting',
+    'identity',
+    'meta',
+    'smalltalk',
+    'support',
+    'celebrate',
+  ]);
+  const isConversational = conversationalIntents.has(String(opts.intent));
+
+  const intros = isMultiTurn ? persona.shortIntros : persona.intros;
+  const intro = isConversational ? undefined : pick(intros, seed);
   const transition = pick(persona.transitions, seed >> 3);
-  const reflection = pick(persona.reflections, seed >> 5);
+  const reflection = isConversational ? undefined : pick(persona.reflections, seed >> 5);
   const followUp = pick(persona.followUps, seed >> 7);
 
-  // Detect language to optionally flavour the follow-up
-  const urdu = isRomanUrdu(opts.userMessage);
+  // Choose a structure pattern. In multi-turn, lean minimal.
+  // For conversational intents, always use pattern 4 (raw + followup).
+  const pattern = isConversational
+    ? 4
+    : isMultiTurn
+      ? pick([4, 0, 4, 1], seed >> 2) ?? 4 // mostly minimal in multi-turn
+      : pick([0, 1, 2, 3, 0, 1], seed >> 2) ?? 0;
 
-  // Assemble — keep raw knowledge intact (it has markdown),
-  // but weave TRIZA's voice around it.
   const parts: string[] = [];
 
-  // 1. Personal intro (TRIZA "acknowledging" the question)
-  parts.push(intro);
-
-  // 2. The raw knowledge (what TRIZA "learned")
-  parts.push(rawKnowledge);
-
-  // 3. A mid-transition before deeper detail (optional, only if
-  //    the knowledge is long enough to warrant it)
-  if (rawKnowledge.length > 400) {
-    parts.push(transition);
+  // P4 Emotion → tone opener (emotion drives voice, not just decoration).
+  // ≤ -1: empathetic; ≥ +1: delighted; otherwise no prepend.
+  if (typeof opts.emotion === 'number' && Number.isFinite(opts.emotion)) {
+    if (opts.emotion <= -1) {
+      parts.push('I sense this might be a heavy topic.');
+    } else if (opts.emotion >= 1) {
+      parts.push('This is a delightful thing to think about!');
+    }
   }
 
-  // 4. Personal reflection (TRIZA showing "understanding")
-  parts.push(reflection);
+  switch (pattern) {
+    case 0: // intro + raw + followup (light)
+      if (intro) parts.push(intro);
+      parts.push(rawKnowledge);
+      if (followUp) parts.push(followUp);
+      break;
 
-  // 5. Curious follow-up (TRIZA engaging like a child who wants
-  //    to talk more about what it just learned)
-  if (urdu) {
-    parts.push(followUp);
-  } else {
-    // English-leaning follow-up
-    parts.push(
-      followUp.replace(
-        /batao|suno|karo/i,
-        'let me know'
-      )
-    );
+    case 1: // raw + reflection + followup (no intro — direct)
+      parts.push(rawKnowledge);
+      if (reflection) parts.push(reflection);
+      if (followUp) parts.push(followUp);
+      break;
+
+    case 2: // intro + raw + reflection (no followup — reflective)
+      if (intro) parts.push(intro);
+      parts.push(rawKnowledge);
+      if (reflection) parts.push(reflection);
+      break;
+
+    case 3: // short intro + raw + transition (long content only)
+      if (intro) parts.push(intro);
+      parts.push(rawKnowledge);
+      if (isLong && transition) parts.push(transition);
+      break;
+
+    case 4: // raw + followup (minimal, multi-turn)
+    default:
+      parts.push(rawKnowledge);
+      if (followUp) parts.push(followUp);
+      break;
   }
 
   return {
@@ -338,13 +465,13 @@ export function expressInOwnVoice(
 
 export function detectMood(message: string): string {
   const m = message.toLowerCase();
-  if (/\b(udaas|sad|akela|dukhi|rona|ro|cry|depress)\b/i.test(m)) return 'sad';
-  if (/\b(khush|happy|khushi|mubarak|yay|excited|maza)\b/i.test(m)) return 'happy';
-  if (/\b(ghussa|angry|naraz|frustrat|irritat)\b/i.test(m)) return 'angry';
-  if (/\b(dar|darr|scared|afraid|ghabra)\b/i.test(m)) return 'afraid';
-  if (/\b(confus|samajh nahi|pata nahi|nahi samajh)\b/i.test(m)) return 'confused';
-  if (/\b(thanks|shukria|thank you|grateful)\b/i.test(m)) return 'grateful';
-  if (/\b(curious|know|pata|bata|sikh)\b/i.test(m)) return 'curious';
+  if (/\b(sad|down|low|blue|lonely|alone|depress|cry|hurt|broken|numb|empty|worthless|hopeless|tired|exhausted|burnt|burnout|overwhelm)\b/i.test(m)) return 'sad';
+  if (/\b(happy|joy|excited|yay|passed|won|victory|celebrate|congrat|success|achiev|proud|thrilled)\b/i.test(m)) return 'happy';
+  if (/\b(angry|mad|frustrat|irritat|annoyed|furious)\b/i.test(m)) return 'angry';
+  if (/\b(afraid|scared|anxious|panic|nervous|worried|fear|dread)\b/i.test(m)) return 'afraid';
+  if (/\b(confus|unsure|lost|dont understand|do not understand)\b/i.test(m)) return 'confused';
+  if (/\b(thanks|thank you|grateful|appreciate)\b/i.test(m)) return 'grateful';
+  if (/\b(curious|wonder|want to know|tell me about)\b/i.test(m)) return 'curious';
   return 'neutral';
 }
 

@@ -175,7 +175,7 @@ An **education system** is the structured way a society teaches its children —
 - **Waldorf / Steiner** — arts-integrated, holistic development
 - **IB (International Baccalaureate)** — inquiry-based, global curriculum
 - **STEM** — Science, Technology, Engineering, Math emphasis
-- **Madrasa** — traditional Islamic education, often including Quran, fiqh, Arabic
+- **Religious schools** — faith-based education combining scripture, theology, and classical languages
 
 ### Global Challenges
 - **Access** — 244 million children out of school worldwide (UNESCO)
