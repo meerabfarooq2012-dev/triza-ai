@@ -234,7 +234,7 @@ export function TrizaChatApp() {
               {
                 id: `err-${Date.now()}`,
                 role: 'assistant',
-                content: `⚠️ TRIZA se connect nahi ho paya (${errDetail}). "Retry" button daba kar dobara koshish karein, ya "New conversation" se fresh start karein.`,
+                content: `⚠️ TRIZA couldn't connect (${errDetail}). Tap "Retry" to try again, or start a "New conversation" for a fresh session.`,
                 createdAt: new Date().toISOString(),
                 isError: true,
                 retryText: message,

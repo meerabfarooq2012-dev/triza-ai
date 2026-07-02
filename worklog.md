@@ -4885,3 +4885,38 @@ Stage Summary:
 - NO DUPLICATION with batch-psychology.ts or batch-health.ts — each new entry covers a DEEPER subtopic angle and uses more specific trigger patterns (e.g. deep entry triggers on `attribution theory|cognitive dissonance|groupthink` while existing social-influence entry triggers on `conformity|asch|milgram`; deep entry triggers on `dopamine|serotonin|GABA|split-brain` while existing human-brain-structure triggers on brain anatomy terms; deep nutrition entry triggers on `vitamin a|b12|scurvy|rickets` while existing nutrition-basics entry triggers on broad `nutrition|macronutrients` terms)
 - All 6 health entries include "consult a doctor" reminder in the Why It Matters paragraph (per task spec)
 - NOTE: PSYCHOLOGY_HEALTH_DEEP_ENTRIES is exported but NOT YET registered in any central knowledge-base aggregator. A follow-up wiring task should import and append PSYCHOLOGY_HEALTH_DEEP_ENTRIES alongside existing PSYCHOLOGY_ENTRIES and HEALTH_ENTRIES in response-generator.ts's KNOWLEDGE_BASE array so TRIZA can match these deeper subtopic questions at runtime.
+
+---
+Task ID: TRIZA-UI-1
+Agent: frontend-styling-expert
+Task: Redesign TRIZA chat workspace UI (sidebar + chat-view + triza-chat-app wrapper) — make it feel professional & polished while keeping all logic/handlers identical.
+
+Work Log:
+- Read worklog.md and the 3 target files (sidebar.tsx ~117 lines, chat-view.tsx ~671 lines, triza-chat-app.tsx ~289 lines).
+- Inspected triza-landing.tsx nav to mirror its brand-mark design language (T-square + TRIZA wordmark + "transparent AI" subtitle + pulse-dot live badge) into the dark-themed sidebar.
+- Verified lucide-react icons used (Plus, Trash2, Layers, MessageSquare, Zap, Shield, Code2, Cpu, Globe, Eye, AlertTriangle, RotateCw, Brain, ChevronDown, Send, User, Sparkles, Loader2, Heart, PartyPopper, PenLine) all exist in node_modules.
+- sidebar.tsx redesign:
+  * Added TRIZA brand mark at top — emerald T-square + "TRIZA" bold + "transparent AI" mono subtitle, separated from action area with border-b.
+  * "New conversation" button promoted to emerald-tinted CTA (bg-emerald-500/10, border-emerald-500/30, hover glow + rotating + icon).
+  * Conversation list items: left-border active indicator (border-l-2 border-emerald-400 + bg-zinc-900), consistent px-3 py-2.5, smooth opacity transition on delete button (group-hover:opacity-100).
+  * Empty state: rounded icon tile (MessageSquare in bordered circle) + clearer text hierarchy ("No conversations yet" / helper subline).
+  * Footer: replaced single CircleDot with a refined pulse-dot + "Engine online" + divider + "3-layer" hint (Layers icon) + "v1.0" mono — all cleanly aligned with justify-between.
+- chat-view.tsx redesign (all logic/props/handlers/markdown components unchanged):
+  * TopNav: active "Chatbot" tab now has bg-zinc-900 + ring + emerald text + bottom-border indicator; "Cyber"/"Coding" tabs have refined bordered "Soon" badges; TRINITY engine badge is now a pill (rounded-full border-emerald-500/20 bg-emerald-500/5) with animated pulse dot.
+  * WelcomeView: avatar enlarged to h-16 w-16 with gradient bg + ring + shadow glow; greeting bumped to text-[34px]; suggestion cards now use small refined icons (MessageSquare/Heart/PartyPopper/PenLine) in bordered circle tiles instead of big emojis, with hover lift (hover:-translate-y-0.5 transition-all duration-200); composer has focus-within ring (focus-within:ring-1 focus-within:ring-emerald-500/20) and send button has shadow-sm/shadow-md hover lift.
+  * ReplyMeta: badges restyled to consistent rounded-full border-zinc-800 bg-zinc-950 px-2.5 py-1 with dim label + bright value; confidence badge highlighted in emerald (border-emerald-500/30 bg-emerald-500/10); collapsible steps renamed from Hindi "TRIZA ki soch" to English "TRIZA's reasoning", with hover:border-zinc-700 + smoother chevron rotation transition.
+  * ConversationView: header now shows status dot + message count, right-aligned; message spacing bumped to space-y-7; "TRIZA is thinking..." replaced with TRIZA avatar + animated bouncing dots (3 emerald dots with staggered animation-delay) + label.
+  * MessageBubble: avatars enlarged to h-8 w-8 rounded-lg with ring (emerald for TRIZA, zinc for user, amber for error); user bubble is chat-shaped (rounded-2xl rounded-tr-sm bg-zinc-800 px-4 py-2.5); assistant bubble now has subtle bg-zinc-900/30 + border-zinc-800/50 container (rounded-2xl rounded-tl-sm); error bubble refined with amber border + Retry button shadowed.
+- triza-chat-app.tsx: only changed the Hindi error message string to English ("⚠️ TRIZA couldn't connect (${errDetail}). Tap "Retry" to try again, or start a "New conversation" for a fresh session.") — root wrapper div + all state/handlers/retry logic untouched.
+- Verification:
+  * `bun run lint` → only pre-existing error in use-google-auth-callback.ts (explicitly ignored per task spec). ZERO new lint errors in the 3 modified files.
+  * Dev server still serves HTTP 200 at http://localhost:3000/.
+  * `git diff --name-only` shows exactly the 3 allowed files: sidebar.tsx, chat-view.tsx, triza-chat-app.tsx. No forbidden files (marketplace, providers, layout, globals.css, shop, db, prisma, mini-services, triza-landing, triza-engine, api routes) were touched.
+
+Stage Summary:
+- TRIZA chat workspace is now visually consistent with the professional landing page language (T-brand mark, emerald-only accent, refined dark theme #0a0a0b + zinc-900 cards + zinc-800 borders).
+- Spacing, padding, border-radius, typography hierarchy and micro-interactions (hover lifts, focus rings, animated thinking dots, rotating + icon, pulse dots) all standardized across sidebar, top nav, welcome view, conversation view, message bubbles, transparency panel, and composer.
+- All Hindi/Devanagari UI text replaced with English ("TRIZA's reasoning", error message) — project rule honored.
+- All existing functionality preserved: conversation CRUD, optimistic send, fetch-with-retry, error bubbles, collapsible reasoning steps, ReactMarkdown rendering, mood/intent/confidence badges, auto-resize textarea, autoscroll.
+- No new dependencies added (used only existing lucide-react icons + cn() utility + Tailwind 4 classes).
+- Ready for visual review by the user (14-year-old poet). Next iteration could add subtle framer-motion message-enter animations if desired, but the task constrained us to className/JSX-only changes here.
