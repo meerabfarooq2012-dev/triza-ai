@@ -25,15 +25,14 @@ import {
   Repeat,
 } from 'lucide-react'
 import { TrizaChatApp } from '@/components/ai/workspace/triza-chat-app'
-import { Button } from '@/components/ui/button'
 import { Toaster } from '@/components/ui/sonner'
 import { toast } from 'sonner'
 
 /* ============================================================
- *  TRIZA — Marketing Landing Page
+ *  TRIZA — Marketing Landing Page (Stone & Forest theme)
  * ============================================================
  *  Sections:
- *    1. Hero          — "An AI that shows its work"
+ *    1. Hero          — "An AI that shows its work" + editorial stats row
  *    2. TRINITY       — Three minds. One brain. (architecture)
  *    3. Pipeline      — Every reply flows through this pipeline
  *    4. Transparency  — real, annotated exchanges
@@ -57,11 +56,6 @@ type DemoMsg = {
     intent?: string
     confidence?: number
     steps?: string[]
-    /**
-     * The knowledge-entry id TRIZA matched for this reply. Passed
-     * to /api/ai/triza-feedback so the Hebbian weight store can
-     * adjust that entry's weight on 👍/👎.
-     */
     entryId?: string
   }
 }
@@ -94,6 +88,13 @@ const PIPELINE = [
   'Quality check',
   'Secularize',
   'Confidence score',
+]
+
+const STATS = [
+  { num: '368', label: 'Knowledge entries' },
+  { num: '3', label: 'Reasoning layers' },
+  { num: '0', label: 'External APIs' },
+  { num: '100%', label: 'Transparent' },
 ]
 
 // Pre-filled example exchange shown by default in the live demo card
@@ -251,27 +252,7 @@ const ROADMAP = [
 // ---------------------------------------------------------------
 //  Feedback Row — REAL 👍 / 👎 learning loop
 // ---------------------------------------------------------------
-//  Wired to POST /api/ai/triza-feedback. Each click sends the last
-//  assistant reply's matched entryId and a reward signal ('up' or
-//  'down'). The endpoint applies the Hebbian weight update:
-//
-//      w_new = clamp( w_old + 0.15 * reward, 0.1, 3.0 )
-//
-//  The new weight is shown in the toast and is immediately used by
-//  searchKnowledgeBase() in response-generator.ts for ranking future
-//  queries. This is REAL learning — not a fake toast.
-//
-//  UI rules:
-//    - Disables both buttons while a request is in flight.
-//    - Tracks which direction the user already chose for the
-//      current last reply, so the active thumb shows highlighted.
-//    - If there's no last assistant reply (or it has no entryId),
-//      shows a muted "shows its work" caption and inert buttons.
-// ---------------------------------------------------------------
 function FeedbackRow({ messages }: { messages: DemoMsg[] }) {
-  // Find the LAST assistant message that has an entryId we can
-  // reinforce. We iterate from the end so the user always gives
-  // feedback on the most recent reply.
   const lastReply = (() => {
     for (let i = messages.length - 1; i >= 0; i--) {
       const m = messages[i]
@@ -281,14 +262,8 @@ function FeedbackRow({ messages }: { messages: DemoMsg[] }) {
   })()
 
   const [submitting, setSubmitting] = useState(false)
-  // 'up' | 'down' | null — which thumb the user has already pressed
-  // for the current last reply. Resets when the last reply changes
-  // (see useEffect below).
   const [chosen, setChosen] = useState<'up' | 'down' | null>(null)
 
-  // Reset chosen state when a new reply arrives. We key off the
-  // lastReply's entryId + content so any new assistant message
-  // resets the thumbs to neutral.
   const lastReplyKey = lastReply
     ? `${lastReply.meta?.entryId}::${lastReply.content.slice(0, 32)}`
     : ''
@@ -300,10 +275,6 @@ function FeedbackRow({ messages }: { messages: DemoMsg[] }) {
     async (reward: 'up' | 'down') => {
       if (!lastReply?.meta?.entryId) return
       if (submitting) return
-      // Don't allow double-submitting the same direction for the
-      // same reply — but DO allow flipping to the opposite thumb
-      // (which would effectively adjust weight twice). This matches
-      // how most feedback UIs behave (you can change your mind).
       if (chosen === reward) return
 
       setSubmitting(true)
@@ -345,7 +316,7 @@ function FeedbackRow({ messages }: { messages: DemoMsg[] }) {
   const hasReply = !!lastReply?.meta?.entryId
 
   return (
-    <div className="flex items-center justify-between border-t border-zinc-100 bg-zinc-50/60 px-4 py-2">
+    <div className="flex items-center justify-between border-t border-border bg-muted/50 px-4 py-2">
       <div className="flex items-center gap-1">
         <button
           onClick={() => sendFeedback('up')}
@@ -355,8 +326,8 @@ function FeedbackRow({ messages }: { messages: DemoMsg[] }) {
             'flex h-7 w-7 items-center justify-center rounded-md transition-colors',
             'disabled:cursor-not-allowed disabled:opacity-40',
             chosen === 'up'
-              ? 'bg-emerald-100 text-emerald-700'
-              : 'text-zinc-400 hover:bg-emerald-50 hover:text-emerald-600',
+              ? 'bg-primary/15 text-primary'
+              : 'text-muted-foreground hover:bg-primary/10 hover:text-primary',
           ].join(' ')}
         >
           <ThumbsUp className="h-3.5 w-3.5" />
@@ -369,14 +340,14 @@ function FeedbackRow({ messages }: { messages: DemoMsg[] }) {
             'flex h-7 w-7 items-center justify-center rounded-md transition-colors',
             'disabled:cursor-not-allowed disabled:opacity-40',
             chosen === 'down'
-              ? 'bg-rose-100 text-rose-700'
-              : 'text-zinc-400 hover:bg-rose-50 hover:text-rose-600',
+              ? 'bg-rose-500/15 text-rose-600 dark:text-rose-300'
+              : 'text-muted-foreground hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-300',
           ].join(' ')}
         >
           <ThumbsDown className="h-3.5 w-3.5" />
         </button>
       </div>
-      <span className="font-mono text-[10px] text-zinc-400">
+      <span className="mono-tag text-muted-foreground" style={{ fontSize: '10px' }}>
         {hasReply ? (submitting ? 'learning…' : 'shows its work') : 'shows its work'}
       </span>
     </div>
@@ -407,7 +378,6 @@ function LiveDemo() {
     setMessages((m) => [...m, { role: 'user', content: text }])
 
     try {
-      // Lazily create an ephemeral conversation for the demo
       if (!conversationIdRef.current) {
         const createRes = await fetch('/api/ai/conversations', {
           method: 'POST',
@@ -446,9 +416,6 @@ function LiveDemo() {
                 ? Math.round(data.confidence * 100)
                 : undefined,
             steps: data.steps,
-            // Capture the matched knowledge-entry id so the 👍/👎
-            // buttons can send it to /api/ai/triza-feedback and
-            // actually adjust this entry's Hebbian weight.
             entryId:
               typeof data.matchedEntryId === 'string'
                 ? data.matchedEntryId
@@ -473,23 +440,25 @@ function LiveDemo() {
   }, [input, loading])
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl shadow-zinc-900/5 ring-1 ring-zinc-900/5">
+    <div className="overflow-hidden rounded-2xl border border-border bg-card soft-shadow">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-zinc-100 bg-zinc-50/80 px-4 py-3">
+      <div className="flex items-center justify-between border-b border-border bg-muted/50 px-4 py-3">
         <div className="flex items-center gap-2">
-          <span className="flex h-6 w-6 items-center justify-center rounded-md bg-emerald-600 text-[10px] font-bold text-white">
+          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-[11px] font-semibold text-primary-foreground">
             T
           </span>
-          <span className="font-mono text-xs font-medium text-zinc-700">
+          <span className="mono-tag text-foreground" style={{ fontSize: '11px' }}>
             TRIZA
           </span>
-          <span className="font-mono text-xs text-zinc-400">·</span>
-          <span className="font-mono text-xs text-zinc-500">transparent AI</span>
+          <span className="mono-tag text-muted-foreground/60">·</span>
+          <span className="mono-tag text-muted-foreground" style={{ fontSize: '11px' }}>
+            transparent AI
+          </span>
         </div>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2 py-0.5 font-mono text-[10px] font-medium text-emerald-700 ring-1 ring-emerald-600/20">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-2 py-0.5 mono-tag text-primary" style={{ fontSize: '10px' }}>
           <span className="relative flex h-1.5 w-1.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
-            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-600" />
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
           </span>
           live
         </span>
@@ -498,46 +467,54 @@ function LiveDemo() {
       {/* Messages */}
       <div
         ref={scrollRef}
-        className="max-h-[340px] min-h-[260px] space-y-4 overflow-y-auto bg-white px-4 py-5"
+        className="max-h-[340px] min-h-[260px] space-y-4 overflow-y-auto bg-card px-4 py-5"
       >
         {messages.map((m, i) => (
           <div key={i} className="space-y-2">
             {m.role === 'user' ? (
               <div className="flex justify-end">
-                <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-zinc-900 px-3.5 py-2 text-sm text-white">
+                <div className="max-w-[85%] rounded-2xl rounded-br-md bg-primary px-3.5 py-2 text-sm text-primary-foreground">
                   {m.content}
                 </div>
               </div>
             ) : (
               <div className="flex justify-start">
-                <div className="max-w-[88%] space-y-2">
-                  <div className="rounded-2xl rounded-bl-sm border border-zinc-200 bg-zinc-50 px-3.5 py-2.5 text-sm text-zinc-800">
-                    {m.content}
+                <div className="flex max-w-[88%] gap-2.5">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary text-[11px] font-semibold text-primary-foreground">
+                    T
                   </div>
-                  {m.meta && (
-                    <div className="flex flex-wrap items-center gap-1.5 font-mono text-[10px]">
-                      {m.meta.mood && (
-                        <span className="rounded-md bg-zinc-100 px-1.5 py-0.5 text-zinc-600">
-                          {m.meta.mood}
-                        </span>
-                      )}
-                      {m.meta.intent && (
-                        <span className="rounded-md bg-zinc-100 px-1.5 py-0.5 text-zinc-600">
-                          {m.meta.intent}
-                        </span>
-                      )}
-                      {typeof m.meta.confidence === 'number' && (
-                        <span className="rounded-md bg-emerald-50 px-1.5 py-0.5 text-emerald-700">
-                          {m.meta.confidence}% confident
-                        </span>
-                      )}
-                      {m.meta.steps && m.meta.steps.length > 0 && (
-                        <span className="rounded-md bg-zinc-100 px-1.5 py-0.5 text-zinc-600">
-                          {m.meta.steps.length} steps
-                        </span>
-                      )}
+                  <div className="space-y-2">
+                    <div className="rounded-2xl rounded-bl-md border border-border bg-muted px-3.5 py-2.5 text-sm text-foreground">
+                      {m.content}
                     </div>
-                  )}
+                    {m.meta && (
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {m.meta.mood && (
+                          <span className="mono-tag rounded-md border border-border bg-background px-1.5 py-0.5 text-muted-foreground" style={{ fontSize: '10px' }}>
+                            {m.meta.mood}
+                          </span>
+                        )}
+                        {m.meta.intent && (
+                          <span className="mono-tag rounded-md border border-border bg-background px-1.5 py-0.5 text-muted-foreground" style={{ fontSize: '10px' }}>
+                            {m.meta.intent}
+                          </span>
+                        )}
+                        {typeof m.meta.confidence === 'number' && (
+                          <span className="mono-tag inline-flex items-center gap-1 rounded-md border border-primary/30 bg-accent px-1.5 py-0.5 text-primary" style={{ fontSize: '10px' }}>
+                            <span className="inline-block w-10 h-1 rounded-full" style={{ background: 'rgba(125,128,121,0.2)' }}>
+                              <span className="block h-full rounded-full bg-primary" style={{ width: `${m.meta.confidence}%` }} />
+                            </span>
+                            {m.meta.confidence}%
+                          </span>
+                        )}
+                        {m.meta.steps && m.meta.steps.length > 0 && (
+                          <span className="mono-tag rounded-md border border-border bg-background px-1.5 py-0.5 text-muted-foreground" style={{ fontSize: '10px' }}>
+                            {m.meta.steps.length} steps
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -546,19 +523,14 @@ function LiveDemo() {
 
         {loading && (
           <div className="flex justify-start">
-            <div className="flex items-center gap-1.5 rounded-2xl rounded-bl-sm border border-zinc-200 bg-zinc-50 px-3.5 py-2.5">
-              <Loader2 className="h-3.5 w-3.5 animate-spin text-zinc-400" />
-              <span className="font-mono text-xs text-zinc-400">thinking…</span>
+            <div className="flex items-center gap-1.5 rounded-2xl rounded-bl-md border border-border bg-muted px-3.5 py-2.5">
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+              <span className="mono-tag text-muted-foreground" style={{ fontSize: '11px' }}>thinking…</span>
             </div>
           </div>
         )}
       </div>
 
-      {/* Feedback row — REAL 👍 / 👎 learning loop.
-          Sends the last assistant reply's matched entryId to
-          /api/ai/triza-feedback, which applies the Hebbian weight
-          update. The new weight then influences future ranking in
-          searchKnowledgeBase(). This is not a fake toast. */}
       <FeedbackRow messages={messages} />
 
       {/* Input */}
@@ -567,18 +539,18 @@ function LiveDemo() {
           e.preventDefault()
           send()
         }}
-        className="flex items-center gap-2 border-t border-zinc-100 bg-white px-3 py-3"
+        className="flex items-center gap-2 border-t border-border bg-card px-3 py-3"
       >
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Message TRIZA…"
-          className="flex-1 bg-transparent text-sm text-zinc-800 placeholder:text-zinc-400 focus:outline-none"
+          className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
         />
         <button
           type="submit"
           disabled={!input.trim() || loading}
-          className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-900 text-white transition-opacity disabled:opacity-30"
+          className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-opacity disabled:opacity-30"
           aria-label="Send message"
         >
           <Send className="h-3.5 w-3.5" />
@@ -593,7 +565,7 @@ function LiveDemo() {
 // ---------------------------------------------------------------
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1 font-mono text-[11px] font-medium uppercase tracking-wider text-zinc-500">
+    <span className="mono-tag inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-muted-foreground" style={{ fontSize: '11px' }}>
       {children}
     </span>
   )
@@ -601,7 +573,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 function MoodDot({ mood, emoji }: { mood: string; emoji?: string }) {
   return (
-    <span className="inline-flex items-center gap-1 font-mono text-[11px] text-zinc-600">
+    <span className="mono-tag inline-flex items-center gap-1 text-muted-foreground" style={{ fontSize: '11px' }}>
       {emoji && <span>{emoji}</span>}
       {mood}
     </span>
@@ -621,7 +593,7 @@ export function TrizaLanding() {
         <Toaster richColors position="top-center" />
         <button
           onClick={() => setChatOpen(false)}
-          className="fixed left-4 top-4 z-50 flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white/90 px-3 py-1.5 text-xs font-medium text-zinc-700 shadow-sm backdrop-blur transition-colors hover:bg-zinc-50"
+          className="fixed left-4 top-4 z-50 flex items-center gap-1.5 rounded-lg border border-border bg-card/90 px-3 py-1.5 text-xs font-medium text-foreground shadow-sm backdrop-blur transition-colors hover:bg-muted"
           aria-label="Back to landing"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
@@ -634,120 +606,113 @@ export function TrizaLanding() {
 
   // ---- Landing page ----
   return (
-    <div className="flex min-h-screen flex-col bg-white text-zinc-900 antialiased">
+    <div className="flex min-h-screen flex-col bg-background text-foreground antialiased">
       <Toaster richColors position="top-center" />
 
       {/* ===== NAV ===== */}
-      <nav className="sticky top-0 z-40 border-b border-zinc-200/70 bg-white/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-          <a href="#top" className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-zinc-900 text-xs font-bold text-white">
+      <nav className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+          <a href="#top" className="flex items-center gap-2.5">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary font-serif font-semibold text-primary-foreground">
               T
             </span>
-            <span className="text-base font-bold tracking-tight">TRIZA</span>
-            <span className="hidden font-mono text-xs text-zinc-400 sm:inline">
+            <span className="font-serif text-base font-semibold tracking-tight">TRIZA</span>
+            <span className="mono-tag hidden text-muted-foreground sm:inline">
               · transparent AI
             </span>
-            <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 font-mono text-[10px] font-medium text-emerald-700 ring-1 ring-emerald-600/20">
+            <span className="mono-tag ml-1 inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-primary" style={{ fontSize: '10px' }}>
               <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-600" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
               </span>
               live
             </span>
           </a>
-          <div className="hidden items-center gap-7 text-sm text-zinc-600 md:flex">
+          <div className="hidden items-center gap-7 text-sm text-muted-foreground md:flex">
             {NAV_LINKS.map((l) => (
               <a
                 key={l.href}
                 href={l.href}
-                className="transition-colors hover:text-zinc-900"
+                className="transition-colors hover:text-foreground"
               >
                 {l.label}
               </a>
             ))}
           </div>
-          <Button
+          <button
             onClick={() => setChatOpen(true)}
-            size="sm"
-            className="bg-zinc-900 text-white hover:bg-zinc-800"
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
           >
-            See it think
-            <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-          </Button>
+            Try TRIZA →
+          </button>
         </div>
       </nav>
 
       {/* ===== HERO ===== */}
       <section id="top" className="relative overflow-hidden">
-        {/* subtle grid background */}
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.4]"
-          style={{
-            backgroundImage:
-              'linear-gradient(to right, #e4e4e7 1px, transparent 1px), linear-gradient(to bottom, #e4e4e7 1px, transparent 1px)',
-            backgroundSize: '56px 56px',
-            maskImage:
-              'radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 75%)',
-            WebkitMaskImage:
-              'radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 75%)',
-          }}
-        />
-        <div className="pointer-events-none absolute left-1/2 top-0 h-[420px] w-[680px] -translate-x-1/2 rounded-full bg-emerald-500/10 blur-[120px]" />
+        {/* ambient glows */}
+        <div className="ambient-glow" style={{ background: '#e3ebe5', width: '500px', height: '500px', top: '-100px', right: '-50px', opacity: '0.6' }} />
+        <div className="ambient-glow" style={{ background: '#efe6d4', width: '400px', height: '400px', bottom: '-100px', left: '-100px', opacity: '0.4' }} />
 
         <div className="relative mx-auto max-w-6xl px-4 pb-20 pt-16 sm:px-6 sm:pt-24 lg:px-8">
-          <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+          {/* editorial top bar */}
+          <div className="mb-12 flex items-center justify-between border-b border-foreground pb-4">
+            <div className="mono-tag text-foreground">Vol. 01 — Transparent Intelligence</div>
+            <div className="mono-tag flex items-center gap-2 text-muted-foreground">
+              <span className="dot h-1.5 w-1.5 rounded-full bg-primary" />
+              Engine online · v1.0
+            </div>
+          </div>
+
+          <div className="grid items-end gap-12 lg:grid-cols-2 lg:gap-16">
             {/* Left: copy */}
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <SectionLabel>
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                Phase 1 live — transparent conversational AI
-              </SectionLabel>
+              <div className="mono-tag mb-6 text-primary">
+                — The Brief
+              </div>
 
-              <h1 className="mt-6 text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
+              <h1 className="font-serif text-5xl font-medium leading-[1.02] tracking-tight sm:text-6xl lg:text-7xl">
                 An AI that
                 <br />
-                <span className="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">
-                  shows its work.
-                </span>
+                shows its{' '}
+                <span className="serif-accent text-primary">work</span>.
               </h1>
 
-              <p className="mt-6 max-w-xl text-base leading-relaxed text-zinc-600 sm:text-lg">
+              <p className="mt-8 max-w-xl text-lg leading-relaxed text-muted-foreground">
                 TRIZA is a transparent, CPU-first AI built from scratch. No black
                 box, no borrowed models — every reply shows its mood, intent,
                 confidence, and reasoning steps.
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Button
-                  size="lg"
+                <button
                   onClick={() => setChatOpen(true)}
-                  className="bg-zinc-900 text-white hover:bg-zinc-800"
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-primary px-7 text-sm font-medium text-primary-foreground soft-shadow transition-opacity hover:opacity-90"
                 >
-                  <Sparkles className="mr-2 h-4 w-4" />
+                  <Sparkles className="h-4 w-4" />
                   See it think
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
+                  <ArrowRight className="h-4 w-4" />
+                </button>
                 <a
                   href="#architecture"
-                  className="inline-flex h-11 items-center justify-center rounded-md border border-zinc-300 bg-white px-6 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
+                  className="inline-flex h-12 items-center justify-center rounded-lg border border-border bg-card px-7 text-sm font-medium text-foreground transition-colors hover:bg-muted"
                 >
                   View architecture
                 </a>
               </div>
 
               {/* badges */}
-              <div className="mt-8 flex flex-wrap gap-2">
+              <div className="mt-10 flex flex-wrap gap-2">
                 {HERO_BADGES.map((b) => (
                   <span
                     key={b}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3 py-1 font-mono text-[11px] text-zinc-600"
+                    className="mono-tag inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-muted-foreground"
                   >
-                    <Check className="h-3 w-3 text-emerald-600" />
+                    <Check className="h-3 w-3 text-primary" />
                     {b}
                   </span>
                 ))}
@@ -763,26 +728,36 @@ export function TrizaLanding() {
               className="scroll-mt-24"
             >
               <LiveDemo />
-              <p className="mt-4 text-center font-mono text-xs text-zinc-400">
+              <p className="mono-tag mt-4 text-center text-muted-foreground">
                 Shows its work · mood · intent · confidence
               </p>
             </motion.div>
           </div>
 
+          {/* Stats row */}
+          <div className="mt-20 grid grid-cols-2 gap-8 border-t border-border pt-10 md:grid-cols-4">
+            {STATS.map((s) => (
+              <div key={s.label}>
+                <div className="serif-accent text-5xl leading-none text-foreground">{s.num}</div>
+                <div className="mono-tag mt-2 text-muted-foreground">{s.label}</div>
+              </div>
+            ))}
+          </div>
+
           {/* Built on */}
-          <div className="mt-20 border-t border-zinc-100 pt-8">
-            <p className="mb-5 text-center font-mono text-[11px] uppercase tracking-wider text-zinc-400">
-              Built on
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
-              {BUILT_ON.map((b) => (
-                <span
-                  key={b}
-                  className="font-mono text-sm text-zinc-500 transition-colors hover:text-zinc-800"
-                >
-                  {b}
-                </span>
-              ))}
+          <div className="mt-16 border-t border-border pt-6">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <p className="mono-tag text-muted-foreground">Built on —</p>
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                {BUILT_ON.map((b) => (
+                  <span
+                    key={b}
+                    className="mono-tag text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    {b}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -791,15 +766,15 @@ export function TrizaLanding() {
       {/* ===== TRINITY ARCHITECTURE ===== */}
       <section
         id="architecture"
-        className="scroll-mt-20 border-t border-zinc-100 bg-zinc-50/60 py-20 sm:py-28"
+        className="scroll-mt-20 border-t border-border bg-muted/40 py-20 sm:py-28"
       >
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
             <SectionLabel>The TRINITY Architecture</SectionLabel>
-            <h2 className="mt-5 text-3xl font-bold tracking-tight sm:text-4xl">
+            <h2 className="mt-5 font-serif text-3xl font-medium tracking-tight sm:text-4xl">
               Three minds. One brain.
             </h2>
-            <p className="mt-4 text-base leading-relaxed text-zinc-600">
+            <p className="mt-4 text-base leading-relaxed text-muted-foreground">
               Most AIs are a single black box. TRIZA fuses three independent
               reasoning systems — each transparent on its own, stronger together.
             </p>
@@ -813,25 +788,25 @@ export function TrizaLanding() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-80px' }}
                 transition={{ duration: 0.4, delay: i * 0.08 }}
-                className="group relative overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6 transition-shadow hover:shadow-lg hover:shadow-zinc-900/5"
+                className="forest-border-glow group relative overflow-hidden rounded-2xl border border-border bg-card p-6"
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-3xl font-bold text-zinc-200 transition-colors group-hover:text-emerald-200">
+                  <span className="serif-accent text-3xl text-muted-foreground/40 transition-colors group-hover:text-primary/40">
                     {t.no}
                   </span>
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 ring-1 ring-emerald-600/15">
-                    <t.icon className="h-4 w-4 text-emerald-600" />
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent ring-1 ring-primary/15">
+                    <t.icon className="h-4 w-4 text-primary" />
                   </div>
                 </div>
-                <p className="mt-5 font-mono text-[11px] uppercase tracking-wider text-zinc-400">
+                <p className="mono-tag mt-5 text-muted-foreground">
                   {t.label}
                 </p>
-                <h3 className="mt-1 text-xl font-semibold">{t.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-zinc-600">
+                <h3 className="mt-1 font-serif text-xl font-medium">{t.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                   {t.desc}
                 </p>
-                <div className="mt-5 border-t border-zinc-100 pt-4">
-                  <span className="font-mono text-xs text-emerald-700">
+                <div className="mt-5 border-t border-border pt-4">
+                  <span className="mono-tag text-primary">
                     {t.stat}
                   </span>
                 </div>
@@ -844,19 +819,19 @@ export function TrizaLanding() {
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="mt-10 rounded-2xl border border-zinc-200 bg-white p-6 sm:p-8"
+            className="mt-10 rounded-2xl border border-border bg-card p-6 sm:p-8"
           >
-            <p className="mb-6 text-center font-mono text-[11px] uppercase tracking-wider text-zinc-400">
+            <p className="mono-tag mb-6 text-center text-muted-foreground">
               Every reply flows through this pipeline
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2">
               {PIPELINE.map((step, i) => (
                 <div key={step} className="flex items-center gap-2">
-                  <span className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-1.5 font-mono text-xs text-zinc-700">
+                  <span className="mono-tag rounded-lg border border-border bg-muted px-3 py-1.5 text-foreground" style={{ fontSize: '12px' }}>
                     {step}
                   </span>
                   {i < PIPELINE.length - 1 && (
-                    <ArrowRight className="h-3.5 w-3.5 text-zinc-300" />
+                    <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/50" />
                   )}
                 </div>
               ))}
@@ -866,14 +841,14 @@ export function TrizaLanding() {
       </section>
 
       {/* ===== TRANSPARENCY (showcase) ===== */}
-      <section className="border-t border-zinc-100 py-20 sm:py-28">
+      <section className="border-t border-border py-20 sm:py-28">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
             <SectionLabel>Transparency, by default</SectionLabel>
-            <h2 className="mt-5 text-3xl font-bold tracking-tight sm:text-4xl">
+            <h2 className="mt-5 font-serif text-3xl font-medium tracking-tight sm:text-4xl">
               No black box. Ever.
             </h2>
-            <p className="mt-4 text-base leading-relaxed text-zinc-600">
+            <p className="mt-4 text-base leading-relaxed text-muted-foreground">
               Every TRIZA reply is annotated with the mood it detected, the
               intent it inferred, its honest confidence, and the exact graph
               steps it walked. You see the reasoning, not just the result.
@@ -888,38 +863,40 @@ export function TrizaLanding() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-80px' }}
                 transition={{ duration: 0.4, delay: i * 0.08 }}
-                className="flex flex-col rounded-2xl border border-zinc-200 bg-white p-5"
+                className="flex flex-col rounded-2xl border border-border bg-card p-5"
               >
-                <div className="mb-3 flex items-center gap-2 font-mono text-[10px] text-zinc-400">
-                  <span className="flex h-5 w-5 items-center justify-center rounded bg-zinc-900 text-[9px] font-bold text-white">
+                <div className="mb-3 flex items-center gap-2">
+                  <span className="flex h-5 w-5 items-center justify-center rounded bg-primary font-serif text-[9px] font-semibold text-primary-foreground">
                     T
                   </span>
-                  TRIZA · real exchange
+                  <span className="mono-tag text-muted-foreground" style={{ fontSize: '10px' }}>
+                    TRIZA · real exchange
+                  </span>
                 </div>
 
                 {/* user bubble */}
                 <div className="mb-3 flex justify-end">
-                  <div className="max-w-[90%] rounded-2xl rounded-br-sm bg-zinc-900 px-3 py-2 text-sm text-white">
+                  <div className="max-w-[90%] rounded-2xl rounded-br-md bg-primary px-3 py-2 text-sm text-primary-foreground">
                     {s.user}
                   </div>
                 </div>
                 {/* assistant bubble */}
                 <div className="flex justify-start">
-                  <div className="max-w-[92%] rounded-2xl rounded-bl-sm border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-800">
+                  <div className="max-w-[92%] rounded-2xl rounded-bl-md border border-border bg-muted px-3 py-2 text-sm text-foreground">
                     {s.reply}
                   </div>
                 </div>
 
                 {/* meta */}
-                <div className="mt-3 flex flex-wrap items-center gap-1.5 font-mono text-[10px]">
+                <div className="mt-3 flex flex-wrap items-center gap-1.5">
                   <MoodDot mood={s.mood} emoji={s.moodEmoji} />
-                  <span className="rounded-md bg-zinc-100 px-1.5 py-0.5 text-zinc-600">
+                  <span className="mono-tag rounded-md border border-border bg-background px-1.5 py-0.5 text-muted-foreground" style={{ fontSize: '10px' }}>
                     {s.intent}
                   </span>
-                  <span className="rounded-md bg-emerald-50 px-1.5 py-0.5 text-emerald-700">
+                  <span className="mono-tag rounded-md border border-primary/30 bg-accent px-1.5 py-0.5 text-primary" style={{ fontSize: '10px' }}>
                     {s.confidence}% confident
                   </span>
-                  <span className="rounded-md bg-zinc-100 px-1.5 py-0.5 text-zinc-600">
+                  <span className="mono-tag rounded-md border border-border bg-background px-1.5 py-0.5 text-muted-foreground" style={{ fontSize: '10px' }}>
                     {s.steps} {s.steps === 1 ? 'step' : 'steps'}
                   </span>
                 </div>
@@ -932,15 +909,15 @@ export function TrizaLanding() {
       {/* ===== WHY DIFFERENT (features) ===== */}
       <section
         id="features"
-        className="scroll-mt-20 border-t border-zinc-100 bg-zinc-50/60 py-20 sm:py-28"
+        className="scroll-mt-20 border-t border-border bg-muted/40 py-20 sm:py-28"
       >
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
             <SectionLabel>Why TRIZA is different</SectionLabel>
-            <h2 className="mt-5 text-3xl font-bold tracking-tight sm:text-4xl">
+            <h2 className="mt-5 font-serif text-3xl font-medium tracking-tight sm:text-4xl">
               Built on principles, not borrowed weights.
             </h2>
-            <p className="mt-4 text-base leading-relaxed text-zinc-600">
+            <p className="mt-4 text-base leading-relaxed text-muted-foreground">
               No API calls to big tech. No GPU bills. No opacity. Just an AI you
               can actually understand.
             </p>
@@ -954,13 +931,13 @@ export function TrizaLanding() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-60px' }}
                 transition={{ duration: 0.4, delay: (i % 3) * 0.06 }}
-                className="group rounded-2xl border border-zinc-200 bg-white p-6 transition-colors hover:border-emerald-600/30"
+                className="forest-border-glow group rounded-2xl border border-border bg-card p-6"
               >
-                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 ring-1 ring-emerald-600/15 transition-transform group-hover:scale-105">
-                  <f.icon className="h-5 w-5 text-emerald-600" />
+                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-accent ring-1 ring-primary/15 transition-transform group-hover:scale-105">
+                  <f.icon className="h-5 w-5 text-primary" />
                 </div>
-                <h3 className="text-base font-semibold">{f.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-zinc-600">
+                <h3 className="font-serif text-base font-medium">{f.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                   {f.desc}
                 </p>
               </motion.div>
@@ -972,15 +949,15 @@ export function TrizaLanding() {
       {/* ===== ROADMAP ===== */}
       <section
         id="roadmap"
-        className="scroll-mt-20 border-t border-zinc-100 py-20 sm:py-28"
+        className="scroll-mt-20 border-t border-border py-20 sm:py-28"
       >
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
             <SectionLabel>The Roadmap</SectionLabel>
-            <h2 className="mt-5 text-3xl font-bold tracking-tight sm:text-4xl">
+            <h2 className="mt-5 font-serif text-3xl font-medium tracking-tight sm:text-4xl">
               Three phases. One brain.
             </h2>
-            <p className="mt-4 text-base leading-relaxed text-zinc-600">
+            <p className="mt-4 text-base leading-relaxed text-muted-foreground">
               TRIZA launches in phases. Each phase unlocks a new capability —
               all powered by the same transparent engine.
             </p>
@@ -998,41 +975,42 @@ export function TrizaLanding() {
                   transition={{ duration: 0.4, delay: i * 0.08 }}
                   className={`relative overflow-hidden rounded-2xl border p-6 ${
                     live
-                      ? 'border-emerald-600/30 bg-emerald-50/40'
-                      : 'border-zinc-200 bg-white'
+                      ? 'border-primary/30 bg-accent/40'
+                      : 'border-border bg-card'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-3xl font-bold text-zinc-200">
+                    <span className="serif-accent text-3xl text-muted-foreground/40">
                       {r.no}
                     </span>
                     <span
-                      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 font-mono text-[10px] font-medium ${
+                      className={`mono-tag inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 ${
                         live
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-zinc-100 text-zinc-500'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-muted-foreground'
                       }`}
+                      style={{ fontSize: '10px' }}
                     >
                       {live && (
                         <span className="relative flex h-1.5 w-1.5">
-                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
-                          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-white" />
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary-foreground opacity-75" />
+                          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary-foreground" />
                         </span>
                       )}
                       {r.status}
                     </span>
                   </div>
-                  <h3 className="mt-5 text-lg font-semibold">{r.title}</h3>
-                  <p className="mt-1 text-sm text-zinc-500">{r.desc}</p>
+                  <h3 className="mt-5 font-serif text-lg font-medium">{r.title}</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">{r.desc}</p>
                   <ul className="mt-4 space-y-2">
                     {r.points.map((p) => (
                       <li
                         key={p}
-                        className="flex items-center gap-2 text-sm text-zinc-600"
+                        className="flex items-center gap-2 text-sm text-muted-foreground"
                       >
                         <Check
                           className={`h-3.5 w-3.5 ${
-                            live ? 'text-emerald-600' : 'text-zinc-400'
+                            live ? 'text-primary' : 'text-muted-foreground/60'
                           }`}
                         />
                         {p}
@@ -1047,35 +1025,34 @@ export function TrizaLanding() {
       </section>
 
       {/* ===== CTA ===== */}
-      <section className="border-t border-zinc-100 bg-zinc-50/60 py-20 sm:py-28">
+      <section className="border-t border-border bg-muted/40 py-20 sm:py-28">
         <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
           <SectionLabel>
             <HeartHandshake className="h-3 w-3" />
             Open the chat
           </SectionLabel>
-          <h2 className="mt-6 text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
+          <h2 className="mt-6 font-serif text-3xl font-medium tracking-tight sm:text-4xl lg:text-5xl">
             Talk to an AI that shows its work.
           </h2>
-          <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-zinc-600">
+          <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-muted-foreground">
             No sign-up. No waitlist. Just open the chat and ask. Every reply
             comes with its mood, intent, confidence, and reasoning steps —
             visible by default.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Button
-              size="lg"
+            <button
               onClick={() => setChatOpen(true)}
-              className="bg-zinc-900 text-white hover:bg-zinc-800"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-primary px-7 text-sm font-medium text-primary-foreground soft-shadow transition-opacity hover:opacity-90"
             >
-              <Sparkles className="mr-2 h-4 w-4" />
+              <Sparkles className="h-4 w-4" />
               Try TRIZA now
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+              <ArrowRight className="h-4 w-4" />
+            </button>
             <a
               href="https://github.com/meerabfarooq2012-dev/triza-ai"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-zinc-300 bg-white px-6 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-border bg-card px-6 text-sm font-medium text-foreground transition-colors hover:bg-muted"
             >
               <Github className="h-4 w-4" />
               View on GitHub
@@ -1085,39 +1062,31 @@ export function TrizaLanding() {
       </section>
 
       {/* ===== FOOTER ===== */}
-      <footer className="mt-auto border-t border-zinc-200 bg-white">
+      <footer className="mt-auto border-t border-border bg-background">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
-            <div className="flex items-center gap-2">
-              <span className="flex h-7 w-7 items-center justify-center rounded-md bg-zinc-900 text-xs font-bold text-white">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary font-serif text-sm font-semibold text-primary-foreground">
                 T
               </span>
               <div>
-                <p className="text-sm font-semibold">TRIZA AI</p>
-                <p className="font-mono text-[11px] text-zinc-400">
+                <p className="font-serif text-sm font-semibold">TRIZA AI</p>
+                <p className="mono-tag text-muted-foreground">
                   Three minds. One answer.
                 </p>
               </div>
             </div>
 
-            <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-zinc-500">
-              <a href="#architecture" className="hover:text-zinc-900">
-                Architecture
-              </a>
-              <a href="#demo" className="hover:text-zinc-900">
-                Live demo
-              </a>
-              <a href="#features" className="hover:text-zinc-900">
-                Features
-              </a>
-              <a href="#roadmap" className="hover:text-zinc-900">
-                Roadmap
-              </a>
+            <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
+              <a href="#architecture" className="hover:text-foreground">Architecture</a>
+              <a href="#demo" className="hover:text-foreground">Live demo</a>
+              <a href="#features" className="hover:text-foreground">Features</a>
+              <a href="#roadmap" className="hover:text-foreground">Roadmap</a>
               <a
                 href="https://github.com/meerabfarooq2012-dev/triza-ai"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 hover:text-zinc-900"
+                className="inline-flex items-center gap-1 hover:text-foreground"
               >
                 <Github className="h-3.5 w-3.5" />
                 GitHub
@@ -1125,16 +1094,16 @@ export function TrizaLanding() {
             </nav>
           </div>
 
-          <div className="mt-8 flex flex-col items-center justify-between gap-3 border-t border-zinc-100 pt-6 sm:flex-row">
-            <p className="font-mono text-[11px] text-zinc-400">
+          <div className="mt-8 flex flex-col items-center justify-between gap-3 border-t border-border pt-6 sm:flex-row">
+            <p className="mono-tag text-muted-foreground">
               © 2026 TRIZA AI. Built from scratch — no borrowed models.
             </p>
-            <div className="flex items-center gap-4 font-mono text-[11px] text-zinc-400">
-              <span className="inline-flex items-center gap-1.5">
+            <div className="flex items-center gap-4">
+              <span className="mono-tag inline-flex items-center gap-1.5 text-muted-foreground">
                 <Brain className="h-3 w-3" />
                 TRINITY engine v1.0
               </span>
-              <span className="inline-flex items-center gap-1.5">
+              <span className="mono-tag inline-flex items-center gap-1.5 text-muted-foreground">
                 <Cpu className="h-3 w-3" />
                 CPU-first
               </span>

@@ -6,8 +6,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-serif: var(--font-serif);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -41,99 +42,99 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --color-gold: var(--gold);
-  --color-gold-foreground: var(--gold-foreground);
+  --color-forest: var(--forest);
+  --color-forest-foreground: var(--forest-foreground);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   OBSIDIAN & GOLD — Luxury Marketplace Theme
-   
-   Light mode: Warm ivory + rich gold accents
-   Dark mode: Deep obsidian + luminous gold accents
+   STONE & FOREST — TRIZA Brand Theme
+
+   Light mode: Warm stone + deep forest green + Fraunces serif
+   Dark mode: Deep ink + luminous forest
    ═══════════════════════════════════════════════════════════════════════════════ */
 
 :root {
   --radius: 0.75rem;
 
-  /* ── Light Mode: Warm Ivory & Gold ── */
-  --background: oklch(0.97 0.005 85);          /* Warm ivory */
-  --foreground: oklch(0.18 0.02 60);           /* Rich warm black */
-  --card: oklch(0.995 0.003 85);               /* Pure warm white */
-  --card-foreground: oklch(0.18 0.02 60);      /* Rich warm black */
-  --popover: oklch(0.995 0.003 85);            /* Pure warm white */
-  --popover-foreground: oklch(0.18 0.02 60);   /* Rich warm black */
-  --primary: oklch(0.55 0.12 75);              /* Rich gold */
-  --primary-foreground: oklch(0.99 0.005 85);  /* Warm white */
-  --secondary: oklch(0.94 0.008 85);           /* Warm light gray */
-  --secondary-foreground: oklch(0.25 0.02 60); /* Dark warm */
-  --muted: oklch(0.93 0.008 85);               /* Warm muted */
-  --muted-foreground: oklch(0.50 0.015 60);    /* Warm medium gray */
-  --accent: oklch(0.94 0.02 85);               /* Warm accent with gold tint */
-  --accent-foreground: oklch(0.25 0.02 60);    /* Dark warm */
-  --destructive: oklch(0.577 0.245 27.325);    /* Red for errors */
-  --border: oklch(0.90 0.01 85);               /* Warm border */
-  --input: oklch(0.90 0.01 85);                /* Warm input border */
-  --ring: oklch(0.55 0.12 75);                 /* Gold ring */
-  --gold: oklch(0.55 0.12 75);                 /* Brand gold */
-  --gold-foreground: oklch(0.99 0.005 85);     /* Gold text on dark */
+  /* ── Light Mode: Warm Stone & Deep Forest ── */
+  --background: #f7f5f0;              /* Warm stone */
+  --foreground: #1a1d1a;              /* Deep ink */
+  --card: #ffffff;                    /* Pure white card */
+  --card-foreground: #1a1d1a;         /* Deep ink */
+  --popover: #ffffff;
+  --popover-foreground: #1a1d1a;
+  --primary: #1f4a36;                 /* Deep forest green */
+  --primary-foreground: #ffffff;      /* White on forest */
+  --secondary: #efede6;               /* Warm tint */
+  --secondary-foreground: #3a3d3a;    /* Dark warm */
+  --muted: #efede6;                   /* Warm muted */
+  --muted-foreground: #7d8079;        /* Warm medium gray */
+  --accent: #e3ebe5;                  /* Forest soft tint */
+  --accent-foreground: #1f4a36;       /* Deep forest */
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: #e4e1d8;                  /* Warm line */
+  --input: #d0ccc0;                   /* Stronger line for inputs */
+  --ring: #2d6b4f;                    /* Forest glow ring */
+  --forest: #1f4a36;                  /* Brand forest */
+  --forest-foreground: #ffffff;
 
-  /* Chart colors — warm gold palette */
-  --chart-1: oklch(0.65 0.14 75);              /* Rich gold */
-  --chart-2: oklch(0.55 0.10 55);              /* Warm bronze */
-  --chart-3: oklch(0.45 0.08 45);              /* Deep copper */
-  --chart-4: oklch(0.75 0.10 85);              /* Light champagne */
-  --chart-5: oklch(0.60 0.12 65);              /* Amber */
+  /* Chart colors — forest + earth palette */
+  --chart-1: #1f4a36;                 /* Forest */
+  --chart-2: #2d6b4f;                 /* Forest glow */
+  --chart-3: #8a6d3b;                 /* Bronze */
+  --chart-4: #b8651a;                 /* Amber */
+  --chart-5: #6b7d3f;                 /* Olive */
 
   /* Sidebar */
-  --sidebar: oklch(0.97 0.005 85);
-  --sidebar-foreground: oklch(0.18 0.02 60);
-  --sidebar-primary: oklch(0.55 0.12 75);
-  --sidebar-primary-foreground: oklch(0.99 0.005 85);
-  --sidebar-accent: oklch(0.94 0.02 85);
-  --sidebar-accent-foreground: oklch(0.25 0.02 60);
-  --sidebar-border: oklch(0.90 0.01 85);
-  --sidebar-ring: oklch(0.55 0.12 75);
+  --sidebar: #efede6;                 /* Warm tint */
+  --sidebar-foreground: #1a1d1a;
+  --sidebar-primary: #1f4a36;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e3ebe5;
+  --sidebar-accent-foreground: #1f4a36;
+  --sidebar-border: #e4e1d8;
+  --sidebar-ring: #2d6b4f;
 }
 
 .dark {
-  /* ── Dark Mode: Obsidian & Luminous Gold ── */
-  --background: oklch(0.13 0.015 60);          /* Deep obsidian */
-  --foreground: oklch(0.95 0.008 85);          /* Warm white */
-  --card: oklch(0.17 0.015 60);                /* Dark slate */
-  --card-foreground: oklch(0.95 0.008 85);     /* Warm white */
-  --popover: oklch(0.17 0.015 60);             /* Dark slate */
-  --popover-foreground: oklch(0.95 0.008 85);  /* Warm white */
-  --primary: oklch(0.72 0.14 80);              /* Luminous gold */
-  --primary-foreground: oklch(0.13 0.015 60);  /* Deep obsidian */
-  --secondary: oklch(0.22 0.015 60);           /* Dark warm gray */
-  --secondary-foreground: oklch(0.95 0.008 85);/* Warm white */
-  --muted: oklch(0.22 0.015 60);               /* Dark warm gray */
-  --muted-foreground: oklch(0.65 0.02 60);     /* Medium warm gray */
-  --accent: oklch(0.22 0.02 60);               /* Subtle warm accent */
-  --accent-foreground: oklch(0.95 0.008 85);   /* Warm white */
-  --destructive: oklch(0.704 0.191 22.216);    /* Red for errors */
-  --border: oklch(0.25 0.015 60);              /* Subtle dark border */
-  --input: oklch(0.25 0.015 60);               /* Subtle dark input */
-  --ring: oklch(0.72 0.14 80);                 /* Gold ring */
-  --gold: oklch(0.72 0.14 80);                 /* Brand gold */
-  --gold-foreground: oklch(0.13 0.015 60);     /* Gold text on dark */
+  /* ── Dark Mode: Deep Ink & Luminous Forest ── */
+  --background: #161a17;              /* Deep ink with forest tint */
+  --foreground: #f0ede5;              /* Warm white */
+  --card: #1c211d;                    /* Dark slate */
+  --card-foreground: #f0ede5;
+  --popover: #1c211d;
+  --popover-foreground: #f0ede5;
+  --primary: #4a9d77;                 /* Luminous forest */
+  --primary-foreground: #0e1311;      /* Deep ink */
+  --secondary: #232a25;               /* Dark warm gray */
+  --secondary-foreground: #f0ede5;
+  --muted: #232a25;
+  --muted-foreground: #9aa39c;        /* Medium warm gray */
+  --accent: #1f3329;                  /* Dark forest tint */
+  --accent-foreground: #4a9d77;
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: #2a322d;
+  --input: #3a443d;
+  --ring: #4a9d77;
+  --forest: #4a9d77;
+  --forest-foreground: #0e1311;
 
-  /* Chart colors — luminous gold palette */
-  --chart-1: oklch(0.72 0.14 80);              /* Luminous gold */
-  --chart-2: oklch(0.62 0.12 55);              /* Warm bronze */
-  --chart-3: oklch(0.55 0.10 45);              /* Deep copper */
-  --chart-4: oklch(0.80 0.10 85);              /* Light champagne */
-  --chart-5: oklch(0.68 0.13 65);              /* Amber */
+  /* Chart colors */
+  --chart-1: #4a9d77;
+  --chart-2: #6bb892;
+  --chart-3: #c4a06a;
+  --chart-4: #e08840;
+  --chart-5: #8da66a;
 
   /* Sidebar */
-  --sidebar: oklch(0.15 0.015 60);
-  --sidebar-foreground: oklch(0.95 0.008 85);
-  --sidebar-primary: oklch(0.72 0.14 80);
-  --sidebar-primary-foreground: oklch(0.13 0.015 60);
-  --sidebar-accent: oklch(0.22 0.02 60);
-  --sidebar-accent-foreground: oklch(0.95 0.008 85);
-  --sidebar-border: oklch(0.25 0.015 60);
-  --sidebar-ring: oklch(0.72 0.14 80);
+  --sidebar: #1c211d;
+  --sidebar-foreground: #f0ede5;
+  --sidebar-primary: #4a9d77;
+  --sidebar-primary-foreground: #0e1311;
+  --sidebar-accent: #1f3329;
+  --sidebar-accent-foreground: #4a9d77;
+  --sidebar-border: #2a322d;
+  --sidebar-ring: #4a9d77;
 }
 
 @layer base {
@@ -146,35 +147,23 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   Custom Utilities — Obsidian & Gold Theme
+   Custom Utilities — Stone & Forest Theme
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-/* Gold gradient for brand elements */
-.gold-gradient {
-  background: linear-gradient(135deg, 
-    oklch(0.55 0.12 75) 0%, 
-    oklch(0.72 0.14 80) 50%, 
-    oklch(0.65 0.14 65) 100%
-  );
-}
-
-.gold-gradient-text {
+/* Forest gradient for brand elements */
+.forest-gradient {
   background: linear-gradient(135deg,
-    oklch(0.55 0.12 75) 0%,
-    oklch(0.72 0.14 80) 50%,
-    oklch(0.65 0.14 65) 100%
+    #1f4a36 0%,
+    #2d6b4f 50%,
+    #1f4a36 100%
   );
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  color: transparent;
 }
 
-.dark .gold-gradient-text {
+.forest-gradient-text {
   background: linear-gradient(135deg,
-    oklch(0.68 0.14 75) 0%,
-    oklch(0.82 0.14 85) 50%,
-    oklch(0.75 0.14 70) 100%
+    #1f4a36 0%,
+    #2d6b4f 50%,
+    #1f4a36 100%
   );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -182,114 +171,98 @@
   color: transparent;
 }
 
-/* Gold shimmer text animation — continuously sweeping highlight */
-@property --shimmer-angle {
-  syntax: "<angle>";
-  initial-value: 0deg;
-  inherits: false;
-}
-
-.gold-shimmer-text {
-  background: linear-gradient(
-    var(--shimmer-angle),
-    oklch(0.55 0.12 75) 0%,
-    oklch(0.72 0.14 80) 20%,
-    oklch(0.92 0.08 90) 40%,
-    oklch(0.72 0.14 80) 60%,
-    oklch(0.55 0.12 75) 100%
+.dark .forest-gradient-text {
+  background: linear-gradient(135deg,
+    #4a9d77 0%,
+    #6bb892 50%,
+    #4a9d77 100%
   );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   color: transparent;
-  animation: shimmer-rotate 4s linear infinite;
 }
 
-.dark .gold-shimmer-text {
-  background: linear-gradient(
-    var(--shimmer-angle),
-    oklch(0.68 0.14 75) 0%,
-    oklch(0.82 0.14 85) 20%,
-    oklch(0.95 0.06 90) 40%,
-    oklch(0.82 0.14 85) 60%,
-    oklch(0.68 0.14 75) 100%
-  );
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  color: transparent;
-  animation: shimmer-rotate 4s linear infinite;
+/* Serif italic accent (Fraunces) — for emphasized words like "work" */
+.serif-accent {
+  font-family: var(--font-serif), serif;
+  font-style: italic;
+  font-weight: 400;
 }
 
-@keyframes shimmer-rotate {
-  to {
-    --shimmer-angle: 360deg;
-  }
+/* Mono tag — for uppercase tracking labels */
+.mono-tag {
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 500;
 }
 
-/* Animated gradient border angle for conic-gradient borders */
-@property --border-angle {
-  syntax: "<angle>";
-  initial-value: 0deg;
-  inherits: false;
+/* Forest soft tint background — for subtle accent surfaces */
+.forest-tint {
+  background-color: #e3ebe5;
 }
 
-/* Subtle gold shimmer effect for hover states */
-.gold-shimmer {
-  position: relative;
-  overflow: hidden;
+.dark .forest-tint {
+  background-color: #1f3329;
 }
 
-.gold-shimmer::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    120deg,
-    transparent 30%,
-    oklch(0.72 0.14 80 / 8%) 50%,
-    transparent 70%
-  );
-  transform: translateX(-100%);
-  transition: transform 0.6s ease;
+/* Soft layered shadow for premium card feel */
+.soft-shadow {
+  box-shadow: 0 1px 2px rgba(26, 29, 26, 0.04), 0 12px 32px -12px rgba(26, 29, 26, 0.1);
 }
 
-.gold-shimmer:hover::after {
-  transform: translateX(100%);
+.dark .soft-shadow {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 12px 32px -12px rgba(0, 0, 0, 0.4);
 }
 
-/* Gold border glow for cards on hover */
-.gold-border-glow {
+/* Forest border glow for cards on hover */
+.forest-border-glow {
   transition: box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
-.gold-border-glow:hover {
-  box-shadow: 0 0 20px oklch(0.72 0.14 80 / 12%);
-  border-color: oklch(0.72 0.14 80 / 30%);
+.forest-border-glow:hover {
+  box-shadow: 0 0 24px rgba(45, 107, 79, 0.15);
+  border-color: rgba(45, 107, 79, 0.3);
 }
 
-.dark .gold-border-glow:hover {
-  box-shadow: 0 0 25px oklch(0.72 0.14 80 / 15%);
-  border-color: oklch(0.72 0.14 80 / 40%);
+.dark .forest-border-glow:hover {
+  box-shadow: 0 0 28px rgba(74, 157, 119, 0.2);
+  border-color: rgba(74, 157, 119, 0.4);
 }
 
-/* Luxury section divider */
-.gold-divider {
+/* Ambient glow blobs (used in landing hero) */
+.ambient-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+}
+
+/* Editorial divider — thin line with forest tint */
+.forest-divider {
   height: 1px;
-  background: linear-gradient(90deg, 
-    transparent 0%, 
-    oklch(0.55 0.12 75 / 30%) 50%, 
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(31, 74, 54, 0.2) 50%,
     transparent 100%
   );
 }
 
-.dark .gold-divider {
-  background: linear-gradient(90deg, 
-    transparent 0%, 
-    oklch(0.72 0.14 80 / 30%) 50%, 
+.dark .forest-divider {
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(74, 157, 119, 0.25) 50%,
     transparent 100%
   );
 }
+
+/* Tabular numbers for stats */
+.tabular-num {
+  font-feature-settings: "tnum";
+}
+
 
 /* RTL Support for Urdu & Arabic */
 

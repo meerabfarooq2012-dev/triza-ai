@@ -20,25 +20,25 @@ export function Sidebar({
   onDeleteConversation,
 }: SidebarProps) {
   return (
-    <aside className="flex w-72 shrink-0 flex-col border-r border-zinc-900 bg-[#0a0a0b]">
+    <aside className="flex w-72 shrink-0 flex-col border-r border-border bg-sidebar">
       {/* Brand mark + tagline */}
-      <div className="border-b border-zinc-900 p-4">
+      <div className="border-b border-border p-5">
         <div className="flex items-center gap-2.5">
-          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-500 text-xs font-bold text-zinc-950 shadow-sm shadow-emerald-500/20">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground">
             T
           </span>
           <div className="flex flex-col leading-none">
-            <span className="text-[15px] font-bold tracking-tight text-zinc-100">
+            <span className="font-serif text-base font-semibold tracking-tight text-foreground">
               TRIZA
             </span>
-            <span className="mt-0.5 font-mono text-[10px] text-zinc-500">
+            <span className="mono-tag mt-0.5 text-muted-foreground" style={{ fontSize: '9px' }}>
               transparent AI
             </span>
           </div>
         </div>
-        <p className="mt-3 text-[13px] font-medium leading-snug text-zinc-400">
+        <p className="mt-4 text-[13px] font-medium leading-snug text-muted-foreground">
           Ask anything, get{' '}
-          <span className="text-emerald-400">one</span> answer.
+          <span className="text-primary">one</span> answer.
         </p>
       </div>
 
@@ -46,10 +46,10 @@ export function Sidebar({
       <div className="p-3">
         <button
           onClick={onNewChat}
-          className="group flex w-full items-center justify-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-[13px] font-semibold text-emerald-300 transition-all duration-200 hover:border-emerald-500/50 hover:bg-emerald-500/15 hover:shadow-sm hover:shadow-emerald-500/10"
+          className="group flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 py-2.5 text-[13px] font-medium text-foreground transition-all duration-200 hover:border-primary/30 hover:bg-accent"
         >
           <Plus
-            className="h-4 w-4 text-emerald-400 transition-transform duration-200 group-hover:rotate-90"
+            className="h-4 w-4 text-primary transition-transform duration-200 group-hover:rotate-90"
             strokeWidth={2.2}
           />
           New conversation
@@ -57,8 +57,8 @@ export function Sidebar({
       </div>
 
       {/* Recent label */}
-      <div className="px-4 pb-2 pt-1">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-600">
+      <div className="px-5 pb-2 pt-1">
+        <span className="mono-tag text-muted-foreground">
           Recent
         </span>
       </div>
@@ -67,13 +67,13 @@ export function Sidebar({
       <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
         {conversations.length === 0 ? (
           <div className="px-3 py-10 text-center">
-            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900/50">
-              <MessageSquare className="h-4 w-4 text-zinc-600" strokeWidth={2} />
+            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-background">
+              <MessageSquare className="h-4 w-4 text-muted-foreground" strokeWidth={2} />
             </div>
-            <p className="text-[13px] font-medium text-zinc-500">
+            <p className="text-[13px] font-medium text-muted-foreground">
               No conversations yet
             </p>
-            <p className="mt-1 text-[11px] leading-relaxed text-zinc-600">
+            <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground/80">
               Start one above — TRIZA replies in seconds.
             </p>
           </div>
@@ -88,14 +88,14 @@ export function Sidebar({
                     className={cn(
                       'flex w-full items-center gap-2.5 rounded-lg border-l-2 px-3 py-2.5 text-left transition-colors',
                       active
-                        ? 'border-emerald-400 bg-zinc-900 text-zinc-100'
-                        : 'border-transparent text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-200'
+                        ? 'border-primary bg-background text-foreground'
+                        : 'border-transparent text-muted-foreground hover:bg-background/60 hover:text-foreground'
                     )}
                   >
                     <span
                       className={cn(
                         'h-1.5 w-1.5 shrink-0 rounded-full transition-colors',
-                        active ? 'bg-emerald-400' : 'bg-zinc-700'
+                        active ? 'bg-primary' : 'bg-muted-foreground/40'
                       )}
                     />
                     <span className="truncate text-[13px] font-medium">
@@ -109,10 +109,8 @@ export function Sidebar({
                         onDeleteConversation(c.id)
                       }}
                       className={cn(
-                        'absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-1 text-zinc-600 transition-all duration-200 hover:bg-zinc-800 hover:text-rose-300',
-                        active
-                          ? 'opacity-0 group-hover:opacity-100'
-                          : 'opacity-0 group-hover:opacity-100'
+                        'absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground transition-all duration-200 hover:bg-destructive/10 hover:text-destructive',
+                        'opacity-0 group-hover:opacity-100'
                       )}
                       aria-label="Delete conversation"
                     >
@@ -127,24 +125,24 @@ export function Sidebar({
       </div>
 
       {/* Engine status footer */}
-      <div className="border-t border-zinc-900 px-4 py-3">
+      <div className="border-t border-border px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
             </span>
-            <span className="text-[11px] font-medium text-zinc-300">
+            <span className="text-[11px] font-medium text-foreground">
               Engine online
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-zinc-600">
-              <Layers className="h-3 w-3 text-zinc-500" strokeWidth={2} />
+            <span className="inline-flex items-center gap-1 mono-tag text-muted-foreground">
+              <Layers className="h-3 w-3" strokeWidth={2} />
               3-layer
             </span>
-            <span className="h-3 w-px bg-zinc-800" />
-            <span className="font-mono text-[10px] text-zinc-600">v1.0</span>
+            <span className="h-3 w-px bg-border" />
+            <span className="font-mono text-[10px] text-muted-foreground">v1.0</span>
           </div>
         </div>
       </div>

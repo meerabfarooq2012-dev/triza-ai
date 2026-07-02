@@ -265,7 +265,7 @@ export function TrizaChatApp() {
 
   // ---- Render ----
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-[#0a0a0b] text-zinc-100 antialiased">
+    <div className="flex h-screen w-full overflow-hidden bg-background text-foreground antialiased">
       <Sidebar
         conversations={conversations}
         activeConversationId={activeConversationId}

@@ -44,49 +44,48 @@ interface ChatViewProps {
 // ============================================================
 function TopNav() {
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b border-zinc-900 bg-[#0a0a0b] px-4">
+    <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-6">
       <nav className="flex items-center gap-1">
         {/* Chatbot — active */}
-        <button className="relative flex items-center gap-1.5 rounded-lg bg-zinc-900 px-3 py-1.5 text-[13px] font-semibold text-emerald-400 ring-1 ring-inset ring-zinc-800">
+        <button className="flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 text-[13px] font-medium text-primary-foreground">
           <Sparkles className="h-3.5 w-3.5" strokeWidth={2.2} />
           Chatbot
-          <span className="absolute -bottom-px left-3 right-3 h-px bg-emerald-400/70" />
         </button>
         {/* Cyber — coming soon */}
         <button
           disabled
-          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium text-zinc-500 cursor-not-allowed"
+          className="flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-[13px] font-medium text-muted-foreground cursor-not-allowed"
         >
           <Shield className="h-3.5 w-3.5" strokeWidth={2} />
           Cyber
-          <span className="rounded-md border border-zinc-800 bg-zinc-900 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-zinc-600">
+          <span className="mono-tag rounded border border-border bg-muted px-1.5 py-0.5" style={{ fontSize: '9px' }}>
             Soon
           </span>
         </button>
         {/* Coding — coming soon */}
         <button
           disabled
-          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium text-zinc-500 cursor-not-allowed"
+          className="flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-[13px] font-medium text-muted-foreground cursor-not-allowed"
         >
           <Code2 className="h-3.5 w-3.5" strokeWidth={2} />
           Coding
-          <span className="rounded-md border border-zinc-800 bg-zinc-900 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-zinc-600">
+          <span className="mono-tag rounded border border-border bg-muted px-1.5 py-0.5" style={{ fontSize: '9px' }}>
             Soon
           </span>
         </button>
       </nav>
 
       {/* TRINITY engine badge */}
-      <div className="flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-3 py-1">
+      <div className="flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-1">
         <span className="relative flex h-1.5 w-1.5">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
-          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
+          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
         </span>
         <Zap
-          className="h-3.5 w-3.5 fill-emerald-500/20 text-emerald-400"
+          className="h-3.5 w-3.5 text-primary"
           strokeWidth={2.2}
         />
-        <span className="text-[12px] font-semibold tracking-tight text-emerald-400">
+        <span className="mono-tag text-foreground">
           TRINITY engine
         </span>
       </div>
@@ -165,16 +164,16 @@ function WelcomeView({
       <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-4 py-10">
         {/* Greeting */}
         <div className="text-center">
-          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500/15 to-emerald-500/5 ring-1 ring-emerald-500/25 shadow-lg shadow-emerald-500/10">
-            <Sparkles className="h-8 w-8 text-emerald-400" strokeWidth={2} />
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent ring-1 ring-border shadow-sm">
+            <Sparkles className="h-8 w-8 text-primary" strokeWidth={2} />
           </div>
-          <h1 className="text-[34px] font-semibold leading-tight tracking-tight text-zinc-100">
-            Hi, I&apos;m <span className="text-emerald-400">TRIZA</span>.
+          <h1 className="font-serif text-[36px] font-medium leading-tight tracking-tight text-foreground">
+            Hi, I&apos;m <span className="text-primary">TRIZA</span>.
           </h1>
-          <p className="mt-3 text-[15px] leading-relaxed text-zinc-400">
+          <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">
             An AI built from scratch — three minds fused into one.
           </p>
-          <p className="mt-1.5 text-[13px] leading-relaxed text-zinc-500">
+          <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground/80">
             I think with a knowledge graph, remember through analogy, and
             reason with honest confidence.
           </p>
@@ -187,9 +186,9 @@ function WelcomeView({
             return (
               <span
                 key={b.label}
-                className="inline-flex items-center gap-1.5 rounded-full border border-zinc-800 bg-zinc-900/50 px-3 py-1 text-[11px] font-medium text-zinc-400"
+                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1 text-[11px] font-medium text-muted-foreground"
               >
-                <Icon className="h-3 w-3 text-emerald-400" strokeWidth={2} />
+                <Icon className="h-3 w-3 text-primary" strokeWidth={2} />
                 {b.label}
               </span>
             )
@@ -205,19 +204,19 @@ function WelcomeView({
                 key={s.title}
                 onClick={() => handleSuggestion(s.prompt)}
                 disabled={sending}
-                className="group flex items-start gap-3 rounded-xl border border-zinc-800 bg-zinc-900/40 p-3.5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-500/30 hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
+                className="group flex items-start gap-3 rounded-xl border border-border bg-background p-3.5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
               >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-950 transition-colors group-hover:border-emerald-500/30">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-muted transition-colors group-hover:border-primary/30">
                   <Icon
-                    className="h-4 w-4 text-emerald-400"
+                    className="h-4 w-4 text-primary"
                     strokeWidth={2}
                   />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[13px] font-medium text-zinc-100">
+                  <p className="truncate text-[13px] font-medium text-foreground">
                     {s.title}
                   </p>
-                  <p className="mt-0.5 text-[11px] text-zinc-500">{s.hint}</p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">{s.hint}</p>
                 </div>
               </button>
             )
@@ -226,7 +225,7 @@ function WelcomeView({
 
         {/* Composer */}
         <div className="mt-8">
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-2 transition-all duration-200 focus-within:border-emerald-500/40 focus-within:ring-1 focus-within:ring-emerald-500/20">
+          <div className="rounded-2xl border border-border bg-card p-2 transition-all duration-200 focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/20">
             <textarea
               ref={textareaRef}
               value={input}
@@ -234,16 +233,16 @@ function WelcomeView({
               onKeyDown={handleKeyDown}
               placeholder="Message TRIZA..."
               rows={2}
-              className="w-full resize-none bg-transparent px-3 py-2 text-[14px] leading-relaxed text-zinc-100 placeholder:text-zinc-600 focus:outline-none"
+              className="w-full resize-none bg-transparent px-3 py-2 text-[14px] leading-relaxed text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
             />
             <div className="flex items-center justify-between px-2 pb-1">
-              <span className="text-[10px] text-zinc-600">
+              <span className="text-[10px] text-muted-foreground/70">
                 Enter: send · Shift+Enter: newline
               </span>
               <button
                 onClick={handleSend}
                 disabled={!input.trim() || sending}
-                className="flex items-center justify-center rounded-lg bg-emerald-500 px-3 py-1.5 text-zinc-950 shadow-sm shadow-emerald-500/20 transition-all duration-200 hover:bg-emerald-400 hover:shadow-md hover:shadow-emerald-500/30 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:shadow-sm"
+                className="flex items-center justify-center rounded-lg bg-primary px-3 py-1.5 text-primary-foreground transition-all duration-200 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-30"
                 aria-label="Send message"
               >
                 {sending ? (
@@ -254,7 +253,7 @@ function WelcomeView({
               </button>
             </div>
           </div>
-          <p className="mt-3 text-center text-[11px] text-zinc-600">
+          <p className="mt-3 text-center text-[11px] text-muted-foreground/70">
             TRIZA shows detected mood, intent &amp; confidence on every reply.
           </p>
         </div>
@@ -269,76 +268,69 @@ function WelcomeView({
 function ReplyMeta({ meta }: { meta: MessageMeta }) {
   const confidencePct = Math.round((meta.confidence ?? 0) * 100)
   const steps = meta.steps ?? []
-  const processingMs = meta.processingTimeMs
   // Pick a colored badge for principle steps so the eye can scan them
   const stepColor = (s: string): string => {
-    if (s.startsWith('P14')) return 'text-amber-300' // agency = original contribution
-    if (s.startsWith('P4')) return 'text-rose-300' // emotion
-    if (s.startsWith('P28') || s.startsWith('P29') || s.startsWith('P30')) return 'text-indigo-300' // sleep
-    if (s.startsWith('P15') || s.startsWith('P16')) return 'text-emerald-300' // memory
-    if (s.startsWith('P10')) return 'text-cyan-300' // goals
-    if (s.startsWith('TRINITY') || s.startsWith('Cognition')) return 'text-violet-300'
-    if (s.startsWith('Intent') || s.startsWith('Mood')) return 'text-zinc-400'
-    return 'text-zinc-400'
+    if (s.startsWith('P14')) return 'text-amber-600 dark:text-amber-400' // agency = original contribution
+    if (s.startsWith('P4')) return 'text-rose-600 dark:text-rose-300' // emotion
+    if (s.startsWith('P28') || s.startsWith('P29') || s.startsWith('P30')) return 'text-indigo-600 dark:text-indigo-300' // sleep
+    if (s.startsWith('P15') || s.startsWith('P16')) return 'text-primary' // memory
+    if (s.startsWith('P10')) return 'text-cyan-600 dark:text-cyan-300' // goals
+    if (s.startsWith('TRINITY') || s.startsWith('Cognition')) return 'text-violet-600 dark:text-violet-300'
+    if (s.startsWith('Intent') || s.startsWith('Mood')) return 'text-muted-foreground'
+    return 'text-muted-foreground'
   }
   return (
     <div className="mt-2.5 space-y-2">
       {/* Badges row */}
       <div className="flex flex-wrap items-center gap-1.5">
         {meta.mood && (
-          <span className="inline-flex items-center gap-1 rounded-full border border-zinc-800 bg-zinc-950 px-2.5 py-1 text-[11px]">
-            <span className="text-zinc-600">mood</span>
-            <span className="font-medium text-zinc-300">{meta.mood}</span>
+          <span className="mono-tag inline-flex items-center gap-1 rounded-full border border-border bg-muted px-2 py-0.5" style={{ fontSize: '10px' }}>
+            <span className="text-muted-foreground/70">mood</span>
+            <span className="font-medium text-foreground">{meta.mood}</span>
           </span>
         )}
         {meta.intent && (
-          <span className="inline-flex items-center gap-1 rounded-full border border-zinc-800 bg-zinc-950 px-2.5 py-1 text-[11px]">
-            <span className="text-zinc-600">intent</span>
-            <span className="font-medium text-zinc-300">
+          <span className="mono-tag inline-flex items-center gap-1 rounded-full border border-border bg-muted px-2 py-0.5" style={{ fontSize: '10px' }}>
+            <span className="text-muted-foreground/70">intent</span>
+            <span className="font-medium text-foreground">
               {meta.intent.replace(/_/g, ' ')}
             </span>
           </span>
         )}
         {typeof meta.confidence === 'number' && (
-          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px]">
-            <span className="text-emerald-400/70">conf</span>
-            <span className="font-semibold text-emerald-300">{confidencePct}%</span>
+          <span className="mono-tag inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-accent px-2 py-0.5" style={{ fontSize: '10px' }}>
+            <span className="text-primary/80">conf</span>
+            <span className="font-semibold text-primary">{confidencePct}%</span>
           </span>
         )}
         {meta.topicDomain && (
-          <span className="inline-flex items-center gap-1 rounded-full border border-zinc-800 bg-zinc-950 px-2.5 py-1 text-[11px]">
-            <span className="text-zinc-600">topic</span>
-            <span className="font-medium text-zinc-300">{meta.topicDomain}</span>
-          </span>
-        )}
-        {typeof processingMs === 'number' && (
-          <span className="inline-flex items-center gap-1 rounded-full border border-zinc-800 bg-zinc-950 px-2.5 py-1 text-[11px]">
-            <span className="text-zinc-600">cpu</span>
-            <span className="font-medium text-zinc-300">{processingMs}ms</span>
+          <span className="mono-tag inline-flex items-center gap-1 rounded-full border border-border bg-muted px-2 py-0.5" style={{ fontSize: '10px' }}>
+            <span className="text-muted-foreground/70">topic</span>
+            <span className="font-medium text-foreground">{meta.topicDomain}</span>
           </span>
         )}
       </div>
 
       {/* Collapsible thinking steps — TRIZA's transparent cognition */}
       {steps.length > 0 && (
-        <details className="group rounded-lg border border-zinc-800/80 bg-zinc-950/50 text-[11px] text-zinc-400 transition-colors hover:border-zinc-700">
-          <summary className="flex cursor-pointer list-none items-center gap-1.5 px-3 py-2 text-zinc-500 transition-colors hover:text-zinc-300">
-            <Brain className="h-3.5 w-3.5 text-emerald-400" />
-            <span className="font-medium text-zinc-400">
-              TRIZA&apos;s reasoning ({steps.length} steps)
+        <details className="group rounded-lg border border-border bg-muted/50 text-[11px] text-muted-foreground transition-colors hover:border-primary/30">
+          <summary className="flex cursor-pointer list-none items-center gap-1.5 px-3 py-2 text-muted-foreground transition-colors hover:text-foreground">
+            <Brain className="h-3.5 w-3.5 text-primary" />
+            <span className="mono-tag font-medium text-foreground" style={{ fontSize: '10px' }}>
+              Show reasoning · {steps.length} steps
             </span>
-            <ChevronDown className="ml-auto h-3.5 w-3.5 text-zinc-600 transition-transform duration-200 group-open:rotate-180" />
+            <ChevronDown className="ml-auto h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
           </summary>
-          <ol className="max-h-72 overflow-y-auto border-t border-zinc-800/60 px-3 py-2">
+          <ol className="max-h-72 overflow-y-auto border-t border-border px-3 py-2">
             {steps.map((s, i) => (
               <li
                 key={i}
                 className={cn(
-                  'flex gap-2 border-b border-zinc-900/60 py-1.5 last:border-0',
+                  'flex gap-2 border-b border-border/60 py-1.5 last:border-0',
                   stepColor(s),
                 )}
               >
-                <span className="shrink-0 tabular-nums text-zinc-600">
+                <span className="shrink-0 tabular-nums text-muted-foreground/60">
                   {String(i + 1).padStart(2, '0')}
                 </span>
                 <span className="break-words leading-relaxed">{s}</span>
@@ -385,14 +377,14 @@ function ConversationView({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {/* Header */}
-      <div className="flex h-12 shrink-0 items-center justify-between border-b border-zinc-900 px-4">
+      <div className="flex h-12 shrink-0 items-center justify-between border-b border-border px-4">
         <div className="flex min-w-0 items-center gap-2">
-          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" />
-          <h2 className="truncate text-[13px] font-medium text-zinc-300">
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+          <h2 className="truncate text-[13px] font-medium text-foreground">
             {conversation.title}
           </h2>
         </div>
-        <span className="ml-3 shrink-0 text-[11px] text-zinc-600">
+        <span className="mono-tag ml-3 shrink-0 text-muted-foreground">
           {messages.length} {messages.length === 1 ? 'message' : 'messages'}
         </span>
       </div>
@@ -410,16 +402,16 @@ function ConversationView({
             ))}
             {sending && (
               <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500 text-zinc-950 ring-1 ring-emerald-500/20">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground ring-1 ring-primary/30">
                   <Sparkles className="h-4 w-4" />
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="flex gap-1">
-                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-emerald-400 [animation-delay:-0.3s]" />
-                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-emerald-400 [animation-delay:-0.15s]" />
-                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-emerald-400" />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary [animation-delay:-0.3s]" />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary [animation-delay:-0.15s]" />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary" />
                   </span>
-                  <span className="text-[12px] font-medium text-zinc-500">
+                  <span className="text-[12px] font-medium text-muted-foreground">
                     TRIZA is thinking...
                   </span>
                 </div>
@@ -430,9 +422,9 @@ function ConversationView({
       </div>
 
       {/* Composer */}
-      <div className="shrink-0 border-t border-zinc-900 bg-[#0a0a0b] px-4 py-3">
+      <div className="shrink-0 border-t border-border bg-background px-4 py-3">
         <div className="mx-auto max-w-3xl">
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-2 transition-all duration-200 focus-within:border-emerald-500/40 focus-within:ring-1 focus-within:ring-emerald-500/20">
+          <div className="rounded-2xl border border-border bg-card p-2 transition-all duration-200 focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/20">
             <textarea
               ref={textareaRef}
               value={input}
@@ -440,16 +432,16 @@ function ConversationView({
               onKeyDown={handleKeyDown}
               placeholder="Message TRIZA..."
               rows={1}
-              className="max-h-[200px] w-full resize-none bg-transparent px-3 py-2 text-[14px] leading-relaxed text-zinc-100 placeholder:text-zinc-600 focus:outline-none"
+              className="max-h-[200px] w-full resize-none bg-transparent px-3 py-2 text-[14px] leading-relaxed text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
             />
             <div className="flex items-center justify-between px-2 pb-1">
-              <span className="text-[10px] text-zinc-600">
+              <span className="text-[10px] text-muted-foreground/70">
                 Enter: send · Shift+Enter: newline
               </span>
               <button
                 onClick={handleSend}
                 disabled={!input.trim() || sending}
-                className="flex items-center justify-center rounded-lg bg-emerald-500 px-3 py-1.5 text-zinc-950 shadow-sm shadow-emerald-500/20 transition-all duration-200 hover:bg-emerald-400 hover:shadow-md hover:shadow-emerald-500/30 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:shadow-sm"
+                className="flex items-center justify-center rounded-lg bg-primary px-3 py-1.5 text-primary-foreground transition-all duration-200 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-30"
                 aria-label="Send message"
               >
                 {sending ? (
@@ -483,10 +475,10 @@ function MessageBubble({
         className={cn(
           'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
           isError
-            ? 'bg-amber-500 text-zinc-950 ring-1 ring-amber-500/30'
+            ? 'bg-amber-500 text-white ring-1 ring-amber-500/30'
             : isUser
-              ? 'bg-zinc-800 text-zinc-300 ring-1 ring-zinc-700/50'
-              : 'bg-emerald-500 text-zinc-950 ring-1 ring-emerald-500/30 shadow-sm shadow-emerald-500/20'
+              ? 'bg-muted text-muted-foreground ring-1 ring-border'
+              : 'bg-primary text-primary-foreground ring-1 ring-primary/30 shadow-sm'
         )}
       >
         {isError ? (
@@ -494,7 +486,7 @@ function MessageBubble({
         ) : isUser ? (
           <User className="h-4 w-4" />
         ) : (
-          <Sparkles className="h-4 w-4" />
+          <span className="font-serif font-semibold text-sm">T</span>
         )}
       </div>
 
@@ -509,10 +501,10 @@ function MessageBubble({
           className={cn(
             'inline-block max-w-full',
             isError
-              ? 'rounded-2xl rounded-tl-sm border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-[14px] text-amber-100'
+              ? 'rounded-2xl rounded-tl-sm border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-[14px] text-amber-900 dark:text-amber-100'
               : isUser
-                ? 'rounded-2xl rounded-tr-sm bg-zinc-800 px-4 py-2.5 text-[14px] text-zinc-100'
-                : 'w-full rounded-2xl rounded-tl-sm border border-zinc-800/50 bg-zinc-900/30 px-4 py-2.5'
+                ? 'rounded-2xl rounded-tr-sm bg-primary px-4 py-2.5 text-[14px] text-primary-foreground'
+                : 'w-full rounded-2xl rounded-tl-sm border border-border bg-card px-4 py-2.5'
           )}
         >
           {isError ? (
@@ -523,7 +515,7 @@ function MessageBubble({
               {onRetry && (
                 <button
                   onClick={onRetry}
-                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-[12px] font-semibold text-zinc-950 shadow-sm shadow-amber-500/20 transition-all duration-200 hover:bg-amber-400 hover:shadow-md hover:shadow-amber-500/30"
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-[12px] font-semibold text-white shadow-sm transition-all duration-200 hover:bg-amber-400"
                 >
                   <RotateCw className="h-3.5 w-3.5" />
                   Retry
@@ -535,24 +527,24 @@ function MessageBubble({
               {message.content}
             </p>
           ) : (
-            <div className="text-[14px] leading-relaxed text-zinc-200">
+            <div className="text-[14px] leading-relaxed text-foreground">
               <ReactMarkdown
                 components={{
                   p: ({ children }) => (
                     <p className="my-2 first:mt-0 last:mb-0">{children}</p>
                   ),
                   h1: ({ children }) => (
-                    <h1 className="mb-2 mt-3 text-base font-semibold text-zinc-100">
+                    <h1 className="mb-2 mt-3 text-base font-semibold text-foreground">
                       {children}
                     </h1>
                   ),
                   h2: ({ children }) => (
-                    <h2 className="mb-2 mt-3 text-sm font-semibold text-zinc-100">
+                    <h2 className="mb-2 mt-3 text-sm font-semibold text-foreground">
                       {children}
                     </h2>
                   ),
                   h3: ({ children }) => (
-                    <h3 className="mb-1.5 mt-2.5 text-sm font-semibold text-zinc-100">
+                    <h3 className="mb-1.5 mt-2.5 text-sm font-semibold text-foreground">
                       {children}
                     </h3>
                   ),
@@ -577,13 +569,13 @@ function MessageBubble({
                       )
                     }
                     return (
-                      <code className="rounded bg-zinc-800 px-1 py-0.5 text-[0.85em] text-emerald-300">
+                      <code className="rounded bg-muted px-1 py-0.5 text-[0.85em] text-primary">
                         {children}
                       </code>
                     )
                   },
                   pre: ({ children }) => (
-                    <pre className="my-2 overflow-x-auto rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-[0.8rem]">
+                    <pre className="my-2 overflow-x-auto rounded-lg border border-border bg-muted p-3 text-[0.8rem]">
                       {children}
                     </pre>
                   ),
@@ -592,18 +584,18 @@ function MessageBubble({
                       href={href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-emerald-400 underline underline-offset-2 hover:text-emerald-300"
+                      className="text-primary underline underline-offset-2 hover:opacity-80"
                     >
                       {children}
                     </a>
                   ),
                   strong: ({ children }) => (
-                    <strong className="font-semibold text-zinc-100">
+                    <strong className="font-semibold text-foreground">
                       {children}
                     </strong>
                   ),
                   blockquote: ({ children }) => (
-                    <blockquote className="my-2 border-l-2 border-zinc-700 pl-3 text-zinc-400">
+                    <blockquote className="my-2 border-l-2 border-primary/40 pl-3 text-muted-foreground">
                       {children}
                     </blockquote>
                   ),
@@ -615,12 +607,12 @@ function MessageBubble({
                     </div>
                   ),
                   th: ({ children }) => (
-                    <th className="border border-zinc-800 bg-zinc-900 px-2 py-1 text-left font-semibold text-zinc-200">
+                    <th className="border border-border bg-muted px-2 py-1 text-left font-semibold text-foreground">
                       {children}
                     </th>
                   ),
                   td: ({ children }) => (
-                    <td className="border border-zinc-800 px-2 py-1 text-zinc-300">
+                    <td className="border border-border px-2 py-1 text-foreground">
                       {children}
                     </td>
                   ),
@@ -681,7 +673,7 @@ export function ChatView({
       <div className="flex min-h-0 flex-1 flex-col">
         <TopNav />
         <div className="flex flex-1 items-center justify-center">
-          <Loader2 className="h-5 w-5 animate-spin text-emerald-400" />
+          <Loader2 className="h-5 w-5 animate-spin text-primary" />
         </div>
       </div>
     )
@@ -690,7 +682,7 @@ export function ChatView({
   // Empty state — no conversation selected
   if (!conversation) {
     return (
-      <main className="flex min-w-0 flex-1 flex-col bg-[#0a0a0b]">
+      <main className="flex min-w-0 flex-1 flex-col bg-background">
         <TopNav />
         <WelcomeView
           input={input}
@@ -707,7 +699,7 @@ export function ChatView({
 
   // Active conversation
   return (
-    <main className="flex min-w-0 flex-1 flex-col bg-[#0a0a0b]">
+    <main className="flex min-w-0 flex-1 flex-col bg-background">
       <TopNav />
       <ConversationView
         conversation={conversation}

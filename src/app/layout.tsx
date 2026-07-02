@@ -1,21 +1,28 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono, Fraunces } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "next-themes";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const interSans = Inter({
+  variable: "--font-sans",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-mono",
   subsets: ["latin"],
+});
+
+const frauncesSerif = Fraunces({
+  variable: "--font-serif",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
 });
 
 export const viewport: Viewport = {
-  themeColor: "#10b981",
+  themeColor: "#1f4a36",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -190,14 +197,14 @@ export default function RootLayout({
           }}
         />
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#10b981" />
+        <meta name="theme-color" content="#1f4a36" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="TRIZA" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="application-name" content="TRIZA" />
-        <meta name="msapplication-TileColor" content="#10b981" />
-        <meta name="msapplication-navbutton-color" content="#10b981" />
+        <meta name="msapplication-TileColor" content="#1f4a36" />
+        <meta name="msapplication-navbutton-color" content="#1f4a36" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="icon" type="image/png" sizes="192x192" href="/icon-192x192.png" />
@@ -263,7 +270,7 @@ export default function RootLayout({
       </head>
       <body
         className={`
-          ${geistSans.variable} ${geistMono.variable}
+          ${interSans.variable} ${jetbrainsMono.variable} ${frauncesSerif.variable}
           antialiased bg-background text-foreground
           min-h-dvh overflow-x-hidden
           supports-[height:100dvh]:min-h-[100dvh]
