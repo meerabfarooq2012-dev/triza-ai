@@ -21,6 +21,7 @@ import {
   Heart,
   PartyPopper,
   PenLine,
+  ArrowLeft,
   type LucideIcon,
 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
@@ -37,15 +38,28 @@ interface ChatViewProps {
   lastAssistantMeta?: MessageMeta | null
   /** Optional retry callback — when set, error bubbles show a Retry button */
   onRetry?: () => void
+  /** Optional back-to-landing callback — when set, TopNav shows a Back button */
+  onBack?: () => void
 }
 
 // ============================================================
-//  Top navigation — Chatbot / Cyber / Coding + TRINITY engine
+//  Top navigation — Back / Chatbot / Cyber / Coding + TRINITY engine
 // ============================================================
-function TopNav() {
+function TopNav({ onBack }: { onBack?: () => void }) {
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-6">
-      <nav className="flex items-center gap-1">
+    <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-4 sm:px-6">
+      <nav className="flex items-center gap-1 sm:gap-2">
+        {/* Back to landing — only when onBack is provided */}
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            aria-label="Back to home"
+            title="Back to home"
+          >
+            <ArrowLeft className="h-4 w-4" strokeWidth={2.2} />
+          </button>
+        )}
         {/* Chatbot — active */}
         <button className="flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 text-[13px] font-medium text-primary-foreground">
           <Sparkles className="h-3.5 w-3.5" strokeWidth={2.2} />
@@ -639,6 +653,7 @@ export function ChatView({
   sending,
   lastAssistantMeta,
   onRetry,
+  onBack,
 }: ChatViewProps) {
   const [input, setInput] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -671,7 +686,7 @@ export function ChatView({
   if (loading) {
     return (
       <div className="flex min-h-0 flex-1 flex-col">
-        <TopNav />
+        <TopNav onBack={onBack} />
         <div className="flex flex-1 items-center justify-center">
           <Loader2 className="h-5 w-5 animate-spin text-primary" />
         </div>
@@ -683,7 +698,7 @@ export function ChatView({
   if (!conversation) {
     return (
       <main className="flex min-w-0 flex-1 flex-col bg-background">
-        <TopNav />
+        <TopNav onBack={onBack} />
         <WelcomeView
           input={input}
           setInput={setInput}
@@ -700,7 +715,7 @@ export function ChatView({
   // Active conversation
   return (
     <main className="flex min-w-0 flex-1 flex-col bg-background">
-      <TopNav />
+      <TopNav onBack={onBack} />
       <ConversationView
         conversation={conversation}
         messages={messages}

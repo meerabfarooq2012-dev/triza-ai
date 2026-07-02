@@ -5,7 +5,6 @@ import { motion } from 'framer-motion'
 import {
   Brain,
   ArrowRight,
-  ArrowLeft,
   Network,
   Boxes,
   Scale,
@@ -870,15 +869,7 @@ export function TrizaLanding() {
     return (
       <div className="relative min-h-screen bg-background">
         <Toaster richColors position="top-center" />
-        <button
-          onClick={() => setChatOpen(false)}
-          className="fixed left-4 top-4 z-50 flex items-center gap-1.5 rounded-lg border border-border bg-card/90 px-3 py-1.5 text-xs font-medium text-foreground shadow-sm backdrop-blur transition-colors hover:bg-muted"
-          aria-label="Back to landing"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          Back to home
-        </button>
-        <TrizaChatApp />
+        <TrizaChatApp onBack={() => setChatOpen(false)} />
       </div>
     )
   }

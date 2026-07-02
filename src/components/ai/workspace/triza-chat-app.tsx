@@ -15,7 +15,7 @@ import type {
  * Landing page se "Launch TRIZA" button par click karne par yeh khulta hai.
  * 100% self-built AI, no external LLM APIs.
  */
-export function TrizaChatApp() {
+export function TrizaChatApp({ onBack }: { onBack?: () => void }) {
   // Chat state
   const [conversations, setConversations] = useState<ConversationSummary[]>([])
   const [activeConversation, setActiveConversation] =
@@ -282,6 +282,7 @@ export function TrizaChatApp() {
         sending={sending}
         lastAssistantMeta={lastAssistantMeta}
         onRetry={handleRetry}
+        onBack={onBack}
       />
     </div>
   )
