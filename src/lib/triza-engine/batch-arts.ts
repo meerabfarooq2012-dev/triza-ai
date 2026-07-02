@@ -838,7 +838,7 @@ Jazz spread worldwide by the 1930s, shaping Latin music, Bollywood arrangements,
   // 23. BOLLYWOOD CINEMA
   // ----------------------------------------------------------
   {
-    id: 'bollywood-cinema',
+    id: 'bollywood-cinema-arts',
     patterns: [/\b(bollywood|hindi cinema|indian cinema|hindi film|bombay film industry|bollywood history|filmi music)\b/i],
     intent: 'factual_question',
     topic: 'art',

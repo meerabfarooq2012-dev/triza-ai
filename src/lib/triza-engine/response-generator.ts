@@ -107,6 +107,42 @@ import {
 import {
   PSYCHOLOGY_HEALTH_DEEP_ENTRIES,
 } from './batch-psychology-health-deep'
+// Phase 7 — 10 new deeper subtopic batches: history, geography, arts,
+// philosophy, technology, nature, entertainment, society, business,
+// daily-life. Each adds 13 detailed entries going ONE LEVEL DEEPER
+// than the broad batches (e.g. "stoicism-epictetus-marcus-aurelius"
+// below general "philosophy"; "hurricanes-tropical-cyclones" below
+// general "weather"). ~130 new entries total.
+import {
+  HISTORY_DEEP_ENTRIES,
+} from './batch-history-deep'
+import {
+  GEOGRAPHY_DEEP_ENTRIES,
+} from './batch-geography-deep'
+import {
+  ARTS_DEEP_ENTRIES,
+} from './batch-arts-deep'
+import {
+  PHILOSOPHY_DEEP_ENTRIES,
+} from './batch-philosophy-deep'
+import {
+  TECHNOLOGY_DEEP_ENTRIES,
+} from './batch-technology-deep'
+import {
+  NATURE_DEEP_ENTRIES,
+} from './batch-nature-deep'
+import {
+  ENTERTAINMENT_DEEP_ENTRIES,
+} from './batch-entertainment-deep'
+import {
+  SOCIETY_DEEP_ENTRIES,
+} from './batch-society-deep'
+import {
+  BUSINESS_DEEP_ENTRIES,
+} from './batch-business-deep'
+import {
+  DAILY_LIFE_DEEP_ENTRIES,
+} from './batch-daily-life-deep'
 import {
   CORE_ENTRIES,
 } from './batch-core'
@@ -192,6 +228,38 @@ type SleepLayer = {
 // ============================================================
 
 const KNOWLEDGE_BASE: KnowledgeEntry[] = [
+  // ============================================================
+  // DEEP batches FIRST — specific subtopic entries are checked
+  // before broad entries so a SPECIFIC deep entry (e.g.
+  // "dna-types-structure" matching "types of DNA") wins over the
+  // broad entry (e.g. "dna-and-genes" matching "dna") on near-ties.
+  // Array order is the FINAL tie-breaker after score/overlap.
+  // ============================================================
+  // Phase 6 deep batches (~76 entries): biology, physics-chem,
+  // space, computing, math, psychology-health.
+  ...BIOLOGY_DEEP_ENTRIES,
+  ...PHYSICS_CHEM_DEEP_ENTRIES,
+  ...SPACE_DEEP_ENTRIES,
+  ...COMPUTING_DEEP_ENTRIES,
+  ...MATH_DEEP_ENTRIES,
+  ...PSYCHOLOGY_HEALTH_DEEP_ENTRIES,
+  // Phase 7 deep batches (~130 entries): history, geography, arts,
+  // philosophy, technology, nature, entertainment, society,
+  // business, daily-life. Each goes one level deeper than its
+  // broad counterpart below.
+  ...HISTORY_DEEP_ENTRIES,
+  ...GEOGRAPHY_DEEP_ENTRIES,
+  ...ARTS_DEEP_ENTRIES,
+  ...PHILOSOPHY_DEEP_ENTRIES,
+  ...TECHNOLOGY_DEEP_ENTRIES,
+  ...NATURE_DEEP_ENTRIES,
+  ...ENTERTAINMENT_DEEP_ENTRIES,
+  ...SOCIETY_DEEP_ENTRIES,
+  ...BUSINESS_DEEP_ENTRIES,
+  ...DAILY_LIFE_DEEP_ENTRIES,
+  // ============================================================
+  // BROAD batches AFTER deep — so deep wins on tie.
+  // ============================================================
   ...ARTS_ENTRIES,
   ...GEOGRAPHY_ENTRIES,
   ...DAILY_LIFE_ENTRIES,
@@ -201,30 +269,10 @@ const KNOWLEDGE_BASE: KnowledgeEntry[] = [
   ...ENTERTAINMENT_ENTRIES,
   ...PHILOSOPHY_ENTRIES,
   ...SOCIETY_ENTRIES,
-  // Phase 4 knowledge expansion: math, computing, psychology,
-  // astronomy, economics/finance/business (~50+ new entries).
   ...MATH_ENTRIES,
   ...PSYCHOLOGY_ENTRIES,
   ...SPACE_ENTRIES,
   ...BUSINESS_ENTRIES,
-  // Phase 6 — deeper subtopic entries: DNA types, RNA types,
-  // mutations, quantum mechanics, relativity, sorting algorithms,
-  // derivatives, integration, developmental psychology, nutrition
-  // details, etc. These go ONE LEVEL DEEPER than the broad batches
-  // above (~76 new entries). Placed BEFORE the broad biology,
-  // physics-chem, computing, and health batches so a SPECIFIC deep
-  // entry (e.g. "dna-types-structure" matching "types of DNA") is
-  // checked before the broad entry (e.g. "dna-and-genes" matching
-  // "dna") — when both hit on regex, array order is the FINAL
-  // tie-breaker after score/overlap, so deep-first ordering lets
-  // the more specific entry win on near-ties.
-  ...BIOLOGY_DEEP_ENTRIES,
-  ...PHYSICS_CHEM_DEEP_ENTRIES,
-  ...SPACE_DEEP_ENTRIES,
-  ...COMPUTING_DEEP_ENTRIES,
-  ...MATH_DEEP_ENTRIES,
-  ...PSYCHOLOGY_HEALTH_DEEP_ENTRIES,
-  // Broad batches come AFTER deep so deep wins on tie.
   ...BIOLOGY_ENTRIES,
   ...PHYSICS_CHEM_ENTRIES,
   ...COMPUTING_ENTRIES,
