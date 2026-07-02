@@ -4920,3 +4920,43 @@ Stage Summary:
 - All existing functionality preserved: conversation CRUD, optimistic send, fetch-with-retry, error bubbles, collapsible reasoning steps, ReactMarkdown rendering, mood/intent/confidence badges, auto-resize textarea, autoscroll.
 - No new dependencies added (used only existing lucide-react icons + cn() utility + Tailwind 4 classes).
 - Ready for visual review by the user (14-year-old poet). Next iteration could add subtle framer-motion message-enter animations if desired, but the task constrained us to className/JSX-only changes here.
+
+---
+Task ID: UI-REVIEW-1
+Agent: main (Z.ai Code)
+Task: Triza-AI ka UI aur design review karna - screenshots lo, VLM se analyze karo, issues identify karo, redesign plan banao
+
+Work Log:
+- Dev server check kiya (port 3000 chal raha tha)
+- Agent browser se Triza-AI home page khola (1440x900)
+- 5 home page screenshots liye (top, mid, features, phases, footer)
+- "Try TRIZA" click karke workspace khola
+- Workspace empty state aur chat conversation screenshots liye
+- Mobile view (390x844) screenshot liya responsiveness check ke liye
+- VLM skill use karke 5 screenshots analyze kiye
+- Explore agent se codebase structure thoroughly research karwaya
+- Sab analyses combine karke review report banaya
+
+Stage Summary:
+- TRIZA AI single-page app hai: TrizaLanding (marketing, light/zinc) + TrizaChatApp (workspace, dark/emerald)
+- globals.css mein "Obsidian & Gold" OKLCH theme tokens defined hain par UNUSED - actual UI hardcoded emerald/zinc use karta hai
+- 3 orphaned workspace views hain (brain-view, models-view, playground-view) - dead code
+- 46 shadcn/ui primitives available hain par zyadaatar raw Tailwind classes use ho rahi hain
+- Rich animations + PWA polish already globals.css mein hai
+- Geist + Geist Mono fonts use ho rahe hain
+- NO global navbar/footer in layout - dono TrizaLanding ke andar hain
+
+CRITICAL DESIGN ISSUES IDENTIFIED:
+1. Landing page dated/template-like lagti hai, premium nahi
+2. Theme tokens vs usage mismatch (gold theme defined, emerald use ho raha)
+3. Typography hierarchy weak - headings compete equally
+4. Excessive whitespace, no grid system, uneven spacing
+5. Workspace dark theme 2010s-era lagti hai, modern nahi
+6. "SOON" badges on tabs amateurish
+7. Transparency metadata cluttered - redundant tags, thin confidence bar
+8. Message bubbles low contrast, small avatar, no brand identity
+9. Thinking steps panel dense, misleading "29 steps" label
+10. Mobile: touch targets < 44px (WCAG fail), text 13px, no mobile menu
+11. Inconsistent button styles, weak CTAs
+12. Cards inconsistent (3rd showcase card missing user message)
+13. Roadmap section static, no visual storytelling
