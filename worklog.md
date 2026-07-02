@@ -4960,3 +4960,39 @@ CRITICAL DESIGN ISSUES IDENTIFIED:
 11. Inconsistent button styles, weak CTAs
 12. Cards inconsistent (3rd showcase card missing user message)
 13. Roadmap section static, no visual storytelling
+
+---
+Task ID: REDESIGN-1
+Agent: main (Z.ai Code)
+Task: Stone & Forest theme poore Triza-AI pe implement karna (landing + workspace)
+
+Work Log:
+- Original page.tsx restore kiya (gallery hata diya)
+- globals.css mein Stone & Forest theme tokens set kiye (replaced Obsidian & Gold)
+  - Light: #f7f5f0 bg + #1f4a36 forest green + Fraunces serif
+  - Dark: #161a17 deep ink + #4a9d77 luminous forest
+- layout.tsx mein fonts swap kiye: Geist -> Inter + JetBrains Mono + Fraunces
+  - theme-color meta #1f4a36 (forest) set kiya
+- triza-landing.tsx poora rewrite kiya Stone & Forest theme + editorial stats row ke saath
+  - Vol. 01 editorial top bar
+  - Stats row (368 entries / 3 layers / 0 APIs / 100% transparent)
+  - Forest green accents, serif headings, ambient glow blobs
+- chat-view.tsx poora redesign kiya: TopNav, WelcomeView, MessageBubble, ReplyMeta, composer
+- sidebar.tsx redesign kiya: forest brand mark, theme tokens
+- triza-chat-app.tsx container bg-background text-foreground set kiya
+- Agent browser se verify kiya:
+  - Landing page: perfect render, VLM confirmed Stone & Forest match
+  - Workspace: perfect, theme consistent
+  - Chat conversation: user bubble (forest green), assistant bubble (white), meta bar working
+  - Mobile (390px): responsive, no overflow, touch targets ok
+- Git commit + push to triza-ai repo (039bb27)
+
+Stage Summary:
+- Stone & Forest theme successfully applied to entire Triza-AI
+- All theme tokens centralized in globals.css (light + dark mode)
+- Fonts: Inter (sans) + JetBrains Mono (mono) + Fraunces (serif display)
+- Landing page: editorial style with Vol. 01 bar + stats row + forest green
+- Workspace: clean light theme with forest accents (replaced dark #0a0a0b)
+- Verified via agent-browser: no rendering errors on desktop/mobile
+- Pushed to triza-ai repo — Vercel auto-deploy triggered
+- Marketo/Thiora NOT touched (origin still points to Marketo, untouched)
