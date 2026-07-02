@@ -4996,3 +4996,38 @@ Stage Summary:
 - Verified via agent-browser: no rendering errors on desktop/mobile
 - Pushed to triza-ai repo — Vercel auto-deploy triggered
 - Marketo/Thiora NOT touched (origin still points to Marketo, untouched)
+
+---
+Task ID: ANIM-1
+Agent: main (Z.ai Code)
+Task: TRIZA demo (T · transparent AI · live · "I'm feeling a bit down today" · sad / sad.acknowledge / 95% / 3 steps · "shows its work" · "Message TRIZA…") ko self-playing animation banao jo loop kare
+
+Work Log:
+- Read worklog.md tail to understand prior state — Stone & Forest theme already applied to landing + workspace (REDESIGN-1). Landing page's hero has a `LiveDemo` component that showed the SEED_EXCHANGE statically (no animation).
+- Read src/components/ai/landing/triza-landing.tsx (1117 lines) — found the `LiveDemo` function (lines 360-561) which rendered SEED_EXCHANGE as static bubbles + a real interactive send() that called /api/ai/chat.
+- Read src/app/globals.css for theme utility classes (mono-tag, serif-accent, soft-shadow, forest-border-glow, ambient-glow) — confirmed Stone & Forest tokens already wired.
+- Added module-level constants: SEED_USER, SEED_REPLY, SEED_META, and 4 bitmask flags (META_MOOD=1, META_INTENT=2, META_CONF=4, META_STEPS=8) for the staged meta reveal.
+- Removed the now-unused SEED_EXCHANGE const (was only used by the old static LiveDemo).
+- Rewrote `LiveDemo` into a dual-mode component:
+  * AUTO-PLAY mode (default): an async state-machine loop driven by a single useEffect with a `cancelled` flag + timer array. Phases: (1) reset 550ms, (2) type user msg char-by-char @34ms/char with a blinking cursor, (3) commit user bubble + 280ms pause, (4) show 3 bouncing `ThinkingDots` for 1500ms, (5) type reply char-by-char @20ms/char with cursor, (6) commit reply + 360ms pause, (7) staged meta reveal — mood badge (400ms) → +intent badge (400ms) → +confidence badge with animated bar fill 0→95% over 700ms CSS transition (420ms) → +steps badge, (8) hold full exchange 5200ms, then loop. All timers cleared on unmount or when switching to interactive mode.
+  * INTERACTIVE mode (activated by clicking "try it yourself →" button or focusing/clicking the input): preserves the original real /api/ai/chat send logic. Each message bubble enters with a framer-motion fade+slide. Loading state shows the same `ThinkingDots` component (consistency).
+- Added two new sub-components: `ThinkingDots` (3 emerald dots with staggered framer-motion y-bounce + opacity pulse, aria-label) and `MetaBadge` (pops in with scale+fade+slide, accepts a delay prop).
+- Footer row is mode-aware: interactive → `<FeedbackRow>` (thumbs up/down + "shows its work"); autoplay → a custom row with a "try it yourself →" CTA (left) and "shows its work" label (right).
+- Input form onSubmit: in autoplay mode, first submit just flips to interactive mode (doesn't send); in interactive mode, calls send(). Input onFocus also flips to interactive.
+- Kept the exact card shell (header with T logo + TRIZA + · transparent AI + live pulse badge, messages area max-h-340px min-h-260px, footer, input "Message TRIZA…") so it visually matches the reference demo the user shared.
+- Lint: `bunx eslint src/components/ai/landing/triza-landing.tsx` → exit 0, zero errors, zero warnings.
+- Agent Browser verification (1440x900 desktop):
+  * Phase 2 (thinking) screenshot: VLM confirmed user bubble "I'm feeling a bit down today." committed + 3 bouncing thinking dots visible + no reply yet.
+  * Hold state screenshot: VLM confirmed EXACT match to reference demo — header "TRIZA · TRANSPARENT AI", user bubble "I'm feeling a bit down today.", assistant bubble "I hear you, and I'm glad you said it. Feeling down is not a flaw — it's a signal worth listening to.", meta badges SAD / SAD.ACKNOWLEDGE / 95% / 3 STEPS, footer "try it yourself" + "shows its work", input "Message TRIZA…".
+  * Interactive mode: clicked "try it yourself →" button → message area cleared (interactive mode active), input ready, FeedbackRow rendered.
+  * Recorded a 13s video of the full animation loop at /tmp/triza-anim-loop.webm (180KB).
+  * Console: no errors, no warnings (only HMR/Fast Refresh logs).
+- Mobile verification (390x844): VLM confirmed responsive — no horizontal overflow, demo card readable, messages + meta badges properly laid out.
+
+Stage Summary:
+- TRIZA hero demo is now a self-playing looping animation that replays the seed exchange every ~12s: types the user message with a blinking cursor → shows 3 bouncing thinking dots → types the reply with a cursor → reveals mood/intent/confidence/steps badges one-by-one (confidence bar fills 0→95%) → holds → loops.
+- Final hold state is a pixel-accurate match to the reference demo the user shared (T logo, transparent AI, live, both bubbles, all 4 meta badges, "shows its work", "Message TRIZA…").
+- Seamlessly turns interactive the moment you click "try it yourself →" or focus the input — then it becomes a real chat with the TRIZA engine (existing /api/ai/chat logic preserved, framer-motion entrance animations added to real messages).
+- Built with framer-motion (already in deps) + Tailwind 4 + Stone & Forest theme tokens. No new dependencies.
+- Files changed: only src/components/ai/landing/triza-landing.tsx (removed SEED_EXCHANGE, added SEED_USER/SEED_REPLY/SEED_META/bitmask constants, added ThinkingDots + MetaBadge components, rewrote LiveDemo into dual-mode autoplay+interactive).
+- Lint: PASS. Browser verification: PASS (desktop + mobile, no console errors). Animation video captured at /tmp/triza-anim-loop.webm.

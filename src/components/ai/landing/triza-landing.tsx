@@ -97,24 +97,22 @@ const STATS = [
   { num: '100%', label: 'Transparent' },
 ]
 
-// Pre-filled example exchange shown by default in the live demo card
-const SEED_EXCHANGE: DemoMsg[] = [
-  {
-    role: 'user',
-    content: "I'm feeling a bit down today.",
-  },
-  {
-    role: 'assistant',
-    content:
-      "I hear you, and I'm glad you said it. Feeling down is not a flaw — it's a signal worth listening to.",
-    meta: {
-      mood: 'sad',
-      intent: 'sad.acknowledge',
-      confidence: 95,
-      steps: ['detect mood', 'walk graph', 'compose'],
-    },
-  },
-]
+// Auto-play loop strings (the demo exchange, broken out for the typewriter)
+const SEED_USER = "I'm feeling a bit down today."
+const SEED_REPLY =
+  "I hear you, and I'm glad you said it. Feeling down is not a flaw — it's a signal worth listening to."
+const SEED_META = {
+  mood: 'sad',
+  intent: 'sad.acknowledge',
+  confidence: 95,
+  steps: 3,
+} as const
+
+// Bitmask flags for the staged meta reveal during auto-play
+const META_MOOD = 1
+const META_INTENT = 2
+const META_CONF = 4
+const META_STEPS = 8
 
 // Static showcase exchanges for the "Transparency, by default" section
 const SHOWCASE = [
@@ -355,21 +353,146 @@ function FeedbackRow({ messages }: { messages: DemoMsg[] }) {
 }
 
 // ---------------------------------------------------------------
-//  Live Demo — interactive mini chat
+//  Live Demo — auto-playing animated replay that loops forever,
+//  and seamlessly turns interactive the moment you click the input.
 // ---------------------------------------------------------------
+
+// Animated thinking dots — three emerald dots that bounce in sequence.
+function ThinkingDots() {
+  return (
+    <span className="inline-flex items-center gap-1" aria-label="TRIZA is thinking">
+      {[0, 1, 2].map((i) => (
+        <motion.span
+          key={i}
+          className="block h-1.5 w-1.5 rounded-full bg-primary"
+          animate={{ y: [0, -3, 0], opacity: [0.4, 1, 0.4] }}
+          transition={{
+            duration: 0.9,
+            repeat: Infinity,
+            ease: 'easeInOut',
+            delay: i * 0.15,
+          }}
+        />
+      ))}
+    </span>
+  )
+}
+
 function LiveDemo() {
-  const [messages, setMessages] = useState<DemoMsg[]>(SEED_EXCHANGE)
+  // ---- interactive state ----
+  const [interactive, setInteractive] = useState(false)
+  const [messages, setMessages] = useState<DemoMsg[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const conversationIdRef = useRef<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
+  // ---- auto-play state ----
+  const [typedUser, setTypedUser] = useState('')
+  const [userCommitted, setUserCommitted] = useState(false)
+  const [thinking, setThinking] = useState(false)
+  const [typedReply, setTypedReply] = useState('')
+  const [replyCommitted, setReplyCommitted] = useState(false)
+  const [metaMask, setMetaMask] = useState(0) // bitmask: mood|intent|conf|steps
+  const [confWidth, setConfWidth] = useState(0) // animated 0 → 95
+
+  // Auto-play loop — types the seed exchange, reveals meta one-by-one, then loops.
+  useEffect(() => {
+    if (interactive) return
+    let cancelled = false
+    const timers: ReturnType<typeof setTimeout>[] = []
+    const wait = (ms: number) =>
+      new Promise<void>((res) => {
+        if (cancelled) return
+        timers.push(setTimeout(res, ms))
+      })
+
+    const run = async () => {
+      while (!cancelled) {
+        // reset everything for a fresh loop
+        setTypedUser('')
+        setUserCommitted(false)
+        setThinking(false)
+        setTypedReply('')
+        setReplyCommitted(false)
+        setMetaMask(0)
+        setConfWidth(0)
+        await wait(550)
+        if (cancelled) return
+
+        // Phase 1 — type the user message char-by-char
+        for (let i = 1; i <= SEED_USER.length; i++) {
+          if (cancelled) return
+          setTypedUser(SEED_USER.slice(0, i))
+          await wait(34)
+        }
+        await wait(380)
+        if (cancelled) return
+        setUserCommitted(true)
+        setTypedUser('')
+
+        // Phase 2 — thinking dots
+        await wait(280)
+        if (cancelled) return
+        setThinking(true)
+        await wait(1500)
+        if (cancelled) return
+        setThinking(false)
+
+        // Phase 3 — type the reply char-by-char
+        for (let i = 1; i <= SEED_REPLY.length; i++) {
+          if (cancelled) return
+          setTypedReply(SEED_REPLY.slice(0, i))
+          await wait(20)
+        }
+        if (cancelled) return
+        setReplyCommitted(true)
+        setTypedReply('')
+
+        // Phase 4 — staged meta reveal, one badge at a time
+        await wait(360)
+        if (cancelled) return
+        setMetaMask(META_MOOD)
+        await wait(400)
+        if (cancelled) return
+        setMetaMask(META_MOOD | META_INTENT)
+        await wait(400)
+        if (cancelled) return
+        setMetaMask(META_MOOD | META_INTENT | META_CONF)
+        // animate the confidence bar filling 0 → 95
+        setConfWidth(95)
+        await wait(420)
+        if (cancelled) return
+        setMetaMask(META_MOOD | META_INTENT | META_CONF | META_STEPS)
+
+        // Phase 5 — hold the complete exchange, then loop
+        await wait(5200)
+      }
+    }
+    run()
+    return () => {
+      cancelled = true
+      timers.forEach(clearTimeout)
+    }
+  }, [interactive])
+
+  // keep the demo scrolled to the latest line
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
-  }, [messages, loading])
+  }, [
+    messages,
+    loading,
+    typedUser,
+    userCommitted,
+    thinking,
+    typedReply,
+    replyCommitted,
+    metaMask,
+  ])
 
+  // ---- interactive send (real chat with the engine) ----
   const send = useCallback(async () => {
     const text = input.trim()
     if (!text || loading) return
@@ -469,74 +592,211 @@ function LiveDemo() {
         ref={scrollRef}
         className="max-h-[340px] min-h-[260px] space-y-4 overflow-y-auto bg-card px-4 py-5"
       >
-        {messages.map((m, i) => (
-          <div key={i} className="space-y-2">
-            {m.role === 'user' ? (
-              <div className="flex justify-end">
-                <div className="max-w-[85%] rounded-2xl rounded-br-md bg-primary px-3.5 py-2 text-sm text-primary-foreground">
-                  {m.content}
-                </div>
-              </div>
-            ) : (
-              <div className="flex justify-start">
-                <div className="flex max-w-[88%] gap-2.5">
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary text-[11px] font-semibold text-primary-foreground">
-                    T
-                  </div>
-                  <div className="space-y-2">
-                    <div className="rounded-2xl rounded-bl-md border border-border bg-muted px-3.5 py-2.5 text-sm text-foreground">
+        {interactive ? (
+          <>
+            {/* Interactive mode — render the real conversation */}
+            {messages.map((m, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25 }}
+                className="space-y-2"
+              >
+                {m.role === 'user' ? (
+                  <div className="flex justify-end">
+                    <div className="max-w-[85%] rounded-2xl rounded-br-md bg-primary px-3.5 py-2 text-sm text-primary-foreground">
                       {m.content}
                     </div>
-                    {m.meta && (
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {m.meta.mood && (
-                          <span className="mono-tag rounded-md border border-border bg-background px-1.5 py-0.5 text-muted-foreground" style={{ fontSize: '10px' }}>
-                            {m.meta.mood}
-                          </span>
-                        )}
-                        {m.meta.intent && (
-                          <span className="mono-tag rounded-md border border-border bg-background px-1.5 py-0.5 text-muted-foreground" style={{ fontSize: '10px' }}>
-                            {m.meta.intent}
-                          </span>
-                        )}
-                        {typeof m.meta.confidence === 'number' && (
-                          <span className="mono-tag inline-flex items-center gap-1 rounded-md border border-primary/30 bg-accent px-1.5 py-0.5 text-primary" style={{ fontSize: '10px' }}>
-                            <span className="inline-block w-10 h-1 rounded-full" style={{ background: 'rgba(125,128,121,0.2)' }}>
-                              <span className="block h-full rounded-full bg-primary" style={{ width: `${m.meta.confidence}%` }} />
-                            </span>
-                            {m.meta.confidence}%
-                          </span>
-                        )}
-                        {m.meta.steps && m.meta.steps.length > 0 && (
-                          <span className="mono-tag rounded-md border border-border bg-background px-1.5 py-0.5 text-muted-foreground" style={{ fontSize: '10px' }}>
-                            {m.meta.steps.length} steps
-                          </span>
+                  </div>
+                ) : (
+                  <div className="flex justify-start">
+                    <div className="flex max-w-[88%] gap-2.5">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary text-[11px] font-semibold text-primary-foreground">
+                        T
+                      </div>
+                      <div className="space-y-2">
+                        <div className="rounded-2xl rounded-bl-md border border-border bg-muted px-3.5 py-2.5 text-sm text-foreground">
+                          {m.content}
+                        </div>
+                        {m.meta && (
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {m.meta.mood && (
+                              <span className="mono-tag rounded-md border border-border bg-background px-1.5 py-0.5 text-muted-foreground" style={{ fontSize: '10px' }}>
+                                {m.meta.mood}
+                              </span>
+                            )}
+                            {m.meta.intent && (
+                              <span className="mono-tag rounded-md border border-border bg-background px-1.5 py-0.5 text-muted-foreground" style={{ fontSize: '10px' }}>
+                                {m.meta.intent}
+                              </span>
+                            )}
+                            {typeof m.meta.confidence === 'number' && (
+                              <span className="mono-tag inline-flex items-center gap-1 rounded-md border border-primary/30 bg-accent px-1.5 py-0.5 text-primary" style={{ fontSize: '10px' }}>
+                                <span className="inline-block w-10 h-1 rounded-full" style={{ background: 'rgba(125,128,121,0.2)' }}>
+                                  <span className="block h-full rounded-full bg-primary" style={{ width: `${m.meta.confidence}%` }} />
+                                </span>
+                                {m.meta.confidence}%
+                              </span>
+                            )}
+                            {m.meta.steps && m.meta.steps.length > 0 && (
+                              <span className="mono-tag rounded-md border border-border bg-background px-1.5 py-0.5 text-muted-foreground" style={{ fontSize: '10px' }}>
+                                {m.meta.steps.length} steps
+                              </span>
+                            )}
+                          </div>
                         )}
                       </div>
-                    )}
+                    </div>
                   </div>
+                )}
+              </motion.div>
+            ))}
+
+            {loading && (
+              <div className="flex justify-start">
+                <div className="flex items-center gap-2 rounded-2xl rounded-bl-md border border-border bg-muted px-3.5 py-2.5">
+                  <ThinkingDots />
+                  <span className="mono-tag text-muted-foreground" style={{ fontSize: '11px' }}>thinking…</span>
                 </div>
               </div>
             )}
-          </div>
-        ))}
+          </>
+        ) : (
+          <>
+            {/* Auto-play mode — animated seed exchange */}
+            {/* User bubble: typing in the input row, then committed as a bubble */}
+            {(typedUser || userCommitted) && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25 }}
+                className="flex justify-end"
+              >
+                <div className="max-w-[85%] rounded-2xl rounded-br-md bg-primary px-3.5 py-2 text-sm text-primary-foreground">
+                  {userCommitted ? SEED_USER : typedUser}
+                  {!userCommitted && (
+                    <span className="ml-0.5 inline-block h-3.5 w-[2px] translate-y-0.5 animate-pulse bg-primary-foreground/80" />
+                  )}
+                </div>
+              </motion.div>
+            )}
 
-        {loading && (
-          <div className="flex justify-start">
-            <div className="flex items-center gap-1.5 rounded-2xl rounded-bl-md border border-border bg-muted px-3.5 py-2.5">
-              <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
-              <span className="mono-tag text-muted-foreground" style={{ fontSize: '11px' }}>thinking…</span>
-            </div>
-          </div>
+            {/* Thinking dots */}
+            {thinking && (
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+                className="flex justify-start"
+              >
+                <div className="flex items-center gap-2 rounded-2xl rounded-bl-md border border-border bg-muted px-3.5 py-2.5">
+                  <ThinkingDots />
+                </div>
+              </motion.div>
+            )}
+
+            {/* Assistant reply: typing, then committed */}
+            {(typedReply || replyCommitted) && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25 }}
+                className="flex justify-start"
+              >
+                <div className="flex max-w-[88%] gap-2.5">
+                  <motion.div
+                    initial={{ scale: 0.85, opacity: 0.6 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.25 }}
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary text-[11px] font-semibold text-primary-foreground"
+                  >
+                    T
+                  </motion.div>
+                  <div className="space-y-2">
+                    <div className="rounded-2xl rounded-bl-md border border-border bg-muted px-3.5 py-2.5 text-sm leading-relaxed text-foreground">
+                      {replyCommitted ? SEED_REPLY : typedReply}
+                      {!replyCommitted && (
+                        <span className="ml-0.5 inline-block h-3.5 w-[2px] translate-y-0.5 animate-pulse bg-primary" />
+                      )}
+                    </div>
+
+                    {/* Staged meta reveal */}
+                    {replyCommitted && metaMask > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.3 }}
+                        className="flex flex-wrap items-center gap-1.5"
+                      >
+                        {metaMask & META_MOOD && (
+                          <MetaBadge delay={0}>{SEED_META.mood}</MetaBadge>
+                        )}
+                        {metaMask & META_INTENT && (
+                          <MetaBadge delay={0.05}>{SEED_META.intent}</MetaBadge>
+                        )}
+                        {metaMask & META_CONF && (
+                          <motion.span
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.25 }}
+                            className="mono-tag inline-flex items-center gap-1 rounded-md border border-primary/30 bg-accent px-1.5 py-0.5 text-primary"
+                            style={{ fontSize: '10px' }}
+                          >
+                            <span
+                              className="inline-block h-1 w-10 overflow-hidden rounded-full"
+                              style={{ background: 'rgba(125,128,121,0.2)' }}
+                            >
+                              <span
+                                className="block h-full rounded-full bg-primary transition-[width] duration-700 ease-out"
+                                style={{ width: `${confWidth}%` }}
+                              />
+                            </span>
+                            {SEED_META.confidence}%
+                          </motion.span>
+                        )}
+                        {metaMask & META_STEPS && (
+                          <MetaBadge delay={0.05}>
+                            {SEED_META.steps} steps
+                          </MetaBadge>
+                        )}
+                      </motion.div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </>
         )}
       </div>
 
-      <FeedbackRow messages={messages} />
+      {/* Footer row — feedback (interactive) or "shows its work" (autoplay) */}
+      {interactive ? (
+        <FeedbackRow messages={messages} />
+      ) : (
+        <div className="flex items-center justify-between border-t border-border bg-muted/50 px-4 py-2">
+          <button
+            onClick={() => setInteractive(true)}
+            className="mono-tag inline-flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-primary transition-colors hover:bg-primary/10"
+            style={{ fontSize: '10px' }}
+          >
+            <Sparkles className="h-3 w-3" />
+            try it yourself →
+          </button>
+          <span className="mono-tag text-muted-foreground" style={{ fontSize: '10px' }}>
+            shows its work
+          </span>
+        </div>
+      )}
 
       {/* Input */}
       <form
         onSubmit={(e) => {
           e.preventDefault()
+          if (!interactive) {
+            setInteractive(true)
+            return
+          }
           send()
         }}
         className="flex items-center gap-2 border-t border-border bg-card px-3 py-3"
@@ -544,19 +804,38 @@ function LiveDemo() {
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onFocus={() => {
+            if (!interactive) setInteractive(true)
+          }}
           placeholder="Message TRIZA…"
+          aria-label="Message TRIZA"
           className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
         />
         <button
           type="submit"
-          disabled={!input.trim() || loading}
+          disabled={interactive && (!input.trim() || loading)}
           className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-opacity disabled:opacity-30"
-          aria-label="Send message"
+          aria-label={interactive ? 'Send message' : 'Start chatting'}
         >
           <Send className="h-3.5 w-3.5" />
         </button>
       </form>
     </div>
+  )
+}
+
+// Small staged meta badge — pops in with a subtle scale.
+function MetaBadge({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
+  return (
+    <motion.span
+      initial={{ opacity: 0, scale: 0.85, y: 4 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      transition={{ duration: 0.28, delay, ease: 'easeOut' }}
+      className="mono-tag rounded-md border border-border bg-background px-1.5 py-0.5 text-muted-foreground"
+      style={{ fontSize: '10px' }}
+    >
+      {children}
+    </motion.span>
   )
 }
 
