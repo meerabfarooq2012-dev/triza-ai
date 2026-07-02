@@ -6,10 +6,10 @@
  * ============================================================
  *
  *  Yeh view browser-side TRINITY ka full interface hai:
- *    1. Think  — apne browser wale TRINITY se sawal poocho
- *    2. Learn  — TRINITY ko naye examples sikhao
- *    3. Memory — sab trained entries dekho, delete karo
- *    4. Export — AI ko HTML file ke roop mein download karo
+ *    1. Think   — apne browser wale TRINITY se sawal poocho
+ *    2. Memory  — manually TRINITY ko naye examples sikhao
+ *    3. Library — pre-built knowledge packs ek-click install
+ *    4. Export  — AI ko HTML/JSON file ke roop mein download karo
  *    5. Install — PWA install button (native app jaisa)
  *
  *  SAB KUCH user ke browser mein hota hai. Server pe zero load.
@@ -33,6 +33,9 @@ import {
   XCircle,
   Clock,
   ArrowRight,
+  Library,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useTrinityBrowser } from '@/hooks/use-trinity-browser'
@@ -40,6 +43,11 @@ import {
   downloadStandaloneHTML,
   downloadMemoryJSON,
 } from '@/lib/trinity-browser/export-html'
+import {
+  KNOWLEDGE_PACKS,
+  totalKnowledgeEntries,
+  type KnowledgePack,
+} from '@/lib/trinity-browser/knowledge-packs'
 import type { TrinityResult, MemoryEntry } from '@/components/trinity/types'
 
 interface BrainViewProps {
@@ -53,7 +61,7 @@ interface BrainViewProps {
 
 export function BrainView({ onStatsChange }: BrainViewProps) {
   const trinity = useTrinityBrowser()
-  const [tab, setTab] = useState<'think' | 'memory' | 'export'>('think')
+  const [tab, setTab] = useState<'think' | 'memory' | 'library' | 'export'>('think')
 
   // Think state
   const [input, setInput] = useState('')
@@ -164,6 +172,48 @@ export function BrainView({ onStatsChange }: BrainViewProps) {
     setResult(null)
     setHistory([])
   }, [trinity, refreshEntries])
+
+  // ─── Library: install a knowledge pack ──────────────
+  // Track which packs are being installed (by id) + progress.
+  const [installingPacks, setInstallingPacks] = useState<
+    Record<string, { current: number; total: number }>
+  >({})
+  const [installedPackIds, setInstalledPackIds] = useState<Set<string>>(new Set())
+
+  const handleInstallPack = useCallback(
+    async (pack: KnowledgePack) => {
+      if (installingPacks[pack.id]) return
+      setInstallingPacks((prev) => ({
+        ...prev,
+        [pack.id]: { current: 0, total: pack.entries.length },
+      }))
+      for (let i = 0; i < pack.entries.length; i++) {
+        const entry = pack.entries[i]
+        await trinity.learn(entry.input, entry.label, entry.category)
+        setInstallingPacks((prev) => ({
+          ...prev,
+          [pack.id]: { current: i + 1, total: pack.entries.length },
+        }))
+      }
+      setInstallingPacks((prev) => {
+        const next = { ...prev }
+        delete next[pack.id]
+        return next
+      })
+      setInstalledPackIds((prev) => new Set(prev).add(pack.id))
+      await refreshEntries()
+    },
+    [installingPacks, trinity, refreshEntries]
+  )
+
+  const handleInstallAll = useCallback(async () => {
+    if (!confirm(`${KNOWLEDGE_PACKS.length} packs install karein? (${totalKnowledgeEntries()} total entries)`)) return
+    for (const pack of KNOWLEDGE_PACKS) {
+      // Skip if already in progress
+      if (installingPacks[pack.id]) continue
+      await handleInstallPack(pack)
+    }
+  }, [installingPacks, handleInstallPack])
 
   // ─── Export HTML ─────────────────────────────────────
   const handleExportHTML = useCallback(async () => {
@@ -279,10 +329,11 @@ export function BrainView({ onStatsChange }: BrainViewProps) {
         </div>
 
         {/* Tabs */}
-        <div className="mt-4 flex gap-1 border-b border-zinc-800 -mb-4">
+        <div className="mt-4 flex gap-1 border-b border-zinc-800 -mb-4 flex-wrap">
           {[
             { id: 'think' as const, label: 'Think', icon: Sparkles },
             { id: 'memory' as const, label: 'Memory', icon: HardDrive },
+            { id: 'library' as const, label: 'Library', icon: Library },
             { id: 'export' as const, label: 'Download & Install', icon: Download },
           ].map((t) => {
             const Icon = t.icon
@@ -333,6 +384,15 @@ export function BrainView({ onStatsChange }: BrainViewProps) {
             onClear={handleClear}
             onFeedback={trinity.feedback}
             onRefresh={refreshEntries}
+          />
+        )}
+        {tab === 'library' && (
+          <LibraryTab
+            entries={entries}
+            installingPacks={installingPacks}
+            installedPackIds={installedPackIds}
+            onInstallPack={handleInstallPack}
+            onInstallAll={handleInstallAll}
           />
         )}
         {tab === 'export' && (
@@ -769,6 +829,320 @@ function MemoryEntryCard({
           </pre>
         </div>
       )}
+    </div>
+  )
+}
+
+// ════════════════════════════════════════════════════════════
+//  LIBRARY TAB — Pre-built Knowledge Packs
+// ════════════════════════════════════════════════════════════
+
+// Tailwind-safe color class maps (purge-safe — full literal strings)
+const PACK_COLOR_CLASSES: Record<
+  KnowledgePack['color'],
+  { border: string; bg: string; text: string; chip: string; bar: string }
+> = {
+  purple: {
+    border: 'border-t-purple-500',
+    bg: 'bg-purple-500/5',
+    text: 'text-purple-300',
+    chip: 'bg-purple-500/10 text-purple-300',
+    bar: 'bg-purple-500',
+  },
+  pink: {
+    border: 'border-t-pink-500',
+    bg: 'bg-pink-500/5',
+    text: 'text-pink-300',
+    chip: 'bg-pink-500/10 text-pink-300',
+    bar: 'bg-pink-500',
+  },
+  cyan: {
+    border: 'border-t-cyan-500',
+    bg: 'bg-cyan-500/5',
+    text: 'text-cyan-300',
+    chip: 'bg-cyan-500/10 text-cyan-300',
+    bar: 'bg-cyan-500',
+  },
+  emerald: {
+    border: 'border-t-emerald-500',
+    bg: 'bg-emerald-500/5',
+    text: 'text-emerald-300',
+    chip: 'bg-emerald-500/10 text-emerald-300',
+    bar: 'bg-emerald-500',
+  },
+  amber: {
+    border: 'border-t-amber-500',
+    bg: 'bg-amber-500/5',
+    text: 'text-amber-300',
+    chip: 'bg-amber-500/10 text-amber-300',
+    bar: 'bg-amber-500',
+  },
+  rose: {
+    border: 'border-t-rose-500',
+    bg: 'bg-rose-500/5',
+    text: 'text-rose-300',
+    chip: 'bg-rose-500/10 text-rose-300',
+    bar: 'bg-rose-500',
+  },
+  blue: {
+    border: 'border-t-blue-500',
+    bg: 'bg-blue-500/5',
+    text: 'text-blue-300',
+    chip: 'bg-blue-500/10 text-blue-300',
+    bar: 'bg-blue-500',
+  },
+  violet: {
+    border: 'border-t-violet-500',
+    bg: 'bg-violet-500/5',
+    text: 'text-violet-300',
+    chip: 'bg-violet-500/10 text-violet-300',
+    bar: 'bg-violet-500',
+  },
+}
+
+function LibraryTab({
+  entries,
+  installingPacks,
+  installedPackIds,
+  onInstallPack,
+  onInstallAll,
+}: {
+  entries: MemoryEntry[]
+  installingPacks: Record<string, { current: number; total: number }>
+  installedPackIds: Set<string>
+  onInstallPack: (pack: KnowledgePack) => void
+  onInstallAll: () => void
+}) {
+  const totalEntries = totalKnowledgeEntries()
+  const memoryCount = entries.length
+  const allPacksInstalled =
+    installedPackIds.size === KNOWLEDGE_PACKS.length && KNOWLEDGE_PACKS.length > 0
+  const anyInstalling = Object.keys(installingPacks).length > 0
+
+  return (
+    <div className="mx-auto max-w-5xl px-6 py-6">
+      {/* Header */}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="flex items-center gap-2 text-base font-semibold text-zinc-100">
+            <Library className="h-5 w-5 text-purple-400" />
+            Knowledge Library
+          </h2>
+          <p className="mt-1 text-xs text-zinc-500">
+            Pre-built knowledge packs — ek click mein TRINITY ke dimaagh mein daal do.
+            Phir Think tab pe ja kar test karo.
+          </p>
+        </div>
+        <button
+          onClick={onInstallAll}
+          disabled={anyInstalling || allPacksInstalled}
+          className="flex items-center gap-1.5 rounded-md border border-purple-500/40 bg-purple-500/10 px-3 py-1.5 text-xs font-medium text-purple-300 transition-colors hover:bg-purple-500/20 disabled:opacity-40"
+        >
+          {anyInstalling ? (
+            <>
+              <div className="h-3 w-3 animate-spin rounded-full border border-purple-400/40 border-t-purple-300" />
+              Installing...
+            </>
+          ) : allPacksInstalled ? (
+            <>
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              All Installed
+            </>
+          ) : (
+            <>
+              <Plus className="h-3.5 w-3.5" />
+              Install All ({totalEntries})
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Stats bar */}
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        <div className="rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2">
+          <div className="text-[10px] uppercase tracking-wider text-zinc-500">Packs</div>
+          <div className="mt-0.5 text-lg font-semibold text-zinc-100">
+            {KNOWLEDGE_PACKS.length}
+          </div>
+        </div>
+        <div className="rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2">
+          <div className="text-[10px] uppercase tracking-wider text-zinc-500">
+            Total Entries
+          </div>
+          <div className="mt-0.5 text-lg font-semibold text-zinc-100">{totalEntries}</div>
+        </div>
+        <div className="rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2">
+          <div className="text-[10px] uppercase tracking-wider text-zinc-500">
+            Your Memory
+          </div>
+          <div className="mt-0.5 text-lg font-semibold text-emerald-300">{memoryCount}</div>
+        </div>
+      </div>
+
+      {/* Pack cards grid */}
+      <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {KNOWLEDGE_PACKS.map((pack) => {
+          const colors = PACK_COLOR_CLASSES[pack.color]
+          const progress = installingPacks[pack.id]
+          const isInstalled = installedPackIds.has(pack.id)
+          return (
+            <PackCard
+              key={pack.id}
+              pack={pack}
+              colors={colors}
+              progress={progress}
+              isInstalled={isInstalled}
+              onInstall={() => onInstallPack(pack)}
+            />
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function PackCard({
+  pack,
+  colors,
+  progress,
+  isInstalled,
+  onInstall,
+}: {
+  pack: KnowledgePack
+  colors: (typeof PACK_COLOR_CLASSES)[KnowledgePack['color']]
+  progress?: { current: number; total: number }
+  isInstalled: boolean
+  onInstall: () => void
+}) {
+  const [expanded, setExpanded] = useState(false)
+  const previewEntries = expanded ? pack.entries : pack.entries.slice(0, 3)
+  const hiddenCount = pack.entries.length - 3
+
+  return (
+    <div
+      className={cn(
+        'flex flex-col overflow-hidden rounded-lg border border-zinc-800 border-t-2 bg-zinc-900',
+        colors.border,
+        colors.bg
+      )}
+    >
+      {/* Header */}
+      <div className="flex items-start gap-3 p-4">
+        <div className="text-2xl">{pack.emoji}</div>
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-sm font-semibold text-zinc-100">{pack.name}</h3>
+          <div className="mt-0.5 flex items-center gap-1.5">
+            <span className={cn('rounded px-1.5 py-0.5 text-[10px] font-medium', colors.chip)}>
+              {pack.entries.length} entries
+            </span>
+            {isInstalled && (
+              <span className="flex items-center gap-0.5 rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] text-emerald-300">
+                <CheckCircle2 className="h-2.5 w-2.5" />
+                Installed
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Description */}
+      <div className="px-4 pb-2">
+        <p className="line-clamp-2 text-xs leading-relaxed text-zinc-400">
+          {pack.description}
+        </p>
+      </div>
+
+      {/* Preview entries */}
+      <div className="flex-1 px-4 pb-3">
+        <div className="space-y-1">
+          {previewEntries.map((entry, i) => (
+            <div
+              key={i}
+              className="flex items-start gap-1.5 rounded border border-zinc-800 bg-zinc-950/60 px-2 py-1.5"
+            >
+              <ChevronRight className="mt-0.5 h-3 w-3 flex-shrink-0 text-zinc-600" />
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[11px] font-medium text-zinc-200">
+                  {entry.label}
+                </div>
+                <div className="truncate font-mono text-[10px] text-zinc-600">
+                  {entry.input.replace(/\s+/g, ' ').slice(0, 50)}
+                  {entry.input.length > 50 ? '...' : ''}
+                </div>
+              </div>
+              <span className="flex-shrink-0 rounded bg-zinc-800 px-1 py-0.5 text-[9px] text-zinc-500">
+                {entry.category}
+              </span>
+            </div>
+          ))}
+        </div>
+        {pack.entries.length > 3 && (
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="mt-1.5 flex items-center gap-1 text-[10px] text-zinc-500 hover:text-zinc-300"
+          >
+            {expanded ? (
+              <>
+                <ChevronDown className="h-3 w-3 rotate-180" />
+                Show less
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-3 w-3" />
+                +{hiddenCount} more
+              </>
+            )}
+          </button>
+        )}
+      </div>
+
+      {/* Install footer */}
+      <div className="border-t border-zinc-800 bg-zinc-950/40 px-4 py-3">
+        {progress ? (
+          <div>
+            <div className="mb-1 flex items-center justify-between text-[10px] text-zinc-400">
+              <span className="flex items-center gap-1">
+                <div className="h-2.5 w-2.5 animate-spin rounded-full border border-purple-400/40 border-t-purple-300" />
+                Installing...
+              </span>
+              <span className="font-mono text-zinc-300">
+                {progress.current}/{progress.total}
+              </span>
+            </div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-zinc-800">
+              <div
+                className={cn('h-full rounded-full transition-all duration-200', colors.bar)}
+                style={{
+                  width: `${(progress.current / progress.total) * 100}%`,
+                }}
+              />
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={onInstall}
+            disabled={isInstalled}
+            className={cn(
+              'flex w-full items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-default',
+              isInstalled
+                ? 'bg-emerald-500/10 text-emerald-300'
+                : 'bg-zinc-100 text-zinc-900 hover:bg-white'
+            )}
+          >
+            {isInstalled ? (
+              <>
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                In Memory
+              </>
+            ) : (
+              <>
+                <Plus className="h-3.5 w-3.5" />
+                Install Pack
+              </>
+            )}
+          </button>
+        )}
+      </div>
     </div>
   )
 }

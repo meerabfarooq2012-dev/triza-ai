@@ -2081,3 +2081,62 @@ Stage Summary:
 - Verified end-to-end: train in browser → think on CPU → export HTML → open standalone HTML offline → AI works, learns, persists.
 - Files created: indexeddb-memory.ts, messages.ts, worker.ts, export-html.ts, use-trinity-browser.ts, brain-view.tsx (975 lines). Files updated: types.ts, sidebar.tsx, page.tsx, manifest.json.
 - No Hindi/Devanagari used. Roman Urdu explanations in AI responses. English UI labels.
+
+---
+Task ID: KNOWLEDGE-LIBRARY-1
+Agent: Main Agent
+Task: User asked (Roman Urdu): "acha to kya app is ke ander aur knowladge add kar sakte ho" — can more knowledge be added to the TRINITY brain? Build a Knowledge Library feature: pre-built themed knowledge packs the user can one-click install into their browser-side TRINITY memory.
+
+Work Log:
+- Read worklog.md to understand prior work: NOOR AI workspace with 4 modes (Chat/Playground/Models/My Brain). My Brain mode runs TRINITY (3-layer: Knowledge Graph + HDC Analogy + Bayesian Logic) 100% in the browser via Web Worker + IndexedDB. Existing "Memory" tab only had a manual teach-form (one entry at a time).
+- Read existing infrastructure: knowledge-graph.ts (buildGraph auto-detects code vs text), use-trinity-browser.ts (learn(input, label, category) → posts to worker), brain-view.tsx (MemoryTab with manual form + entries list), trinity types (MemoryEntry).
+- Created /home/z/my-project/src/lib/trinity-browser/knowledge-packs.ts — defines 8 themed packs, 53 total entries:
+  1. JavaScript Functions (amber, 10 entries: add, subtract, multiply, divide, greet, isEven, factorial, fibonacci, reverseString, capitalize)
+  2. Python Snippets (blue, 6 entries: greet, add, is_prime, list comprehension, for loop, if-else)
+  3. Urdu Poetry Moods (violet, 6 entries: Sad/Dard, Nostalgic/Yaad, Peaceful/Sukoon, Revolutionary/Inqilab, Romantic/Ishq, Spiritual/Ruhani)
+  4. Common Code Bugs (rose, 6 entries: off-by-one, infinite loop, missing await, undefined var, assign-vs-compare, divide-by-zero)
+  5. Math Concepts (cyan, 6 entries: prime, even, factorial, fibonacci, sorting, recursion as text)
+  6. Roman Urdu Vocabulary (emerald, 7 entries: greeting, daily, memory, sadness, happiness, love, action words)
+  7. HTML & CSS Basics (pink, 6 entries: div, span, anchor, button, flex container, card style)
+  8. Poetry Forms (purple, 6 entries: ghazal, nazm, rubai, shayari, qata, sher — for the 14-year-old poet user)
+  Each pack has typed KnowledgeEntry[] with input/label/category.
+- Modified /home/z/my-project/src/components/ai/workspace/brain-view.tsx:
+  * Added 'library' to tab union type (between 'memory' and 'export').
+  * Added Library, ChevronDown, ChevronRight to lucide-react imports (removed unused BookOpen).
+  * Imported KNOWLEDGE_PACKS, totalKnowledgeEntries, KnowledgePack type from knowledge-packs.
+  * Added installingPacks state (Record<id, {current, total}>) and installedPackIds state (Set).
+  * Added handleInstallPack(pack) — iterates pack.entries, calls trinity.learn() for each, updates progress per-entry, marks pack as installed on completion, refreshes entries.
+  * Added handleInstallAll() — confirms then iterates all 8 packs sequentially.
+  * Added LibraryTab button to the tabs row (flex-wrap for mobile).
+  * Rendered LibraryTab in the content area (between MemoryTab and ExportTab).
+  * Built PACK_COLOR_CLASSES — purge-safe literal Tailwind class map for 8 colors (border-t, bg, chip, bar).
+  * Built LibraryTab component — header with "Knowledge Library" title + "Install All (N)" button; 3-tile stats bar (Packs / Total Entries / Your Memory); responsive grid (1/2/3 cols) of PackCards.
+  * Built PackCard component — emoji + name + entry count chip + "Installed" badge if installed; 2-line clamped description; preview list (first 3 entries with label + truncated input + category chip) + "+N more" expand toggle; install footer with progress bar (current/total) during install OR "Install Pack" / "In Memory" button.
+  * Updated BrainView docstring to list 5 features (Think/Memory/Library/Export/Install).
+- Lint: clean for all my new code. Only pre-existing error remains in src/hooks/use-google-auth-callback.ts (untouched Thiora auth).
+
+Browser Verification (Agent Browser, dark media):
+- Opened / → workspace shell rendered with 4 mode tabs (Chat/Playground/Models/My Brain).
+- Clicked "My Brain" (via JS eval because Notifications region was covering the click point) → BrainView loaded with 4 sub-tabs (Think/Memory/Library/Download & Install).
+- Clicked "Library" sub-tab → Knowledge Library page rendered with:
+  * "Knowledge Library" heading
+  * "Install All (53)" button at top-right
+  * 3-tile stats bar (8 Packs / 53 Total Entries / 0 Your Memory)
+  * 8 pack cards in responsive grid, each showing emoji, name, entry count chip, description, 3 preview entries with "+N more" expand button, and "Install Pack" button.
+- Clicked "Install Pack" on Urdu Poetry Moods pack → progress ran → button changed to "In Memory" (disabled, emerald). Pack card now shows "Installed" badge.
+- Clicked "Memory" sub-tab → "MEMORY ENTRIES (6)" heading + all 6 poetry entries listed with full text (Sad/Dard, Nostalgic/Yaad, Peaceful/Sukoon, Revolutionary/Inqilab, Romantic/Ishq, Spiritual/Ruhani). Sidebar updated to "6 MEMORIES · 1 CATEGORY · 1024 BIT DIM · 23.5KB".
+- Clicked "Think" sub-tab → filled input "mere dil mein dard hai tanhai mein roya raat bhar aansoo" → clicked Think → RESULT (4ms):
+  * Best match: "Sad / Dard poetry" — 80.4% similar (Hamming: 201/1024)
+  * Confidence: 17.1% (low — honest, small memory)
+  * Layer-by-layer transparency: GRAPH (10 nodes, 10 edges, text type), ANALOGY (5 analogies, top match Sad/Dard 80.4%), BAYESIAN (best hypothesis Sad/Dard posterior 21.3%, 17.1% sure / 82.9% galat ho sakti hai)
+  * Footer: "🔒 Sab kuch tumhare browser mein hua. Koi data server pe nahi gaya."
+- Browser console: zero errors (only HMR/DevTools info).
+- Dev server log: zero errors related to Library/Brain (pre-existing Prisma errors in /api/ai/conversations and /api/ai/models are unrelated — those are server-side HDC model APIs needing db:push, Library is 100% client-side via Web Worker + IndexedDB).
+
+Stage Summary:
+- DELIVERED: Knowledge Library feature — user can now add 53 pre-built knowledge entries (across 8 themed packs) to their TRINITY brain in ONE CLICK each, or all at once via "Install All".
+- New file: src/lib/trinity-browser/knowledge-packs.ts (8 packs, 53 entries, fully typed).
+- Modified file: src/components/ai/workspace/brain-view.tsx — added 'library' tab, LibraryTab + PackCard components (~280 new lines), handleInstallPack/handleInstallAll handlers, PACK_COLOR_CLASSES purge-safe color map.
+- Verified end-to-end: install Urdu Poetry Moods pack → Memory tab shows 6 entries → Think tab queries sad poetry → TRINITY matches "Sad / Dard poetry" at 80.4% similarity with full bit-level transparency. Knowledge IS being added and IS being used by the AI.
+- All 8 packs are themed for the 14-year-old poet user: JavaScript/Python/HTML-CSS for coding, Urdu Poetry Moods + Poetry Forms for her poetic side, Math Concepts, Roman Urdu Vocabulary, Common Bugs.
+- Feature is 100% client-side: no server calls, no API changes, knowledge persists in IndexedDB, survives refresh, exports with the standalone HTML download.
